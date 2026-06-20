@@ -785,13 +785,7 @@ export default function InventoryDashboard() {
                                                 onChange={e => setSearchTerm(e.target.value)}
                                                 className="w-full bg-slate-800/80 border border-slate-700/50 pl-12 pr-12 py-4 rounded-2xl font-medium outline-none focus:border-[#0ea5e9] shadow-lg transition-all"
                                             />
-                                            <button 
-                                                onClick={handleVoiceSearch} 
-                                                className={`absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full transition-colors ${isListeningVoice ? 'bg-red-100 text-red-500 animate-pulse' : 'text-slate-400 hover:text-[#0ea5e9] hover:bg-slate-50'}`}
-                                                title="Búsqueda por voz"
-                                            >
-                                                <Mic size={18} />
-                                            </button>
+
                                         </div>
                                         <button 
                                             onClick={() => setShowNewEstanteModal(true)}
