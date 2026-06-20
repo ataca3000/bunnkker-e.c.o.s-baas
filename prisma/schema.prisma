@@ -1,0 +1,71 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+// Catálogo Local (copia del Cloud o maestro local)
+model Product {
+  id          String   @id // Coincide con ID de Firebase o generado
+  name        String
+  price       Float
+  stock       Int      @default(0)
+  category    String?
+  image       String?
+  rating      Float?
+  reviewCount Int?
+  barcode     String?
+  description String?
+  
+  orderItems  OrderItem[]
+}
+
+// Historial Local de Ventas
+model Order {
+  id            String   @id @default(uuid())
+  total         Float
+  paymentMethod String
+  status        String   @default("paid")
+  date          DateTime @default(now())
+  offline       Boolean  @default(true) // True porque nació offline
+  synced        Boolean  @default(false) // Si ya subió a Firebase
+  
+  items         OrderItem[]
+}
+
+// Detalle de la Venta Local
+model OrderItem {
+  id        String  @id @default(uuid())
+  orderId   String
+  productId String
+  cantidad  Int
+  precio    Float
+
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id])
+}
+
+// Cola de Sincronización (Worker Sync)
+model SyncQueue {
+  id         String   @id @default(uuid())
+  collection String   // "orders", "audit_logs", etc.
+  documentId String?  // ID de firebase
+  action     String   // "CREATE", "UPDATE", "DELETE"
+  payload    String   // JSON con los datos a mandar
+  createdAt  DateTime @default(now())
+  status     String   @default("PENDING") // PENDING, PROCESSING, FAILED
+  errorMsg   String?
+}
+
+// Registro de Auditoría Local
+model AuditLog {
+  id        String   @id @default(uuid())
+  action    String
+  details   String?
+  userId    String
+  timestamp DateTime @default(now())
+  synced    Boolean  @default(false)
+}
