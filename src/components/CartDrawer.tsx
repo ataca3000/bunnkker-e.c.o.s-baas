@@ -117,7 +117,7 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
                                     <div className={styles.cartList}>
                                         {cart.map(item => (
                                             <div key={item.id} className={styles.cartItem}>
-                                                <Image src={item.image} alt={item.name} width={60} height={60} className={styles.cartItemImage} unoptimized />
+                                                <Image src={item.image || '/placeholder-product.png'} alt={item.name} width={60} height={60} className={styles.cartItemImage} unoptimized />
                                                 <div className={styles.cartItemInfo}>
                                                     <h4 className={styles.cartItemName}>{item.name}</h4>
                                                     <div className={styles.cartItemPricing}>
