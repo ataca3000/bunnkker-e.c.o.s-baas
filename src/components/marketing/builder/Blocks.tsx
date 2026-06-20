@@ -54,7 +54,7 @@ export function ImageUploader({ onUpload, isPreviewMode, className, children }: 
         
         uploadTask.on('state_changed', 
             null, 
-            (error) => {
+            (error: Error) => {
                 console.error("Error subiendo archivo:", error);
                 setIsUploading(false);
             }, 
