@@ -34,7 +34,7 @@ export default function ReportsAndBackups() {
         const byMonth: Record<string, { total: number; orders: number }> = {};
         orders.forEach(o => {
             if (o.status !== 'paid') return;
-            const month = new Date(o.date).toLocaleString('es-MX', { month: 'short', year: 'numeric' });
+            const month = new Date(o.date || Date.now()).toLocaleString('es-MX', { month: 'short', year: 'numeric' });
             if (!byMonth[month]) byMonth[month] = { total: 0, orders: 0 };
             byMonth[month].total += o.total;
             byMonth[month].orders += 1;
@@ -82,7 +82,7 @@ export default function ReportsAndBackups() {
                         o.id,
                         o.customer?.name || '',
                         o.customer?.phone || '',
-                        new Date(o.date).toLocaleDateString('es-MX'),
+                        new Date(o.date || Date.now()).toLocaleDateString('es-MX'),
                         o.total.toString(),
                         o.paymentMethod || '',
                     ]);
@@ -119,7 +119,7 @@ export default function ReportsAndBackups() {
             } else if (type === 'Facturas') {
                 const rows = orders
                     .filter(o => (o as any).requiresInvoice)
-                    .map(o => [o.id, o.customer?.name || '', new Date(o.date).toLocaleDateString('es-MX'), o.total.toString()]);
+                    .map(o => [o.id, o.customer?.name || '', new Date(o.date || Date.now()).toLocaleDateString('es-MX'), o.total.toString()]);
                 exportCSV(
                     `cfdi_${siteConfig.businessName}_${new Date().toISOString().slice(0, 10)}.csv`,
                     rows,
