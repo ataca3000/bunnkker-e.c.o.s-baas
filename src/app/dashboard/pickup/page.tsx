@@ -155,13 +155,13 @@ export default function PickupDashboard() {
                                     >
                                         <div className="absolute top-0 left-0 w-1 h-full bg-cyan-400"></div>
                                         <div className="flex justify-between items-start mb-3 pl-3">
-                                            <h3 className="font-bold text-lg text-white">{order.customer.name}</h3>
+                                            <h3 className="font-bold text-lg text-white">{order.customer?.name || 'Cliente Mostrador'}</h3>
                                             <span className="bg-green-500/20 text-green-400 px-2 py-1 rounded text-xs font-bold border border-green-500/30">
                                                 PAGO VERIFICADO
                                             </span>
                                         </div>
                                         <div className="text-sm text-gray-400 space-y-1 mb-4 pl-3">
-                                            <p>📞 {order.customer.phone}</p>
+                                            <p>📞 {order.customer?.phone || 'Sin teléfono'}</p>
                                             <p className="flex items-center gap-2">
                                                 <Calendar size={14} /> Fecha: {new Date(order.date || Date.now()).toLocaleDateString()}
                                             </p>
