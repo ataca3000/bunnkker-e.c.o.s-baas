@@ -6,8 +6,8 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
-  DragEndEvent,
 } from '@dnd-kit/core';
+import type { DragEndEvent } from '@dnd-kit/core';
 import {
   arrayMove,
   SortableContext,
@@ -15,7 +15,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { v4 as uuidv4 } from 'uuid';
-import { BlockConfig, BlockType } from './Types';
+import type { BlockConfig, BlockType } from './Types';
 import { SortableBlock } from './Blocks';
 import SidebarBuilder from './SidebarBuilder';
 import { Save, Eye, Monitor, Smartphone, Store } from 'lucide-react';
