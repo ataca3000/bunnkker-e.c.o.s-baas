@@ -111,7 +111,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                         displayName: 'DUEÑO DEL NEGOCIO',
                         role: 'superadmin',
                         nodeAccess: ['Todos'],
-                        isPremium: false
+                        isPremium: false,
+                        lastLogin: Date.now()
                     });
                 } else if (sessionUid) {
                     // Cargar perfil local desde Firestore
