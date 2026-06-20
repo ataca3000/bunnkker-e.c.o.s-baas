@@ -1,6 +1,6 @@
 import React from 'react';
 import { LayoutTemplate, Type, Image as ImageIcon, ShoppingBag, Info, Phone, Target, Trash2, PlusCircle, PaintBucket, Palette } from 'lucide-react';
-import { BlockConfig, BlockType } from './Types';
+import type { BlockConfig, BlockType } from './Types';
 
 interface SidebarProps {
     selectedBlock?: BlockConfig;
