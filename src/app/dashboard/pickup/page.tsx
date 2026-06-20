@@ -115,7 +115,7 @@ export default function PickupDashboard() {
                                         <div className="text-sm text-gray-400 space-y-1 mb-4">
                                             <p>📞 {order.customer?.phone || 'Sin teléfono'}</p>
                                             <p className="flex items-center gap-2">
-                                                <Clock size={14} /> Solicitado: {new Date(order.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                                <Clock size={14} /> Solicitado: {new Date(order.date || Date.now()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                                             </p>
                                         </div>
                                         <button 
@@ -163,7 +163,7 @@ export default function PickupDashboard() {
                                         <div className="text-sm text-gray-400 space-y-1 mb-4 pl-3">
                                             <p>📞 {order.customer.phone}</p>
                                             <p className="flex items-center gap-2">
-                                                <Calendar size={14} /> Fecha: {new Date(order.date).toLocaleDateString()}
+                                                <Calendar size={14} /> Fecha: {new Date(order.date || Date.now()).toLocaleDateString()}
                                             </p>
                                         </div>
                                         <button 
