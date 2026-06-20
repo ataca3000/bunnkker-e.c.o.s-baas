@@ -164,7 +164,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     displayName: 'DUEÑO DEL NEGOCIO',
                     role: 'superadmin',
                     nodeAccess: ['Todos'],
-                    isPremium: false
+                    isPremium: false,
+                    lastLogin: Date.now()
                 });
             }
             setIsReadOnly(false); // Permitimos escritura en la DB local
