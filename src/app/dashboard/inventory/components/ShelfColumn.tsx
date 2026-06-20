@@ -8,7 +8,7 @@ interface ShelfColumnProps {
   key?: React.Key;
   shelfName: string;
   products: Product[];
-  onProductClick?: (productId: string) => void;
+  onProductClick?: (product: Product) => void;
 }
 
 export default function ShelfColumn({ shelfName, products, onProductClick }: ShelfColumnProps) {
@@ -47,7 +47,7 @@ export default function ShelfColumn({ shelfName, products, onProductClick }: She
             <ProductCard 
               key={product.id} 
               product={product} 
-              onClick={() => onProductClick && onProductClick(product.id)}
+              onClick={() => onProductClick && onProductClick(product)}
             />
           ))}
         </SortableContext>
