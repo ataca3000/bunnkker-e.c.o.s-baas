@@ -105,7 +105,7 @@ export default function ReportsAndBackups() {
                 orders.forEach(o => {
                     const key = o.customer?.phone || o.customer?.name;
                     if (!key) return;
-                    if (!clientMap[key]) clientMap[key] = { name: o.customer.name, phone: o.customer.phone, orders: 0, total: 0 };
+                    if (!clientMap[key]) clientMap[key] = { name: o.customer?.name || 'Cliente', phone: o.customer?.phone || '', orders: 0, total: 0 };
                     if (o.status === 'paid') { clientMap[key].orders++; clientMap[key].total += o.total; }
                 });
                 const rows = Object.values(clientMap).map(c => [
