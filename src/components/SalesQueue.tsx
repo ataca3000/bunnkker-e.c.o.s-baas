@@ -16,7 +16,7 @@ export default function SalesQueue() {
         return orders.filter(o => {
             const isPending = o.status === 'pending_confirmation';
             const matchesSearch = o.id.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                                 o.customer.name.toLowerCase().includes(searchTerm.toLowerCase());
+                                 (o.customer?.name || '').toLowerCase().includes(searchTerm.toLowerCase());
             return isPending && matchesSearch;
         });
     }, [orders, searchTerm]);
@@ -76,10 +76,10 @@ export default function SalesQueue() {
                         <div className="flex-1">
                             <div className="flex items-center gap-3 mb-2">
                                 <span className="bg-blue-100 text-[#0ea5e9] px-3 py-1 rounded-full text-xs font-black">{order.id}</span>
-                                <h3 className="font-black text-gray-800 uppercase">{order.customer.name}</h3>
+                                <h3 className="font-black text-gray-800 uppercase">{order.customer?.name || 'Cliente Mostrador'}</h3>
                             </div>
                             <div className="flex gap-4 text-xs text-gray-500 font-bold uppercase">
-                                <span className="flex items-center gap-1"><UserIcon size={14} /> {order.customer.phone}</span>
+                                <span className="flex items-center gap-1"><UserIcon size={14} /> {order.customer?.phone || 'Sin teléfono'}</span>
                                 <span className="flex items-center gap-1"><DollarSign size={14} /> {formatCurrency(order.total)}</span>
                                 <span className="flex items-center gap-1 text-[#0ea5e9]">
                                     <CreditCard size={14} /> 
