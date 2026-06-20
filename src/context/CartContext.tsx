@@ -424,7 +424,7 @@ export const useCart = () => {
     const sendDailyClosing = async () => {
         if (isReadOnly) return;
         const today = new Date().toISOString().split('T')[0];
-        const todaysOrders = store.orders.filter(o => o.date.startsWith(today) && o.status === 'paid');
+        const todaysOrders = store.orders.filter(o => (o.date || '').startsWith(today) && o.status === 'paid');
         const totalSales = todaysOrders.reduce((sum, o) => sum + o.total, 0);
         const salesCount = todaysOrders.length;
         const reportText = `CORTE DE CAJA - ${today}\n---------------------------\nVentas Totales: ${store.formatCurrency(totalSales)}\nNúmero de Pedidos: ${salesCount}\nVendedor Activo: ${profile?.displayName || 'Admin'}\n`;
