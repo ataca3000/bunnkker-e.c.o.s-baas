@@ -195,7 +195,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
             onSnapshot(collection(db, 'orders'), (snap: any) => {
                 const updated = snap.docs.map((d: any) => ({ id: d.id, ...d.data() })) as Order[];
-                setOrders(updated.sort((a, b) => b.date.localeCompare(a.date)));
+                setOrders(updated.sort((a, b) => (b.date || '').localeCompare(a.date || '')));
             }, (err: any) => handleError(err, OperationType.LIST, 'orders')),
 
             onSnapshot(doc(db, 'settings', 'site_config'), (snap: any) => {
