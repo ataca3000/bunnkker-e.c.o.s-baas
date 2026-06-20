@@ -17,7 +17,7 @@ import { logAudit } from '@/lib/audit';
 import { useAuth } from './AuthContext';
 import { reportError, handleFirestoreError, OperationType } from '@/lib/errorMonitor';
 import { useERPStore, fallbackProducts, defaultSiteConfig } from '@/store/useERPStore';
-import { BlockConfig } from '@/components/marketing/builder/Types';
+import type { BlockConfig } from '@/components/marketing/builder/Types';
 import type { Product, CartItem, Order } from '@/lib/types';
 
 export type { Product, CartItem, Order };
