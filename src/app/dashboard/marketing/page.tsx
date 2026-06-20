@@ -5,7 +5,8 @@ import { QRCodeSVG } from 'qrcode.react';
 import { Download, Printer, Share2, Copy, CheckCircle, Settings, Globe, Image, Type, Palette, Save, RefreshCw, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '@/context/CartContext';
-import { CanvasBuilder, BlockConfig } from '@/components/marketing/builder';
+import { CanvasBuilder } from '@/components/marketing/builder';
+import type { BlockConfig } from '@/components/marketing/builder';
 
 interface BusinessDraft {
     businessName: string;
