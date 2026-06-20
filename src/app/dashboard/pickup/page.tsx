@@ -109,11 +109,11 @@ export default function PickupDashboard() {
                                         className="bg-[#1a1d2d] border border-white/5 rounded-xl p-5 hover:border-yellow-400/30 transition-colors"
                                     >
                                         <div className="flex justify-between items-start mb-3">
-                                            <h3 className="font-bold text-lg">{order.customer.name}</h3>
+                                            <h3 className="font-bold text-lg">{order.customer?.name || 'Cliente Mostrador'}</h3>
                                             <span className="text-yellow-400 font-bold text-xl">{formatCurrency(order.total)}</span>
                                         </div>
                                         <div className="text-sm text-gray-400 space-y-1 mb-4">
-                                            <p>📞 {order.customer.phone}</p>
+                                            <p>📞 {order.customer?.phone || 'Sin teléfono'}</p>
                                             <p className="flex items-center gap-2">
                                                 <Clock size={14} /> Solicitado: {new Date(order.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                                             </p>
