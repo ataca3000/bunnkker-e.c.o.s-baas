@@ -75,7 +75,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                             recoveryEmail: data.recoveryEmail,
                             recoveryPhone: data.recoveryPhone,
                             twoFactorConfigured: data.twoFactorConfigured,
-                            needsSetup: data.needsSetup || false
+                            needsSetup: data.needsSetup || false,
+                            lastLogin: data.lastLogin || Date.now()
                         });
                     } else {
                         // Create admin profile for first-time users
@@ -84,7 +85,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                             email: firebaseUser.email || '',
                             displayName: firebaseUser.displayName || 'Cliente',
                             role: 'client',
-                            nodeAccess: []
+                            nodeAccess: [],
+                            lastLogin: Date.now()
                         };
                         import('firebase/firestore').then(({ setDoc }) => {
                             setDoc(doc(db, 'users', firebaseUser.uid), newProfile).catch(console.error);
@@ -125,7 +127,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                                 recoveryEmail: data.recoveryEmail,
                                 recoveryPhone: data.recoveryPhone,
                                 isPremium: data.isPremium || false,
-                                needsSetup: data.needsSetup || false
+                                needsSetup: data.needsSetup || false,
+                                lastLogin: data.lastLogin || Date.now()
                             });
                             setUser({ uid: sessionUid, email: data.email });
                         } else {
