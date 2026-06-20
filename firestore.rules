@@ -1,0 +1,98 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Función para obtener el tenant del usuario autenticado
+    function getUserTenant() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.tenantId;
+    }
+    
+    // Función para obtener el rol del usuario
+    function isSuperAdmin() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'superadmin';
+    }
+
+    function isStaff() {
+      let role = get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+      return role == 'superadmin' || role == 'admin' || role == 'sales' || role == 'inventory' || role == 'billing' || role == 'driver' || role == 'carga_descarga';
+    }
+
+    match /users/{userId} {
+      // Un usuario puede leer su propio perfil. Un superadmin puede leer todos.
+      allow read: if request.auth != null && (request.auth.uid == userId || isSuperAdmin());
+      // Permitir que un nuevo cliente cree su propio perfil durante el registro
+      allow create: if request.auth != null && request.auth.uid == userId && request.resource.data.role == 'client';
+      // Permitir actualización si no cambia su rol ni su tenantId (usando get para evitar error si no existe)
+      allow update: if request.auth != null && (
+        isSuperAdmin() || 
+        (request.auth.uid == userId && 
+         request.resource.data.role == resource.data.role && 
+         request.resource.data.get('tenantId', null) == resource.data.get('tenantId', null))
+      );
+      allow delete: if request.auth != null && isSuperAdmin();
+    }
+
+    // Registro de Tenants: lectura pública para resolver subdominios, escritura solo autenticados
+    match /tenants_registry/{tenantDoc} {
+      allow read: if true;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && isSuperAdmin();
+    }
+
+    match /radio_channel/{document=**} {
+      // Walkie-Talkie temporal (sin memoria a largo plazo)
+      allow read, write: if request.auth != null;
+    }
+    
+    match /settings/{doc} {
+      allow read: if true;
+      allow write: if request.auth != null && isSuperAdmin();
+    }
+
+    match /secrets/{doc} {
+      // SOLO superadmin puede leer/escribir. El frontend de clientes/empleados nunca debe leer esto.
+      // Firebase Admin SDK ignorará esta regla, por lo que el Backend (API) puede leer sin problema.
+      allow read, write: if request.auth != null && isSuperAdmin();
+    }
+
+    match /orders/{document=**} {
+      allow read, write: if request.auth != null 
+        && (
+             isSuperAdmin() || 
+             (resource == null && request.resource.data.tenantId == getUserTenant()) || 
+             (resource != null && resource.data.tenantId == getUserTenant())
+           );
+    }
+    
+    match /products/{document=**} {
+      allow read: if true; // Temporal: para la vista del test
+      allow write: if request.auth != null 
+        && (
+             isSuperAdmin() || 
+             (resource == null && request.resource.data.tenantId == getUserTenant()) || 
+             (resource != null && resource.data.tenantId == getUserTenant())
+           )
+        && (!request.resource.data.keys().hasAny(['stock']) || request.resource.data.stock >= 0);
+    }
+
+    // GPS Tracking para repartidores en tiempo real
+    match /tracking_fleet/{driverId} {
+      allow read: if request.auth != null && isStaff();
+      allow write: if request.auth != null && request.auth.uid == driverId;
+    }
+
+    // Alertas de Pánico — cualquier usuario autenticado puede crear, solo superadmin lee
+    match /panic_alerts/{document=**} {
+      allow create: if request.auth != null;
+      allow read: if request.auth != null && isSuperAdmin();
+      allow update, delete: if false;
+    }
+
+    // Logs de Auditoría Inmutables — solo crear (append-only), superadmin lee
+    match /audit_logs/{document=**} {
+      allow create: if request.auth != null;
+      allow read: if request.auth != null && isSuperAdmin();
+      allow update, delete: if false;
+    }
+  }
+}

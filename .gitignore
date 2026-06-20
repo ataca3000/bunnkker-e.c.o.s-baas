@@ -1,0 +1,9 @@
+﻿dist-final/
+dist-final/
+.next/
+node_modules/
+dist/
+build/
+*.log
+.env.local/
+node_modules

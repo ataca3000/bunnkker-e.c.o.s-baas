@@ -1,0 +1,171 @@
+{
+  "name": "evostore-erp",
+  "version": "1.0.0",
+  "private": true,
+  "main": "electron-main.js",
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "dev:https": "next dev --experimental-https -p 3000",
+    "build": "next build --webpack",
+    "start": "next start -p 3000",
+    "lint": "next lint",
+    "dev:electron": "electron .",
+    "build:standalone": "next build --webpack && node copy-standalone.js",
+    "obfuscate": "javascript-obfuscator ./electron-main.js --output ./electron-main.obf.js --compact true --self-defending true",
+    "build:secure": "npm run build:standalone && npm run obfuscate",
+    "dist": "npm run build:secure && electron-builder",
+    "dist:win": "npm run build:standalone && electron-builder --win --x64",
+    "dist:publish": "npm run build:standalone && electron-builder --win --publish always",
+    "emulate:local": "firebase emulators:start --import=./firebase_data --export-on-exit",
+    "validate:ports": "node src/lib/check-ports.js",
+    "validate:comm": "node src/lib/validate-comm.js",
+    "test:logic": "node scripts/test-logic.js",
+    "worker": "cross-env dotenv_config_path=.env.local npx tsx src/worker/worker.ts",
+    "start:all": "concurrently \"npm run dev\" \"npm run worker\""
+  },
+  "build": {
+    "appId": "com.admincom.erp",
+    "productName": "EvoStore ERP",
+    "copyright": "Copyright © 2026 Tu Empresa S.A. de C.V.",
+    "directories": {
+      "output": "dist-final",
+      "buildResources": "build-resources"
+    },
+    "files": [
+      "electron-main.js",
+      "preload.js",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": ".next/standalone",
+        "to": "server",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "public",
+        "to": "server/public",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": ".next/static",
+        "to": "server/.next/static",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "win": {
+      "icon": "public/favicon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "requestedExecutionLevel": "requireAdministrator"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "EvoStore ERP"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "ataca3000",
+      "repo": "admin.com.erp",
+      "private": true
+    }
+  },
+  "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
+    "@ducanh2912/next-pwa": "^10.2.9",
+    "@opentelemetry/api": "^1.9.0",
+    "@prisma/client": "^5.21.1",
+    "@stripe/react-stripe-js": "^6.6.0",
+    "@stripe/stripe-js": "^8.11.0",
+    "@types/react-resizable": "^3.0.8",
+    "@types/react-signature-canvas": "^1.0.7",
+    "@types/uuid": "^10.0.0",
+    "ajv": "^8.12.0",
+    "clsx": "^2.1.1",
+    "cosine-similarity": "^1.0.1",
+    "cross-spawn": "^7.0.6",
+    "date-fns": "^4.1.0",
+    "electron-updater": "^6.8.9",
+    "facturapi": "^4.13.1",
+    "firebase": "^11.3.1",
+    "firebase-admin": "^14.0.0",
+    "framer-motion": "^12.34.2",
+    "html5-qrcode": "^2.3.8",
+    "immer": "^10.2.0",
+    "leaflet": "^1.9.4",
+    "lucide-react": "^0.563.0",
+    "mercadopago": "^3.1.0",
+    "multicast-dns": "^7.2.5",
+    "natural": "^8.0.1",
+    "next": "^16.2.9",
+    "node-machine-id": "^1.1.12",
+    "nodemailer": "^8.0.1",
+    "openai": "^4.85.4",
+    "qrcode.react": "^4.2.0",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "react-leaflet": "^5.0.0",
+    "react-qr-code": "^2.0.18",
+    "react-resizable": "^4.0.2",
+    "react-signature-canvas": "^1.1.0-alpha.2",
+    "react-webcam": "^7.2.0",
+    "react-window": "^1.8.10",
+    "recharts": "^3.8.1",
+    "stripe": "^20.4.1",
+    "tailwind-merge": "^3.4.1",
+    "tmp": "^0.2.3",
+    "uuid": "^14.0.0",
+    "workbox-precaching": "^7.4.1",
+    "zustand": "^5.0.14"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.29.7",
+    "@tailwindcss/postcss": "^4.0.8",
+    "@types/leaflet": "^1.9.21",
+    "@types/multicast-dns": "^7.2.2",
+    "@types/natural": "^5.1.5",
+    "@types/node": "^20.19.33",
+    "@types/nodemailer": "^7.0.10",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@types/react-window": "^1.8.8",
+    "concurrently": "^10.0.3",
+    "cross-env": "^10.1.0",
+    "electron": "^42.3.3",
+    "electron-builder": "^26.8.1",
+    "eslint": "^9.39.4",
+    "eslint-config-next": "15.1.7",
+    "javascript-obfuscator": "^5.4.3",
+    "minimatch": "^10.2.1",
+    "postcss": "^8.5.3",
+    "prisma": "^5.21.1",
+    "tailwindcss": "^4.0.8",
+    "tw-animate-css": "^1.0.1",
+    "typescript": "^5.9.3",
+    "webpack-obfuscator": "^3.6.1"
+  },
+  "overrides": {
+    "cross-spawn": "^7.0.6",
+    "nanoid": "^3.3.8",
+    "braces": "^3.0.3",
+    "micromatch": "^4.0.8"
+  }
+}
