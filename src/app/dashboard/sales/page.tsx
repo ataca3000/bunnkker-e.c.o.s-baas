@@ -435,8 +435,8 @@ export default function SalesDashboard() {
                                             </div>
 
                                             <div className="space-y-2 mb-6">
-                                                <p className="text-sm font-bold text-slate-300 flex items-center gap-3"><User size={16} className="text-[#004A99]"/> {order.customer.name}</p>
-                                                <p className="text-sm font-bold text-slate-400 flex items-center gap-3"><Phone size={16} className="text-[#004A99]"/> {order.customer.phone || 'N/A'}</p>
+                                                <p className="text-sm font-bold text-slate-300 flex items-center gap-3"><User size={16} className="text-[#004A99]"/> {order.customer?.name || 'Cliente Mostrador'}</p>
+                                                <p className="text-sm font-bold text-slate-400 flex items-center gap-3"><Phone size={16} className="text-[#004A99]"/> {order.customer?.phone || 'N/A'}</p>
                                             </div>
 
                                             <div className="bg-slate-50 rounded-2xl p-5 mb-6 border border-slate-700/50">
