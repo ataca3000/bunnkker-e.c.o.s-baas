@@ -42,13 +42,14 @@ function RoleBadge({ role, label }: { role: string; label: string }) {
 }
 
 export default function TeamManagement() {
-    const { isSuperAdmin, isReadOnly } = useAuth();
+    const { isSuperAdmin, isReadOnly, profile } = useAuth();
     const [users, setUsers] = useState<UserData[]>([]);
     const [invitations, setInvitations] = useState<Invitation[]>([]);
     const [loading, setLoading] = useState(true);
     const [editingUserId, setEditingUserId] = useState<string | null>(null);
     const [selectedRole, setSelectedRole] = useState<string>('');
     const [inviteEmail, setInviteEmail] = useState('');
+    const [inviteName, setInviteName] = useState('');
     const [inviteRole, setInviteRole] = useState('node');
     const [sendingInvite, setSendingInvite] = useState(false);
     const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -149,67 +150,55 @@ export default function TeamManagement() {
                             </div>
                             <h2 className="font-black text-white uppercase tracking-tight text-lg">Miembros Activos</h2>
                         </div>
-                        <div className="overflow-x-auto">
-                            <table className="w-full">
-                                <thead>
-                                    <tr className="border-b border-white/5">
-                                        <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-widest text-gray-500">Nombre / Email</th>
-                                        <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-widest text-gray-500">Rol Actual</th>
-                                        {isSuperAdmin && <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-widest text-gray-500">Acciones</th>}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {users.map((user, idx) => {
-                                        const roleLabel = user.role === 'superadmin' ? 'SuperAdmin (Master)' : roles.find(r => r.id === user.role)?.label || user.role || 'Sin Asignar';
-                                        return (
-                                            <tr key={user.uid} className={`border-b border-white/5 transition-colors hover:bg-slate-800/80/3 ${idx % 2 === 0 ? '' : 'bg-slate-800/80/[0.02]'}`}>
-                                                <td className="px-6 py-4">
-                                                    <div className="font-bold text-white text-sm">{user.displayName || 'Sin Nombre'}</div>
-                                                    <div className="text-xs text-gray-500 mt-0.5">{user.email}</div>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    {editingUserId === user.uid ? (
-                                                        <select
-                                                            value={selectedRole}
-                                                            onChange={(e) => setSelectedRole(e.target.value)}
-                                                            className="bg-[#0f111a] border border-white/10 text-white text-sm font-bold px-3 py-2 rounded-xl outline-none focus:border-[#0ea5e9]"
-                                                        >
-                                                            <option value="">Seleccionar rol...</option>
-                                                            {roles.map(r => <option key={r.id} value={r.id}>{r.label}</option>)}
-                                                        </select>
-                                                    ) : (
-                                                        <RoleBadge role={user.role} label={roleLabel} />
-                                                    )}
-                                                </td>
-                                                {isSuperAdmin && (
-                                                    <td className="px-6 py-4 text-right">
-                                                        {user.role !== 'superadmin' && (
-                                                            editingUserId === user.uid ? (
-                                                                <button
-                                                                    onClick={() => handleSaveRole(user.uid)}
-                                                                    className="inline-flex items-center gap-2 bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/30 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all"
-                                                                >
-                                                                    <Save size={14} /> Guardar
-                                                                </button>
-                                                            ) : (
+                        <div className="p-6 space-y-8 h-[700px] overflow-y-auto hide-scrollbar">
+                            {roles.map(role => {
+                                const roleUsers = users.filter(u => u.role === role.id);
+                                return (
+                                    <div key={role.id} className="mb-6">
+                                        <h3 className="font-bold text-white text-sm uppercase tracking-widest mb-4 flex items-center gap-2">
+                                            <div className="w-2 h-2 rounded-full bg-sky-400"></div>
+                                            {role.label} <span className="text-gray-500">({roleUsers.length}/{role.id === 'admin' ? 1 : 5})</span>
+                                        </h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                                            {Array.from({ length: role.id === 'admin' ? 1 : 5 }).map((_, idx) => {
+                                                const user = roleUsers[idx];
+                                                if (user) {
+                                                    return (
+                                                        <div key={user.uid} className="bg-slate-800/80 border border-slate-700 rounded-xl p-4 flex flex-col justify-between">
+                                                            <div>
+                                                                <div className="font-bold text-white text-sm truncate" title={user.displayName || 'Sin Nombre'}>{user.displayName || 'Sin Nombre'}</div>
+                                                                <div className="text-[10px] text-gray-500 mt-1 truncate" title={user.email}>{user.email}</div>
+                                                            </div>
+                                                            {isSuperAdmin && (
                                                                 <button
                                                                     onClick={() => { setEditingUserId(user.uid); setSelectedRole(user.role); }}
-                                                                    className="inline-flex items-center gap-2 bg-sky-500/10 border border-sky-500/20 text-sky-400 hover:bg-sky-500/20 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all"
+                                                                    className="mt-4 text-center w-full bg-slate-900/50 hover:bg-sky-500/20 text-sky-400 text-[10px] font-black uppercase tracking-widest py-1.5 rounded-lg transition-colors border border-sky-500/10"
                                                                 >
-                                                                    <Edit2 size={14} /> Editar Rol
+                                                                    Editar Rol
                                                                 </button>
-                                                            )
-                                                        )}
-                                                    </td>
-                                                )}
-                                            </tr>
-                                        );
-                                    })}
-                                    {users.length === 0 && (
-                                        <tr><td colSpan={3} className="px-6 py-16 text-center text-gray-500 text-sm">No hay miembros registrados aún.</td></tr>
-                                    )}
-                                </tbody>
-                            </table>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                } else {
+                                                    return (
+                                                        <div key={`empty-${role.id}-${idx}`} className="border border-dashed border-slate-700/50 bg-slate-900/30 rounded-xl p-4 flex flex-col items-center justify-center text-center gap-2 min-h-[100px] transition-colors hover:border-sky-500/30 hover:bg-sky-500/5">
+                                                            <div className="text-slate-600 font-bold text-[10px] uppercase tracking-widest">Disponible</div>
+                                                            {isSuperAdmin && (
+                                                                <button 
+                                                                    onClick={() => setInviteRole(role.id)}
+                                                                    className="bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg transition-colors"
+                                                                >
+                                                                    Asignar
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                }
+                                            })}
+                                        </div>
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
 
@@ -236,24 +225,41 @@ export default function TeamManagement() {
 
                                 <form onSubmit={async (e) => {
                                     e.preventDefault();
-                                    if (!inviteEmail || !inviteRole || isReadOnly) return;
+                                    if (!inviteEmail || !inviteName || !inviteRole || isReadOnly) return;
                                     const existingCount = users.filter(u => u.role === inviteRole).length;
-                                    if (existingCount >= 5) { alert(`⚠️ Límite: Ya hay ${existingCount} con este rol.`); return; }
+                                    const maxAllowed = inviteRole === 'admin' ? 1 : 5;
+                                    if (existingCount >= maxAllowed) { alert(`⚠️ Límite: Ya se alcanzó el máximo permitido de ${maxAllowed} para este rol.`); return; }
                                     setSendingInvite(true);
                                     try {
                                         const newUid = `user-${Date.now()}`;
                                         await setDoc(doc(db, 'users', newUid), {
                                             email: inviteEmail, role: inviteRole,
-                                            displayName: `Empleado (${inviteRole})`,
+                                            tenantId: profile?.tenantId || 'demo-tenant',
+                                            displayName: inviteName,
                                             password: '0000', needsSetup: true,
                                             createdAt: serverTimestamp()
                                         });
-                                        setUsers([...users, { uid: newUid, email: inviteEmail, role: inviteRole, displayName: `Empleado (${inviteRole})` }]);
+                                        setUsers([...users, { uid: newUid, email: inviteEmail, role: inviteRole, displayName: inviteName }]);
                                         alert('Usuario creado. Contraseña: "0000"');
                                         setInviteEmail('');
-                                    } catch { alert('Error al crear usuario'); }
+                                        setInviteName('');
+                                    } catch (err: any) { alert('Error al crear usuario: ' + err.message); console.error(err); }
                                     finally { setSendingInvite(false); }
                                 }} className="space-y-4">
+
+                                    <div>
+                                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
+                                            <UserPlus size={10} className="inline mr-1" /> Nombre Completo
+                                        </label>
+                                        <input
+                                            type="text"
+                                            placeholder="Juan Pérez"
+                                            required
+                                            value={inviteName}
+                                            onChange={e => setInviteName(e.target.value)}
+                                            className="w-full bg-[#0f111a] border border-white/10 text-white placeholder-gray-600 font-medium text-sm px-4 py-3 rounded-xl outline-none focus:border-[#0ea5e9] transition-all mb-4"
+                                        />
+                                    </div>
 
                                     <div>
                                         <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
@@ -265,7 +271,7 @@ export default function TeamManagement() {
                                             required
                                             value={inviteEmail}
                                             onChange={e => setInviteEmail(e.target.value)}
-                                            className="w-full bg-black/20 border border-white/10 text-white placeholder-gray-600 font-medium text-sm px-4 py-3 rounded-xl outline-none focus:border-[#0ea5e9] transition-all"
+                                            className="w-full bg-[#0f111a] border border-white/10 text-white placeholder-gray-600 font-medium text-sm px-4 py-3 rounded-xl outline-none focus:border-[#0ea5e9] transition-all"
                                         />
                                     </div>
 
@@ -276,9 +282,9 @@ export default function TeamManagement() {
                                         <select
                                             value={inviteRole}
                                             onChange={e => setInviteRole(e.target.value)}
-                                            className="w-full bg-black/20 border border-white/10 text-white font-bold text-sm px-4 py-3 rounded-xl outline-none focus:border-[#0ea5e9] transition-all appearance-none"
+                                            className="w-full bg-[#0f111a] border border-white/10 text-white font-bold text-sm px-4 py-3 rounded-xl outline-none focus:border-[#0ea5e9] transition-all appearance-none"
                                         >
-                                            {roles.map(r => <option key={r.id} value={r.id} className="bg-[#1a1d2d]">{r.label}</option>)}
+                                            {roles.map(r => <option key={r.id} value={r.id} className="bg-[#1a1d2d] text-white">{r.label}</option>)}
                                         </select>
                                     </div>
 

@@ -72,15 +72,16 @@ function FacturacionContent() {
         setLoading(true);
         setOrderFound(null);
         try {
-            const docRef = doc(db, 'orders', orderId);
-            const docSnap = await getDoc(docRef);
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                setOrderFound({ id: docSnap.id, ...data });
-                // Autofill some customer data if available
-                if (data.customer?.email) setCustomerEmail(data.customer.email);
+            // Fetch from API instead
+            const res = await fetch('/api/orders');
+            const data = await res.json();
+            const foundInApi = data.data?.find((o: any) => o.id === orderId);
+
+            if (foundInApi) {
+                setOrderFound(foundInApi);
+                if (foundInApi.customer?.email) setCustomerEmail(foundInApi.customer.email);
             } else {
-                alert("❌ Orden no encontrada.");
+                alert("❌ Orden no encontrada en el servidor local.");
             }
         } catch (err) {
             console.error("Error searching order", err);

@@ -65,7 +65,7 @@ export interface AppConfig {
 
 export interface Order {
     id: string;
-    customer?: { name: string; phone: string; address: string };
+    customer?: { name: string; phone: string; address: string; reference?: string; pickupTime?: string };
     customerName?: string;
     items: CartItem[];
     total: number;
