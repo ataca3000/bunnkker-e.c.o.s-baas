@@ -64,8 +64,8 @@ export default function middleware(request: NextRequest) {
                 return NextResponse.redirect(new URL('/login?error=unauthorized', request.url));
             }
         } else {
-            // Default Deny
-            if (role !== 'superadmin' && role !== 'admin') {
+            // Default Deny for unknown subpaths, but ALLOW the root /dashboard
+            if (pathname !== '/dashboard' && role !== 'superadmin' && role !== 'admin') {
                 console.warn(`[Security] Default Deny: ${role} intentó entrar a ${pathname}`);
                 return NextResponse.redirect(new URL('/login?error=unauthorized', request.url));
             }

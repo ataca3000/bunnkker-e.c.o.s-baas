@@ -567,13 +567,17 @@ const CargaDescargaDashboardWorker = ({ userName, greeting, orders, startLoading
             } else if (action === 'complete') {
                 await completeLoading(orderId);
             } else if (action === 'postpone') {
-                const { doc, updateDoc } = await import('firebase/firestore');
-                const { db } = await import('@/lib/firebase');
-                await updateDoc(doc(db, 'orders', orderId), { status: 'PENDIENTE_LLEGADA' });
+                await fetch('/api/orders', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: orderId, status: 'PENDIENTE_LLEGADA' })
+                });
             } else if (action === 'resume') {
-                const { doc, updateDoc } = await import('firebase/firestore');
-                const { db } = await import('@/lib/firebase');
-                await updateDoc(doc(db, 'orders', orderId), { status: 'PREPARANDO' });
+                await fetch('/api/orders', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: orderId, status: 'PREPARANDO' })
+                });
             }
         } catch {
             alert('Error al procesar la acción de carga.');

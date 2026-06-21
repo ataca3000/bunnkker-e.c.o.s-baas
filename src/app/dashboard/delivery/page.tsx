@@ -154,13 +154,17 @@ export default function DeliveryDashboard() {
     const updateOrderInFirebase = async (id: string, updates: Partial<DeliveryOrder>) => {
         try {
             const mappedStatus = updates.status === 'completed' ? 'delivered' : updates.status;
-            const dataToUpdate: any = {};
+            const dataToUpdate: any = { id };
             if (mappedStatus) dataToUpdate.status = mappedStatus;
             if (updates.driverId) dataToUpdate.driverId = updates.driverId;
             if (updates.signatureData) dataToUpdate.signatureData = updates.signatureData;
             if (updates.photoData) dataToUpdate.photoData = updates.photoData;
 
-            await updateDoc(doc(db, 'orders', id), dataToUpdate);
+            await fetch('/api/orders', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dataToUpdate)
+            });
         } catch (error) {
             console.error("Error updating order", error);
             alert("No se pudo actualizar la orden. Verifica tu conexión.");

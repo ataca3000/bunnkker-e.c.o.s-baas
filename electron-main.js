@@ -82,8 +82,10 @@ const createServer = () => {
             : path.join(process.resourcesPath, 'server', 'server.js');
 
         console.log('[Server] Iniciando desde:', serverPath);
+        const serverDir = path.dirname(serverPath);
 
         serverProcess = fork(serverPath, [], {
+            cwd: serverDir,
             env: {
                 ...process.env,
                 PORT: '3000',
@@ -94,11 +96,11 @@ const createServer = () => {
             stdio: 'inherit',
         });
 
-        // Wait for server to boot
-        setTimeout(resolve, 3000);
+        // Darle 5 segundos al servidor para arrancar bien
+        setTimeout(resolve, 5000);
 
         serverProcess.on('error', (err) => {
-            console.error('[Server] Error:', err);
+            console.error('[Server] Error crítico:', err);
             reject(err);
         });
     });
@@ -121,6 +123,13 @@ const createWindow = (urlHost = 'localhost') => {
     });
 
     mainWindow.loadURL(`http://${urlHost}:3000`);
+
+    mainWindow.webContents.on('did-fail-load', () => {
+        console.log('[Electron] Servidor aún no listo. Reintentando en 2 segundos...');
+        setTimeout(() => {
+            if (mainWindow) mainWindow.loadURL(`http://${urlHost}:3000`);
+        }, 2000);
+    });
 
     mainWindow.webContents.setWindowOpenHandler(({ url }) => {
         require('electron').shell.openExternal(url);

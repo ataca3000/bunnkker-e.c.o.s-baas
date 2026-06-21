@@ -44,12 +44,20 @@ export default function PickupDashboard() {
         }
 
         try {
-            await updateDoc(doc(db, 'orders', orderId), {
-                status: needsPayment ? 'paid' : 'delivered',
-                deliveredAt: new Date().toISOString()
+            await fetch('/api/orders', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id: orderId,
+                    status: needsPayment ? 'paid' : 'delivered',
+                    deliveredAt: new Date().toISOString()
+                })
             });
+
             if (profile?.uid) {
-                await updateDoc(doc(db, 'users', profile.uid), { kpiScore: increment(needsPayment ? 10 : 50) });
+                try {
+                    await updateDoc(doc(db, 'users', profile.uid), { kpiScore: increment(needsPayment ? 10 : 50) });
+                } catch(e) {}
             }
         } catch (error) {
             console.error("Error al marcar como entregado:", error);
@@ -57,7 +65,7 @@ export default function PickupDashboard() {
         }
     };
 
-    const pendingPaymentOrders = orders.filter(o => o.status === 'pending_confirmation');
+    const pendingPaymentOrders = orders.filter(o => o.status === 'pending_confirmation' || o.status === 'pending_payment');
     const readyToDeliverOrders = orders.filter(o => o.status === 'paid');
 
     return (
@@ -91,7 +99,7 @@ export default function PickupDashboard() {
                             <div className="bg-yellow-400/20 p-3 rounded-lg text-yellow-400">
                                 <Banknote size={24} />
                             </div>
-                            <h2 className="text-xl font-bold text-yellow-400">Cobrar en Caja</h2>
+                            <h2 className="text-xl font-bold text-yellow-400">Preparar y Cobrar</h2>
                             <span className="ml-auto bg-yellow-400/20 text-yellow-400 px-3 py-1 rounded-full text-sm font-bold">
                                 {pendingPaymentOrders.length}
                             </span>
@@ -116,8 +124,22 @@ export default function PickupDashboard() {
                                             <p>📞 {order.customer?.phone || 'Sin teléfono'}</p>
                                             <p className="flex items-center gap-2">
                                                 <Clock size={14} /> Solicitado: {new Date(order.date || Date.now()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                                {order.customer?.pickupTime && <span className="ml-2 text-sky-400 font-bold bg-sky-900/30 px-2 rounded">Cita: {order.customer.pickupTime}</span>}
                                             </p>
                                         </div>
+                                        
+                                        <div className="bg-black/30 rounded-lg p-3 mb-4 max-h-40 overflow-y-auto">
+                                            <p className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">Lista de Materiales</p>
+                                            <ul className="space-y-2">
+                                                {order.items?.map((item: any, i: number) => (
+                                                    <li key={i} className="flex items-start gap-2 text-sm text-gray-300">
+                                                        <input type="checkbox" className="mt-1 accent-yellow-500" />
+                                                        <span>{item.quantity}x {item.name}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+
                                         <button 
                                             onClick={() => markAsDelivered(order.id, true)}
                                             className="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-black py-3 rounded-lg flex items-center justify-center gap-2 transition-transform active:scale-95"

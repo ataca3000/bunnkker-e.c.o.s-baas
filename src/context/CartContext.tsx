@@ -132,92 +132,105 @@ export type FirebaseStatus = 'connecting' | 'online' | 'offline' | 'demo';
 const CartContext = createContext<any>(null); // Dummy context por compatibilidad
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-    const { isReadOnly, profile } = useAuth();
+    const { isReadOnly, profile, loading: authLoading } = useAuth();
     const setProducts       = useERPStore((s) => s.setProducts);
     const setOrders         = useERPStore((s) => s.setOrders);
     const setOwnerConfig    = useERPStore((s) => s.setOwnerConfig);
     const _setSiteConfig    = useERPStore((s) => s.setSiteConfig);
     const setFirebaseStatus = useERPStore((s) => s.setFirebaseStatus);
     const setLoading        = useERPStore((s) => s.setLoading);
+    const firebaseStatus    = useERPStore((s) => s.firebaseStatus);
 
-    // ─── Load products from Firestore (with offline fallback) ─────────────────
+    // ─── Local API Sync for Operational Data (Products & Orders) ──────────────
     useEffect(() => {
-        const loadProducts = async () => {
+        if (authLoading) return;
+        
+        let isFetching = false;
+        const fetchLocalData = async () => {
+            if (isFetching) return;
+            isFetching = true;
             try {
-                const snapshot = await getDocs(collection(db, 'products'));
-                if (!snapshot.empty) {
-                    setProducts(snapshot.docs.map((d: any) => ({ id: d.id, ...d.data() })) as Product[]);
-                    setFirebaseStatus('online');
-                } else if (!isReadOnly) {
-                    console.log('[Admin.com ERP] Seeding demo products into Firestore...');
-                    const batch = writeBatch(db);
-                    fallbackProducts.forEach(p => {
-                        batch.set(doc(db, 'products', p.id), p);
-                    });
-                    await batch.commit();
-                    setFirebaseStatus('online');
-                } else {
-                    setFirebaseStatus('demo');
+                // Fetch Products from Local API
+                const prodRes = await fetch('/api/products');
+                if (prodRes.ok) {
+                    const prodData = await prodRes.json();
+                    if (prodData.success) {
+                        setProducts(prodData.data);
+                    }
                 }
-            } catch (err: any) {
-                console.warn('[Admin.com ERP] Firebase unavailable — offline demo mode.', err?.code || err?.message);
+
+                // Fetch Orders from Local API
+                const ordRes = await fetch('/api/orders');
+                if (ordRes.ok) {
+                    const ordData = await ordRes.json();
+                    if (ordData.success) {
+                        setOrders(ordData.data.sort((a: any, b: any) => (b.date || '').localeCompare(a.date || '')));
+                    }
+                }
+                
+                setFirebaseStatus('online'); // Using this status to represent "Local Server Online"
+            } catch (err) {
+                console.warn('[Admin.com ERP] Local server unreachable. Working offline.', err);
                 setFirebaseStatus('offline');
             } finally {
                 setLoading(false);
+                isFetching = false;
             }
         };
-        loadProducts();
-    }, [isReadOnly, setProducts, setFirebaseStatus, setLoading]);
 
-    // ─── Real-time Firestore listeners (only when online) ─────────────────────
+        // Initial fetch
+        fetchLocalData();
+
+        // Ultra-fast polling for local network (every 2 seconds)
+        const pollInterval = setInterval(fetchLocalData, 2000);
+
+        return () => clearInterval(pollInterval);
+    }, [authLoading, setProducts, setOrders, setFirebaseStatus, setLoading]);
+
+    // ─── Real-time Firebase listeners ONLY for Command Center (Settings) ──────
     useEffect(() => {
-        const status = useERPStore.getState().firebaseStatus;
-        if (status !== 'online') return;
+        if (firebaseStatus !== 'online' || authLoading) return;
 
         const handleError = (err: any, op: OperationType, path: string) => {
             console.warn(`[Admin.com ERP] Listener error on ${path}:`, err?.code);
-            setFirebaseStatus('offline');
-            try { handleFirestoreError(err, op, path); } catch { }
         };
 
-        const unsubs = [
-            onSnapshot(collection(db, 'products'), (snap: any) => {
-                const updated = snap.docs.map((d: any) => ({ id: d.id, ...d.data() })) as Product[];
-                if (updated.length > 0) setProducts(updated);
-            }, (err: any) => handleError(err, OperationType.LIST, 'products')),
+        const unsubs: (() => void)[] = [];
 
-            onSnapshot(doc(db, 'settings', 'owner_config'), (snap: any) => {
-                if (snap.exists()) {
-                    const d = snap.data() as any;
-                    setOwnerConfig(d.invoiceCredits || 0, d.automationProfit || 0, d.maintenanceCredits || 0);
-                }
-            }, (err: any) => handleError(err, OperationType.GET, 'settings/owner_config')),
-
-            onSnapshot(collection(db, 'orders'), (snap: any) => {
-                const updated = snap.docs.map((d: any) => ({ id: d.id, ...d.data() })) as Order[];
-                setOrders(updated.sort((a, b) => (b.date || '').localeCompare(a.date || '')));
-            }, (err: any) => handleError(err, OperationType.LIST, 'orders')),
-
+        // Listeners Públicos de Respaldo (Firebase)
+        unsubs.push(
             onSnapshot(doc(db, 'settings', 'site_config'), (snap: any) => {
                 if (snap.exists()) {
                     _setSiteConfig({ ...defaultSiteConfig, ...(snap.data() as SiteConfig) });
+                    localStorage.setItem('_admincom_site_config', JSON.stringify(snap.data()));
                 }
-            }, (err: any) => handleError(err, OperationType.GET, 'settings/site_config')),
-        ];
+            }, (err: any) => handleError(err, OperationType.GET, 'settings/site_config'))
+        );
+
+        // Listeners Privados (requieren auth)
+        if (profile) {
+            unsubs.push(
+                onSnapshot(doc(db, 'settings', 'owner_config'), (snap: any) => {
+                    if (snap.exists()) {
+                        const d = snap.data() as any;
+                        setOwnerConfig(d.invoiceCredits || 0, d.automationProfit || 0, d.maintenanceCredits || 0);
+                    }
+                }, (err: any) => handleError(err, OperationType.GET, 'settings/owner_config'))
+            );
+        }
 
         return () => unsubs.forEach(unsub => unsub());
-    }, [setProducts, setOrders, setOwnerConfig, _setSiteConfig, setFirebaseStatus]);
+    }, [firebaseStatus, authLoading, profile, setOwnerConfig, _setSiteConfig]);
 
     // ─── Offline: restore siteConfig from localStorage ────────────────────────
     useEffect(() => {
-        const status = useERPStore.getState().firebaseStatus;
-        if (status === 'offline') {
+        if (firebaseStatus === 'offline') {
             try {
                 const local = localStorage.getItem('_admincom_site_config');
                 if (local) _setSiteConfig({ ...defaultSiteConfig, ...JSON.parse(local) });
             } catch { }
         }
-    }, [_setSiteConfig]);
+    }, [firebaseStatus, _setSiteConfig]);
 
     return <>{children}</>;
 }
@@ -229,7 +242,7 @@ export const useCart = () => {
 
     // Re-creamos las funciones de negocio aquí para que tengan acceso a profile/auth
     const createOrder = async (
-        customerData: { name: string; phone: string; address: string; rfc?: string; regimenFiscal?: string; usoCFDI?: string; deliveryMethod?: string; paymentMethod?: string },
+        customerData: { name: string; phone: string; address: string; rfc?: string; regimenFiscal?: string; usoCFDI?: string; deliveryMethod?: string; paymentMethod?: string; tip?: number; lat?: number; lng?: number; pickupTime?: string },
         requiresInvoice: boolean = false,
         isOnline: boolean = false,
         asRequest: boolean = false 
@@ -240,13 +253,10 @@ export const useCart = () => {
 
         const orderId = `ORD-${Date.now().toString().slice(-6)}`;
         let orderTotal = store.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        const developerFee = isOnline ? (requiresInvoice ? 6 : 1) : 0;
-        const ownerAutomationFee = isOnline ? (requiresInvoice ? 5 : 0) : 0;
-        orderTotal += (developerFee + ownerAutomationFee);
-
-        if (isOnline && store.maintenanceBalance < developerFee) {
-            alert('⚠️ Saldo de sistema insuficiente. Recarga créditos.'); return;
-        }
+        orderTotal += (customerData.tip || 0);
+        
+        const developerFee = 0;
+        const ownerAutomationFee = 0;
 
         let isNightQueue = false;
         if (store.siteConfig.businessHours?.isNightModeSimulated) {
@@ -264,45 +274,59 @@ export const useCart = () => {
         }
 
         let finalStatus = asRequest ? 'pending_confirmation' : 'paid';
-        if (asRequest && customerData.deliveryMethod === 'repartidor') {
-            finalStatus = 'pending_delivery';
+        let expiresAt = null;
+
+        if (asRequest) {
+            if (customerData.deliveryMethod === 'repartidor') {
+                if (customerData.paymentMethod === 'pago_caja') {
+                    finalStatus = 'pending_payment';
+                    expiresAt = new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString();
+                } else {
+                    finalStatus = 'pending_delivery';
+                }
+            } else if (customerData.deliveryMethod === 'tienda') {
+                if (customerData.paymentMethod === 'pago_caja') {
+                    finalStatus = 'pending_payment';
+                } else {
+                    finalStatus = 'pending_confirmation';
+                }
+            }
         }
 
         const newOrder = {
             id: orderId, customer: customerData, customerEmail: customerData.phone,
-            items: [...store.cart], total: orderTotal, developerFee, ownerAutomationFee,
+            items: [...store.cart], total: orderTotal,
             date: new Date().toISOString(), status: isNightQueue ? 'NIGHT_QUEUE' : finalStatus as any,
-            paymentMethod: asRequest ? (customerData.paymentMethod || 'Pendiente en Piso') : (isOnline ? 'Online' : 'Venta Directa'), requiresInvoice,
+            expiresAt,
+            paymentMethod: asRequest ? (customerData.paymentMethod || 'pago_caja') : (isOnline ? 'Online' : 'Venta Directa'), requiresInvoice,
             deliveryMethod: customerData.deliveryMethod || 'tienda'
         };
 
         try {
-            const batch = writeBatch(db);
-
-            // ── Stock: se reserva SIEMPRE al crear la orden para evitar sobreventa.
-            // La venta queda "abierta" (pending_confirmation) hasta que caja/pickup
-            // confirme el cobro físico y la cierre como 'paid'.
-            // Si se cancela, el stock se reintegra automáticamente.
-
-            // 1. Crear la orden — stock ya reservado desde este momento
-            batch.set(doc(db, 'orders', orderId), {
-                ...newOrder,
-                createdAt: serverTimestamp(),
-                stockDeducted: true, // siempre true: stock siempre se reserva al ordenar
+            // ── LOCAL API SYNC ──
+            const res = await fetch('/api/orders', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ...newOrder,
+                    id: orderId,
+                    stockDeducted: true,
+                    items: store.cart.map(i => ({ id: i.id, quantity: i.quantity, price: i.price }))
+                })
             });
 
-            // 2. Descontar créditos de mantenimiento si es venta online
+            if (!res.ok) throw new Error('Error al guardar en el servidor local');
+
+            // 2. Descontar créditos de mantenimiento si es venta online en la Nube
             if (isOnline) {
-                batch.update(doc(db, 'settings', 'owner_config'), {
-                    maintenanceCredits: increment(-developerFee),
-                    automationProfit: increment(ownerAutomationFee),
-                });
+                try {
+                    await updateDoc(doc(db, 'settings', 'owner_config'), {
+                        maintenanceCredits: increment(-developerFee),
+                        automationProfit: increment(ownerAutomationFee),
+                    });
+                } catch (e) { console.warn('Error syncing owner config to cloud', e); }
             }
 
-            // 3. Reservar stock — descuento inmediato para prevenir sobreventa
-            store.cart.forEach(item => batch.update(doc(db, 'products', item.id), { stock: increment(-item.quantity) }));
-
-            await batch.commit();
             store.clearCart();
             await logAudit({
                 type: 'ORDER_CREATE', userId: profile?.uid || 'GUEST',
@@ -314,8 +338,7 @@ export const useCart = () => {
             return orderId;
         } catch (err: any) {
             console.error('Order error:', err);
-            try { handleFirestoreError(err, OperationType.WRITE, `orders/${orderId}`); } catch { }
-            alert('❌ Error al procesar el pedido.');
+            alert('❌ Error al procesar el pedido localmente.');
         }
 
     };
@@ -332,25 +355,28 @@ export const useCart = () => {
         const plainAudit = `[${timestamp}] ${sellerName.toUpperCase()}: CONFIRMÓ COBRO ${orderId} - TOTAL ${store.formatCurrency(order.total)}`;
 
         try {
-            const batch = writeBatch(db);
-
-            // 1. Marcar orden como pagada + registrar quién cobró
-            batch.update(doc(db, 'orders', orderId), { 
-                status: 'paid',
-                vendedorId: profile?.uid,
-                vendedorName: sellerName,
-                confirmedAt: serverTimestamp(),
+            // 1. Marcar orden como pagada en el Servidor Local
+            const res = await fetch('/api/orders', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id: orderId,
+                    status: 'paid',
+                    vendedorId: profile?.uid,
+                    vendedorName: sellerName,
+                    confirmedAt: new Date().toISOString()
+                })
             });
 
-            // Nota: El stock ya fue descontado al crear la orden (stockDeducted: true).
-            // Ya no es necesario volver a descontarlo aquí.
+            if (!res.ok) throw new Error('Error actualizando orden localmente');
 
-            // 2. Sumar KPI al vendedor que confirmó
+            // 2. Sumar KPI al vendedor que confirmó (en Firebase, centralizado)
             if (profile?.uid) {
-                batch.update(doc(db, 'users', profile.uid), { kpiScore: increment(order.total || 1) });
+                try {
+                    await updateDoc(doc(db, 'users', profile.uid), { kpiScore: increment(order.total || 1) });
+                } catch (e) { console.warn('No se pudo subir KPI a Firebase (offline)'); }
             }
 
-            await batch.commit();
             await logAudit({
                 type: 'ORDER_CREATE', userId: profile?.uid || 'SYSTEM',
                 userName: sellerName, userRole: 'sales',
@@ -367,10 +393,15 @@ export const useCart = () => {
         const plainAudit = `[${timestamp}] ${workerName.toUpperCase()}: INICIÓ CARGA DE ORDEN ${orderId}`;
 
         try {
-            await updateDoc(doc(db, 'orders', orderId), { 
-                loadedBy: workerName,
-                loadedByUid: profile?.uid,
-                loadingStartedAt: serverTimestamp()
+            await fetch('/api/orders', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id: orderId,
+                    loadedBy: workerName,
+                    loadedByUid: profile?.uid,
+                    loadingStartedAt: new Date().toISOString()
+                })
             });
             await logAudit({
                 type: 'CONFIG_UPDATE', userId: profile?.uid || 'SYSTEM',
@@ -387,14 +418,22 @@ export const useCart = () => {
         const plainAudit = `[${timestamp}] ${workerName.toUpperCase()}: FINALIZÓ CARGA DE ORDEN ${orderId}`;
 
         try {
-            const batch = writeBatch(db);
-            batch.update(doc(db, 'orders', orderId), { 
-                isLoaded: true, loadingFinishedAt: serverTimestamp(), status: 'ready_for_delivery'
+            await fetch('/api/orders', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id: orderId,
+                    isLoaded: true,
+                    loadingFinishedAt: new Date().toISOString(),
+                    status: 'ready_for_delivery'
+                })
             });
+
             if (profile?.uid) {
-                batch.update(doc(db, 'users', profile.uid), { kpiScore: increment(50) }); // 50 points per load
+                try {
+                    await updateDoc(doc(db, 'users', profile.uid), { kpiScore: increment(50) }); // 50 points per load
+                } catch (e) {}
             }
-            await batch.commit();
 
             await logAudit({
                 type: 'CONFIG_UPDATE', userId: profile?.uid || 'SYSTEM',
@@ -451,13 +490,17 @@ export const useCart = () => {
         const product = store.products.find(p => p.id === productId);
         if (!product) return;
         try {
-            await updateDoc(doc(db, 'products', productId), { price: newPrice });
+            await fetch('/api/products', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: productId, price: newPrice })
+            });
             await logAudit({
                 type: 'PRICE_CHANGE', userId: adminName, userName: adminName, userRole: 'admin',
                 description: `Precio ${product.name}: ${store.formatCurrency(product.price)} → ${store.formatCurrency(newPrice)}`,
                 metadata: { productId, oldPrice: product.price, newPrice },
             });
-        } catch (err: any) { try { handleFirestoreError(err, OperationType.UPDATE, `products/${productId}`); } catch { } }
+        } catch (err: any) { console.error('Error', err); }
     };
 
     const updateProduct = async (productId: string, updates: Partial<Product>, adminName: string) => {
@@ -466,12 +509,16 @@ export const useCart = () => {
         const product = store.products.find(p => p.id === productId);
         if (!product) return;
         try {
-            await updateDoc(doc(db, 'products', productId), updates);
+            await fetch('/api/products', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: productId, ...updates })
+            });
             await logAudit({
                 type: 'CONFIG_UPDATE', userId: profile?.uid || 'SYSTEM', userName: adminName, userRole: profile?.role || 'admin',
                 description: `Producto editado: ${product.name}`, metadata: { productId, updates },
             });
-        } catch (err: any) { try { handleFirestoreError(err, OperationType.UPDATE, `products/${productId}`); } catch { } }
+        } catch (err: any) { console.error('Error', err); }
     };
 
     const purchaseCredits = async (amount: number, type: 'invoice' | 'maintenance') => {
@@ -492,24 +539,42 @@ export const useCart = () => {
         const order = store.orders.find(o => o.id === orderId);
         if (!order) return;
         try {
-            const batch = writeBatch(db);
-            batch.update(doc(db, 'orders', orderId), { status: 'cancelled', cancelledAt: serverTimestamp() });
-            batch.update(doc(db, 'settings', 'owner_config'), {
-                maintenanceCredits: increment(order.developerFee || 0),
-                automationProfit: increment(-(order.ownerAutomationFee || 0)),
+            // Cancelar la orden localmente
+            await fetch('/api/orders', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id: orderId,
+                    status: 'cancelled',
+                    cancelledAt: new Date().toISOString()
+                })
             });
-            // Solo restaurar stock si realmente se había descontado
-            // (evita inflar el inventario al cancelar pedidos que nunca lo redujeron)
+
+            // Reembolsar fee en la nube
+            try {
+                await updateDoc(doc(db, 'settings', 'owner_config'), {
+                    maintenanceCredits: increment(order.developerFee || 0),
+                    automationProfit: increment(-(order.ownerAutomationFee || 0)),
+                });
+            } catch (e) {}
+
+            // Devolver stock localmente si aplica
             if ((order as any).stockDeducted === true) {
-                order.items.forEach(item => batch.update(doc(db, 'products', item.id), { stock: increment(item.quantity) }));
+                for (const item of order.items) {
+                    await fetch('/api/products', {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ id: item.id, stockIncrement: item.quantity }) 
+                    });
+                }
             }
-            await batch.commit();
+            
             await logAudit({
                 type: 'ORDER_CANCEL', userId: profile?.uid || 'SYSTEM',
                 userName: profile?.displayName || 'Sistema', userRole: profile?.role || 'admin',
                 description: `Pedido cancelado: ${orderId}`, metadata: { orderId, refundTotal: order.total },
             });
-        } catch (err: any) { try { handleFirestoreError(err, OperationType.WRITE, `orders/${orderId}`); } catch { } }
+        } catch (err: any) { console.error('Error', err); }
     };
 
     const updateSiteConfig = async (config: Partial<SiteConfig>) => {

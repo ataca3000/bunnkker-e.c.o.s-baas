@@ -2,10 +2,13 @@
 
 import { useCart } from "@/context/CartContext";
 import React, { useState } from "react";
-import { X, ShoppingBag, Truck, CreditCard, FileText } from "lucide-react";
+import { X, ShoppingBag, Truck, CreditCard, FileText, MapPin, Clock } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import styles from "./CartDrawer.module.css";
+import dynamic from 'next/dynamic';
+
+const LocationPickerMap = dynamic(() => import('./LocationPickerMap'), { ssr: false });
 
 export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
     const { cart, removeFromCart, total, createOrder } = useCart();
@@ -15,6 +18,10 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
         name: '',
         phone: '',
         address: '',
+        lat: 0,
+        lng: 0,
+        pickupTime: '',
+        tip: 0,
         deliveryMethod: 'tienda', // 'tienda' o 'repartidor'
         paymentMethod: 'efectivo', // 'efectivo', 'tarjeta', 'creditos'
         rfc: '',
@@ -27,8 +34,8 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
     const [isProcessing, setIsProcessing] = useState(false);
 
     const handleCheckout = async () => {
-        if (!formData.name || !formData.address || !formData.phone) {
-            alert("Por favor completa los datos de entrega.");
+        if (!formData.name || !formData.phone || (formData.deliveryMethod === 'repartidor' && !formData.address)) {
+            alert("Por favor completa los datos obligatorios de entrega.");
             return;
         }
         setIsProcessing(true);
@@ -39,7 +46,7 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
                 return; // Hubo un error al crear la orden
             }
 
-            const finalTotal = total + (formData.requireInvoice ? 10 : 0);
+            const finalTotal = total + formData.tip;
 
             if (formData.paymentMethod === 'tarjeta_mp') {
                 const res = await fetch('/api/mercadopago/create-preference', {
@@ -143,36 +150,75 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
                                                 <label style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#666', marginBottom: '4px', display: 'block' }}>Entrega</label>
                                                 <div style={{ display: 'flex', gap: '10px' }}>
                                                     <button 
-                                                        onClick={() => setFormData({ ...formData, deliveryMethod: 'tienda' })}
+                                                        onClick={() => setFormData({ ...formData, deliveryMethod: 'tienda', paymentMethod: 'pago_caja' })}
                                                         className={styles.methodBtn} 
                                                         style={{ flex: 1, padding: '10px', borderRadius: '8px', border: formData.deliveryMethod === 'tienda' ? '2px solid #0ea5e9' : '1px solid #ddd', background: formData.deliveryMethod === 'tienda' ? '#e0f2fe' : '#fff', color: '#111', fontWeight: 'bold', cursor: 'pointer' }}
                                                     >
-                                                        🏬 Tienda
+                                                        🏬 Recoger en Tienda
                                                     </button>
                                                     <button 
-                                                        onClick={() => setFormData({ ...formData, deliveryMethod: 'repartidor' })}
+                                                        onClick={() => setFormData({ ...formData, deliveryMethod: 'repartidor', paymentMethod: 'tarjeta_mp' })}
                                                         className={styles.methodBtn} 
                                                         style={{ flex: 1, padding: '10px', borderRadius: '8px', border: formData.deliveryMethod === 'repartidor' ? '2px solid #0ea5e9' : '1px solid #ddd', background: formData.deliveryMethod === 'repartidor' ? '#e0f2fe' : '#fff', color: '#111', fontWeight: 'bold', cursor: 'pointer' }}
                                                     >
-                                                        🛵 Repartidor
+                                                        🛵 Envío a Domicilio
                                                     </button>
                                                 </div>
                                             </div>
 
                                             {formData.deliveryMethod === 'repartidor' && (
-                                                <div style={{ backgroundColor: '#fffbeb', border: '1px solid #fcd34d', padding: '12px', borderRadius: '8px', marginBottom: '15px' }}>
-                                                    <h4 style={{ color: '#d97706', fontSize: '0.85rem', margin: '0 0 5px 0', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                                        <Truck size={14} /> Propina para Repartidor
-                                                    </h4>
-                                                    <p style={{ margin: 0, fontSize: '0.75rem', color: '#92400e', lineHeight: 1.4 }}>
-                                                        Nuestros repartidores se esfuerzan por llevar tu pedido rápido y seguro. 
-                                                        <b> Propina sugerida: ${(total * 0.1).toFixed(2)} MXN</b>. 
-                                                        Por favor, entrégala en efectivo al conductor al recibir tu pedido. ¡Gracias por apoyar su trabajo!
-                                                    </p>
+                                                <>
+                                                    <div style={{ backgroundColor: '#fffbeb', border: '1px solid #fcd34d', padding: '12px', borderRadius: '8px', marginBottom: '15px' }}>
+                                                        <h4 style={{ color: '#d97706', fontSize: '0.85rem', margin: '0 0 5px 0', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                                            <Truck size={14} /> Información de Envío
+                                                        </h4>
+                                                        <p style={{ margin: 0, fontSize: '0.75rem', color: '#92400e', lineHeight: 1.4 }}>
+                                                            <b>Nota:</b> El repartidor NO recibe efectivo, solo valida la entrega. Si no pagas en línea, deberás elegir "Pago en Caja" y pagar en sucursal para que tu pedido sea liberado.
+                                                        </p>
+                                                        
+                                                        <div style={{ marginTop: '10px' }}>
+                                                            <label style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#d97706', marginBottom: '4px', display: 'block' }}>Propina (sugerida si hay descarga pesada):</label>
+                                                            <div style={{ display: 'flex', gap: '5px' }}>
+                                                                {[0, 10, 20, 30].map(amt => (
+                                                                    <button
+                                                                        key={amt}
+                                                                        onClick={() => setFormData({ ...formData, tip: amt })}
+                                                                        style={{ flex: 1, padding: '6px', fontSize: '0.75rem', borderRadius: '6px', border: formData.tip === amt ? '2px solid #d97706' : '1px solid #fcd34d', background: formData.tip === amt ? '#fef3c7' : '#fff', color: '#92400e', fontWeight: 'bold', cursor: 'pointer' }}
+                                                                    >
+                                                                        {amt === 0 ? 'Nada' : `$${amt}`}
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div>
+                                                        <label style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#666', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                            <MapPin size={14} /> Pin de Entrega Exacta
+                                                        </label>
+                                                        <p style={{ fontSize: '0.65rem', color: '#888', margin: '0 0 4px 0' }}>Toca el mapa para fijar tu ubicación.</p>
+                                                        <LocationPickerMap 
+                                                            onLocationSelect={(lat, lng) => setFormData({ ...formData, lat, lng })}
+                                                        />
+                                                    </div>
+                                                </>
+                                            )}
+
+                                            {formData.deliveryMethod === 'tienda' && (
+                                                <div>
+                                                    <label style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#666', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '10px' }}>
+                                                        <Clock size={14} /> Horario Estimado de Recolección
+                                                    </label>
+                                                    <input 
+                                                        type="time" 
+                                                        value={formData.pickupTime}
+                                                        onChange={(e) => setFormData({ ...formData, pickupTime: e.target.value })}
+                                                        className={styles.formInput} 
+                                                    />
                                                 </div>
                                             )}
 
-                                            <div>
+                                            <div style={{ marginTop: '15px' }}>
                                                 <label style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#666', marginBottom: '4px', display: 'block' }}>Método de Pago</label>
                                                 <select 
                                                     value={formData.paymentMethod}
@@ -180,11 +226,19 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
                                                     className={styles.formInput}
                                                     style={{ width: '100%' }}
                                                 >
-                                                    <option value="efectivo">💵 Efectivo (Al recibir)</option>
+                                                    <option value="pago_caja">💵 Pago en Caja (Sucursal)</option>
                                                     <option value="tarjeta_mp">💳 Pagar en línea (MercadoPago)</option>
                                                     <option value="tarjeta_stripe">💳 Pagar en línea (Stripe)</option>
                                                     <option value="creditos">🪙 Pagar con Créditos</option>
                                                 </select>
+                                                
+                                                {formData.paymentMethod === 'pago_caja' && formData.deliveryMethod === 'repartidor' && (
+                                                    <div style={{ marginTop: '8px', padding: '8px', backgroundColor: '#fee2e2', border: '1px solid #f87171', borderRadius: '6px' }}>
+                                                        <p style={{ fontSize: '0.7rem', color: '#991b1b', margin: 0, fontWeight: 'bold' }}>
+                                                            ⚠️ Tu pedido no será preparado ni enviado hasta que liquides el total en nuestra sucursal. Tienes un máximo de 3 horas para pagar o el pedido será cancelado automáticamente.
+                                                        </p>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
 
@@ -219,9 +273,6 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
                                                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, requireInvoice: e.target.checked })}
                                                 />
                                                 Requiero Factura Fiscal (CFDI 4.0)
-                                                <span style={{ color: '#E30613', fontSize: '0.75rem', marginLeft: '5px', fontWeight: 'bold' }}>
-                                                    (+$10 MXN cargo de procesamiento)
-                                                </span>
                                             </label>
 
                                             {formData.requireInvoice && (
@@ -269,14 +320,14 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
 
                                 <div className={styles.footer}>
                                     <div className={styles.totalRow} style={{ flexDirection: 'column', alignItems: 'flex-end' }}>
-                                        {formData.requireInvoice && (
-                                            <div style={{ fontSize: '0.7rem', color: '#666', marginBottom: '4px' }}>
-                                                + Cargo por Facturación: $10.00 MXN
+                                        {formData.deliveryMethod === 'repartidor' && formData.tip > 0 && (
+                                            <div style={{ fontSize: '0.7rem', color: '#d97706', marginBottom: '4px', fontWeight: 'bold' }}>
+                                                + Propina repartidor: ${formData.tip.toFixed(2)} MXN
                                             </div>
                                         )}
                                         <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
                                             <span>TOTAL:</span>
-                                            <span>${(total + (formData.requireInvoice ? 10 : 0)).toFixed(2)}</span>
+                                            <span>${(total + formData.tip).toFixed(2)}</span>
                                         </div>
                                     </div>
 

@@ -55,35 +55,42 @@ async function processQueue() {
                 const payload = JSON.parse(task.payload);
 
                 if (task.collection === 'orders' && task.action === 'CREATE') {
-                    // Generar un ID para Firestore o usar uno si ya viene
                     const docId = task.documentId || task.id;
-
-                    // A) Guardar en Firestore la orden
                     await setDoc(doc(db, 'orders', docId), {
                         ...payload,
                         syncedAt: new Date().toISOString()
                     });
 
-                    // B) Descontar inventario en Firestore (para sincronizar con los demás clientes)
                     if (payload.items && Array.isArray(payload.items)) {
                         for (const item of payload.items) {
                             try {
                                 await updateDoc(doc(db, 'products', item.id), {
-                                    stock: increment(-item.quantity)
+                                    stock: increment(-item.quantity),
+                                    syncedAt: new Date().toISOString()
                                 });
-                            } catch (err) {
-                                console.warn(`[Worker] No se pudo actualizar stock de ${item.id} en Firebase. Puede que no exista en la nube.`);
-                            }
+                            } catch (err) {}
                         }
                     }
 
-                    // C) Marcar la orden local como sincronizada
                     if (payload.localOrderId) {
                         await prisma.order.update({
                             where: { id: payload.localOrderId },
                             data: { synced: true }
                         });
                     }
+                } else if (task.action === 'UPDATE' || task.action === 'UPSERT') {
+                    const docId = task.documentId || task.id;
+                    await setDoc(doc(db, task.collection, docId), {
+                        ...payload,
+                        syncedAt: new Date().toISOString()
+                    }, { merge: true });
+                } else if (task.action === 'DELETE') {
+                    // Firebase deleteDoc is imported? We need it, or we just set it as deleted.
+                    const docId = task.documentId || task.id;
+                    await setDoc(doc(db, task.collection, docId), {
+                        deleted: true,
+                        syncedAt: new Date().toISOString()
+                    }, { merge: true });
                 }
 
                 // Si todo sale bien, ELIMINAMOS la tarea para ahorrar espacio local

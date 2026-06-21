@@ -11,8 +11,8 @@
     "lint": "next lint",
     "dev:electron": "electron .",
     "build:standalone": "next build --webpack && node copy-standalone.js",
-    "obfuscate": "javascript-obfuscator ./electron-main.js --output ./electron-main.obf.js --compact true --self-defending true",
-    "build:secure": "npm run build:standalone && npm run obfuscate",
+    "obfuscate": "javascript-obfuscator ./electron-main.js --output ./electron-main.obf.js --target node --compact true --self-defending false --dead-code-injection false",
+    "build:secure": "npm run build:standalone",
     "dist": "npm run build:secure && electron-builder",
     "dist:win": "npm run build:standalone && electron-builder --win --x64",
     "dist:publish": "npm run build:standalone && electron-builder --win --publish always",
@@ -24,6 +24,7 @@
     "start:all": "concurrently \"npm run dev\" \"npm run worker\""
   },
   "build": {
+    "npmRebuild": false,
     "appId": "com.admincom.erp",
     "productName": "EvoStore ERP",
     "copyright": "Copyright © 2026 Tu Empresa S.A. de C.V.",
@@ -107,6 +108,7 @@
     "facturapi": "^4.13.1",
     "firebase": "^11.3.1",
     "firebase-admin": "^14.0.0",
+    "firebase-tools": "^15.22.0",
     "framer-motion": "^12.34.2",
     "html5-qrcode": "^2.3.8",
     "immer": "^10.2.0",

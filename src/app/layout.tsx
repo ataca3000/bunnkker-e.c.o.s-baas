@@ -18,8 +18,9 @@ export async function generateMetadata(): Promise<Metadata> {
 
   if (tenantId === 'default' || tenantId === 'admin.com') {
     return {
-      title: "EvoStore ERP",
-      description: "Sistema integral de gestión empresarial — EvoStore ERP",
+      title: "LDS CONTADOR | Sistema Integral ERP",
+      description: "LDS CONTADOR - El mejor sistema de gestión empresarial, punto de venta y logística.",
+      keywords: ["LDS CONTADOR", "ERP", "punto de venta", "gestión empresarial", "facturación"],
       manifest: '/manifest.json',
       verification: {
         google: 'CRRkmj4XJ1qPMAkpFbfzftUC4kS0viq_JgEFG_YvG3Y'

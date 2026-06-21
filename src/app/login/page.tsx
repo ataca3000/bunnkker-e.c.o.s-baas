@@ -33,8 +33,8 @@ export default function LoginPage() {
             try {
                 const qSnap = await getDocs(collection(db, 'users'));
                 if (qSnap.empty) {
-                    // Si no hay usuarios en absoluto, es una instancia nueva. Mandamos al Launcher.
-                    window.location.href = '/register-tenant';
+                    // Si no hay usuarios en absoluto, no redirigimos al Launcher.
+                    // El admin debe ser creado externamente o con el bypass de desarrollo.
                     return;
                 }
 

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useCart, type Product } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { db } from '@/lib/firebase';
-import { doc, setDoc, serverTimestamp, collection, addDoc, getDocs, query, where, orderBy, onSnapshot } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, serverTimestamp, collection, addDoc, getDocs, query, where, orderBy, onSnapshot } from 'firebase/firestore';
 import { logAudit } from '@/lib/audit';
 import { QRCodeSVG } from 'qrcode.react';
 import { 
@@ -82,46 +82,48 @@ export default function InventoryDashboard() {
         if (!over) return;
 
         const productId = active.id as string;
-        const overId = over.id as string; // Could be a ShelfName or a ProductId
+        const overId = over.id as string; // Could be "ShelfName::LevelName" or a ProductId
         
         const product = products.find(p => p.id === productId);
         if (!product) return;
 
         let targetShelfName = '';
+        let targetLevelName = '';
 
-        // Check if overId is a shelf name (from our allEstantes)
-        if (allEstantes.includes(overId) || overId === 'Sin Asignar') {
-            targetShelfName = overId;
+        if (overId.includes('::')) {
+            // Es un LevelDropZone
+            const parts = overId.split('::');
+            targetShelfName = parts[0];
+            targetLevelName = parts[1];
         } else {
             // Over another product
             const targetProduct = products.find(p => p.id === overId);
             if (targetProduct) {
                 targetShelfName = targetProduct.location?.estante || 'Sin Asignar';
+                targetLevelName = targetProduct.location?.fila || 'Nivel 1';
             }
         }
 
         const currentShelfName = product.location?.estante || 'Sin Asignar';
+        const currentLevelName = product.location?.fila || 'Nivel 1';
 
-        if (targetShelfName && targetShelfName !== currentShelfName) {
+        if (targetShelfName && (targetShelfName !== currentShelfName || targetLevelName !== currentLevelName)) {
             try {
                 const finalShelfName = targetShelfName === 'Sin Asignar' ? '' : targetShelfName;
                 
-                await setDoc(doc(db, 'products', productId), {
-                    ...product,
-                    location: {
-                        ...(product.location || {}),
-                        estante: finalShelfName
-                    },
+                await updateDoc(doc(db, 'products', productId), {
+                    'location.estante': finalShelfName,
+                    'location.fila': targetLevelName,
                     updatedAt: serverTimestamp()
-                }, { merge: true });
+                });
 
                 await logAudit({
                     type: 'INVENTORY_MOVE',
                     userId: profile?.uid || 'SYSTEM',
                     userName: profile?.displayName || 'Almacenista',
-                    userRole: profile?.role || 'almacen',
-                    description: `Movió "${product.name}" a ${targetShelfName}`,
-                    metadata: { productId, from: currentShelfName, to: targetShelfName }
+                    userRole: profile?.role || 'inventory',
+                    description: `Movió "${product.name}" a ${targetShelfName} / ${targetLevelName}`,
+                    metadata: { productId, from: currentShelfName, to: targetShelfName, level: targetLevelName }
                 });
             } catch (error) {
                 console.error('Error moviendo producto:', error);
@@ -341,8 +343,28 @@ export default function InventoryDashboard() {
             setCustomEstantes(prev => [...prev, name]);
             setExpandedEstantes(prev => ({ ...prev, [name]: true }));
         }
+        
+        // Auto-select in form if creating/editing product
+        if (isCreating || editingProductId) {
+            setFormData(prev => ({ ...prev, estante: name }));
+        }
+
         setNewEstanteName('');
         setShowNewEstanteModal(false);
+    };
+
+    const handleAddProductClick = (shelfName: string, levelName: string) => {
+        setEditingProductId(null);
+        setFormData({
+            name: '', category: '', description: '',
+            barcode: '', image: '',
+            estante: shelfName === 'Sin Asignar' ? '' : shelfName, 
+            fila: levelName,
+            price: '', stock: '',
+            warranty: '', unitType: 'PZA'
+        });
+        setIsCreating(true);
+        setStep(1);
     };
 
     const handleEditProduct = (p: Product) => {
@@ -402,12 +424,22 @@ export default function InventoryDashboard() {
         };
 
         try {
-            await setDoc(doc(db, 'products', productId), {
+            const dataToSave: any = {
                 ...newProduct,
-                id: productId,
-                updatedAt: serverTimestamp(),
-                createdAt: editingProductId ? undefined : serverTimestamp()
-            }, { merge: true });
+                updatedAt: new Date().toISOString()
+            };
+            if (!editingProductId) {
+                dataToSave.createdAt = new Date().toISOString();
+            }
+
+            // ─── LOCAL EDGE API SYNC ───
+            const res = await fetch('/api/products', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dataToSave)
+            });
+
+            if (!res.ok) throw new Error('Error guardando en Edge API local');
 
             await logAudit({
                 type: 'CONFIG_UPDATE',
@@ -425,9 +457,9 @@ export default function InventoryDashboard() {
             setEditingProductId(null);
             setStep(1);
             setFormData({ name: '', category: '', description: '', barcode: '', image: '', estante: '', fila: '', price: '', stock: '', warranty: '', unitType: 'PZA' });
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
-            alert('Error al guardar el producto.');
+            alert('Error al guardar el producto: ' + (error.message || 'Error desconocido'));
         } finally {
             setLoading(false);
         }
@@ -619,19 +651,19 @@ export default function InventoryDashboard() {
                                 <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
                                     <div>
                                         <label className="text-xs font-black text-white uppercase tracking-widest mb-2 block">Nombre del Producto *</label>
-                                        <input type="text" disabled={profile?.role === 'inventory'} value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-slate-50 border border-slate-700/50 p-4 rounded-xl font-medium text-white focus:border-[#0ea5e9] outline-none transition-all disabled:opacity-50" placeholder="Ej. Cemento Cruz Azul 50kg" />
+                                        <input type="text" disabled={profile?.role === 'inventory' && !!editingProductId} value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl font-medium text-white placeholder-slate-500 focus:border-[#0ea5e9] outline-none transition-all disabled:opacity-50" placeholder="Ej. Cemento Cruz Azul 50kg" />
                                     </div>
                                     <div>
                                         <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Categoría</label>
-                                        <input type="text" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} className="w-full bg-slate-50 border border-slate-700/50 p-4 rounded-xl font-medium text-white focus:border-[#0ea5e9] outline-none transition-all" placeholder="Ej. Materiales de Construcción" />
+                                        <input type="text" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} className="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl font-medium text-white placeholder-slate-500 focus:border-[#0ea5e9] outline-none transition-all" placeholder="Ej. Materiales de Construcción" />
                                     </div>
                                     <div>
                                         <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Ficha Técnica / Descripción / Especificaciones</label>
-                                        <textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full bg-slate-50 border border-slate-700/50 p-4 rounded-xl font-medium text-white focus:border-[#0ea5e9] outline-none transition-all min-h-[100px]" placeholder="Detalles técnicos, medidas, peso..."></textarea>
+                                        <textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl font-medium text-white placeholder-slate-500 focus:border-[#0ea5e9] outline-none transition-all min-h-[100px]" placeholder="Detalles técnicos, medidas, peso..."></textarea>
                                     </div>
                                     <div>
                                         <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Garantía</label>
-                                        <input type="text" value={formData.warranty} onChange={e => setFormData({...formData, warranty: e.target.value})} className="w-full bg-slate-50 border border-slate-700/50 p-4 rounded-xl font-medium text-white focus:border-[#0ea5e9] outline-none transition-all" placeholder="Ej. Garantía de 1 año con fabricante" />
+                                        <input type="text" value={formData.warranty} onChange={e => setFormData({...formData, warranty: e.target.value})} className="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl font-medium text-white placeholder-slate-500 focus:border-[#0ea5e9] outline-none transition-all" placeholder="Ej. Garantía de 1 año con fabricante" />
                                     </div>
                                 </motion.div>
                             )}
@@ -639,17 +671,17 @@ export default function InventoryDashboard() {
                             {/* STEP 2: IDENTIDAD Y FOTO */}
                             {step === 2 && (
                                 <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
-                                    <div className="bg-blue-50 border border-blue-100 p-6 rounded-2xl flex flex-col md:flex-row gap-6 items-center">
+                                    <div className="bg-blue-900/20 border border-blue-500/20 p-6 rounded-2xl flex flex-col md:flex-row gap-6 items-center">
                                         <div className="bg-slate-800/80 p-4 rounded-xl shadow-lg text-blue-500"><Barcode size={40}/></div>
                                         <div className="flex-1 w-full">
                                             <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Código de Barras / Serial</label>
-                                            <input type="text" value={formData.barcode} onChange={e => setFormData({...formData, barcode: e.target.value})} className="w-full bg-slate-800/80 border border-slate-700/50 p-4 rounded-xl font-medium text-white focus:border-[#0ea5e9] outline-none transition-all" placeholder="Escanee o teclee el código" />
+                                            <input type="text" value={formData.barcode} onChange={e => setFormData({...formData, barcode: e.target.value})} className="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl font-medium text-white placeholder-slate-500 focus:border-[#0ea5e9] outline-none transition-all" placeholder="Escanee o teclee el código" />
                                         </div>
                                     </div>
-                                    <div className="bg-slate-50 border border-slate-700/50 p-6 rounded-2xl flex flex-col md:flex-row gap-6 items-center">
+                                    <div className="bg-slate-900/50 border border-slate-700/50 p-6 rounded-2xl flex flex-col md:flex-row gap-6 items-center">
                                         <div className="bg-slate-800/80 p-4 rounded-xl shadow-lg text-slate-400"><Camera size={40}/></div>
-                                        <div>
-                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">Imagen (FOTO O ARCHIVO)</label>
+                                        <div className="flex-1 w-full">
+                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">Cámara / Archivo</label>
                                             <input 
                                                 type="file" 
                                                 accept="image/*"
@@ -657,17 +689,39 @@ export default function InventoryDashboard() {
                                                 onChange={(e) => {
                                                     const file = e.target.files?.[0];
                                                     if (file) {
-                                                        const reader = new FileReader();
-                                                        reader.onloadend = () => {
-                                                            setFormData({ ...formData, image: reader.result as string });
+                                                        const img = new Image();
+                                                        const objectUrl = URL.createObjectURL(file);
+                                                        img.src = objectUrl;
+                                                        img.onload = () => {
+                                                            const canvas = document.createElement('canvas');
+                                                            const MAX_WIDTH = 800;
+                                                            const MAX_HEIGHT = 800;
+                                                            let width = img.width;
+                                                            let height = img.height;
+
+                                                            if (width > height && width > MAX_WIDTH) {
+                                                                height *= MAX_WIDTH / width;
+                                                                width = MAX_WIDTH;
+                                                            } else if (height > MAX_HEIGHT) {
+                                                                width *= MAX_HEIGHT / height;
+                                                                height = MAX_HEIGHT;
+                                                            }
+                                                            canvas.width = width;
+                                                            canvas.height = height;
+                                                            const ctx = canvas.getContext('2d');
+                                                            ctx?.drawImage(img, 0, 0, width, height);
+                                                            
+                                                            // Comprimir a WEBP con 70% de calidad para ahorrar muchísimo espacio (Offline Friendly)
+                                                            const dataUrl = canvas.toDataURL('image/webp', 0.7);
+                                                            setFormData({ ...formData, image: dataUrl });
+                                                            URL.revokeObjectURL(objectUrl);
                                                         };
-                                                        reader.readAsDataURL(file);
                                                     }
                                                 }}
-                                                className="w-full bg-slate-800/80 border border-slate-700/50 p-3 rounded-xl font-medium text-white focus:border-[#0ea5e9] outline-none transition-all file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#0ea5e9]/10 file:text-[#0ea5e9] hover:file:bg-[#0ea5e9]/20" 
+                                                className="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl font-medium text-white focus:border-[#0ea5e9] outline-none transition-all file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-[#0ea5e9] file:text-white hover:file:bg-[#0ea5e9]/80 cursor-pointer" 
                                             />
                                             {formData.image && (
-                                                <div className="mt-2 h-20 w-20 rounded-lg overflow-hidden border border-slate-700/50">
+                                                <div className="mt-4 h-32 w-32 rounded-xl overflow-hidden border-2 border-[#0ea5e9] shadow-lg shadow-blue-500/20">
                                                     {/* eslint-disable-next-line @next/next/no-img-element */}
                                                     <img src={formData.image} alt="Preview" className="w-full h-full object-cover" />
                                                 </div>
@@ -681,13 +735,13 @@ export default function InventoryDashboard() {
                             {step === 3 && (
                                 <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8">
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                        <div className="bg-emerald-50 border border-emerald-100 p-6 rounded-2xl">
-                                            <label className="text-xs font-black text-emerald-800 uppercase tracking-widest mb-2 block">Precio (MXN) *</label>
-                                            <input type="number" step="0.01" disabled={profile?.role === 'inventory'} value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} className="w-full bg-slate-800/80 border border-emerald-200 p-4 rounded-xl font-black text-2xl text-emerald-700 outline-none transition-all disabled:opacity-50" placeholder="0.00" />
+                                        <div className="bg-emerald-900/20 border border-emerald-500/20 p-6 rounded-2xl">
+                                            <label className="text-xs font-black text-emerald-400 uppercase tracking-widest mb-2 block">Precio (MXN) *</label>
+                                            <input type="number" step="0.01" disabled={profile?.role === 'inventory' && !!editingProductId} value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} className="w-full bg-slate-900 border border-emerald-500/30 p-4 rounded-xl font-black text-2xl text-emerald-400 placeholder-emerald-900/50 outline-none transition-all disabled:opacity-50" placeholder="0.00" />
                                         </div>
-                                        <div className="bg-blue-50 border border-blue-100 p-6 rounded-2xl">
-                                            <label className="text-xs font-black text-blue-800 uppercase tracking-widest mb-2 block">Unidad de Medida *</label>
-                                            <select disabled={profile?.role === 'marketing'} value={formData.unitType || 'PZA'} onChange={e => setFormData({...formData, unitType: e.target.value as any})} className="w-full bg-slate-800/80 border border-blue-200 p-4 rounded-xl font-black text-xl text-blue-700 outline-none transition-all disabled:opacity-50">
+                                        <div className="bg-blue-900/20 border border-blue-500/20 p-6 rounded-2xl">
+                                            <label className="text-xs font-black text-blue-400 uppercase tracking-widest mb-2 block">Unidad de Medida *</label>
+                                            <select disabled={profile?.role === 'marketing'} value={formData.unitType || 'PZA'} onChange={e => setFormData({...formData, unitType: e.target.value as any})} className="w-full bg-slate-900 border border-blue-500/30 p-4 rounded-xl font-black text-xl text-blue-400 outline-none transition-all disabled:opacity-50">
                                                 <option value="PZA">Pieza (PZA)</option>
                                                 <option value="KG">Kilos (KG)</option>
                                                 <option value="M">Metros (M)</option>
@@ -696,24 +750,47 @@ export default function InventoryDashboard() {
                                                 <option value="CAJA">Caja</option>
                                             </select>
                                         </div>
-                                        <div className="bg-amber-50 border border-amber-100 p-6 rounded-2xl">
-                                            <label className="text-xs font-black text-amber-800 uppercase tracking-widest mb-2 block">Stock Físico *</label>
-                                            <input type="number" step="any" disabled={profile?.role === 'marketing'} value={formData.stock} onChange={e => setFormData({...formData, stock: e.target.value})} className="w-full bg-slate-800/80 border border-amber-200 p-4 rounded-xl font-black text-2xl text-amber-700 outline-none transition-all disabled:opacity-50" placeholder="0" />
+                                        <div className="bg-amber-900/20 border border-amber-500/20 p-6 rounded-2xl">
+                                            <label className="text-xs font-black text-amber-400 uppercase tracking-widest mb-2 block">Stock Físico *</label>
+                                            <input type="number" step="any" disabled={profile?.role === 'marketing'} value={formData.stock} onChange={e => setFormData({...formData, stock: e.target.value})} className="w-full bg-slate-900 border border-amber-500/30 p-4 rounded-xl font-black text-2xl text-amber-400 placeholder-amber-900/50 outline-none transition-all disabled:opacity-50" placeholder="0" />
                                         </div>
                                     </div>
-                                    <div className="bg-indigo-50 border border-indigo-100 p-6 rounded-2xl">
+                                    <div className="bg-indigo-900/20 border border-indigo-500/20 p-6 rounded-2xl">
                                         <div className="flex items-center gap-3 mb-4">
-                                            <MapPin className="text-indigo-500" />
-                                            <h3 className="font-black text-indigo-800 uppercase tracking-widest text-sm">Ubicación Física en Almacén</h3>
+                                            <MapPin className="text-indigo-400" />
+                                            <h3 className="font-black text-indigo-400 uppercase tracking-widest text-sm">Ubicación Física en Almacén</h3>
                                         </div>
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>
-                                                <label className="text-[10px] font-black text-indigo-800 uppercase tracking-widest mb-2 block">Estante / Pasillo</label>
-                                                <input type="text" disabled={profile?.role === 'marketing'} value={formData.estante} onChange={e => setFormData({...formData, estante: e.target.value})} className="w-full bg-slate-800/80 border border-indigo-200 p-3 rounded-xl font-bold text-indigo-700 outline-none uppercase disabled:opacity-50" placeholder="Ej. A-12" />
+                                                <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-2 block">Estante / Pasillo</label>
+                                                <div className="flex items-center gap-2">
+                                                    <select 
+                                                        disabled={profile?.role === 'marketing'} 
+                                                        value={formData.estante} 
+                                                        onChange={e => setFormData({...formData, estante: e.target.value})} 
+                                                        className="flex-1 bg-slate-900 border border-indigo-500/30 p-3 rounded-xl font-bold text-indigo-300 outline-none uppercase disabled:opacity-50"
+                                                    >
+                                                        <option value="">-- Sin Asignar --</option>
+                                                        {allEstantes.map(estante => (
+                                                            <option key={estante} value={estante}>{estante}</option>
+                                                        ))}
+                                                        {formData.estante && !allEstantes.includes(formData.estante) && (
+                                                            <option value={formData.estante}>{formData.estante}</option>
+                                                        )}
+                                                    </select>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowNewEstanteModal(true)}
+                                                        className="w-12 h-12 flex-shrink-0 bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 rounded-xl flex items-center justify-center hover:bg-indigo-500/40 hover:text-indigo-300 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                                                        title="Agregar Estante Rápido"
+                                                    >
+                                                        <Plus size={20} />
+                                                    </button>
+                                                </div>
                                             </div>
                                             <div>
-                                                <label className="text-[10px] font-black text-indigo-800 uppercase tracking-widest mb-2 block">Fila / Nivel</label>
-                                                <input type="text" disabled={profile?.role === 'marketing'} value={formData.fila} onChange={e => setFormData({...formData, fila: e.target.value})} className="w-full bg-slate-800/80 border border-indigo-200 p-3 rounded-xl font-bold text-indigo-700 outline-none uppercase disabled:opacity-50" placeholder="Ej. Nivel 3" />
+                                                <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-2 block">Fila / Nivel</label>
+                                                <input type="text" disabled={profile?.role === 'marketing'} value={formData.fila} onChange={e => setFormData({...formData, fila: e.target.value})} className="w-full bg-slate-900 border border-indigo-500/30 p-3 rounded-xl font-bold text-indigo-300 placeholder-indigo-900/50 outline-none uppercase disabled:opacity-50" placeholder="Ej. Nivel 3" />
                                             </div>
                                         </div>
                                     </div>
@@ -813,7 +890,8 @@ export default function InventoryDashboard() {
                                                         key={estante} 
                                                         shelfName={estante} 
                                                         products={productsInEstante} 
-                                                        onProductClick={handleEditProduct} 
+                                                        onProductClick={handleEditProduct}
+                                                        onAddProductClick={handleAddProductClick}
                                                     />
                                                 );
                                             })}

@@ -59,9 +59,9 @@ const menuGroups = [
         items: [
             { id: 'dashboard',  title: 'Dashboard General',  icon: <LayoutDashboard size={20} />, href: '/dashboard',             premium: false },
             { id: 'sales',      title: 'Control de Ventas',  icon: <ShoppingCart size={20} />,    href: '/dashboard/admin/sales', premium: false },
-
             { id: 'users',      title: 'Usuarios y Roles',   icon: <Users size={20} />,           href: '/dashboard/admin/users', premium: false },
             { id: 'customers',  title: 'CRM y Clientes',     icon: <User size={20} />,            href: '/dashboard/admin/customers', premium: false },
+            { id: 'qr',         title: 'Vincular por QR',    icon: <Share2 size={20} />,          href: '/dashboard/qr',          premium: false },
         ],
     },
     {
@@ -310,7 +310,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const [siteConfig, setSiteConfig]           = useState<any>(null);
 
     const isDashboard = pathname?.startsWith('/dashboard');
-    const { isReadOnly, isPremium, profile, signOut } = useAuth();
+    const { isReadOnly, isPremium, profile, signOut, loading: authLoading } = useAuth();
     const { firebaseStatus } = useCart();
 
     /* persist sidebar preference */
@@ -321,6 +321,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
     // Fetch site config (activeModules)
     useEffect(() => {
+        if (authLoading) return; // Wait for Auth to initialize
+        
         const fetchSiteConfig = async () => {
             try {
                 const docSnap = await getDoc(doc(db, 'settings', 'site_config'));
@@ -339,7 +341,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             }
         };
         fetchSiteConfig();
-    }, []);
+    }, [authLoading]);
 
     /* close tooltip on outside click */
     useEffect(() => {
@@ -657,7 +659,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         {/* Connection badge */}
                         <div ref={tooltipRef} style={{ position: 'relative' }}>
                             <button
-                                onClick={() => setConnTooltipOpen(o => !o)}
+                                onClick={() => {
+                                    if (firebaseStatus !== 'online') {
+                                        window.location.reload();
+                                    } else {
+                                        setConnTooltipOpen(!connTooltipOpen);
+                                    }
+                                }}
                                 title="Ver estado de conexión"
                                 style={{
                                     display: 'flex', alignItems: 'center', gap: '6px',
