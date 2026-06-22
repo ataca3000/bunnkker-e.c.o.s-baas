@@ -49,6 +49,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import WalkieTalkieRadio from "@/components/WalkieTalkieRadio";
 import ClickSoundProvider from "@/components/ClickSoundProvider";
 import AntiDevTools from "@/components/AntiDevTools";
+import DeviceLockScreen from "@/components/DeviceLockScreen";
 
 export default function RootLayout({
   children,
@@ -60,18 +61,20 @@ export default function RootLayout({
       <body className={inter.className}>
           <AntiDevTools />
           <AuthProvider>
-            <CartProvider>
-              <ConnectionStatus />
-              <Navbar />
-              <AdminLayout>
-                {children}
-              </AdminLayout>
-              <AdminAsistente />
-              <WalkieTalkieRadio />
-              <ClickSoundProvider />
-              <UpdateNotification />
-              <Footer />
-            </CartProvider>
+            <DeviceLockScreen>
+              <CartProvider>
+                <ConnectionStatus />
+                <Navbar />
+                <AdminLayout>
+                  {children}
+                </AdminLayout>
+                <AdminAsistente />
+                <WalkieTalkieRadio />
+                <ClickSoundProvider />
+                <UpdateNotification />
+                <Footer />
+              </CartProvider>
+            </DeviceLockScreen>
           </AuthProvider>
       </body>
     </html>

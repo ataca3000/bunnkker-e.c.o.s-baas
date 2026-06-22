@@ -11,7 +11,18 @@ export default function QRGeneratorPage() {
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
-            setStoreUrl(window.location.origin);
+            const currentHost = window.location.hostname;
+            if (currentHost === 'localhost' || currentHost === '127.0.0.1') {
+                fetch('/api/network/ip')
+                    .then(res => res.json())
+                    .then(data => {
+                        const port = window.location.port ? `:${window.location.port}` : '';
+                        setStoreUrl(`http://${data.ip}${port}/dashboard/link`);
+                    })
+                    .catch(() => setStoreUrl(`${window.location.origin}/dashboard/link`));
+            } else {
+                setStoreUrl(`${window.location.origin}/dashboard/link`);
+            }
         }
     }, []);
 

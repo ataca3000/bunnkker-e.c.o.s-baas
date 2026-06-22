@@ -115,6 +115,7 @@ const createWindow = (urlHost = 'localhost') => {
         height,
         title: 'Admin.com ERP',
         autoHideMenuBar: true,
+        show: false, // Ocultar hasta que esté maximizada
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
@@ -122,6 +123,10 @@ const createWindow = (urlHost = 'localhost') => {
         },
     });
 
+    mainWindow.maximize();
+    mainWindow.show();
+
+    // Mantener la ruta principal (Market) como página de inicio
     mainWindow.loadURL(`http://${urlHost}:3000`);
 
     mainWindow.webContents.on('did-fail-load', () => {
