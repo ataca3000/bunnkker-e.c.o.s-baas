@@ -26,4 +26,19 @@ if (fs.existsSync(envSrc)) {
     console.log("✅ .env.local copiado al standalone.");
 }
 
+// CRÍTICO PARA EVITAR PANTALLA BLANCA: Copiar estáticos al servidor standalone
+const staticSrc = path.join(__dirname, '.next', 'static');
+const staticDest = path.join(standaloneDir, '.next', 'static');
+if (fs.existsSync(staticSrc)) {
+    fs.cpSync(staticSrc, staticDest, { recursive: true });
+    console.log("✅ Assets Javascript y CSS (.next/static) copiados al standalone.");
+}
+
+const publicSrc = path.join(__dirname, 'public');
+const publicDest = path.join(standaloneDir, 'public');
+if (fs.existsSync(publicSrc)) {
+    fs.cpSync(publicSrc, publicDest, { recursive: true });
+    console.log("✅ Carpeta public copiada al standalone.");
+}
+
 console.log("✅ Standalone preparado exitosamente.");

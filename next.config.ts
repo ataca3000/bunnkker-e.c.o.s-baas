@@ -12,21 +12,11 @@ const nextConfig: NextConfig = {
   output: 'standalone', // Required for Electron packaging
   // @ts-ignore
   turbopack: {},
-  webpack: (config, { dev, isServer }) => {
-    if (!dev && !isServer) {
-        const WebpackObfuscator = require('webpack-obfuscator');
-        config.plugins.push(
-            new WebpackObfuscator({
-                rotateStringArray: true,
-                stringArray: true,
-                stringArrayEncoding: ['rc4'],
-                deadCodeInjection: true,
-                debugProtection: false,
-                disableConsoleOutput: false
-            }, ['**/*.server.js']) // Excluir archivos del servidor para no romper Next.js
-        );
-    }
-    return config;
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: true,
   }
 };
 

@@ -62,6 +62,7 @@ const menuGroups = [
             { id: 'users',      title: 'Usuarios y Roles',   icon: <Users size={20} />,           href: '/dashboard/admin/users', premium: false },
             { id: 'customers',  title: 'CRM y Clientes',     icon: <User size={20} />,            href: '/dashboard/admin/customers', premium: false },
             { id: 'qr',         title: 'Vincular por QR',    icon: <Share2 size={20} />,          href: '/dashboard/qr',          premium: false },
+            { id: 'demo',       title: 'Test ISO / Demo',    icon: <Activity size={20} />,        href: '/dashboard/demo',        premium: false },
         ],
     },
     {

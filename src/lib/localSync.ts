@@ -115,19 +115,77 @@ function connectToMaster(ip: string) {
 }
 
 /**
- * SINCRONIZACIÓN: Envía un cambio al maestro para que lo guarde y difunda
+ * SINCRONIZACIÓN ATÓMICA: Envía un cambio al maestro. 
+ * Si no hay conexión, se encola en localStorage y se reintenta automáticamente (WAL - ISO Standard).
  */
 export function emitToMaster(type: string, data: any) {
+    if (typeof window === 'undefined') return;
+
+    // Generar un UUID (Transaction ID) para hacer la operación idempotente
+    const txId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2);
+    const timestamp = Date.now();
+    
+    const payload = { txId, timestamp, type, data };
+
     if (!localSocket || localSocket.readyState !== WebSocket.OPEN) {
-        console.warn(`[P2P] No se pudo enviar ${type}: Sin conexión activa con el Maestro.`);
+        console.warn(`[P2P/WAL] Sin conexión activa. Encolando transacción: ${type} (${txId})`);
+        queueOfflineTransaction(payload);
         return;
     }
     
     try {
-        localSocket.send(JSON.stringify({ type, data }));
+        localSocket.send(JSON.stringify(payload));
+        console.log(`[P2P] Transacción enviada: ${type} (${txId})`);
     } catch (err) {
-        console.error("[P2P] Error al emitir mensaje:", err);
+        console.error("[P2P] Error al emitir mensaje, encolando:", err);
+        queueOfflineTransaction(payload);
     }
+}
+
+// --- ISO STANDARD: OFFLINE QUEUE (Write-Ahead Logging) ---
+
+function queueOfflineTransaction(payload: any) {
+    if (typeof window === 'undefined') return;
+    try {
+        const queueStr = localStorage.getItem('evo_offline_queue');
+        const queue = queueStr ? JSON.parse(queueStr) : [];
+        queue.push(payload);
+        localStorage.setItem('evo_offline_queue', JSON.stringify(queue));
+    } catch (e) {
+        console.error("Error al encolar transacción local:", e);
+    }
+}
+
+function flushOfflineQueue() {
+    if (typeof window === 'undefined') return;
+    if (!localSocket || localSocket.readyState !== WebSocket.OPEN) return;
+
+    try {
+        const queueStr = localStorage.getItem('evo_offline_queue');
+        if (!queueStr) return;
+        
+        const queue: any[] = JSON.parse(queueStr);
+        if (queue.length === 0) return;
+
+        console.log(`[P2P/WAL] Sincronizando cola offline... (${queue.length} transacciones pendientes)`);
+        
+        // En un caso real ISO, enviaríamos todo como un lote atómico.
+        // Aquí lo enviamos uno por uno para retrocompatibilidad "Caballo de Troya".
+        for (const payload of queue) {
+            localSocket.send(JSON.stringify(payload));
+            console.log(`[P2P/WAL] Reintentado: ${payload.type} (${payload.txId})`);
+        }
+        
+        // Vaciamos la cola tras enviar
+        localStorage.removeItem('evo_offline_queue');
+    } catch (e) {
+        console.error("Error al vaciar la cola offline:", e);
+    }
+}
+
+// Iniciar el Auto-Retry Loop en el cliente
+if (typeof window !== 'undefined') {
+    setInterval(flushOfflineQueue, 3000);
 }
 
 function getLocalIP() {
