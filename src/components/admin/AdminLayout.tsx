@@ -34,7 +34,8 @@ import {
     Mail,
     User,
     Save,
-    RefreshCw as Refresh
+    RefreshCw as Refresh,
+    Activity
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
