@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { db as firestore } from '@/lib/firebase';
+import { doc, setDoc } from 'firebase/firestore';
 
 export async function GET() {
     try {
@@ -15,49 +17,81 @@ export async function GET() {
 
 export async function POST(request: Request) {
     try {
+        const tenantId = request.headers.get('x-tenant-id') || 'default-local';
         const body = await request.json();
-        
-        const [order] = await prisma.$transaction([
-            prisma.order.create({
-                data: {
-                    id: body.id,
-                    total: body.total,
-                    paymentMethod: body.paymentMethod || 'cash',
-                    status: body.status || 'paid',
-                    date: new Date(),
-                    offline: true,
-                    synced: false,
-                    items: {
-                        create: body.items.map((item: any) => ({
-                            productId: item.id,
-                            cantidad: item.quantity,
-                            precio: item.price
-                        }))
-                    }
-                },
-                include: { items: true }
-            }),
-            ...body.items.map((item: any) => 
-                prisma.product.update({
-                    where: { id: item.id },
-                    data: { stock: { decrement: item.quantity } }
-                })
-            ),
-            prisma.syncQueue.create({
-                data: {
-                    collection: 'orders',
-                    documentId: body.id,
-                    action: 'CREATE',
-                    payload: JSON.stringify(body)
-                }
-            })
-        ]);
+        const { orderId, total, deliveryType, paymentMethod, clientData, items } = body;
 
-        return NextResponse.json({ success: true, data: order });
+        // Garantía de Transacción ACID local
+        const orderResult = await prisma.$transaction(async (tx) => {
+            
+            // 1. Resolver o Crear Cliente por Teléfono (Upsert Manual)
+            let customer = await tx.customer.findUnique({
+                where: { phone: clientData.phone }
+            });
+
+            if (!customer) {
+                customer = await tx.customer.create({
+                    data: {
+                        tenantId,
+                        name: clientData.name,
+                        phone: clientData.phone,
+                        address: clientData.address || null,
+                        references: clientData.references || null
+                    }
+                });
+            } else if (deliveryType === 'DELIVERY' && clientData.address) {
+                // Actualizar datos de entrega si regresó con nueva dirección
+                customer = await tx.customer.update({
+                    where: { id: customer.id },
+                    data: {
+                        address: clientData.address,
+                        references: clientData.references
+                    }
+                });
+            }
+
+            // 2. Descuento en Caliente de Inventario Local con Validación de Quiebre
+            for (const item of items) {
+                const product = await tx.product.findUnique({
+                    where: { id: item.productId }
+                });
+
+                if (!product || product.stock < item.quantity) {
+                    throw new Error(`Inventario insuficiente para el producto: ${item.name}`);
+                }
+
+                // Modificación atómica del stock en el disco del Nodo Maestro
+                await tx.product.update({
+                    where: { id: item.productId },
+                    data: { stock: product.stock - item.quantity }
+                });
+            }
+
+            // 3. Creación de la Orden en el Pipeline Logístico
+            return await tx.order.create({
+                data: {
+                    id: orderId,
+                    tenantId,
+                    total,
+                    deliveryType, // LOCAL, PICKUP, PATIO, DELIVERY
+                    paymentMethod: paymentMethod || 'CASH', // Aseguramos el método de pago obligatorio
+                    status: 'PENDING_PAYMENT', // Estado inicial en la fila de espera
+                    customerId: customer.id
+                },
+                include: { customer: true }
+            });
+        });
+
+        // NOTA: El frontend receptor de la PWA se encarga de inyectar este payload 
+        // en el SDK de Firebase, aprovechando la persistencia de IndexedDB de forma transparente.
+        return NextResponse.json({ success: true, data: orderResult });
+
     } catch (error: any) {
-        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+        console.error(`[ACID Transaction Error]: ${error.message}`);
+        return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }
+
 
 export async function PATCH(request: Request) {
     try {
@@ -79,7 +113,7 @@ export async function PATCH(request: Request) {
                 order = await prisma.$transaction([
                     prisma.order.update({ where: { id }, data: updates }),
                     ...existingOrder.items.map((item: any) =>
-                        prisma.product.update({
+                        prisma.product.updateMany({
                             where: { id: item.productId },
                             data: { stock: { increment: item.cantidad } }
                         })
@@ -96,15 +130,13 @@ export async function PATCH(request: Request) {
             });
         }
 
-        // Queue sync to Firebase
-        await prisma.syncQueue.create({
-            data: {
-                collection: 'orders',
-                documentId: id,
-                action: 'UPDATE',
-                payload: JSON.stringify(updates)
-            }
-        });
+        // 2. Notificar a Firebase para que gestione su cola de persistencia nativa
+        const cloudPayload = { ...updates, _syncedAt: Date.now() };
+        
+        // El SDK de Firebase encola esto localmente si no hay red
+        setDoc(doc(firestore, `orders`, id), cloudPayload, { merge: true })
+            .then(() => console.log(`[Firebase Sync] Actualización encolada/subida: ${id}`))
+            .catch((err: any) => console.error(`[Firebase Sync] Error en persistencia:`, err.message));
 
         return NextResponse.json({ success: true, data: order });
     } catch (error: any) {

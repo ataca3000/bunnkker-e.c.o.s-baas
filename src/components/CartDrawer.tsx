@@ -1,17 +1,20 @@
 "use client";
 
 import { useCart } from "@/context/CartContext";
-import React, { useState } from "react";
-import { X, ShoppingBag, Truck, CreditCard, FileText, MapPin, Clock } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { X, ShoppingBag, Truck, CreditCard, FileText, MapPin, Clock, Lock } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
+import Link from "next/link";
 import styles from "./CartDrawer.module.css";
 import dynamic from 'next/dynamic';
+import { useAuth } from '@/context/AuthContext';
 
 const LocationPickerMap = dynamic(() => import('./LocationPickerMap'), { ssr: false });
 
 export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
     const { cart, removeFromCart, total, createOrder } = useCart();
+    const { profile } = useAuth();
     const [step, setStep] = useState<'cart' | 'checkout'>('cart');
 
     const [formData, setFormData] = useState({
@@ -33,6 +36,17 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
 
     const [isProcessing, setIsProcessing] = useState(false);
 
+    useEffect(() => {
+        if (profile) {
+            setFormData(prev => ({
+                ...prev,
+                name: (profile as any).displayName || (profile as any).name || prev.name,
+                phone: (profile as any).phone || prev.phone,
+                address: (profile as any).address || prev.address,
+            }));
+        }
+    }, [profile]);
+
     const handleCheckout = async () => {
         if (!formData.name || !formData.phone || (formData.deliveryMethod === 'repartidor' && !formData.address)) {
             alert("Por favor completa los datos obligatorios de entrega.");
@@ -40,45 +54,18 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
         }
         setIsProcessing(true);
         try {
-            const orderId = await createOrder(formData, formData.requireInvoice, true);
-            if (!orderId) {
+            const result = await createOrder(formData, formData.requireInvoice, true, true);
+            if (!result || !result.orderId) {
                 setIsProcessing(false);
                 return; // Hubo un error al crear la orden
             }
+            const { orderId, deliveryPin } = result;
 
             const finalTotal = total + formData.tip;
 
-            if (formData.paymentMethod === 'tarjeta_mp') {
-                const res = await fetch('/api/mercadopago/create-preference', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ items: cart, orderId, customer: formData })
-                });
-                const data = await res.json();
-                if (data.init_point) {
-                    window.location.href = data.init_point;
-                    return; // No cerramos el drawer, nos redirige
-                } else {
-                    alert('Error conectando con MercadoPago: ' + data.error);
-                }
-            } else if (formData.paymentMethod === 'tarjeta_stripe') {
-                const res = await fetch('/api/stripe/create-intent', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ amount: finalTotal, orderId, customer: formData })
-                });
-                const data = await res.json();
-                if (data.url) {
-                    window.location.href = data.url;
-                    return; // No cerramos el drawer, nos redirige
-                } else {
-                    alert('Error conectando con Stripe: ' + data.error);
-                }
-            } else {
-                alert(`¡Pedido Confirmado! \nTotal a Pagar: $${finalTotal.toFixed(2)}\nSe ha enviado un WhatsApp con los detalles a ${formData.phone}.`);
-                setStep('cart');
-                onClose();
-            }
+            alert(`¡Pedido Confirmado! \nOrden: ${orderId}\nTotal a Pagar: $${finalTotal.toFixed(2)}\n\nTu PIN de Entrega (OTP): ${deliveryPin}\nConsérvalo, el repartidor te lo pedirá al entregar tu producto.\n\nSe ha enviado un WhatsApp con los detalles a ${formData.phone}.`);
+            setStep('cart');
+            onClose();
         } catch (err) {
             console.error("Error Checkout:", err);
             alert("Ocurrió un error al procesar tu pedido.");
@@ -144,24 +131,42 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
                                 ) : (
                                     <div className={styles.checkoutForm}>
                                         <h3 className={styles.checkoutTitle}>Opciones de Pedido</h3>
-                                        
-                                        <div className={styles.formFields} style={{ marginBottom: '1.5rem' }}>
+
+                                        {!profile ? (
+                                            <div className="text-center p-6 bg-slate-100 rounded-xl mt-4">
+                                                <Lock className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+                                                <h4 className="font-bold text-slate-800 mb-2">Inicia Sesión para Comprar</h4>
+                                                <p className="text-sm text-slate-600 mb-6">Debes tener una cuenta o iniciar sesión para poder realizar un pedido.</p>
+                                                <Link href="/registro" onClick={onClose} className="bg-[#0ea5e9] hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg w-full flex items-center justify-center gap-2 transition-colors">
+                                                    Iniciar Sesión / Registrarse
+                                                </Link>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <div className={styles.formFields} style={{ marginBottom: '1.5rem' }}>
                                             <div>
                                                 <label style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#666', marginBottom: '4px', display: 'block' }}>Entrega</label>
-                                                <div style={{ display: 'flex', gap: '10px' }}>
+                                                <div style={{ display: 'flex', gap: '5px' }}>
                                                     <button 
-                                                        onClick={() => setFormData({ ...formData, deliveryMethod: 'tienda', paymentMethod: 'pago_caja' })}
+                                                        onClick={() => setFormData({ ...formData, deliveryMethod: 'piso', paymentMethod: 'pago_caja' })}
                                                         className={styles.methodBtn} 
-                                                        style={{ flex: 1, padding: '10px', borderRadius: '8px', border: formData.deliveryMethod === 'tienda' ? '2px solid #0ea5e9' : '1px solid #ddd', background: formData.deliveryMethod === 'tienda' ? '#e0f2fe' : '#fff', color: '#111', fontWeight: 'bold', cursor: 'pointer' }}
+                                                        style={{ flex: 1, padding: '10px 5px', borderRadius: '8px', border: formData.deliveryMethod === 'piso' ? '2px solid #0ea5e9' : '1px solid #ddd', background: formData.deliveryMethod === 'piso' ? '#e0f2fe' : '#fff', color: '#111', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.75rem' }}
                                                     >
-                                                        🏬 Recoger en Tienda
+                                                        🏬 En Piso
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => setFormData({ ...formData, deliveryMethod: 'pickup', paymentMethod: 'pago_caja' })}
+                                                        className={styles.methodBtn} 
+                                                        style={{ flex: 1, padding: '10px 5px', borderRadius: '8px', border: formData.deliveryMethod === 'pickup' ? '2px solid #0ea5e9' : '1px solid #ddd', background: formData.deliveryMethod === 'pickup' ? '#e0f2fe' : '#fff', color: '#111', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.75rem' }}
+                                                    >
+                                                        📦 Pick Up
                                                     </button>
                                                     <button 
                                                         onClick={() => setFormData({ ...formData, deliveryMethod: 'repartidor', paymentMethod: 'tarjeta_mp' })}
                                                         className={styles.methodBtn} 
-                                                        style={{ flex: 1, padding: '10px', borderRadius: '8px', border: formData.deliveryMethod === 'repartidor' ? '2px solid #0ea5e9' : '1px solid #ddd', background: formData.deliveryMethod === 'repartidor' ? '#e0f2fe' : '#fff', color: '#111', fontWeight: 'bold', cursor: 'pointer' }}
+                                                        style={{ flex: 1, padding: '10px 5px', borderRadius: '8px', border: formData.deliveryMethod === 'repartidor' ? '2px solid #0ea5e9' : '1px solid #ddd', background: formData.deliveryMethod === 'repartidor' ? '#e0f2fe' : '#fff', color: '#111', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.75rem' }}
                                                     >
-                                                        🛵 Envío a Domicilio
+                                                        🛵 Domicilio
                                                     </button>
                                                 </div>
                                             </div>
@@ -204,7 +209,7 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
                                                 </>
                                             )}
 
-                                            {formData.deliveryMethod === 'tienda' && (
+                                            {formData.deliveryMethod === 'pickup' && (
                                                 <div>
                                                     <label style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#666', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '10px' }}>
                                                         <Clock size={14} /> Horario Estimado de Recolección
@@ -227,15 +232,20 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
                                                     style={{ width: '100%' }}
                                                 >
                                                     <option value="pago_caja">💵 Pago en Caja (Sucursal)</option>
-                                                    <option value="tarjeta_mp">💳 Pagar en línea (MercadoPago)</option>
-                                                    <option value="tarjeta_stripe">💳 Pagar en línea (Stripe)</option>
                                                     <option value="creditos">🪙 Pagar con Créditos</option>
                                                 </select>
                                                 
                                                 {formData.paymentMethod === 'pago_caja' && formData.deliveryMethod === 'repartidor' && (
                                                     <div style={{ marginTop: '8px', padding: '8px', backgroundColor: '#fee2e2', border: '1px solid #f87171', borderRadius: '6px' }}>
                                                         <p style={{ fontSize: '0.7rem', color: '#991b1b', margin: 0, fontWeight: 'bold' }}>
-                                                            ⚠️ Tu pedido no será preparado ni enviado hasta que liquides el total en nuestra sucursal. Tienes un máximo de 3 horas para pagar o el pedido será cancelado automáticamente.
+                                                            ⚠️ Tu pedido no será enviado hasta que liquides el total en sucursal. Tienes un máximo de 3 horas para pagar o se cancelará automáticamente.
+                                                        </p>
+                                                    </div>
+                                                )}
+                                                {formData.paymentMethod === 'pago_caja' && formData.deliveryMethod === 'pickup' && (
+                                                    <div style={{ marginTop: '8px', padding: '8px', backgroundColor: '#e0f2fe', border: '1px solid #7dd3fc', borderRadius: '6px' }}>
+                                                        <p style={{ fontSize: '0.7rem', color: '#0369a1', margin: 0, fontWeight: 'bold' }}>
+                                                            ℹ️ Tu pedido se preparará y lo podrás pagar directamente en caja al momento de recogerlo.
                                                         </p>
                                                     </div>
                                                 )}
@@ -315,8 +325,10 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
                                                 </div>
                                             )}
                                         </div>
-                                    </div>
+                                    </>
                                 )}
+                            </div>
+                        )}
 
                                 <div className={styles.footer}>
                                     <div className={styles.totalRow} style={{ flexDirection: 'column', alignItems: 'flex-end' }}>
@@ -333,7 +345,14 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
 
                                     {step === 'cart' ? (
                                         <button
-                                            onClick={() => setStep('checkout')}
+                                            onClick={() => {
+                                                if (profile) {
+                                                    setStep('checkout');
+                                                } else {
+                                                    // Opcional: mostrar alerta o redirigir
+                                                    alert("Inicia sesión para continuar");
+                                                }
+                                            }}
                                             className={`btn-sanjose ${styles.payBtn}`}
                                         >
                                             PROCEDER AL PAGO <Truck size={20} />

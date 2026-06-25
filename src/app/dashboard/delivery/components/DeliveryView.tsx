@@ -5,6 +5,19 @@ import SignatureCanvas from 'react-signature-canvas';
 import Webcam from 'react-webcam';
 import { motion } from 'framer-motion';
 
+// Función para calcular distancia con fórmula Haversine
+function getDistanceFromLatLonInMeters(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const R = 6371e3; // Radio de la tierra en metros
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a = 
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * 
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
 export default function DeliveryView({
   order,
   onUpdate,
@@ -17,7 +30,9 @@ export default function DeliveryView({
   const [mode, setMode] = useState<'info' | 'deliver' | 'reject'>('info');
   const [photoMode, setPhotoMode] = useState(false);
   const [photoData, setPhotoData] = useState<string | null>(null);
-  const sigCanvas = useRef<any>(null);
+  const [pinInput, setPinInput] = useState<string>('');
+  const [pinError, setPinError] = useState<string>('');
+  const [isVerifyingGPS, setIsVerifyingGPS] = useState(false);
   const webcamRef = useRef<Webcam>(null);
 
   const openGoogleMaps = () => {
@@ -25,11 +40,37 @@ export default function DeliveryView({
     window.open(url, '_blank');
   };
 
-  const handleComplete = () => {
-    const signature = sigCanvas.current?.isEmpty() ? null : sigCanvas.current?.toDataURL();
+  const handleComplete = async () => {
+    // 1. Validar OTP si la orden lo requiere
+    if (order.deliveryPin && pinInput !== order.deliveryPin) {
+        setPinError('El PIN ingresado es incorrecto.');
+        return;
+    }
+
+    // 2. Validar Geocerca (50 metros) si hay coordenadas de destino
+    if (order.lat && order.lng) {
+        setIsVerifyingGPS(true);
+        try {
+            const pos: any = await new Promise((resolve, reject) => {
+                navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 10000 });
+            });
+            const distance = getDistanceFromLatLonInMeters(pos.coords.latitude, pos.coords.longitude, order.lat, order.lng);
+            if (distance > 50) {
+                alert(`⚠️ Estás a ${Math.round(distance)} metros del destino. Acércate a menos de 50 metros para confirmar la entrega.`);
+                setIsVerifyingGPS(false);
+                return;
+            }
+        } catch (err) {
+            alert('❌ No pudimos obtener tu ubicación actual para verificar la geocerca. Asegúrate de tener el GPS activado.');
+            setIsVerifyingGPS(false);
+            return;
+        }
+        setIsVerifyingGPS(false);
+    }
+
     onUpdate({ 
       status: 'completed', 
-      signatureData: signature,
+      signatureData: null, // Ya no se usa firma
       photoData,
       completedAt: new Date().toISOString() 
     });
@@ -130,27 +171,36 @@ export default function DeliveryView({
           )}
         </div>
 
-        {/* Signature */}
+        {/* OTP Input */}
         <div className="bg-slate-900/60 backdrop-blur-lg p-4 rounded-2xl shadow-[0_4px_30px_rgba(0,0,0,0.1)] border border-white/10">
-           <div className="flex justify-between items-center mb-3">
-             <h3 className="font-bold text-sm text-sky-400 uppercase tracking-wider">Firma de Recibido</h3>
-             <button onClick={() => sigCanvas.current?.clear()} className="text-xs focus:ring-0 text-slate-400 hover:text-white font-medium transition-colors">Limpiar</button>
+           <div className="mb-3 text-center">
+             <h3 className="font-bold text-sm text-sky-400 uppercase tracking-wider mb-1">PIN de Confirmación</h3>
+             <p className="text-xs text-slate-400">Pide al cliente su OTP de 4 dígitos</p>
            </div>
-           <div className="border border-white/20 rounded-xl bg-white overflow-hidden shadow-inner">
-              <SignatureCanvas 
-                ref={sigCanvas} 
-                penColor="black"
-                canvasProps={{ className: 'w-full h-40 bg-white' }}
-              />
+           <div className="flex justify-center">
+             <input 
+                type="text"
+                inputMode="numeric"
+                maxLength={4}
+                value={pinInput}
+                onChange={(e) => {
+                    setPinInput(e.target.value.replace(/\D/g, ''));
+                    setPinError('');
+                }}
+                className="w-32 text-center text-3xl font-bold bg-white/10 border-2 border-white/20 text-white p-3 rounded-xl focus:border-sky-500 focus:outline-none transition-colors"
+                placeholder="0000"
+             />
            </div>
+           {pinError && <p className="text-red-400 text-xs text-center mt-2 font-bold">{pinError}</p>}
         </div>
 
         <button 
             onClick={handleComplete}
-            className="w-full bg-emerald-600/90 hover:bg-emerald-500 border border-emerald-400/50 text-white font-bold p-4 rounded-xl flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(16,185,129,0.3)] active:scale-95 transition-all"
+            disabled={isVerifyingGPS || (order.deliveryPin ? pinInput.length !== 4 : false)}
+            className="w-full bg-emerald-600/90 hover:bg-emerald-500 border border-emerald-400/50 text-white font-bold p-4 rounded-xl flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(16,185,129,0.3)] active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
-            <CheckCircle size={20} />
-            Confirmar y Finalizar
+            {isVerifyingGPS ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <CheckCircle size={20} />}
+            {isVerifyingGPS ? 'Verificando GPS...' : 'Confirmar y Finalizar'}
         </button>
       </div>
     );

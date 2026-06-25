@@ -16,8 +16,8 @@ export default function SalesAdmin() {
     );
 
     const totalSales = orders
-        .filter(o => o.status === 'paid')
-        .reduce((sum, o) => sum + o.total, 0);
+        .filter(o => ['paid', 'COMPLETED', 'READY_TO_SHIP', 'OUT_FOR_DELIVERY', 'DELIVERED'].includes(o.status))
+        .reduce((sum, o) => sum + (Number(o.total) || 0), 0);
 
     const handleCancel = async (orderId: string, customerPhone: string) => {
         if (confirm("¿Estás seguro de cancelar esta orden? Esto restaurará el inventario automáticamente.")) {
@@ -90,23 +90,28 @@ export default function SalesAdmin() {
                                     <td style={{ padding: '15px', fontWeight: 'bold' }}>${order.total.toFixed(2)}</td>
                                     <td style={{ padding: '15px' }}>
                                         <span style={{
-                                            backgroundColor: order.status === 'paid' ? '#e8f8f5' : order.status === 'cancelled' ? '#fdedec' : '#fff8e1',
-                                            color: order.status === 'paid' ? '#27ae60' : order.status === 'cancelled' ? '#c0392b' : '#f39c12',
+                                            backgroundColor: ['paid', 'COMPLETED', 'DELIVERED'].includes(order.status) ? '#e8f8f5' : order.status === 'cancelled' ? '#fdedec' : '#fff8e1',
+                                            color: ['paid', 'COMPLETED', 'DELIVERED'].includes(order.status) ? '#27ae60' : order.status === 'cancelled' ? '#c0392b' : '#f39c12',
                                             padding: '4px 10px', borderRadius: '15px', fontSize: '0.75rem', fontWeight: 'bold', textTransform: 'uppercase',
                                             display: 'inline-flex', alignItems: 'center', gap: '5px'
                                         }}>
-                                            {order.status === 'paid' && <CheckCircle size={12} />}
+                                            {['paid', 'COMPLETED', 'DELIVERED'].includes(order.status) && <CheckCircle size={12} />}
                                             {order.status === 'cancelled' && <XCircle size={12} />}
-                                            {order.status === 'pending' && <AlertTriangle size={12} />}
-                                            {order.status === 'paid' ? 'PAGADO' : order.status === 'cancelled' ? 'CANCELADO' : 'PENDIENTE'}
+                                            {['pending', 'pending_confirmation', 'pending_payment'].includes(order.status) && <AlertTriangle size={12} />}
+                                            {['paid', 'COMPLETED', 'DELIVERED'].includes(order.status) ? 'PAGADO' : order.status === 'cancelled' ? 'CANCELADO' : 'PENDIENTE'}
                                         </span>
                                     </td>
                                     <td style={{ padding: '15px' }}>
                                         <div style={{ display: 'flex', gap: '10px' }}>
-                                            <button title="Ver Detalles" aria-label="Ver Detalles" style={{ background: 'none', border: 'none', color: '#0ea5e9', cursor: 'pointer' }}>
+                                            <button 
+                                                title="Ver Detalles" 
+                                                aria-label="Ver Detalles" 
+                                                onClick={() => alert(`DETALLES DE ORDEN ${order.id}\n\nCliente: ${order.customer?.name || 'N/A'}\nTeléfono: ${order.customer?.phone || 'N/A'}\nDirección: ${order.customer?.address || 'N/A'}\n\nPRODUCTOS:\n${order.items?.map((i: any) => `- ${i.quantity}x ${i.name} ($${i.price})`).join('\n')}\n\nTOTAL: $${order.total}`)}
+                                                style={{ background: 'none', border: 'none', color: '#0ea5e9', cursor: 'pointer' }}
+                                            >
                                                 <FileText size={18} />
                                             </button>
-                                            {order.status === 'paid' && (
+                                            {['paid', 'COMPLETED'].includes(order.status) && (
                                                 <button
                                                     title="Cancelar y Devolver"
                                                     aria-label="Cancelar y Devolver"

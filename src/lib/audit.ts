@@ -16,7 +16,9 @@ export type AuditAction =
     | 'AUTH_FAILURE'
     | 'AUTH_RESCUE_FAILURE'
     | 'AI_CLASSIFICATION'
-    | 'INVENTORY_MOVE';
+    | 'INVENTORY_MOVE'
+    | 'CORTE_CAJA_CIEGO'
+    | 'ORDER_CANCELLED';
 
 export interface AuditLog {
     type: AuditAction;
@@ -34,12 +36,13 @@ export interface AuditLog {
  * Como las reglas de Firestore bloquean edición/borrado, esto crea un rastro permanente.
  */
 export async function logAudit(action: AuditLog) {
-    const isNode = typeof window === 'undefined' || !!(window as any).electronAPI;
+    const isNode = typeof window === 'undefined';
 
     try {
         const logRef = collection(db, 'audit_logs');
         const firebasePromise = addDoc(logRef, {
             ...action,
+            isoDate: new Date().toISOString(),
             timestamp: serverTimestamp(),
             systemVersion: '1.0.0-PRO'
         });

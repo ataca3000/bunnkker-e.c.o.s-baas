@@ -10,7 +10,7 @@ import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 
 export default function PickupDashboard() {
-    const { formatCurrency } = useCart();
+    const { formatCurrency, products } = useCart();
     const { profile } = useAuth();
     const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
@@ -131,12 +131,21 @@ export default function PickupDashboard() {
                                         <div className="bg-black/30 rounded-lg p-3 mb-4 max-h-40 overflow-y-auto">
                                             <p className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">Lista de Materiales</p>
                                             <ul className="space-y-2">
-                                                {order.items?.map((item: any, i: number) => (
-                                                    <li key={i} className="flex items-start gap-2 text-sm text-gray-300">
-                                                        <input type="checkbox" className="mt-1 accent-yellow-500" />
-                                                        <span>{item.quantity}x {item.name}</span>
-                                                    </li>
-                                                ))}
+                                                {order.items?.map((item: any, i: number) => {
+                                                    const fullProduct = products.find((p: any) => p.id === (item.productId || item.id));
+                                                    const loc = fullProduct?.location;
+                                                    const locationStr = loc && loc.estante ? `📍 ${loc.estante} - ${loc.fila || 'N/A'}` : '📍 Bodega General';
+                                                    
+                                                    return (
+                                                        <li key={i} className="flex flex-col text-sm text-gray-300">
+                                                            <div className="flex items-start gap-2">
+                                                                <input type="checkbox" className="mt-1 accent-yellow-500" />
+                                                                <span>{item.quantity}x {item.name || fullProduct?.name || 'Producto Desconocido'}</span>
+                                                            </div>
+                                                            <span className="text-xs text-yellow-500/80 ml-6">{locationStr}</span>
+                                                        </li>
+                                                    );
+                                                })}
                                             </ul>
                                         </div>
 

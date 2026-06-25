@@ -89,12 +89,7 @@ body {
 }
 
 .card-sanjose:hover {
-  transform: translateY(-5px);
-  background: rgba(255, 255, 255, 0.9);
-  border-color: rgba(99, 102, 241, 0.2);
-  box-shadow: 
-    0 20px 50px -10px rgba(99, 102, 241, 0.15),
-    0 10px 15px -3px rgba(15, 23, 42, 0.05);
+  /* No hover effects for data cards */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -106,10 +101,7 @@ body {
   }
   
   .card-sanjose:hover {
-    background: rgba(30, 41, 59, 0.8);
-    border-color: rgba(99, 102, 241, 0.3);
-    box-shadow: 
-      0 20px 50px -10px rgba(99, 102, 241, 0.2);
+    /* No hover effect */
   }
 
   .card-sanjose::after {
@@ -227,6 +219,28 @@ textarea:focus {
 button:focus-visible {
   outline: 2px solid var(--saas-primary);
   outline-offset: 2px;
+}
+
+/* Global Button Hover for entire application */
+button:not(:disabled), 
+a[role="button"],
+[role="button"] {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+button:not(:disabled):hover,
+a[role="button"]:hover,
+[role="button"]:hover {
+  box-shadow: 0 0 15px rgba(124, 58, 237, 0.4);
+  border-color: rgba(124, 58, 237, 0.5);
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+}
+
+/* Don't pulse disabled buttons */
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* Responsive Utilities */

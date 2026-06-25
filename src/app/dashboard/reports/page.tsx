@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FileDown, Database, ShieldCheck, HardDrive, RefreshCcw, CheckCircle, FileSpreadsheet, TrendingUp, Package, Users, ShoppingCart, AlertCircle, Wifi, WifiOff } from 'lucide-react';
+import { FileDown, Database, ShieldCheck, HardDrive, RefreshCcw, CheckCircle, FileSpreadsheet, TrendingUp, Package, Users, ShoppingCart, AlertCircle, Wifi, WifiOff, Calculator } from 'lucide-react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useCart } from '@/context/CartContext';
@@ -261,6 +261,22 @@ export default function ReportsAndBackups() {
                                 <ShieldCheck size={20} color="#0369A1" />
                                 <span style={{ fontSize: '0.7rem', color: '#0369A1' }}>Cifrado de extremo a extremo activo.</span>
                             </div>
+                        </div>
+
+                        {/* Auditoría de Cortes de Caja */}
+                        <div className="card-sanjose" style={{ borderLeft: '6px solid #e11d48' }}>
+                            <h4 style={{ fontWeight: '900', color: '#e11d48', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <Calculator size={20} /> AUDITORÍA DE CAJAS
+                            </h4>
+                            <p style={{ fontSize: '0.85rem', color: '#666', marginBottom: '1.5rem' }}>
+                                Revisa los cortes de caja históricos de todos los cajeros y detecta faltantes al instante.
+                            </p>
+                            <button
+                                onClick={() => window.location.href = '/dashboard/reports/cash-registers'}
+                                className="w-full py-3 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl transition-all shadow-[0_0_15px_rgba(225,29,72,0.3)] flex items-center justify-center gap-2"
+                            >
+                                Revisar Cortes de Caja
+                            </button>
                         </div>
 
                         {/* Top products */}

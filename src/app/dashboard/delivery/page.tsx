@@ -114,7 +114,9 @@ export default function DeliveryDashboard() {
         );
 
         const unsubscribe = onSnapshot(q, (snapshot: any) => {
-            const fetchedOrders: DeliveryOrder[] = snapshot.docs.map((d: any) => {
+            const fetchedOrders: DeliveryOrder[] = snapshot.docs
+                .filter((d: any) => d.data().status !== 'pending_payment' && d.data().status !== 'cancelled' && d.data().status !== 'NIGHT_QUEUE')
+                .map((d: any) => {
                 const data = d.data();
                 return {
                     id: d.id,
@@ -126,7 +128,8 @@ export default function DeliveryDashboard() {
                     lng: data.lng,
                     status: data.status === 'delivered' ? 'completed' : (data.driverId ? 'claimed' : 'available'),
                     driverId: data.driverId || undefined,
-                    total: data.total
+                    total: data.total,
+                    deliveryPin: data.deliveryPin
                 } as DeliveryOrder;
             });
             

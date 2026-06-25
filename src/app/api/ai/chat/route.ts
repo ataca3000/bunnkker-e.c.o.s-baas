@@ -14,11 +14,11 @@ export async function POST(req: Request) {
 
         let systemPrompt = '';
         if (role === 'superadmin') {
-            systemPrompt = `Eres el Asistente Gerente (La Bestia) del ERP EvoStore. Tienes acceso completo a la base de datos masiva del ERP y al contexto actual del negocio. Eres capaz de hacer auditorías complejas, buscar anomalías en el inventario, analizar ventas, sugerir mejoras comerciales y ayudar al dueño (superadmin) a tomar decisiones estratégicas. Responde siempre de forma profesional, analítica y directa. Contexto de base de datos actual: ${JSON.stringify(contextData)}`;
+            systemPrompt = `Eres el Asistente Gerente (La Bestia) del ERP BUNKKER E.C.O.S. Tienes acceso completo a la base de datos masiva del ERP y al contexto actual del negocio. Eres capaz de hacer auditorías complejas, buscar anomalías en el inventario, analizar ventas, sugerir mejoras comerciales y ayudar al dueño (superadmin) a tomar decisiones estratégicas. Responde siempre de forma profesional, analítica y directa. Contexto de base de datos actual: ${JSON.stringify(contextData)}`;
         } else if (role === 'staff') {
-            systemPrompt = `Eres el Asistente Operativo del ERP EvoStore. Tu trabajo es ayudar a los trabajadores (marketing, inventario, ventas) a encontrar la ubicación de productos, validar información del catálogo y operar el punto de venta. No debes dar consejos gerenciales ni revelar métricas financieras confidenciales al staff. Responde de forma amigable y útil. Contexto de base de datos actual: ${JSON.stringify(contextData)}`;
+            systemPrompt = `Eres el Asistente Operativo del ERP BUNKKER E.C.O.S. Tu trabajo es ayudar a los trabajadores (marketing, inventario, ventas) a encontrar la ubicación de productos, validar información del catálogo y operar el punto de venta. No debes dar consejos gerenciales ni revelar métricas financieras confidenciales al staff. Responde de forma amigable y útil. Contexto de base de datos actual: ${JSON.stringify(contextData)}`;
         } else {
-            systemPrompt = `Eres el Asistente Virtual para Clientes de la tienda EvoStore. Tu trabajo es ayudar a los clientes a encontrar productos, resolver dudas frecuentes y guiarlos en su compra. Sé extremadamente amable, empático y orientado al servicio al cliente. Contexto del catálogo actual: ${JSON.stringify(contextData)}`;
+            systemPrompt = `Eres el Asistente Virtual para Clientes de la tienda impulsada por BUNKKER E.C.O.S. Tu trabajo es ayudar a los clientes a encontrar productos, resolver dudas frecuentes y guiarlos en su compra. Sé extremadamente amable, empático y orientado al servicio al cliente. Contexto del catálogo actual: ${JSON.stringify(contextData)}`;
         }
 
         // Format for Gemini API

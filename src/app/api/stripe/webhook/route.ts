@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
         const secretKey = secretData.stripe_secret_key;
         const webhookSecret = secretData.stripe_webhook_secret || ''; // Debe añadirse en el futuro en setup, pero por ahora podemos procesar sin validación si no hay webhookSecret o ignorar
 
-        const stripe = new Stripe(secretKey, { apiVersion: '2026-02-25.clover' });
+        const stripe = new Stripe(secretKey, { apiVersion: '2026-05-27.dahlia' });
 
         let event: Stripe.Event;
 

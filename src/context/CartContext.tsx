@@ -282,16 +282,24 @@ export const useCart = () => {
                     finalStatus = 'pending_payment';
                     expiresAt = new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString();
                 } else {
-                    finalStatus = 'pending_delivery';
+                    finalStatus = 'paid_pending_delivery';
                 }
-            } else if (customerData.deliveryMethod === 'tienda') {
+            } else if (customerData.deliveryMethod === 'pickup') {
                 if (customerData.paymentMethod === 'pago_caja') {
                     finalStatus = 'pending_payment';
                 } else {
-                    finalStatus = 'pending_confirmation';
+                    finalStatus = 'paid_pending_delivery';
+                }
+            } else { // 'piso'
+                if (customerData.paymentMethod === 'pago_caja') {
+                    finalStatus = 'pending_payment';
+                } else {
+                    finalStatus = 'paid';
                 }
             }
         }
+
+        const deliveryPin = Math.floor(1000 + Math.random() * 9000).toString();
 
         const newOrder = {
             id: orderId, customer: customerData, customerEmail: customerData.phone,
@@ -299,7 +307,8 @@ export const useCart = () => {
             date: new Date().toISOString(), status: isNightQueue ? 'NIGHT_QUEUE' : finalStatus as any,
             expiresAt,
             paymentMethod: asRequest ? (customerData.paymentMethod || 'pago_caja') : (isOnline ? 'Online' : 'Venta Directa'), requiresInvoice,
-            deliveryMethod: customerData.deliveryMethod || 'tienda'
+            deliveryMethod: customerData.deliveryMethod || 'tienda',
+            deliveryPin
         };
 
         try {
@@ -335,7 +344,7 @@ export const useCart = () => {
                 description: `Pedido: ${orderId} por ${store.formatCurrency(orderTotal)}`,
                 metadata: { orderId, total: orderTotal, stockDeducted: true },
             });
-            return orderId;
+            return { orderId, deliveryPin };
         } catch (err: any) {
             console.error('Order error:', err);
             alert('❌ Error al procesar el pedido localmente.');
@@ -356,12 +365,13 @@ export const useCart = () => {
 
         try {
             // 1. Marcar orden como pagada en el Servidor Local
+            const nextStatus = order.deliveryType === 'DELIVERY' || order.deliveryMethod === 'repartidor' ? 'READY_TO_SHIP' : 'COMPLETED';
             const res = await fetch('/api/orders', {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     id: orderId,
-                    status: 'paid',
+                    status: nextStatus,
                     vendedorId: profile?.uid,
                     vendedorName: sellerName,
                     confirmedAt: new Date().toISOString()
@@ -425,7 +435,7 @@ export const useCart = () => {
                     id: orderId,
                     isLoaded: true,
                     loadingFinishedAt: new Date().toISOString(),
-                    status: 'ready_for_delivery'
+                    status: 'OUT_FOR_DELIVERY'
                 })
             });
 

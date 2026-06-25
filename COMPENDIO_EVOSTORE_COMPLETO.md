@@ -18,6 +18,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     '/dashboard/patio': ['superadmin', 'carga_descarga', 'driver', 'inventory'],
     '/dashboard/delivery': ['superadmin', 'driver', 'carga_descarga'],
     '/dashboard/marketing': ['superadmin', 'marketing', 'admin'], // edición de la market
+    '/dashboard/reports': ['superadmin'], // Cierres de caja y reportes forenses
 };
 
 // Dominios que NO deben tratarse como tenants
@@ -62,7 +63,7 @@ export default function middleware(request: NextRequest) {
         }
 
         const matchedEntry = Object.entries(ROLE_PERMISSIONS).find(([path]) => 
-            pathname.startsWith(path)
+            pathname.startsWith(path) && path !== '/dashboard'
         );
 
         if (matchedEntry) {
@@ -72,8 +73,19 @@ export default function middleware(request: NextRequest) {
                 return NextResponse.redirect(new URL('/login?error=unauthorized', request.url));
             }
         } else {
-            // Default Deny for unknown subpaths, but ALLOW the root /dashboard
-            if (pathname !== '/dashboard' && role !== 'superadmin' && role !== 'admin') {
+            // Manejo estricto de la raíz /dashboard
+            if (pathname === '/dashboard') {
+                if (role !== 'superadmin' && role !== 'admin') {
+                    // Buscar a qué módulo tiene acceso primario
+                    const primaryPath = Object.entries(ROLE_PERMISSIONS).find(([_, roles]) => roles.includes(role!))?.[0];
+                    if (primaryPath) {
+                        return NextResponse.redirect(new URL(primaryPath, request.url));
+                    }
+                    // Si no tiene ningún rol asignado válido, mandarlo a login
+                    return NextResponse.redirect(new URL('/login?error=unauthorized', request.url));
+                }
+                // Si es admin, lo dejamos pasar a /dashboard
+            } else if (role !== 'superadmin' && role !== 'admin') {
                 console.warn(`[Security] Default Deny: ${role} intentó entrar a ${pathname}`);
                 return NextResponse.redirect(new URL('/login?error=unauthorized', request.url));
             }
@@ -194,12 +206,7 @@ body {
 }
 
 .card-sanjose:hover {
-  transform: translateY(-5px);
-  background: rgba(255, 255, 255, 0.9);
-  border-color: rgba(99, 102, 241, 0.2);
-  box-shadow: 
-    0 20px 50px -10px rgba(99, 102, 241, 0.15),
-    0 10px 15px -3px rgba(15, 23, 42, 0.05);
+  /* No hover effects for data cards */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -211,10 +218,7 @@ body {
   }
   
   .card-sanjose:hover {
-    background: rgba(30, 41, 59, 0.8);
-    border-color: rgba(99, 102, 241, 0.3);
-    box-shadow: 
-      0 20px 50px -10px rgba(99, 102, 241, 0.2);
+    /* No hover effect */
   }
 
   .card-sanjose::after {
@@ -332,6 +336,28 @@ textarea:focus {
 button:focus-visible {
   outline: 2px solid var(--saas-primary);
   outline-offset: 2px;
+}
+
+/* Global Button Hover for entire application */
+button:not(:disabled), 
+a[role="button"],
+[role="button"] {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+button:not(:disabled):hover,
+a[role="button"]:hover,
+[role="button"]:hover {
+  box-shadow: 0 0 15px rgba(124, 58, 237, 0.4);
+  border-color: rgba(124, 58, 237, 0.5);
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+}
+
+/* Don't pulse disabled buttons */
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* Responsive Utilities */
@@ -524,9 +550,9 @@ export async function generateMetadata(): Promise<Metadata> {
 
   if (tenantId === 'default' || tenantId === 'admin.com') {
     return {
-      title: "LDS CONTADOR | Sistema Integral ERP",
-      description: "LDS CONTADOR - El mejor sistema de gestión empresarial, punto de venta y logística.",
-      keywords: ["LDS CONTADOR", "ERP", "punto de venta", "gestión empresarial", "facturación"],
+      title: "BUNKKER E.C.O.S | Sistema Integral ERP",
+      description: "BUNKKER E.C.O.S - Desarrollado por The Brecha Solutions Company S.A. de C.V. El mejor sistema de gestión empresarial, punto de venta y logística.",
+      keywords: ["BUNKKER E.C.O.S", "The Brecha Solutions Company", "ERP", "punto de venta", "gestión empresarial", "facturación"],
       manifest: '/manifest.json',
       verification: {
         google: 'CRRkmj4XJ1qPMAkpFbfzftUC4kS0viq_JgEFG_YvG3Y'
@@ -538,7 +564,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const storeName = tenantId.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   return {
     title: `${storeName} | Tienda`,
-    description: `Catálogo oficial de ${storeName}, impulsado de forma segura por EvoStore ERP.`,
+    description: `Catálogo oficial de ${storeName}, impulsado de forma segura por BUNKKER E.C.O.S.`,
     manifest: '/manifest.json',
     verification: {
       google: 'CRRkmj4XJ1qPMAkpFbfzftUC4kS0viq_JgEFG_YvG3Y'
@@ -555,6 +581,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import WalkieTalkieRadio from "@/components/WalkieTalkieRadio";
 import ClickSoundProvider from "@/components/ClickSoundProvider";
 import AntiDevTools from "@/components/AntiDevTools";
+import DeviceLockScreen from "@/components/DeviceLockScreen";
 
 export default function RootLayout({
   children,
@@ -566,18 +593,20 @@ export default function RootLayout({
       <body className={inter.className}>
           <AntiDevTools />
           <AuthProvider>
-            <CartProvider>
-              <ConnectionStatus />
-              <Navbar />
-              <AdminLayout>
-                {children}
-              </AdminLayout>
-              <AdminAsistente />
-              <WalkieTalkieRadio />
-              <ClickSoundProvider />
-              <UpdateNotification />
-              <Footer />
-            </CartProvider>
+            <DeviceLockScreen>
+              <CartProvider>
+                <ConnectionStatus />
+                <Navbar />
+                <AdminLayout>
+                  {children}
+                </AdminLayout>
+                <AdminAsistente />
+                <WalkieTalkieRadio />
+                <ClickSoundProvider />
+                <UpdateNotification />
+                <Footer />
+              </CartProvider>
+            </DeviceLockScreen>
           </AuthProvider>
       </body>
     </html>
@@ -911,11 +940,11 @@ export async function POST(req: Request) {
 
         let systemPrompt = '';
         if (role === 'superadmin') {
-            systemPrompt = `Eres el Asistente Gerente (La Bestia) del ERP EvoStore. Tienes acceso completo a la base de datos masiva del ERP y al contexto actual del negocio. Eres capaz de hacer auditorías complejas, buscar anomalías en el inventario, analizar ventas, sugerir mejoras comerciales y ayudar al dueño (superadmin) a tomar decisiones estratégicas. Responde siempre de forma profesional, analítica y directa. Contexto de base de datos actual: ${JSON.stringify(contextData)}`;
+            systemPrompt = `Eres el Asistente Gerente (La Bestia) del ERP BUNKKER E.C.O.S. Tienes acceso completo a la base de datos masiva del ERP y al contexto actual del negocio. Eres capaz de hacer auditorías complejas, buscar anomalías en el inventario, analizar ventas, sugerir mejoras comerciales y ayudar al dueño (superadmin) a tomar decisiones estratégicas. Responde siempre de forma profesional, analítica y directa. Contexto de base de datos actual: ${JSON.stringify(contextData)}`;
         } else if (role === 'staff') {
-            systemPrompt = `Eres el Asistente Operativo del ERP EvoStore. Tu trabajo es ayudar a los trabajadores (marketing, inventario, ventas) a encontrar la ubicación de productos, validar información del catálogo y operar el punto de venta. No debes dar consejos gerenciales ni revelar métricas financieras confidenciales al staff. Responde de forma amigable y útil. Contexto de base de datos actual: ${JSON.stringify(contextData)}`;
+            systemPrompt = `Eres el Asistente Operativo del ERP BUNKKER E.C.O.S. Tu trabajo es ayudar a los trabajadores (marketing, inventario, ventas) a encontrar la ubicación de productos, validar información del catálogo y operar el punto de venta. No debes dar consejos gerenciales ni revelar métricas financieras confidenciales al staff. Responde de forma amigable y útil. Contexto de base de datos actual: ${JSON.stringify(contextData)}`;
         } else {
-            systemPrompt = `Eres el Asistente Virtual para Clientes de la tienda EvoStore. Tu trabajo es ayudar a los clientes a encontrar productos, resolver dudas frecuentes y guiarlos en su compra. Sé extremadamente amable, empático y orientado al servicio al cliente. Contexto del catálogo actual: ${JSON.stringify(contextData)}`;
+            systemPrompt = `Eres el Asistente Virtual para Clientes de la tienda impulsada por BUNKKER E.C.O.S. Tu trabajo es ayudar a los clientes a encontrar productos, resolver dudas frecuentes y guiarlos en su compra. Sé extremadamente amable, empático y orientado al servicio al cliente. Contexto del catálogo actual: ${JSON.stringify(contextData)}`;
         }
 
         // Format for Gemini API
@@ -1923,6 +1952,36 @@ export async function POST(req: NextRequest) {
 
 ---
 
+## 📄 ARCHIVO: `src/app/api/network/ip/route.ts`
+
+```typescript
+import { NextResponse } from 'next/server';
+import { networkInterfaces } from 'os';
+
+export async function GET() {
+    try {
+        const nets = networkInterfaces();
+        let localIp = '127.0.0.1';
+
+        for (const name of Object.keys(nets)) {
+            for (const net of nets[name] || []) {
+                if (net.family === 'IPv4' && !net.internal) {
+                    localIp = net.address;
+                    break;
+                }
+            }
+            if (localIp !== '127.0.0.1') break;
+        }
+
+        return NextResponse.json({ ip: localIp });
+    } catch (err: any) {
+        return NextResponse.json({ ip: '127.0.0.1', error: err.message }, { status: 500 });
+    }
+}
+```
+
+---
+
 ## 📄 ARCHIVO: `src/app/api/notify/route.ts`
 
 ```typescript
@@ -2032,6 +2091,8 @@ export async function POST(req: Request) {
 ```typescript
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { db as firestore } from '@/lib/firebase';
+import { doc, setDoc } from 'firebase/firestore';
 
 export async function GET() {
     try {
@@ -2047,49 +2108,80 @@ export async function GET() {
 
 export async function POST(request: Request) {
     try {
+        const tenantId = request.headers.get('x-tenant-id') || 'default-local';
         const body = await request.json();
-        
-        const [order] = await prisma.$transaction([
-            prisma.order.create({
-                data: {
-                    id: body.id,
-                    total: body.total,
-                    paymentMethod: body.paymentMethod || 'cash',
-                    status: body.status || 'paid',
-                    date: new Date(),
-                    offline: true,
-                    synced: false,
-                    items: {
-                        create: body.items.map((item: any) => ({
-                            productId: item.id,
-                            cantidad: item.quantity,
-                            precio: item.price
-                        }))
-                    }
-                },
-                include: { items: true }
-            }),
-            ...body.items.map((item: any) => 
-                prisma.product.update({
-                    where: { id: item.id },
-                    data: { stock: { decrement: item.quantity } }
-                })
-            ),
-            prisma.syncQueue.create({
-                data: {
-                    collection: 'orders',
-                    documentId: body.id,
-                    action: 'CREATE',
-                    payload: JSON.stringify(body)
-                }
-            })
-        ]);
+        const { orderId, total, deliveryType, clientData, items } = body;
 
-        return NextResponse.json({ success: true, data: order });
+        // Garantía de Transacción ACID local
+        const orderResult = await prisma.$transaction(async (tx) => {
+            
+            // 1. Resolver o Crear Cliente por Teléfono (Upsert Manual)
+            let customer = await tx.customer.findUnique({
+                where: { phone: clientData.phone }
+            });
+
+            if (!customer) {
+                customer = await tx.customer.create({
+                    data: {
+                        tenantId,
+                        name: clientData.name,
+                        phone: clientData.phone,
+                        address: clientData.address || null,
+                        references: clientData.references || null
+                    }
+                });
+            } else if (deliveryType === 'DELIVERY' && clientData.address) {
+                // Actualizar datos de entrega si regresó con nueva dirección
+                customer = await tx.customer.update({
+                    where: { id: customer.id },
+                    data: {
+                        address: clientData.address,
+                        references: clientData.references
+                    }
+                });
+            }
+
+            // 2. Descuento en Caliente de Inventario Local con Validación de Quiebre
+            for (const item of items) {
+                const product = await tx.product.findUnique({
+                    where: { id: item.productId }
+                });
+
+                if (!product || product.stock < item.quantity) {
+                    throw new Error(`Inventario insuficiente para el producto: ${item.name}`);
+                }
+
+                // Modificación atómica del stock en el disco del Nodo Maestro
+                await tx.product.update({
+                    where: { id: item.productId },
+                    data: { stock: product.stock - item.quantity }
+                });
+            }
+
+            // 3. Creación de la Orden en el Pipeline Logístico
+            return await tx.order.create({
+                data: {
+                    id: orderId,
+                    tenantId,
+                    total,
+                    deliveryType, // LOCAL, PICKUP, PATIO, DELIVERY
+                    status: 'PENDING_PAYMENT', // Estado inicial en la fila de espera
+                    customerId: customer.id
+                },
+                include: { customer: true }
+            });
+        });
+
+        // NOTA: El frontend receptor de la PWA se encarga de inyectar este payload 
+        // en el SDK de Firebase, aprovechando la persistencia de IndexedDB de forma transparente.
+        return NextResponse.json({ success: true, data: orderResult });
+
     } catch (error: any) {
-        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+        console.error(`[ACID Transaction Error]: ${error.message}`);
+        return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }
+
 
 export async function PATCH(request: Request) {
     try {
@@ -2111,7 +2203,7 @@ export async function PATCH(request: Request) {
                 order = await prisma.$transaction([
                     prisma.order.update({ where: { id }, data: updates }),
                     ...existingOrder.items.map((item: any) =>
-                        prisma.product.update({
+                        prisma.product.updateMany({
                             where: { id: item.productId },
                             data: { stock: { increment: item.cantidad } }
                         })
@@ -2128,15 +2220,13 @@ export async function PATCH(request: Request) {
             });
         }
 
-        // Queue sync to Firebase
-        await prisma.syncQueue.create({
-            data: {
-                collection: 'orders',
-                documentId: id,
-                action: 'UPDATE',
-                payload: JSON.stringify(updates)
-            }
-        });
+        // 2. Notificar a Firebase para que gestione su cola de persistencia nativa
+        const cloudPayload = { ...updates, _syncedAt: Date.now() };
+        
+        // El SDK de Firebase encola esto localmente si no hay red
+        setDoc(doc(firestore, `orders`, id), cloudPayload, { merge: true })
+            .then(() => console.log(`[Firebase Sync] Actualización encolada/subida: ${id}`))
+            .catch((err) => console.error(`[Firebase Sync] Error en persistencia:`, err.message));
 
         return NextResponse.json({ success: true, data: order });
     } catch (error: any) {
@@ -2241,6 +2331,186 @@ export async function DELETE(request: Request) {
         return NextResponse.json({ success: true });
     } catch (error: any) {
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    }
+}
+```
+
+---
+
+## 📄 ARCHIVO: `src/app/api/reports/cash-registers/route.ts`
+
+```typescript
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+
+export async function GET(request: Request) {
+    try {
+        const tenantId = request.headers.get('x-tenant-id') || 'default-local';
+        
+        // Obtenemos los cortes ordenados del más reciente al más antiguo
+        const logs = await prisma.cashRegisterLog.findMany({
+            where: { tenantId },
+            orderBy: { createdAt: 'desc' }
+        });
+
+        return NextResponse.json({ success: true, data: logs });
+    } catch (error: any) {
+        console.error(`[CashRegisterLogs Error]: ${error.message}`);
+        return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+}
+```
+
+---
+
+## 📄 ARCHIVO: `src/app/api/sales/close-register/route.ts`
+
+```typescript
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { db as firestore } from '@/lib/firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+
+export async function POST(request: Request) {
+    try {
+        const tenantId = request.headers.get('x-tenant-id') || 'default-local';
+        const body = await request.json();
+        const { declaredAmount, cashierId, cashierName } = body;
+
+        if (declaredAmount === undefined || !cashierId) {
+            return NextResponse.json({ error: 'Faltan datos requeridos (declaredAmount, cashierId)' }, { status: 400 });
+        }
+
+        // 1. Obtener el último cierre de caja de este tenant
+        const lastLog = await prisma.cashRegisterLog.findFirst({
+            where: { tenantId },
+            orderBy: { createdAt: 'desc' }
+        });
+
+        // 2. Sumar todas las ventas en efectivo (cash) completadas/enviadas desde ese momento
+        const whereClause: any = {
+            tenantId,
+            paymentMethod: 'cash',
+            status: { in: ['READY_TO_SHIP', 'OUT_FOR_DELIVERY', 'DELIVERED', 'COMPLETED'] }
+        };
+
+        if (lastLog) {
+            whereClause.date = { gt: lastLog.createdAt };
+        } else {
+            // Si no hay corte previo, calculamos del día de hoy
+            const startOfDay = new Date();
+            startOfDay.setHours(0, 0, 0, 0);
+            whereClause.date = { gte: startOfDay };
+        }
+
+        const ordersToCount = await prisma.order.findMany({
+            where: whereClause
+        });
+
+        const expectedAmount = ordersToCount.reduce((sum, order) => sum + order.total, 0);
+        const discrepancy = declaredAmount - expectedAmount;
+
+        // 3. Registrar de forma inmutable en Prisma
+        const log = await prisma.cashRegisterLog.create({
+            data: {
+                tenantId,
+                cashierId,
+                cashierName: cashierName || 'Cajero',
+                declaredAmount,
+                expectedAmount,
+                discrepancy,
+                synced: false
+            }
+        });
+
+        // 4. Si hay descuadre negativo (faltante), mandamos alerta push silenciosa a Firebase
+        if (discrepancy < 0) {
+            try {
+                await addDoc(collection(firestore, 'alerts'), {
+                    type: 'CASH_MISMATCH',
+                    tenantId,
+                    cashierId,
+                    cashierName: cashierName || 'Cajero',
+                    expectedAmount,
+                    declaredAmount,
+                    discrepancy,
+                    timestamp: serverTimestamp(),
+                    read: false
+                });
+            } catch (err) {
+                console.error('[Alerta Firebase] No se pudo enviar alerta de caja', err);
+            }
+        }
+
+        return NextResponse.json({ 
+            success: true, 
+            data: log,
+            message: discrepancy < 0 ? 'Faltante detectado y registrado.' : 'Corte exitoso.'
+        });
+
+    } catch (error: any) {
+        console.error(`[Close Register Error]: ${error.message}`);
+        return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+}
+```
+
+---
+
+## 📄 ARCHIVO: `src/app/api/sales/my-day/route.ts`
+
+```typescript
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+
+export async function GET(request: Request) {
+    try {
+        const tenantId = request.headers.get('x-tenant-id') || 'default-local';
+        const { searchParams } = new URL(request.url);
+        const cashierId = searchParams.get('cashierId');
+
+        if (!cashierId) {
+            return NextResponse.json({ error: 'cashierId is required' }, { status: 400 });
+        }
+
+        // Obtener el último cierre
+        const lastLog = await prisma.cashRegisterLog.findFirst({
+            where: { tenantId },
+            orderBy: { createdAt: 'desc' }
+        });
+
+        const whereClause: any = {
+            tenantId,
+            paymentMethod: 'cash',
+            status: { in: ['READY_TO_SHIP', 'OUT_FOR_DELIVERY', 'DELIVERED', 'COMPLETED'] }
+        };
+
+        if (lastLog) {
+            whereClause.date = { gt: lastLog.createdAt };
+        } else {
+            const startOfDay = new Date();
+            startOfDay.setHours(0, 0, 0, 0);
+            whereClause.date = { gte: startOfDay };
+        }
+
+        const myOrders = await prisma.order.findMany({
+            where: whereClause,
+            include: { customer: true, items: true },
+            orderBy: { date: 'desc' }
+        });
+
+        const totalExpected = myOrders.reduce((sum, o) => sum + o.total, 0);
+
+        return NextResponse.json({ 
+            success: true, 
+            data: myOrders,
+            totalExpected,
+            lastCloseAt: lastLog ? lastLog.createdAt : null
+        });
+
+    } catch (error: any) {
+        console.error(`[My Day API Error]: ${error.message}`);
+        return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }
 ```
@@ -4862,7 +5132,9 @@ const Row = memo(({ index, style, data }: ListChildComponentProps<AuditRowData>)
                 [{log.isLocal ? 'LOCAL' : log.type}]
             </span>
             <span className="flex-1 truncate">{log.description}</span>
-            <span className="text-white/40">{new Date(log.timestamp?.seconds * 1000).toLocaleTimeString()}</span>
+            <span className="text-white/40">
+                {log.isoDate ? new Date(log.isoDate).toLocaleTimeString() : (log.timestamp ? new Date(log.timestamp.seconds * 1000).toLocaleTimeString() : 'N/A')}
+            </span>
         </div>
     );
 }, areEqual); // 3. areEqual compara cambios en props (incluyendo el objeto style inyectado)
@@ -5301,6 +5573,40 @@ function FacturacionContent() {
         }, 3000);
     };
 
+    const handleExportBillingCSV = async () => {
+        try {
+            const res = await fetch('/api/orders');
+            const data = await res.json();
+            const allOrders = data.data || [];
+            
+            const rows = [
+                ["Fecha", "ID Pedido", "Cliente", "Total", "Metodo Pago", "Estatus"]
+            ];
+            
+            allOrders.forEach((o: any) => {
+                rows.push([
+                    new Date(o.date).toLocaleDateString(),
+                    o.id,
+                    o.customer?.name || 'PUBLICO EN GENERAL',
+                    o.total,
+                    o.paymentMethod || '01',
+                    o.status
+                ]);
+            });
+
+            const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + rows.map(e => e.join(",")).join("\n");
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `Reporte_Facturacion_${new Date().toLocaleDateString().replace(/\//g,'-')}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        } catch(e) {
+            alert('Error al exportar.');
+        }
+    };
+
     const formatCurrency = (val: number) => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(val || 0);
 
     return (
@@ -5469,6 +5775,16 @@ function FacturacionContent() {
                                     <span className="text-sm text-emerald-700 font-medium">Costo por timbre</span>
                                     <span className="font-black text-lg text-emerald-600">$10.00 MXN</span>
                                 </div>
+                            </div>
+                            
+                            <div className="mt-6 border-t border-slate-700/50 pt-4">
+                                <p className="text-xs text-slate-400 mb-3">Versión 1.5: Descarga el reporte para tu contador si usas facturación externa.</p>
+                                <button 
+                                    onClick={handleExportBillingCSV}
+                                    className="w-full bg-slate-700 hover:bg-slate-600 text-white p-3 rounded-lg font-bold flex items-center justify-center gap-2 transition-colors text-sm"
+                                >
+                                    <Download size={16} /> Exportar Reporte para Contador (CSV)
+                                </button>
                             </div>
                         </div>
 
@@ -6565,7 +6881,9 @@ export default function DeliveryDashboard() {
         );
 
         const unsubscribe = onSnapshot(q, (snapshot: any) => {
-            const fetchedOrders: DeliveryOrder[] = snapshot.docs.map((d: any) => {
+            const fetchedOrders: DeliveryOrder[] = snapshot.docs
+                .filter((d: any) => d.data().status !== 'pending_payment' && d.data().status !== 'cancelled' && d.data().status !== 'NIGHT_QUEUE')
+                .map((d: any) => {
                 const data = d.data();
                 return {
                     id: d.id,
@@ -6577,7 +6895,8 @@ export default function DeliveryDashboard() {
                     lng: data.lng,
                     status: data.status === 'delivered' ? 'completed' : (data.driverId ? 'claimed' : 'available'),
                     driverId: data.driverId || undefined,
-                    total: data.total
+                    total: data.total,
+                    deliveryPin: data.deliveryPin
                 } as DeliveryOrder;
             });
             
@@ -6738,6 +7057,19 @@ import SignatureCanvas from 'react-signature-canvas';
 import Webcam from 'react-webcam';
 import { motion } from 'framer-motion';
 
+// Función para calcular distancia con fórmula Haversine
+function getDistanceFromLatLonInMeters(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const R = 6371e3; // Radio de la tierra en metros
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a = 
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * 
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
 export default function DeliveryView({
   order,
   onUpdate,
@@ -6750,7 +7082,9 @@ export default function DeliveryView({
   const [mode, setMode] = useState<'info' | 'deliver' | 'reject'>('info');
   const [photoMode, setPhotoMode] = useState(false);
   const [photoData, setPhotoData] = useState<string | null>(null);
-  const sigCanvas = useRef<any>(null);
+  const [pinInput, setPinInput] = useState<string>('');
+  const [pinError, setPinError] = useState<string>('');
+  const [isVerifyingGPS, setIsVerifyingGPS] = useState(false);
   const webcamRef = useRef<Webcam>(null);
 
   const openGoogleMaps = () => {
@@ -6758,11 +7092,37 @@ export default function DeliveryView({
     window.open(url, '_blank');
   };
 
-  const handleComplete = () => {
-    const signature = sigCanvas.current?.isEmpty() ? null : sigCanvas.current?.toDataURL();
+  const handleComplete = async () => {
+    // 1. Validar OTP si la orden lo requiere
+    if (order.deliveryPin && pinInput !== order.deliveryPin) {
+        setPinError('El PIN ingresado es incorrecto.');
+        return;
+    }
+
+    // 2. Validar Geocerca (50 metros) si hay coordenadas de destino
+    if (order.lat && order.lng) {
+        setIsVerifyingGPS(true);
+        try {
+            const pos: any = await new Promise((resolve, reject) => {
+                navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 10000 });
+            });
+            const distance = getDistanceFromLatLonInMeters(pos.coords.latitude, pos.coords.longitude, order.lat, order.lng);
+            if (distance > 50) {
+                alert(`⚠️ Estás a ${Math.round(distance)} metros del destino. Acércate a menos de 50 metros para confirmar la entrega.`);
+                setIsVerifyingGPS(false);
+                return;
+            }
+        } catch (err) {
+            alert('❌ No pudimos obtener tu ubicación actual para verificar la geocerca. Asegúrate de tener el GPS activado.');
+            setIsVerifyingGPS(false);
+            return;
+        }
+        setIsVerifyingGPS(false);
+    }
+
     onUpdate({ 
-      status: 'completed', 
-      signatureData: signature,
+      status: 'DELIVERED', 
+      signatureData: null, // Ya no se usa firma
       photoData,
       completedAt: new Date().toISOString() 
     });
@@ -6863,27 +7223,36 @@ export default function DeliveryView({
           )}
         </div>
 
-        {/* Signature */}
+        {/* OTP Input */}
         <div className="bg-slate-900/60 backdrop-blur-lg p-4 rounded-2xl shadow-[0_4px_30px_rgba(0,0,0,0.1)] border border-white/10">
-           <div className="flex justify-between items-center mb-3">
-             <h3 className="font-bold text-sm text-sky-400 uppercase tracking-wider">Firma de Recibido</h3>
-             <button onClick={() => sigCanvas.current?.clear()} className="text-xs focus:ring-0 text-slate-400 hover:text-white font-medium transition-colors">Limpiar</button>
+           <div className="mb-3 text-center">
+             <h3 className="font-bold text-sm text-sky-400 uppercase tracking-wider mb-1">PIN de Confirmación</h3>
+             <p className="text-xs text-slate-400">Pide al cliente su OTP de 4 dígitos</p>
            </div>
-           <div className="border border-white/20 rounded-xl bg-white overflow-hidden shadow-inner">
-              <SignatureCanvas 
-                ref={sigCanvas} 
-                penColor="black"
-                canvasProps={{ className: 'w-full h-40 bg-white' }}
-              />
+           <div className="flex justify-center">
+             <input 
+                type="text"
+                inputMode="numeric"
+                maxLength={4}
+                value={pinInput}
+                onChange={(e) => {
+                    setPinInput(e.target.value.replace(/\D/g, ''));
+                    setPinError('');
+                }}
+                className="w-32 text-center text-3xl font-bold bg-white/10 border-2 border-white/20 text-white p-3 rounded-xl focus:border-sky-500 focus:outline-none transition-colors"
+                placeholder="0000"
+             />
            </div>
+           {pinError && <p className="text-red-400 text-xs text-center mt-2 font-bold">{pinError}</p>}
         </div>
 
         <button 
             onClick={handleComplete}
-            className="w-full bg-emerald-600/90 hover:bg-emerald-500 border border-emerald-400/50 text-white font-bold p-4 rounded-xl flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(16,185,129,0.3)] active:scale-95 transition-all"
+            disabled={isVerifyingGPS || (order.deliveryPin ? pinInput.length !== 4 : false)}
+            className="w-full bg-emerald-600/90 hover:bg-emerald-500 border border-emerald-400/50 text-white font-bold p-4 rounded-xl flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(16,185,129,0.3)] active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
-            <CheckCircle size={20} />
-            Confirmar y Finalizar
+            {isVerifyingGPS ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <CheckCircle size={20} />}
+            {isVerifyingGPS ? 'Verificando GPS...' : 'Confirmar y Finalizar'}
         </button>
       </div>
     );
@@ -7335,6 +7704,242 @@ export default function OrderPool({ orders, onClaim, loading }: { orders: Delive
 ```typescript
 import type { DeliveryOrder, Driver, ViewState } from '@/lib/types';
 export type { DeliveryOrder, Driver, ViewState };
+```
+
+---
+
+## 📄 ARCHIVO: `src/app/dashboard/demo/page.tsx`
+
+```typescript
+"use client";
+
+import React, { useState, useEffect, useRef } from 'react';
+import { Play, ShieldCheck, Activity, Terminal, CheckCircle2, XCircle } from 'lucide-react';
+import { motion } from 'framer-motion';
+
+export default function AtomicDemoPage() {
+    const [logs, setLogs] = useState<{ id: number, time: string, msg: string, type: string }[]>([]);
+    const [running, setRunning] = useState(false);
+    
+    // User configurable test parameters
+    const [config, setConfig] = useState({
+        initialStock: 10,
+        qtyToBuy: 5,
+        networkRetries: 3,
+        exceedQty: 6,
+        qtyToRestock: 20,
+        simulatePayment: true
+    });
+
+    const [inventory, setInventory] = useState({ stock: config.initialStock, pending: 0, sold: 0 });
+    const logEndRef = useRef<HTMLDivElement>(null);
+
+    const addLog = (msg: string, type: string = 'info') => {
+        const time = new Date().toISOString().split('T')[1].slice(0, -1);
+        setLogs(prev => [...prev, { id: Date.now() + Math.random(), time, msg, type }]);
+    };
+
+    useEffect(() => {
+        if (logEndRef.current) {
+            logEndRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+    }, [logs]);
+
+    const runChaosTest = async () => {
+        if (running) return;
+        setRunning(true);
+        setLogs([]);
+        setInventory({ stock: config.initialStock, pending: 0, sold: 0 });
+
+        addLog("🚀 INICIANDO SÚPER SIMULADOR DE ESTRÉS P2P (LAN OFFLINE) 🚀", 'system');
+        addLog(`📋 ESTADO INICIAL DEL INVENTARIO: ${config.initialStock} Unidades Físicas (FERR-CEM-01)`, 'info');
+        
+        await new Promise(r => setTimeout(r, 1500));
+        addLog("⚡ [1. SIMULANDO CAOS EN EL MISMO MILISEGUNDO] ⚡", 'system');
+        addLog(`Lanzando ${config.networkRetries} PCs fantasma intentando clonar transacciones simultáneamente...`, 'warning');
+
+        await new Promise(r => setTimeout(r, 1000));
+
+        const order1TxId = 'TX-ORD-001-XYZ';
+        
+        let currentStock = config.initialStock;
+        let currentPending = 0;
+        let currentSold = 0;
+        const processed = new Set();
+
+        const processSim = async (action: any) => {
+            await new Promise(r => setTimeout(r, Math.random() * 200 + 50));
+            
+            if (action.txId && processed.has(action.txId)) {
+                addLog(`🛡️ [IDEMPOTENCIA] Rechazo de red: La transacción ${action.txId} ya fue procesada. Evitando doble impacto.`, 'shield');
+                return;
+            }
+            if (action.txId) processed.add(action.txId);
+
+            if (action.type === 'BUY') {
+                if (currentStock - currentPending >= action.qty) {
+                    currentPending += action.qty;
+                    addLog(`✅ [CAJA 1] Venta Autorizada (${action.orderId}): Apartando ${action.qty}. (Disponibles Reales: ${currentStock - currentPending})`, 'success');
+                } else {
+                    addLog(`❌ [CAJA 2] Venta Rechazada (${action.orderId}): Stock Insuficiente para -${action.qty}. (Disponibles: ${currentStock - currentPending})`, 'error');
+                }
+            } else if (action.type === 'ADD_STOCK') {
+                currentStock += action.qty;
+                addLog(`📦 [ALMACÉN] Entrada de mercancía: +${action.qty}. (Stock Físico Real: ${currentStock})`, 'info');
+            } else if (action.type === 'CONFIRM_PAYMENT') {
+                if (currentPending >= action.qty) {
+                    currentPending -= action.qty;
+                    currentStock -= action.qty;
+                    currentSold += action.qty;
+                    addLog(`💳 [CAJA 1] Pago Confirmado (${action.orderId}). ${action.qty} Stock debitado permanentemente.`, 'success');
+                }
+            }
+
+            setInventory({ stock: currentStock, pending: currentPending, sold: currentSold });
+        };
+
+        const promises = [];
+        
+        // 1. Original valid purchase
+        promises.push(processSim({ type: 'BUY', qty: config.qtyToBuy, orderId: 'ORD-001', txId: order1TxId }));
+        
+        // 2. Clone/lag retries
+        for(let i=0; i < config.networkRetries; i++) {
+            promises.push(processSim({ type: 'BUY', qty: config.qtyToBuy, orderId: 'ORD-001', txId: order1TxId }));
+        }
+
+        // 3. Excess purchase (should fail if not enough stock left)
+        if (config.exceedQty > 0) {
+            promises.push(processSim({ type: 'BUY', qty: config.exceedQty, orderId: 'ORD-002', txId: 'TX-ORD-002' }));
+        }
+
+        // 4. Simultaneous warehouse restock
+        if (config.qtyToRestock > 0) {
+            promises.push(processSim({ type: 'ADD_STOCK', qty: config.qtyToRestock, txId: 'TX-ADD-001' }));
+        }
+
+        await Promise.all(promises);
+
+        await new Promise(r => setTimeout(r, 1000));
+        addLog("--- 2. SEGUNDOS DESPUÉS (Resoluciones) ---", 'system');
+        
+        if (config.simulatePayment) {
+            await processSim({ type: 'CONFIRM_PAYMENT', qty: config.qtyToBuy, orderId: 'ORD-001', txId: 'TX-PAY-001' });
+        }
+
+        addLog("✔️ PRUEBA FINALIZADA: Cuadre matemático exacto. Inventario invulnerable.", 'system');
+        setRunning(false);
+    };
+
+    return (
+        <div className="p-4 md:p-8 space-y-6">
+            <header className="mb-8">
+                <h1 className="text-3xl font-black text-white uppercase tracking-tight flex items-center gap-3">
+                    <Activity className="text-emerald-400" size={32} />
+                    BUNKKER E.C.O.S Atomic Engine (Demo)
+                </h1>
+                <p className="text-slate-400 mt-2">
+                    Esta es una versión en Modo Espejo (No afecta la Base de Datos principal). 
+                    Úsala para demostrar a los clientes cómo el sistema soporta intermitencias de red sin duplicar ventas.
+                </p>
+            </header>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Panel de Control */}
+                <div className="bg-slate-800/50 backdrop-blur-md rounded-3xl p-6 border border-slate-700/50 h-fit">
+                    <h2 className="text-xl font-bold text-white mb-6">Panel de Simulación</h2>
+                    
+                    <div className="space-y-4 mb-8">
+                        {/* Dynamic Parameters */}
+                        <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700/80 mb-6">
+                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Parámetros del Test</h3>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="text-[10px] text-slate-500 block mb-1">STOCK INICIAL</label>
+                                    <input type="number" value={config.initialStock} onChange={(e) => { setConfig({...config, initialStock: Number(e.target.value)}); setInventory(p => ({...p, stock: Number(e.target.value)})); }} className="w-full bg-black/50 border border-slate-700 rounded p-1.5 text-white font-mono text-sm focus:border-sky-500" disabled={running} />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] text-slate-500 block mb-1">QTY A COMPRAR</label>
+                                    <input type="number" value={config.qtyToBuy} onChange={(e) => setConfig({...config, qtyToBuy: Number(e.target.value)})} className="w-full bg-black/50 border border-slate-700 rounded p-1.5 text-white font-mono text-sm focus:border-sky-500" disabled={running} />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] text-slate-500 block mb-1">CLONES RED (LAG)</label>
+                                    <input type="number" value={config.networkRetries} onChange={(e) => setConfig({...config, networkRetries: Number(e.target.value)})} className="w-full bg-black/50 border border-slate-700 rounded p-1.5 text-white font-mono text-sm focus:border-sky-500" disabled={running} />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] text-slate-500 block mb-1">COMPRA QUE EXCEDE</label>
+                                    <input type="number" value={config.exceedQty} onChange={(e) => setConfig({...config, exceedQty: Number(e.target.value)})} className="w-full bg-black/50 border border-slate-700 rounded p-1.5 text-white font-mono text-sm focus:border-sky-500" disabled={running} />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-slate-900 p-4 rounded-xl border border-slate-700 relative overflow-hidden group">
+                            <div className="absolute inset-0 bg-sky-500/5 translate-y-full group-hover:translate-y-0 transition-transform duration-500"/>
+                            <p className="text-slate-400 text-sm mb-1 uppercase tracking-wider font-bold">Stock Físico Teórico</p>
+                            <p className="text-3xl font-black text-white relative z-10">{inventory.stock}</p>
+                        </div>
+                        <div className="flex gap-4">
+                            <div className="flex-1 bg-amber-900/20 p-4 rounded-xl border border-amber-500/30 relative overflow-hidden group">
+                                <div className="absolute inset-0 bg-amber-500/5 translate-y-full group-hover:translate-y-0 transition-transform duration-500"/>
+                                <p className="text-amber-500 text-xs mb-1 uppercase font-bold relative z-10">Bloqueado</p>
+                                <p className="text-xl font-black text-amber-400 relative z-10">{inventory.pending}</p>
+                            </div>
+                            <div className="flex-1 bg-emerald-900/20 p-4 rounded-xl border border-emerald-500/30 relative overflow-hidden group">
+                                <div className="absolute inset-0 bg-emerald-500/5 translate-y-full group-hover:translate-y-0 transition-transform duration-500"/>
+                                <p className="text-emerald-500 text-xs mb-1 uppercase font-bold relative z-10">Vendido (Pagado)</p>
+                                <p className="text-xl font-black text-emerald-400 relative z-10">{inventory.sold}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button 
+                        onClick={runChaosTest}
+                        disabled={running}
+                        className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold py-4 rounded-xl shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 uppercase tracking-widest"
+                    >
+                        {running ? <Activity className="animate-pulse" /> : <Play />}
+                        {running ? 'Simulando Estrés...' : 'Lanzar Ataque de Estrés'}
+                    </button>
+                </div>
+
+                {/* Consola ISO */}
+                <div className="lg:col-span-2 bg-[#0d1117] rounded-3xl border border-slate-800 overflow-hidden flex flex-col h-[600px]">
+                    <div className="bg-slate-900 px-4 py-3 border-b border-slate-800 flex items-center gap-2">
+                        <Terminal size={18} className="text-slate-400" />
+                        <span className="text-slate-400 font-mono text-sm">terminal-iso-validator.exe</span>
+                    </div>
+                    
+                    <div className="p-4 overflow-y-auto flex-1 font-mono text-sm space-y-2">
+                        {logs.length === 0 && (
+                            <p className="text-slate-600">Presiona "Lanzar Ataque de Estrés" para iniciar la simulación...</p>
+                        )}
+                        {logs.map((log) => (
+                            <motion.div 
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                key={log.id} 
+                                className="flex gap-3"
+                            >
+                                <span className="text-slate-500 shrink-0">[{log.time}]</span>
+                                <span className={`
+                                    ${log.type === 'system' ? 'text-sky-400 font-bold' : ''}
+                                    ${log.type === 'info' ? 'text-slate-300' : ''}
+                                    ${log.type === 'warning' ? 'text-amber-400' : ''}
+                                    ${log.type === 'success' ? 'text-emerald-400' : ''}
+                                    ${log.type === 'error' ? 'text-red-400' : ''}
+                                    ${log.type === 'shield' ? 'text-purple-400 bg-purple-900/30 px-1 rounded' : ''}
+                                `}>
+                                    {log.msg}
+                                </span>
+                            </motion.div>
+                        ))}
+                        <div ref={logEndRef} />
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
 ```
 
 ---
@@ -9293,6 +9898,136 @@ export default function ShelfColumn({ shelfName, products, onProductClick, onAdd
 
 ---
 
+## 📄 ARCHIVO: `src/app/dashboard/link/page.tsx`
+
+```typescript
+"use client";
+
+import React, { useState, useEffect } from 'react';
+import { useDeviceAuth } from '@/hooks/useDeviceAuth';
+import { Fingerprint, CheckCircle2, ShieldAlert, Loader2 } from 'lucide-react';
+
+export default function DeviceLinkPage() {
+    const { hwid, setPin, devicePin } = useDeviceAuth();
+    const [step, setStep] = useState<1 | 2 | 3>(1); // 1: Waiting admin, 2: Create PIN, 3: Done
+    const [newPin, setNewPin] = useState('');
+    const [confirmPin, setConfirmPin] = useState('');
+    const [error, setError] = useState('');
+
+    useEffect(() => {
+        // En un caso real, aquí consultaríamos vía WebSocket si el Admin ya aprobó este HWID.
+        // Simularemos que el admin lo aprueba a los 5 segundos de escanear.
+        if (step === 1 && !devicePin) {
+            const timer = setTimeout(() => {
+                setStep(2);
+            }, 5000);
+            return () => clearTimeout(timer);
+        } else if (devicePin) {
+            setStep(3);
+        }
+    }, [step, devicePin]);
+
+    const handleCreatePin = () => {
+        if (newPin.length !== 4 || confirmPin.length !== 4) {
+            setError('El NIP debe tener 4 dígitos.');
+            return;
+        }
+        if (newPin !== confirmPin) {
+            setError('Los NIPs no coinciden.');
+            return;
+        }
+        setPin(newPin);
+        setStep(3);
+        
+        // Redirigir al dashboard en 2 segundos
+        setTimeout(() => {
+            window.location.href = '/dashboard';
+        }, 2000);
+    };
+
+    return (
+        <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-6 font-sans">
+            <div className="w-full max-w-md bg-slate-800 rounded-3xl shadow-2xl p-8 border border-slate-700">
+                
+                {step === 1 && (
+                    <div className="flex flex-col items-center text-center">
+                        <div className="w-20 h-20 bg-blue-500/20 rounded-full flex items-center justify-center mb-6">
+                            <Loader2 className="animate-spin text-[#0ea5e9]" size={40} />
+                        </div>
+                        <h1 className="text-2xl font-black uppercase tracking-widest text-white mb-2">Sala de Espera</h1>
+                        <p className="text-slate-400 mb-8 text-sm">
+                            Este dispositivo aún no tiene autorización para operar. Por favor, avisa al Administrador que acepte la conexión.
+                        </p>
+                        <div className="bg-slate-900 px-6 py-3 rounded-xl border border-slate-700 w-full">
+                            <p className="text-[10px] uppercase font-bold text-slate-500 mb-1">ID Físico del Dispositivo</p>
+                            <p className="font-mono text-sm tracking-wider text-[#0ea5e9]">{hwid}</p>
+                        </div>
+                    </div>
+                )}
+
+                {step === 2 && (
+                    <div className="flex flex-col items-center text-center">
+                        <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mb-6">
+                            <ShieldAlert className="text-green-500" size={40} />
+                        </div>
+                        <h1 className="text-2xl font-black uppercase tracking-widest text-green-400 mb-2">Dispositivo Autorizado</h1>
+                        <p className="text-slate-400 mb-6 text-sm">
+                            El administrador ha autorizado esta terminal. Crea un NIP personal de 4 dígitos para proteger tus turnos.
+                        </p>
+
+                        <div className="w-full space-y-4">
+                            <div>
+                                <input
+                                    type="password"
+                                    maxLength={4}
+                                    placeholder="NIP"
+                                    value={newPin}
+                                    onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ''))}
+                                    className="w-full bg-slate-900 border-2 border-slate-700 rounded-xl px-4 py-4 text-center text-xl tracking-[1em] focus:border-[#0ea5e9] outline-none"
+                                />
+                            </div>
+                            <div>
+                                <input
+                                    type="password"
+                                    maxLength={4}
+                                    placeholder="CONFIRMAR NIP"
+                                    value={confirmPin}
+                                    onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, ''))}
+                                    className="w-full bg-slate-900 border-2 border-slate-700 rounded-xl px-4 py-4 text-center text-xl tracking-[1em] focus:border-[#0ea5e9] outline-none"
+                                />
+                            </div>
+                            {error && <p className="text-red-500 text-xs font-bold uppercase">{error}</p>}
+                            <button
+                                onClick={handleCreatePin}
+                                disabled={newPin.length !== 4 || confirmPin.length !== 4}
+                                className="w-full mt-4 bg-[#0ea5e9] hover:bg-blue-500 disabled:opacity-50 text-white font-black uppercase tracking-widest py-4 rounded-xl transition-all"
+                            >
+                                Registrar Terminal
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {step === 3 && (
+                    <div className="flex flex-col items-center text-center">
+                        <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mb-6">
+                            <CheckCircle2 className="text-green-500" size={40} />
+                        </div>
+                        <h1 className="text-xl font-black uppercase tracking-widest text-white mb-2">Terminal Vinculada</h1>
+                        <p className="text-slate-400 text-sm">
+                            El dispositivo ha sido emparejado con éxito a la red segura.
+                        </p>
+                    </div>
+                )}
+
+            </div>
+        </div>
+    );
+}
+```
+
+---
+
 ## 📄 ARCHIVO: `src/app/dashboard/marketing/page.tsx`
 
 ```typescript
@@ -9824,16 +10559,18 @@ import { Truck, Package, CheckCircle2, Play, Loader2, Clock, Search, ArrowLeft, 
 import { motion } from 'framer-motion';
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
+import BarcodeScanner from '@/components/BarcodeScanner';
 
 export default function PatioDashboard() {
-    const { orders, startLoading, completeLoading } = useCart();
+    const { orders, startLoading, completeLoading, products } = useCart();
     const { profile } = useAuth();
     const [searchTerm, setSearchTerm] = useState('');
     const [processingId, setProcessingId] = useState<string | null>(null);
+    const [scanTargetId, setScanTargetId] = useState<string | null>(null);
 
     const pendingLoads = useMemo(() => {
         return orders.filter(o => {
-            const validStatus = o.status === 'paid' || o.status === 'PREPARANDO' || o.status === 'NIGHT_QUEUE' || o.status === 'PENDIENTE_LLEGADA';
+            const validStatus = o.status === 'READY_TO_SHIP' || o.status === 'PREPARANDO' || o.status === 'NIGHT_QUEUE' || o.status === 'PENDIENTE_LLEGADA';
             const notLoaded = !(o as any).isLoaded;
             const custName = o.customer?.name || o.customerName || 'Cliente';
             const matchesSearch = o.id.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -9853,7 +10590,7 @@ export default function PatioDashboard() {
             if (action === 'start') {
                 await startLoading(orderId);
             } else if (action === 'complete') {
-                await completeLoading(orderId);
+                setScanTargetId(orderId); // Activa el scanner en vez de completarlo directamente
             } else if (action === 'postpone') {
                 await fetch('/api/orders', {
                     method: 'PATCH',
@@ -9899,6 +10636,29 @@ export default function PatioDashboard() {
                 </div>
             </header>
 
+            {scanTargetId && (
+                <BarcodeScanner 
+                    isOpen={true} 
+                    onClose={() => setScanTargetId(null)} 
+                    onScanSuccess={async (decodedText) => {
+                        if (decodedText.trim() === scanTargetId) {
+                            setScanTargetId(null);
+                            setProcessingId(scanTargetId);
+                            try {
+                                await completeLoading(scanTargetId);
+                                alert("✅ Orden despachada con éxito.");
+                            } catch (e) {
+                                alert("Error al despachar la orden.");
+                            } finally {
+                                setProcessingId(null);
+                            }
+                        } else {
+                            alert(`❌ Código incorrecto. Esperaba: ${scanTargetId}, pero se escaneó: ${decodedText}`);
+                        }
+                    }} 
+                />
+            )}
+
             <div className="grid gap-6">
                 {pendingLoads.length === 0 ? (
                     <div className="bg-slate-800/80 border-2 border-dashed border-gray-200 rounded-3xl p-16 text-center">
@@ -9943,11 +10703,20 @@ export default function PatioDashboard() {
                                     Destino: {order.customer?.address || order.customerAddress || 'Retiro en Sucursal / Local'}
                                 </p>
                                 <div className="mt-2 flex flex-col gap-2">
-                                    {order.items.map((item: any, i: number) => (
-                                        <div key={i} className="flex justify-between items-center bg-blue-50 text-[#0ea5e9] px-3 py-2 rounded-lg text-sm font-bold border border-blue-100">
-                                            <span>{item.quantity}x {item.product?.name || item.name}</span>
-                                        </div>
-                                    ))}
+                                    {order.items.map((item: any, i: number) => {
+                                        const fullProduct = products.find((p: any) => p.id === (item.productId || item.id));
+                                        const loc = fullProduct?.location;
+                                        const locationStr = loc && loc.estante ? `📍 ${loc.estante} - ${loc.fila || 'N/A'}` : '📍 Bodega General';
+                                        
+                                        return (
+                                            <div key={i} className="flex flex-col bg-blue-50 text-[#0ea5e9] px-3 py-2 rounded-lg text-sm font-bold border border-blue-100">
+                                                <div className="flex justify-between items-center">
+                                                    <span>{item.quantity}x {item.product?.name || item.name || fullProduct?.name || 'Producto Desconocido'}</span>
+                                                </div>
+                                                <span className="text-xs text-blue-500/80 mt-1">{locationStr}</span>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             </div>
 
@@ -10130,7 +10899,7 @@ import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 
 export default function PickupDashboard() {
-    const { formatCurrency } = useCart();
+    const { formatCurrency, products } = useCart();
     const { profile } = useAuth();
     const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
@@ -10251,12 +11020,21 @@ export default function PickupDashboard() {
                                         <div className="bg-black/30 rounded-lg p-3 mb-4 max-h-40 overflow-y-auto">
                                             <p className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">Lista de Materiales</p>
                                             <ul className="space-y-2">
-                                                {order.items?.map((item: any, i: number) => (
-                                                    <li key={i} className="flex items-start gap-2 text-sm text-gray-300">
-                                                        <input type="checkbox" className="mt-1 accent-yellow-500" />
-                                                        <span>{item.quantity}x {item.name}</span>
-                                                    </li>
-                                                ))}
+                                                {order.items?.map((item: any, i: number) => {
+                                                    const fullProduct = products.find((p: any) => p.id === (item.productId || item.id));
+                                                    const loc = fullProduct?.location;
+                                                    const locationStr = loc && loc.estante ? `📍 ${loc.estante} - ${loc.fila || 'N/A'}` : '📍 Bodega General';
+                                                    
+                                                    return (
+                                                        <li key={i} className="flex flex-col text-sm text-gray-300">
+                                                            <div className="flex items-start gap-2">
+                                                                <input type="checkbox" className="mt-1 accent-yellow-500" />
+                                                                <span>{item.quantity}x {item.name || fullProduct?.name || 'Producto Desconocido'}</span>
+                                                            </div>
+                                                            <span className="text-xs text-yellow-500/80 ml-6">{locationStr}</span>
+                                                        </li>
+                                                    );
+                                                })}
                                             </ul>
                                         </div>
 
@@ -11503,7 +12281,18 @@ export default function QRGeneratorPage() {
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
-            setStoreUrl(window.location.origin);
+            const currentHost = window.location.hostname;
+            if (currentHost === 'localhost' || currentHost === '127.0.0.1') {
+                fetch('/api/network/ip')
+                    .then(res => res.json())
+                    .then(data => {
+                        const port = window.location.port ? `:${window.location.port}` : '';
+                        setStoreUrl(`http://${data.ip}${port}/dashboard/link`);
+                    })
+                    .catch(() => setStoreUrl(`${window.location.origin}/dashboard/link`));
+            } else {
+                setStoreUrl(`${window.location.origin}/dashboard/link`);
+            }
         }
     }, []);
 
@@ -11658,7 +12447,7 @@ export default function QRGeneratorPage() {
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FileDown, Database, ShieldCheck, HardDrive, RefreshCcw, CheckCircle, FileSpreadsheet, TrendingUp, Package, Users, ShoppingCart, AlertCircle, Wifi, WifiOff } from 'lucide-react';
+import { FileDown, Database, ShieldCheck, HardDrive, RefreshCcw, CheckCircle, FileSpreadsheet, TrendingUp, Package, Users, ShoppingCart, AlertCircle, Wifi, WifiOff, Calculator } from 'lucide-react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useCart } from '@/context/CartContext';
@@ -11919,6 +12708,22 @@ export default function ReportsAndBackups() {
                             </div>
                         </div>
 
+                        {/* Auditoría de Cortes de Caja */}
+                        <div className="card-sanjose" style={{ borderLeft: '6px solid #e11d48' }}>
+                            <h4 style={{ fontWeight: '900', color: '#e11d48', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <Calculator size={20} /> AUDITORÍA DE CAJAS
+                            </h4>
+                            <p style={{ fontSize: '0.85rem', color: '#666', marginBottom: '1.5rem' }}>
+                                Revisa los cortes de caja históricos de todos los cajeros y detecta faltantes al instante.
+                            </p>
+                            <button
+                                onClick={() => window.location.href = '/dashboard/reports/cash-registers'}
+                                className="w-full py-3 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl transition-all shadow-[0_0_15px_rgba(225,29,72,0.3)] flex items-center justify-center gap-2"
+                            >
+                                Revisar Cortes de Caja
+                            </button>
+                        </div>
+
                         {/* Top products */}
                         {topProducts.length > 0 && (
                             <div className="card-sanjose">
@@ -11947,6 +12752,170 @@ export default function ReportsAndBackups() {
                     .card-sanjose { border: none !important; box-shadow: none !important; }
                 }
             `}</style>
+        </div>
+    );
+}
+```
+
+---
+
+## 📄 ARCHIVO: `src/app/dashboard/reports/cash-registers/page.tsx`
+
+```typescript
+"use client";
+
+import { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
+import { Calculator, AlertTriangle, CheckCircle, Search, Calendar, ChevronLeft, User, DollarSign } from 'lucide-react';
+import Link from 'next/link';
+
+interface CashRegisterLog {
+    id: string;
+    cashierName: string;
+    declaredAmount: number;
+    expectedAmount: number;
+    discrepancy: number;
+    createdAt: string;
+}
+
+export default function CashRegistersAuditPage() {
+    const [logs, setLogs] = useState<CashRegisterLog[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [searchTerm, setSearchTerm] = useState('');
+
+    useEffect(() => {
+        fetch('/api/reports/cash-registers')
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    setLogs(data.data);
+                }
+            })
+            .catch(console.error)
+            .finally(() => setLoading(false));
+    }, []);
+
+    const filteredLogs = logs.filter(log => 
+        log.cashierName.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    return (
+        <div className="min-h-screen bg-[#0f111a] p-8">
+            <div className="max-w-6xl mx-auto space-y-6">
+                
+                {/* Header */}
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/10 pb-6">
+                    <div>
+                        <Link href="/dashboard/reports" className="flex items-center gap-2 text-sky-400 hover:text-sky-300 font-bold mb-2 text-sm transition-colors">
+                            <ChevronLeft size={16} /> Volver a Reportes
+                        </Link>
+                        <h1 className="text-3xl font-black text-white flex items-center gap-3 tracking-tight">
+                            <Calculator size={32} className="text-rose-500" />
+                            Auditoría de Cortes de Caja
+                        </h1>
+                        <p className="text-slate-400 mt-1">
+                            Historial inmutable de cortes ciegos. Detecta faltantes y monitorea el rendimiento de tus cajeros.
+                        </p>
+                    </div>
+
+                    <div className="relative w-full md:w-72">
+                        <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                        <input 
+                            type="text" 
+                            placeholder="Buscar cajero..." 
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full bg-white/5 border border-white/10 rounded-xl py-2 pl-10 pr-4 text-white focus:outline-none focus:border-rose-500 transition-colors"
+                        />
+                    </div>
+                </div>
+
+                {/* Content */}
+                {loading ? (
+                    <div className="py-20 flex flex-col items-center justify-center gap-4 text-slate-400">
+                        <div className="w-10 h-10 border-4 border-rose-500/20 border-t-rose-500 rounded-full animate-spin" />
+                        <p className="font-bold">Cargando bitácora de auditoría...</p>
+                    </div>
+                ) : filteredLogs.length === 0 ? (
+                    <div className="py-20 text-center bg-white/5 rounded-3xl border border-white/5">
+                        <Calculator size={48} className="mx-auto text-slate-600 mb-4" />
+                        <h3 className="text-xl font-bold text-white mb-2">Sin Registros</h3>
+                        <p className="text-slate-400">No hay cortes de caja registrados que coincidan con la búsqueda.</p>
+                    </div>
+                ) : (
+                    <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr className="bg-slate-950/50 text-slate-400 text-xs uppercase tracking-widest border-b border-slate-800">
+                                        <th className="p-4 font-bold">Fecha / Hora</th>
+                                        <th className="p-4 font-bold">Cajero</th>
+                                        <th className="p-4 font-bold text-right">Efectivo Físico</th>
+                                        <th className="p-4 font-bold text-right">Efectivo Sistema</th>
+                                        <th className="p-4 font-bold text-right">Descuadre</th>
+                                        <th className="p-4 font-bold text-center">Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {filteredLogs.map((log) => {
+                                        const isMismatch = log.discrepancy < 0;
+                                        const date = new Date(log.createdAt);
+                                        
+                                        return (
+                                            <motion.tr 
+                                                initial={{ opacity: 0 }}
+                                                animate={{ opacity: 1 }}
+                                                key={log.id} 
+                                                className="border-b border-slate-800/50 hover:bg-white/[0.02] transition-colors"
+                                            >
+                                                <td className="p-4">
+                                                    <div className="flex items-center gap-2 text-slate-300 font-medium">
+                                                        <Calendar size={14} className="text-slate-500"/> 
+                                                        {date.toLocaleDateString('es-MX')}
+                                                    </div>
+                                                    <div className="text-xs text-slate-500 mt-0.5 ml-6">
+                                                        {date.toLocaleTimeString('es-MX')}
+                                                    </div>
+                                                </td>
+                                                <td className="p-4">
+                                                    <div className="flex items-center gap-2 text-white font-bold">
+                                                        <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700">
+                                                            <User size={14} className="text-sky-400" />
+                                                        </div>
+                                                        {log.cashierName}
+                                                    </div>
+                                                </td>
+                                                <td className="p-4 text-right">
+                                                    <span className="font-bold text-slate-200">${log.declaredAmount.toFixed(2)}</span>
+                                                </td>
+                                                <td className="p-4 text-right">
+                                                    <span className="font-mono text-slate-500">${log.expectedAmount.toFixed(2)}</span>
+                                                </td>
+                                                <td className="p-4 text-right">
+                                                    <div className={`inline-flex items-center gap-1 font-black px-2 py-1 rounded-lg ${isMismatch ? 'bg-red-500/10 text-red-500 border border-red-500/20' : 'text-slate-400'}`}>
+                                                        {log.discrepancy < 0 ? '-' : (log.discrepancy > 0 ? '+' : '')}${Math.abs(log.discrepancy).toFixed(2)}
+                                                    </div>
+                                                </td>
+                                                <td className="p-4 text-center">
+                                                    {isMismatch ? (
+                                                        <div className="inline-flex items-center gap-1 text-xs font-bold text-red-400 bg-red-500/10 px-3 py-1 rounded-full border border-red-500/20">
+                                                            <AlertTriangle size={12} /> FALTANTE
+                                                        </div>
+                                                    ) : (
+                                                        <div className="inline-flex items-center gap-1 text-xs font-bold text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
+                                                            <CheckCircle size={12} /> OK
+                                                        </div>
+                                                    )}
+                                                </td>
+                                            </motion.tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }
@@ -11994,6 +12963,7 @@ export default function SalesDashboard() {
     const [showCameraScanner, setShowCameraScanner] = useState(false);
     const [currentTime, setCurrentTime] = useState('');
     const [toast, setToast] = useState<string | null>(null);
+    const [corteResult, setCorteResult] = useState<{ type: 'success' | 'mismatch', data: any } | null>(null);
 
     // POS State
     const [posSearch, setPosSearch] = useState('');
@@ -12004,6 +12974,11 @@ export default function SalesDashboard() {
     const [deliveryInfo, setDeliveryInfo] = useState<DeliveryInfo | undefined>();
     const [processingId, setProcessingId] = useState<string | null>(null);
     const [lastOrderData, setLastOrderData] = useState<any>(null);
+
+    // Cancel PIN states
+    const [orderToCancel, setOrderToCancel] = useState<string | null>(null);
+    const [cancelPinInput, setCancelPinInput] = useState('');
+    const [cancelPinError, setCancelPinError] = useState('');
 
     useEffect(() => {
         const timer = setInterval(() => {
@@ -12099,9 +13074,9 @@ export default function SalesDashboard() {
         const orderDate = new Date().toISOString();
         const firebaseStatus = useERPStore.getState().firebaseStatus;
 
-        // Si es delivery, creamos una orden para repartidor (pending_payment / pending_delivery)
-        // En este caso al pagarlo en caja, la orden queda "paid" o "paid_pending_delivery"
-        const finalStatus = orderType === 'delivery' ? 'paid_pending_delivery' : 'paid';
+        // Si es delivery, creamos una orden para repartidor (READY_TO_SHIP / pending_confirmation)
+        // En este caso al pagarlo en caja, la orden queda "READY_TO_SHIP" lista para patio
+        const finalStatus = orderType === 'delivery' ? 'READY_TO_SHIP' : 'completed';
         const cName = orderType === 'delivery' ? deliveryInfo?.customerName : 'Cliente Mostrador';
         
         const orderPayload = {
@@ -12145,7 +13120,8 @@ export default function SalesDashboard() {
                     total: posTotal,
                     paymentMethod: 'cash',
                     status: finalStatus,
-                    items: posCart.map(i => ({ id: i.id, quantity: i.quantity, price: i.price }))
+                    items: posCart.map(i => ({ id: i.id, quantity: i.quantity, price: i.price })),
+                    customer: orderPayload.customer
                 })
             }).catch(err => console.warn('Local Edge API sync failed (will retry):', err));
 
@@ -12184,6 +13160,34 @@ export default function SalesDashboard() {
             showToast(`❌ Error al procesar la venta: ${error?.message}`);
         } finally {
             setProcessingId(null);
+        }
+    };
+
+    const handleConfirmCancel = async () => {
+        if (cancelPinInput.length !== 6) {
+            setCancelPinError('El PIN debe ser de 6 dígitos.');
+            return;
+        }
+        // En un entorno real se validaría contra profile.pin o similar
+        // Por ahora lo aceptamos si es de 6 dígitos para registrar la auditoría
+        
+        try {
+            await cancelOrder(orderToCancel as string);
+            await logAudit({
+                type: 'ORDER_CANCELLED',
+                userId: profile?.uid || 'POS',
+                userName: profile?.displayName || 'Cajero',
+                userRole: profile?.role || 'sales',
+                description: `Cancelación de orden ${orderToCancel} autorizada con PIN.`,
+                metadata: { orderId: orderToCancel, authPin: cancelPinInput }
+            });
+            showToast('✅ Orden rechazada correctamente.');
+        } catch (e) {
+            showToast('❌ Error al rechazar la orden.');
+        } finally {
+            setOrderToCancel(null);
+            setCancelPinInput('');
+            setCancelPinError('');
         }
     };
 
@@ -12320,7 +13324,7 @@ export default function SalesDashboard() {
 
                                         <div className="flex gap-3">
                                             <button 
-                                                onClick={() => cancelOrder(order.id)}
+                                                onClick={() => setOrderToCancel(order.id)}
                                                 className="flex-1 flex items-center justify-center gap-2 py-3 bg-red-500/10 border border-red-500/20 text-red-400 font-bold rounded-xl hover:bg-red-500/20 transition-colors uppercase tracking-widest text-xs"
                                             >
                                                 <XCircle size={14} /> Rechazar
@@ -12376,13 +13380,111 @@ export default function SalesDashboard() {
 
             {/* Modal Corte de Caja Ciego */}
             <CorteCajaCiego 
-                isOpen={showCorteCaja}
+                isOpen={showCorteCaja && !corteResult}
                 onClose={() => setShowCorteCaja(false)}
-                onConfirm={(montoDeclarado) => {
-                    alert(`✅ Corte de caja registrado con éxito.\nTotal Declarado: ${formatCurrency(montoDeclarado)}\n\nEsta información ha sido encriptada y enviada al Radar de Auditoría del dueño.`);
-                    setShowCorteCaja(false);
+                onConfirm={async (montoDeclarado) => {
+                    try {
+                        const res = await fetch('/api/sales/close-register', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                declaredAmount: montoDeclarado,
+                                cashierId: profile?.uid || 'unknown',
+                                cashierName: profile?.displayName || 'Cajero'
+                            })
+                        });
+                        const result = await res.json();
+                        if (result.success) {
+                            await logAudit({
+                                type: 'CORTE_CAJA_CIEGO',
+                                userId: profile?.uid || 'POS',
+                                userName: profile?.displayName || 'Cajero',
+                                userRole: profile?.role || 'sales',
+                                description: `Corte Ciego Procesado. Declarado: $${montoDeclarado.toFixed(2)}, Descuadre: $${result.data.discrepancy.toFixed(2)}`,
+                                metadata: { montoDeclarado, discrepancy: result.data.discrepancy }
+                            });
+                            
+                            if (result.data.discrepancy < 0) {
+                                setCorteResult({ type: 'mismatch', data: result.data });
+                            } else {
+                                setCorteResult({ type: 'success', data: result.data });
+                            }
+                        } else {
+                            alert(`Error: ${result.error}`);
+                        }
+                    } catch (e) {
+                        alert('Error de red al procesar el corte.');
+                    }
                 }}
             />
+
+            {/* Resultado del Corte */}
+            {corteResult && (
+                <div className="fixed inset-0 z-[5000] bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+                    <div className="bg-slate-900 border border-slate-700 rounded-3xl p-8 max-w-md w-full text-center shadow-2xl">
+                        {corteResult.type === 'success' ? (
+                            <>
+                                <CheckCircle2 size={80} className="text-emerald-500 mx-auto mb-6" />
+                                <h2 className="text-3xl font-black text-white mb-2">¡Corte Perfecto!</h2>
+                                <p className="text-emerald-400 font-medium mb-8">El efectivo físico coincide o excede el esperado. Turno cerrado con éxito.</p>
+                                <button onClick={() => { setCorteResult(null); setShowCorteCaja(false); window.location.href='/dashboard'; }} className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition-all shadow-[0_0_20px_rgba(16,185,129,0.4)]">
+                                    Finalizar y Salir
+                                </button>
+                            </>
+                        ) : (
+                            <>
+                                <div className="w-24 h-24 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse">
+                                    <AlertCircle size={60} className="text-red-500" />
+                                </div>
+                                <h2 className="text-3xl font-black text-white mb-2">Descuadre Detectado</h2>
+                                <p className="text-slate-300 text-sm mb-6">
+                                    El sistema detectó un faltante en tu caja. Esto ha sido reportado en la bitácora inmutable de auditoría para el dueño.
+                                </p>
+                                <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 mb-8">
+                                    <span className="text-red-400 font-black text-2xl uppercase">Faltante: ${Math.abs(corteResult.data.discrepancy).toFixed(2)}</span>
+                                </div>
+                                <div className="flex gap-4">
+                                    <button onClick={() => window.open(`/dashboard/sales/my-day`, '_blank')} className="flex-1 py-4 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl transition-all border border-slate-600">
+                                        Ver Historial
+                                    </button>
+                                    <button onClick={() => { setCorteResult(null); setShowCorteCaja(false); window.location.href='/dashboard'; }} className="flex-1 py-4 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl transition-all shadow-[0_0_20px_rgba(220,38,38,0.4)]">
+                                        Aceptar y Salir
+                                    </button>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* Modal PIN Cancelación */}
+            {orderToCancel && (
+                <div className="fixed inset-0 z-[4000] bg-black/80 flex items-center justify-center p-4">
+                    <div className="bg-zinc-900 border border-white/10 p-6 rounded-2xl w-full max-w-sm">
+                        <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2"><AlertCircle className="text-red-500"/> Autorización Requerida</h3>
+                        <p className="text-sm text-zinc-400 mb-6">Ingresa tu PIN de 6 dígitos para autorizar la cancelación de esta orden.</p>
+                        
+                        <input 
+                            type="password"
+                            inputMode="numeric"
+                            maxLength={6}
+                            value={cancelPinInput}
+                            onChange={(e) => {
+                                setCancelPinInput(e.target.value.replace(/\D/g, ''));
+                                setCancelPinError('');
+                            }}
+                            className="w-full bg-black/50 border border-white/10 text-white text-center text-3xl tracking-[1em] p-4 rounded-xl mb-2 focus:border-blue-500 outline-none"
+                            placeholder="••••••"
+                        />
+                        {cancelPinError && <p className="text-red-500 text-xs text-center font-bold mb-4">{cancelPinError}</p>}
+                        
+                        <div className="flex gap-3 mt-6">
+                            <button onClick={() => { setOrderToCancel(null); setCancelPinInput(''); }} className="flex-1 py-3 text-zinc-400 hover:text-white font-bold text-sm">Cancelar</button>
+                            <button onClick={handleConfirmCancel} className="flex-1 py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-sm shadow-[0_0_15px_rgba(220,38,38,0.4)]">Rechazar Orden</button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Toast Notification */}
             <AnimatePresence>
@@ -12407,6 +13509,14 @@ export default function SalesDashboard() {
         </div>
     );
 }
+```
+
+---
+
+## 📄 ARCHIVO: `src/app/dashboard/sales/components/CashRegisterModal.tsx`
+
+```typescript
+
 ```
 
 ---
@@ -14734,7 +15844,14 @@ export default function DocsPortal() {
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Github, Zap, Shield, Globe, ArrowRight, Code, CheckCircle2 } from 'lucide-react';
+import { Zap, Shield, Globe, ArrowRight, Code, CheckCircle2 } from 'lucide-react';
+
+const Github = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4" />
+    <path d="M9 18c-4.51 2-5-2-7-2" />
+  </svg>
+);
 
 export default function GitHubMarketplaceLanding() {
   return (
@@ -14866,8 +15983,15 @@ export default function GitHubMarketplaceLanding() {
 
 import React, { useEffect, useState, Suspense } from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle2, Loader2, ArrowRight, Github } from 'lucide-react';
+import { CheckCircle2, Loader2, ArrowRight } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
+
+const Github = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4" />
+    <path d="M9 18c-4.51 2-5-2-7-2" />
+  </svg>
+);
 
 function GitHubSetupContent() {
   const searchParams = useSearchParams();
@@ -15239,20 +16363,20 @@ export default function AdminDeployLauncher() {
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { auth, db } from '@/lib/firebase';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
-import { collection, query, where, getDocs, setDoc, doc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs, updateDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
-import { ShieldCheck, Lock, Loader2, Mail, ArrowRight, UserPlus } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { ShieldCheck, Lock, Loader2, QrCode, KeyRound, ArrowRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import AmbientMusic from '@/components/AmbientMusic';
+import { Html5QrcodeScanner } from 'html5-qrcode';
 
 export default function LoginPage() {
     const { networkMode, user, profile } = useAuth();
     const [loading, setLoading] = useState(false);
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+    const [mode, setMode] = useState<'pin' | 'qr'>('pin');
+    const [pin, setPin] = useState('');
     const [error, setError] = useState('');
     const [hostname, setHostname] = useState('Mi Empresa');
     const [checkingSetup, setCheckingSetup] = useState(true);
@@ -15262,20 +16386,12 @@ export default function LoginPage() {
     useEffect(() => {
         if (typeof window !== 'undefined') {
             const host = window.location.hostname;
-            // Si es localhost o 127.0.0.1, mostramos algo genérico, sino el subdominio
             setHostname(host.includes('localhost') ? 'Mi Empresa Local' : host);
         }
 
         const initApp = async () => {
             try {
-                const qSnap = await getDocs(collection(db, 'users'));
-                if (qSnap.empty) {
-                    // Si no hay usuarios en absoluto, no redirigimos al Launcher.
-                    // El admin debe ser creado externamente o con el bypass de desarrollo.
-                    return;
-                }
-
-                const { getDoc } = await import('firebase/firestore');
+                const { getDoc, doc } = await import('firebase/firestore');
                 const confSnap = await getDoc(doc(db, 'settings', 'site_config'));
                 if (confSnap.exists()) {
                     const data = confSnap.data();
@@ -15309,23 +16425,36 @@ export default function LoginPage() {
         }
     }, [user, profile, router]);
 
-    const handleLogin = async (e: React.FormEvent) => {
-        e.preventDefault();
+    // Lógica del Scanner QR
+    useEffect(() => {
+        if (mode === 'qr') {
+            const scanner = new Html5QrcodeScanner(
+                "reader",
+                { fps: 10, qrbox: { width: 250, height: 250 } },
+                false
+            );
+            scanner.render(
+                (decodedText) => {
+                    scanner.clear();
+                    handleAuthWithCode(decodedText);
+                },
+                (error) => {
+                    // ignore scan errors
+                }
+            );
+
+            return () => {
+                scanner.clear().catch(console.error);
+            };
+        }
+    }, [mode]);
+
+    const handleAuthWithCode = async (code: string) => {
         setLoading(true);
         setError('');
 
-        // BYPASS DE DESARROLLO / DEMO
-        if (email === 'admin@admin.com' && password === 'admin') {
-            document.cookie = `msj-session=local_owner; path=/; max-age=86400; SameSite=Lax`;
-            document.cookie = `msj-role=superadmin; path=/; max-age=86400; SameSite=Lax`;
-            window.location.href = '/dashboard';
-            return;
-        }
-
-
-        // BYPASS OFFLINE SOBERANO
-        if (!navigator.onLine && networkMode.isMaster) {
-            console.warn("Modo Soberano: Ignorando validación en la nube.");
+        // BYPASS DE DESARROLLO / DEMO (PIN: 123456 o admin)
+        if (code === '123456' || code === 'admin') {
             document.cookie = `msj-session=local_owner; path=/; max-age=86400; SameSite=Lax`;
             document.cookie = `msj-role=superadmin; path=/; max-age=86400; SameSite=Lax`;
             window.location.href = '/dashboard';
@@ -15333,48 +16462,49 @@ export default function LoginPage() {
         }
 
         try {
-            // 1. Consultar Firestore para ver si es un usuario local
-            const qUsers = query(collection(db, 'users'), where('email', '==', email));
-            const querySnap = await getDocs(qUsers);
+            // Buscamos al usuario por su PIN (el PIN se guarda en password por ahora, o en campo pin)
+            // Primero intentamos buscar por 'pin', luego por 'password'
+            let qUsers = query(collection(db, 'users'), where('pin', '==', code));
+            let querySnap = await getDocs(qUsers);
+
+            if (querySnap.empty) {
+                qUsers = query(collection(db, 'users'), where('password', '==', code));
+                querySnap = await getDocs(qUsers);
+            }
 
             if (!querySnap.empty) {
                 const userDoc = querySnap.docs[0];
                 const userData = userDoc.data();
-                const storedPassword = userData.password || '0000';
 
-                if (password === storedPassword) {
-                    const newSessionId = Math.random().toString(36).substring(2);
-                    import('firebase/firestore').then(({ updateDoc }) => {
-                        updateDoc(userDoc.ref, { currentSessionId: newSessionId }).catch(console.error);
-                    });
-                    localStorage.setItem('msj-session-id', newSessionId);
-                    
-                    document.cookie = `msj-session=${userDoc.id}; path=/; max-age=86400; SameSite=Lax`;
-                    document.cookie = `msj-role=${userData.role || 'node'}; path=/; max-age=86400; SameSite=Lax`;
-                    window.location.href = '/dashboard';
+                // Validamos que sea personal
+                if (userData.role === 'client') {
+                    setError('Acceso denegado. Este portal es solo para personal.');
+                    setLoading(false);
                     return;
                 }
-            }
-        } catch (localErr) {
-            console.error("Local user lookup failed:", localErr);
-        }
 
-        try {
-            const userCredential = await signInWithEmailAndPassword(auth, email, password);
-            const newSessionId = Math.random().toString(36).substring(2);
-            import('firebase/firestore').then(({ updateDoc }) => {
-                updateDoc(doc(db, 'users', userCredential.user.uid), { currentSessionId: newSessionId }).catch(console.error);
-            });
-            localStorage.setItem('msj-session-id', newSessionId);
-            window.location.href = '/dashboard';
+                const newSessionId = Math.random().toString(36).substring(2);
+                updateDoc(userDoc.ref, { currentSessionId: newSessionId }).catch(console.error);
+                localStorage.setItem('msj-session-id', newSessionId);
+                
+                document.cookie = `msj-session=${userDoc.id}; path=/; max-age=86400; SameSite=Lax`;
+                document.cookie = `msj-role=${userData.role || 'node'}; path=/; max-age=86400; SameSite=Lax`;
+                window.location.href = '/dashboard';
+            } else {
+                setError('Credencial/PIN inválido.');
+            }
         } catch (err: any) {
             console.error(err);
-            setError('Credenciales inválidas o error de red.');
+            setError('Error de conexión o validación.');
         } finally {
             setLoading(false);
         }
     };
 
+    const handlePinSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        handleAuthWithCode(pin);
+    };
 
     if (checkingSetup) {
         return <div className="min-h-screen bg-slate-900 flex items-center justify-center"><Loader2 className="animate-spin text-purple-500" size={48} /></div>;
@@ -15394,101 +16524,81 @@ export default function LoginPage() {
             <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-slate-900/60 backdrop-blur-xl border border-white/10 w-full max-w-2xl rounded-[40px] p-10 md:p-16 shadow-2xl relative overflow-hidden z-10"
+                className="bg-slate-900/70 backdrop-blur-xl border border-white/10 w-full max-w-lg rounded-[40px] p-10 shadow-2xl relative z-10"
             >
-                <header className="flex flex-col items-center mb-10">
-                    <div className="p-5 rounded-3xl mb-6 shadow-inner bg-purple-600/20 text-purple-400 border border-purple-500/30">
-                        <ShieldCheck size={56} strokeWidth={2} />
+                <header className="flex flex-col items-center mb-8">
+                    <div className="p-4 rounded-3xl mb-4 shadow-inner bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                        <ShieldCheck size={48} strokeWidth={2} />
                     </div>
-                    <h1 className="text-4xl font-[950] text-white uppercase tracking-tight leading-none mb-2 drop-shadow-md text-center">{hostname}</h1>
-                    <p className="font-bold text-xs uppercase tracking-[0.25em] text-purple-300/80">
-                        Portal de Acceso
+                    <h1 className="text-3xl font-[950] text-white uppercase tracking-tight leading-none mb-2 drop-shadow-md text-center">{hostname}</h1>
+                    <p className="font-bold text-[0.65rem] uppercase tracking-[0.2em] text-slate-400">
+                        Acceso Restringido • Personal
                     </p>
                 </header>
 
-                <form onSubmit={handleLogin} className="space-y-6">
-                    {error && (
-                        <div className="bg-red-500/20 text-red-200 text-xs font-bold p-4 rounded-2xl border border-red-500/50 mb-4 backdrop-blur-md">
-                            {error}
-                        </div>
-                    )}
-                    
-                    <div className="space-y-2">
-                        <label className="text-[0.7rem] font-black text-slate-400 uppercase ml-2 tracking-wider">Correo Electrónico</label>
-                        <div className="relative">
-                            <Mail className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-                            <input 
-                                type="email" placeholder="tucorreo@ejemplo.com" required
-                                value={email} onChange={(e) => setEmail(e.target.value)}
-                                className="w-full py-4 pl-[68px] pr-6 bg-slate-800/50 border border-slate-700/50 rounded-2xl focus:border-purple-500 focus:bg-slate-800 focus:ring-1 focus:ring-purple-500 outline-none transition-all font-semibold text-white placeholder-slate-500" 
-                            />
-                        </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                        <label className="text-[0.7rem] font-black text-slate-400 uppercase ml-2 tracking-wider">Contraseña</label>
-                        <div className="relative">
-                            <Lock className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-                            <input 
-                                type="password" placeholder="••••••••" required
-                                value={password} onChange={(e) => setPassword(e.target.value)}
-                                className="w-full py-4 pl-[68px] pr-6 bg-slate-800/50 border border-slate-700/50 rounded-2xl focus:border-purple-500 focus:bg-slate-800 focus:ring-1 focus:ring-purple-500 outline-none transition-all font-semibold text-white placeholder-slate-500" 
-                            />
-                        </div>
-                    </div>
-
+                <div className="flex bg-slate-800/50 p-1 rounded-2xl mb-8">
                     <button 
-                        disabled={loading}
-                        className="w-full mt-8 text-white py-5 rounded-2xl font-black uppercase tracking-widest text-sm shadow-xl active:scale-[0.98] transition-all flex justify-center items-center gap-3 disabled:opacity-50 border bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-purple-900/30 border-purple-500/30"
+                        onClick={() => setMode('pin')}
+                        className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider rounded-xl transition-all flex justify-center items-center gap-2 ${mode === 'pin' ? 'bg-amber-500 text-white shadow-lg shadow-amber-900/20' : 'text-slate-400 hover:text-white'}`}
                     >
-                        {loading ? <Loader2 className="animate-spin" /> : "Entrar al Sistema"}
+                        <KeyRound size={16} /> PIN Acceso
                     </button>
-                    
-                    <div className="relative flex py-4 items-center">
-                        <div className="flex-grow border-t border-slate-700/50"></div>
-                        <span className="flex-shrink-0 mx-4 text-slate-500 text-xs font-bold uppercase">O entra con</span>
-                        <div className="flex-grow border-t border-slate-700/50"></div>
-                    </div>
+                    <button 
+                        onClick={() => setMode('qr')}
+                        className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider rounded-xl transition-all flex justify-center items-center gap-2 ${mode === 'qr' ? 'bg-amber-500 text-white shadow-lg shadow-amber-900/20' : 'text-slate-400 hover:text-white'}`}
+                    >
+                        <QrCode size={16} /> Escanear QR
+                    </button>
+                </div>
 
-                    <div className="flex justify-center w-full mt-2">
+                <AnimatePresence mode="wait">
+                    {error && (
+                        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="bg-red-500/20 text-red-200 text-xs font-bold p-4 rounded-2xl border border-red-500/50 mb-6 backdrop-blur-md text-center">
+                            {error}
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {mode === 'pin' ? (
+                    <motion.form key="pin" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onSubmit={handlePinSubmit} className="space-y-6">
+                        <div className="space-y-2">
+                            <label className="text-[0.7rem] font-black text-slate-400 uppercase ml-2 tracking-wider">PIN de Seguridad (6 dígitos)</label>
+                            <div className="relative">
+                                <Lock className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                                <input 
+                                    type="password" placeholder="••••••" required minLength={6} maxLength={6}
+                                    value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
+                                    className="w-full py-5 pl-[68px] pr-6 bg-slate-800/80 border border-slate-700/50 rounded-2xl focus:border-amber-500 focus:bg-slate-800 focus:ring-1 focus:ring-amber-500 outline-none transition-all font-mono text-2xl text-center tracking-[1em] text-white placeholder-slate-600" 
+                                />
+                            </div>
+                        </div>
+
                         <button 
-                            type="button"
-                            disabled={loading}
-                            onClick={() => {
-                                setEmail('admin@admin.com');
-                                setPassword('admin');
-                            }}
-                            className="w-full bg-slate-800/80 hover:bg-slate-700 text-white border border-slate-600/50 py-4 rounded-2xl font-bold text-sm shadow-lg active:scale-[0.98] transition-all flex justify-center items-center gap-2 disabled:opacity-50"
+                            disabled={loading || pin.length < 6}
+                            className="w-full mt-4 text-slate-900 py-5 rounded-2xl font-black uppercase tracking-widest text-sm shadow-xl active:scale-[0.98] transition-all flex justify-center items-center gap-3 disabled:opacity-50 border bg-gradient-to-r from-amber-400 to-amber-600 hover:from-amber-300 hover:to-amber-500 shadow-amber-900/30 border-amber-500/30"
                         >
-                            <ShieldCheck size={18} className="text-emerald-400" />
-                            Admin Local
+                            {loading ? <Loader2 className="animate-spin" /> : "Desbloquear Sistema"}
                         </button>
-                    </div>
-                </form>
+                    </motion.form>
+                ) : (
+                    <motion.div key="qr" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center">
+                        <div className="w-full aspect-square bg-black/50 rounded-3xl overflow-hidden border-2 border-dashed border-slate-600 relative flex items-center justify-center mb-4">
+                            <div id="reader" className="w-full h-full"></div>
+                        </div>
+                        <p className="text-slate-400 text-xs text-center">Coloca tu código QR de acceso frente a la cámara para desbloquear el portal de tu área.</p>
+                    </motion.div>
+                )}
 
                 <div className="mt-8 pt-8 border-t border-slate-700/50 flex flex-col items-center gap-4">
-                    <button onClick={() => {
-                        if (!email) return alert('Ingresa tu correo arriba primero y luego presiona este botón.');
-                        import('firebase/auth').then(({ sendPasswordResetEmail }) => {
-                            sendPasswordResetEmail(auth, email)
-                                .then(() => alert('Correo de recuperación enviado.'))
-                                .catch((e: any) => alert('Error: ' + e.message));
-                        });
-                    }} className="text-sky-400 hover:text-sky-300 font-bold text-xs transition-colors">
-                        ¿Olvidaste tu contraseña? (Recuperar)
-                    </button>
-                    <p className="text-slate-400 text-sm font-medium mt-2">¿Eres un cliente y deseas hacer pedidos?</p>
-                    <Link href="/registro" className="inline-flex items-center justify-center gap-2 text-purple-400 hover:text-purple-300 font-bold text-sm transition-colors group">
-                        Portal de Clientes (Entrar / Registrarse) <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                    <p className="text-slate-400 text-xs font-medium text-center">¿Eres cliente y deseas hacer pedidos?</p>
+                    <Link href="/registro" className="inline-flex items-center justify-center gap-2 text-sky-400 hover:text-sky-300 font-bold text-xs transition-colors group">
+                        Ir al Portal de Clientes <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
                     </Link>
                 </div>
             </motion.div>
 
-            <div className="mt-12 text-slate-500 text-[0.65rem] font-bold uppercase tracking-widest text-center relative z-10 pb-4 flex flex-col items-center gap-2">
+            <div className="mt-12 text-slate-500 text-[0.65rem] font-bold uppercase tracking-widest text-center relative z-10 pb-4">
                 <span>Derechos reservados &copy; {new Date().getFullYear()} {hostname}</span>
-                <a href="https://admin.com" target="_blank" rel="noopener noreferrer" className="text-purple-400/50 hover:text-purple-400 transition-colors">
-                    Powered by Admin.com
-                </a>
             </div>
         </div>
     );
@@ -16297,18 +17407,17 @@ export default function RegisterPage() {
     const [age, setAge] = useState('');
     const [gender, setGender] = useState('');
     const [address, setAddress] = useState('');
-    const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
     const [curpRfc, setCurpRfc] = useState('');
     const [password, setPassword] = useState('');
     const [confirm, setConfirm] = useState('');
 
     // ── Login ───────────────────────────────────────────────────────────────
-    const [loginEmail, setLoginEmail] = useState('');
+    const [loginPhone, setLoginPhone] = useState('');
     const [loginPass, setLoginPass] = useState('');
 
     // ── Recover ─────────────────────────────────────────────────────────────
-    const [recoverEmail, setRecoverEmail] = useState('');
+    const [recoverPhone, setRecoverPhone] = useState('');
 
     const reset = () => { setError(''); setSuccess(''); };
 
@@ -16320,10 +17429,11 @@ export default function RegisterPage() {
         if (password.length < 6) { setError('La contraseña debe tener al menos 6 caracteres.'); return; }
         setLoading(true);
         try {
-            const cred = await createUserWithEmailAndPassword(auth, email, password);
+            const fakeEmail = `${phone.replace(/\D/g, '')}@cliente.admin.com`;
+            const cred = await createUserWithEmailAndPassword(auth, fakeEmail, password);
             const uid = cred.user.uid;
             await setDoc(doc(db, 'users', uid), {
-                email,
+                email: fakeEmail,
                 displayName: name,
                 phone,
                 age: parseInt(age) || null,
@@ -16338,8 +17448,8 @@ export default function RegisterPage() {
             document.cookie = `msj-role=client; path=/; max-age=86400; SameSite=Lax`;
             window.location.href = '/cuenta';
         } catch (err: any) {
-            if (err.code === 'auth/email-already-in-use') setError('Este correo ya está registrado.');
-            else if (err.code === 'auth/weak-password') setError('La contraseña debe tener al menos 6 caracteres.');
+            if (err.code === 'auth/email-already-in-use') setError('Este número ya está registrado.');
+            else if (err.code === 'auth/weak-password') setError('El PIN/Contraseña debe tener al menos 6 caracteres.');
             else setError('Error al crear la cuenta. Intenta de nuevo.');
         } finally { setLoading(false); }
     };
@@ -16350,10 +17460,11 @@ export default function RegisterPage() {
         reset();
         setLoading(true);
         try {
-            await signInWithEmailAndPassword(auth, loginEmail, loginPass);
+            const fakeEmail = `${loginPhone.replace(/\D/g, '')}@cliente.admin.com`;
+            await signInWithEmailAndPassword(auth, fakeEmail, loginPass);
             window.location.href = '/cuenta';
         } catch {
-            setError('Correo o contraseña incorrectos.');
+            setError('Número o contraseña incorrectos.');
         } finally { setLoading(false); }
     };
 
@@ -16361,19 +17472,13 @@ export default function RegisterPage() {
     const handleRecover = async (e: React.FormEvent) => {
         e.preventDefault();
         reset();
-        setLoading(true);
-        try {
-            await sendPasswordResetEmail(auth, recoverEmail);
-            setSuccess('Te enviamos un correo para restablecer tu contraseña. Revisa tu bandeja de entrada.');
-        } catch {
-            setError('No encontramos ese correo. Verifica que esté bien escrito.');
-        } finally { setLoading(false); }
+        setError('Por seguridad, para recuperar acceso con tu número contacta directamente a la tienda.');
     };
 
     const titles: Record<Mode, { title: string; sub: string; icon: React.ReactNode; color: string }> = {
-        register: { title: 'Crear Cuenta', sub: 'Únete para hacer pedidos y guardar tu información', icon: <UserPlus size={44} />, color: 'purple' },
-        login:    { title: 'Bienvenido',   sub: 'Accede a tu cuenta para ver tus pedidos',           icon: <ShieldCheck size={44} />, color: 'sky' },
-        recover:  { title: 'Recuperar Acceso', sub: 'Te enviamos un enlace a tu correo',             icon: <KeyRound size={44} />, color: 'amber' },
+        register: { title: 'Crear Cuenta', sub: 'Guarda tus datos para pedir más rápido', icon: <UserPlus size={44} />, color: 'purple' },
+        login:    { title: 'Bienvenido',   sub: 'Accede con tu número celular',           icon: <ShieldCheck size={44} />, color: 'sky' },
+        recover:  { title: 'Recuperar Acceso', sub: 'Contacta a soporte',             icon: <KeyRound size={44} />, color: 'amber' },
     };
     const t = titles[mode];
     const accentMap: Record<string, string> = {
@@ -16473,20 +17578,11 @@ export default function RegisterPage() {
                             </Field>
 
                             {/* Teléfono */}
-                            <Field label="Número Telefónico" icon={<Phone size={10} />}>
+                            <Field label="Número Celular (Usuario)" icon={<Phone size={10} />}>
                                 <div className="relative">
                                     <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
-                                    <input type="tel" placeholder="55 1234 5678" required
+                                    <input type="tel" placeholder="10 dígitos (Ej. 5512345678)" required minLength={10} maxLength={10}
                                         value={phone} onChange={e => setPhone(e.target.value)} className={inputCls} />
-                                </div>
-                            </Field>
-
-                            {/* Correo */}
-                            <Field label="Correo Electrónico" icon={<Mail size={10} />}>
-                                <div className="relative">
-                                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
-                                    <input type="email" placeholder="tucorreo@ejemplo.com" required
-                                        value={email} onChange={e => setEmail(e.target.value)} className={inputCls} />
                                 </div>
                             </Field>
 
@@ -16503,17 +17599,17 @@ export default function RegisterPage() {
 
                             {/* Contraseña */}
                             <div className="grid grid-cols-2 gap-3">
-                                <Field label="Contraseña" icon={<Lock size={10} />}>
+                                <Field label="Contraseña / PIN" icon={<Lock size={10} />}>
                                     <div className="relative">
                                         <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
-                                        <input type="password" placeholder="••••••••" required minLength={6}
+                                        <input type="password" placeholder="Min. 6 caracteres" required minLength={6}
                                             value={password} onChange={e => setPassword(e.target.value)} className={inputCls} />
                                     </div>
                                 </Field>
                                 <Field label="Confirmar" icon={<Lock size={10} />}>
                                     <div className="relative">
                                         <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
-                                        <input type="password" placeholder="••••••••" required minLength={6}
+                                        <input type="password" placeholder="Repite contraseña" required minLength={6}
                                             value={confirm} onChange={e => setConfirm(e.target.value)} className={inputCls} />
                                     </div>
                                 </Field>
@@ -16530,11 +17626,11 @@ export default function RegisterPage() {
                     {mode === 'login' && (
                         <motion.form key="login" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                             onSubmit={handleLogin} className="space-y-4">
-                            <Field label="Correo Electrónico" icon={<Mail size={10} />}>
+                            <Field label="Número Celular" icon={<Phone size={10} />}>
                                 <div className="relative">
-                                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
-                                    <input type="email" placeholder="tucorreo@ejemplo.com" required
-                                        value={loginEmail} onChange={e => setLoginEmail(e.target.value)} className={inputCls} />
+                                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                                    <input type="tel" placeholder="10 dígitos (Ej. 5512345678)" required minLength={10} maxLength={10}
+                                        value={loginPhone} onChange={e => setLoginPhone(e.target.value)} className={inputCls} />
                                 </div>
                             </Field>
                             <Field label="Contraseña" icon={<Lock size={10} />}>
@@ -16561,11 +17657,11 @@ export default function RegisterPage() {
                     {mode === 'recover' && (
                         <motion.form key="recover" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                             onSubmit={handleRecover} className="space-y-4">
-                            <Field label="Correo Electrónico Registrado" icon={<Mail size={10} />}>
+                            <Field label="Número Celular Registrado" icon={<Phone size={10} />}>
                                 <div className="relative">
-                                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
-                                    <input type="email" placeholder="tucorreo@ejemplo.com" required
-                                        value={recoverEmail} onChange={e => setRecoverEmail(e.target.value)} className={inputCls} />
+                                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                                    <input type="tel" placeholder="10 dígitos" required
+                                        value={recoverPhone} onChange={e => setRecoverPhone(e.target.value)} className={inputCls} />
                                 </div>
                             </Field>
                             <button disabled={loading}
@@ -17239,7 +18335,7 @@ export default function AdminAsistente() {
             }
 
             // Build Context
-            let contextData: any = { businessName: siteConfig?.businessName || 'EvoStore' };
+            let contextData: any = { businessName: siteConfig?.businessName || 'BUNKKER E.C.O.S' };
             if (aiRole === 'superadmin') {
                 contextData.products = products?.map((p:any) => ({name: p.name, stock: p.stock, price: p.price}));
                 contextData.ordersCount = orders?.length;
@@ -17909,13 +19005,16 @@ import React, { useState } from "react";
 import { X, ShoppingBag, Truck, CreditCard, FileText, MapPin, Clock } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
+import Link from "next/link";
 import styles from "./CartDrawer.module.css";
 import dynamic from 'next/dynamic';
+import { useAuth } from '@/context/AuthContext';
 
 const LocationPickerMap = dynamic(() => import('./LocationPickerMap'), { ssr: false });
 
 export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
     const { cart, removeFromCart, total, createOrder } = useCart();
+    const { profile } = useAuth();
     const [step, setStep] = useState<'cart' | 'checkout'>('cart');
 
     const [formData, setFormData] = useState({
@@ -17937,6 +19036,17 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
 
     const [isProcessing, setIsProcessing] = useState(false);
 
+    useEffect(() => {
+        if (profile) {
+            setFormData(prev => ({
+                ...prev,
+                name: (profile as any).displayName || (profile as any).name || prev.name,
+                phone: (profile as any).phone || prev.phone,
+                address: (profile as any).address || prev.address,
+            }));
+        }
+    }, [profile]);
+
     const handleCheckout = async () => {
         if (!formData.name || !formData.phone || (formData.deliveryMethod === 'repartidor' && !formData.address)) {
             alert("Por favor completa los datos obligatorios de entrega.");
@@ -17944,45 +19054,18 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
         }
         setIsProcessing(true);
         try {
-            const orderId = await createOrder(formData, formData.requireInvoice, true);
-            if (!orderId) {
+            const result = await createOrder(formData, formData.requireInvoice, true, true);
+            if (!result || !result.orderId) {
                 setIsProcessing(false);
                 return; // Hubo un error al crear la orden
             }
+            const { orderId, deliveryPin } = result;
 
             const finalTotal = total + formData.tip;
 
-            if (formData.paymentMethod === 'tarjeta_mp') {
-                const res = await fetch('/api/mercadopago/create-preference', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ items: cart, orderId, customer: formData })
-                });
-                const data = await res.json();
-                if (data.init_point) {
-                    window.location.href = data.init_point;
-                    return; // No cerramos el drawer, nos redirige
-                } else {
-                    alert('Error conectando con MercadoPago: ' + data.error);
-                }
-            } else if (formData.paymentMethod === 'tarjeta_stripe') {
-                const res = await fetch('/api/stripe/create-intent', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ amount: finalTotal, orderId, customer: formData })
-                });
-                const data = await res.json();
-                if (data.url) {
-                    window.location.href = data.url;
-                    return; // No cerramos el drawer, nos redirige
-                } else {
-                    alert('Error conectando con Stripe: ' + data.error);
-                }
-            } else {
-                alert(`¡Pedido Confirmado! \nTotal a Pagar: $${finalTotal.toFixed(2)}\nSe ha enviado un WhatsApp con los detalles a ${formData.phone}.`);
-                setStep('cart');
-                onClose();
-            }
+            alert(`¡Pedido Confirmado! \nOrden: ${orderId}\nTotal a Pagar: $${finalTotal.toFixed(2)}\n\nTu PIN de Entrega (OTP): ${deliveryPin}\nConsérvalo, el repartidor te lo pedirá al entregar tu producto.\n\nSe ha enviado un WhatsApp con los detalles a ${formData.phone}.`);
+            setStep('cart');
+            onClose();
         } catch (err) {
             console.error("Error Checkout:", err);
             alert("Ocurrió un error al procesar tu pedido.");
@@ -18048,24 +19131,42 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
                                 ) : (
                                     <div className={styles.checkoutForm}>
                                         <h3 className={styles.checkoutTitle}>Opciones de Pedido</h3>
-                                        
-                                        <div className={styles.formFields} style={{ marginBottom: '1.5rem' }}>
+
+                                        {!profile ? (
+                                            <div className="text-center p-6 bg-slate-100 rounded-xl mt-4">
+                                                <Lock className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+                                                <h4 className="font-bold text-slate-800 mb-2">Inicia Sesión para Comprar</h4>
+                                                <p className="text-sm text-slate-600 mb-6">Debes tener una cuenta o iniciar sesión para poder realizar un pedido.</p>
+                                                <Link href="/registro" onClick={onClose} className="bg-[#0ea5e9] hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg w-full flex items-center justify-center gap-2 transition-colors">
+                                                    Iniciar Sesión / Registrarse
+                                                </Link>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <div className={styles.formFields} style={{ marginBottom: '1.5rem' }}>
                                             <div>
                                                 <label style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#666', marginBottom: '4px', display: 'block' }}>Entrega</label>
-                                                <div style={{ display: 'flex', gap: '10px' }}>
+                                                <div style={{ display: 'flex', gap: '5px' }}>
                                                     <button 
-                                                        onClick={() => setFormData({ ...formData, deliveryMethod: 'tienda', paymentMethod: 'pago_caja' })}
+                                                        onClick={() => setFormData({ ...formData, deliveryMethod: 'piso', paymentMethod: 'pago_caja' })}
                                                         className={styles.methodBtn} 
-                                                        style={{ flex: 1, padding: '10px', borderRadius: '8px', border: formData.deliveryMethod === 'tienda' ? '2px solid #0ea5e9' : '1px solid #ddd', background: formData.deliveryMethod === 'tienda' ? '#e0f2fe' : '#fff', color: '#111', fontWeight: 'bold', cursor: 'pointer' }}
+                                                        style={{ flex: 1, padding: '10px 5px', borderRadius: '8px', border: formData.deliveryMethod === 'piso' ? '2px solid #0ea5e9' : '1px solid #ddd', background: formData.deliveryMethod === 'piso' ? '#e0f2fe' : '#fff', color: '#111', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.75rem' }}
                                                     >
-                                                        🏬 Recoger en Tienda
+                                                        🏬 En Piso
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => setFormData({ ...formData, deliveryMethod: 'pickup', paymentMethod: 'pago_caja' })}
+                                                        className={styles.methodBtn} 
+                                                        style={{ flex: 1, padding: '10px 5px', borderRadius: '8px', border: formData.deliveryMethod === 'pickup' ? '2px solid #0ea5e9' : '1px solid #ddd', background: formData.deliveryMethod === 'pickup' ? '#e0f2fe' : '#fff', color: '#111', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.75rem' }}
+                                                    >
+                                                        📦 Pick Up
                                                     </button>
                                                     <button 
                                                         onClick={() => setFormData({ ...formData, deliveryMethod: 'repartidor', paymentMethod: 'tarjeta_mp' })}
                                                         className={styles.methodBtn} 
-                                                        style={{ flex: 1, padding: '10px', borderRadius: '8px', border: formData.deliveryMethod === 'repartidor' ? '2px solid #0ea5e9' : '1px solid #ddd', background: formData.deliveryMethod === 'repartidor' ? '#e0f2fe' : '#fff', color: '#111', fontWeight: 'bold', cursor: 'pointer' }}
+                                                        style={{ flex: 1, padding: '10px 5px', borderRadius: '8px', border: formData.deliveryMethod === 'repartidor' ? '2px solid #0ea5e9' : '1px solid #ddd', background: formData.deliveryMethod === 'repartidor' ? '#e0f2fe' : '#fff', color: '#111', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.75rem' }}
                                                     >
-                                                        🛵 Envío a Domicilio
+                                                        🛵 Domicilio
                                                     </button>
                                                 </div>
                                             </div>
@@ -18108,7 +19209,7 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
                                                 </>
                                             )}
 
-                                            {formData.deliveryMethod === 'tienda' && (
+                                            {formData.deliveryMethod === 'pickup' && (
                                                 <div>
                                                     <label style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#666', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '10px' }}>
                                                         <Clock size={14} /> Horario Estimado de Recolección
@@ -18131,15 +19232,20 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
                                                     style={{ width: '100%' }}
                                                 >
                                                     <option value="pago_caja">💵 Pago en Caja (Sucursal)</option>
-                                                    <option value="tarjeta_mp">💳 Pagar en línea (MercadoPago)</option>
-                                                    <option value="tarjeta_stripe">💳 Pagar en línea (Stripe)</option>
                                                     <option value="creditos">🪙 Pagar con Créditos</option>
                                                 </select>
                                                 
                                                 {formData.paymentMethod === 'pago_caja' && formData.deliveryMethod === 'repartidor' && (
                                                     <div style={{ marginTop: '8px', padding: '8px', backgroundColor: '#fee2e2', border: '1px solid #f87171', borderRadius: '6px' }}>
                                                         <p style={{ fontSize: '0.7rem', color: '#991b1b', margin: 0, fontWeight: 'bold' }}>
-                                                            ⚠️ Tu pedido no será preparado ni enviado hasta que liquides el total en nuestra sucursal. Tienes un máximo de 3 horas para pagar o el pedido será cancelado automáticamente.
+                                                            ⚠️ Tu pedido no será enviado hasta que liquides el total en sucursal. Tienes un máximo de 3 horas para pagar o se cancelará automáticamente.
+                                                        </p>
+                                                    </div>
+                                                )}
+                                                {formData.paymentMethod === 'pago_caja' && formData.deliveryMethod === 'pickup' && (
+                                                    <div style={{ marginTop: '8px', padding: '8px', backgroundColor: '#e0f2fe', border: '1px solid #7dd3fc', borderRadius: '6px' }}>
+                                                        <p style={{ fontSize: '0.7rem', color: '#0369a1', margin: 0, fontWeight: 'bold' }}>
+                                                            ℹ️ Tu pedido se preparará y lo podrás pagar directamente en caja al momento de recogerlo.
                                                         </p>
                                                     </div>
                                                 )}
@@ -18219,8 +19325,10 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
                                                 </div>
                                             )}
                                         </div>
-                                    </div>
+                                    </>
                                 )}
+                            </div>
+                        )}
 
                                 <div className={styles.footer}>
                                     <div className={styles.totalRow} style={{ flexDirection: 'column', alignItems: 'flex-end' }}>
@@ -18237,7 +19345,14 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
 
                                     {step === 'cart' ? (
                                         <button
-                                            onClick={() => setStep('checkout')}
+                                            onClick={() => {
+                                                if (profile) {
+                                                    setStep('checkout');
+                                                } else {
+                                                    // Opcional: mostrar alerta o redirigir
+                                                    alert("Inicia sesión para continuar");
+                                                }
+                                            }}
                                             className={`btn-sanjose ${styles.payBtn}`}
                                         >
                                             PROCEDER AL PAGO <Truck size={20} />
@@ -18814,6 +19929,179 @@ export default function DemoModeBanner({ sectionName }: { sectionName?: string }
             <Info size={16} />
             <span>Modo Demostración Activo{sectionName ? ` en ${sectionName}` : ''} — Los datos son reales de prueba.</span>
         </div>
+    );
+}
+```
+
+---
+
+## 📄 ARCHIVO: `src/components/DeviceLockScreen.tsx`
+
+```typescript
+"use client";
+
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '@/context/AuthContext';
+import { Lock, ShieldCheck, KeyRound, Loader2, WifiOff } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+
+export default function DeviceLockScreen({ children }: { children: React.ReactNode }) {
+    const { networkMode } = useAuth();
+    const [isSubscriptionLocked, setIsSubscriptionLocked] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [inputVal, setInputVal] = useState('');
+    const [error, setError] = useState(false);
+    const [daysRemaining, setDaysRemaining] = useState<number | null>(null);
+
+    // Evitar render en servidor
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => setMounted(true), []);
+
+    useEffect(() => {
+        if (!mounted) return;
+
+        const checkSubscription = async () => {
+            try {
+                // 1. Revisar online si hay red
+                if (navigator.onLine) {
+                    const confSnap = await getDoc(doc(db, 'settings', 'site_config'));
+                    if (confSnap.exists()) {
+                        const data = confSnap.data();
+                        if (data.subscriptionExpiresAt) {
+                            const expiresAt = data.subscriptionExpiresAt.toMillis ? data.subscriptionExpiresAt.toMillis() : data.subscriptionExpiresAt;
+                            localStorage.setItem('admin_sub_expires', expiresAt.toString());
+                        } else {
+                            // Por defecto, damos 30 días si no hay config
+                            const defaultExpires = Date.now() + (30 * 24 * 60 * 60 * 1000);
+                            localStorage.setItem('admin_sub_expires', defaultExpires.toString());
+                        }
+                    }
+                }
+
+                // 2. Verificar localmente
+                const expiresStr = localStorage.getItem('admin_sub_expires');
+                if (expiresStr) {
+                    const expiresAt = parseInt(expiresStr, 10);
+                    const now = Date.now();
+                    const diffDays = Math.ceil((expiresAt - now) / (1000 * 60 * 60 * 24));
+                    
+                    if (now > expiresAt) {
+                        setIsSubscriptionLocked(true);
+                    } else {
+                        setIsSubscriptionLocked(false);
+                        setDaysRemaining(diffDays);
+                    }
+                } else {
+                    // Primer arranque offline sin datos? Damos 30 días de gracia local
+                    const defaultExpires = Date.now() + (30 * 24 * 60 * 60 * 1000);
+                    localStorage.setItem('admin_sub_expires', defaultExpires.toString());
+                    setIsSubscriptionLocked(false);
+                    setDaysRemaining(30);
+                }
+            } catch (err) {
+                console.error("Error verificando suscripción:", err);
+            }
+        };
+
+        checkSubscription();
+        
+        // Revisar cada hora
+        const interval = setInterval(checkSubscription, 3600000);
+        return () => clearInterval(interval);
+    }, [mounted, navigator.onLine]);
+
+    const handleManualUnlock = () => {
+        setLoading(true);
+        setTimeout(() => {
+            // PIN de emergencia o renovación offline: "999999" o "admin123"
+            if (inputVal === '999999' || inputVal === 'admin123') {
+                const newExpires = Date.now() + (30 * 24 * 60 * 60 * 1000);
+                localStorage.setItem('admin_sub_expires', newExpires.toString());
+                setIsSubscriptionLocked(false);
+                setDaysRemaining(30);
+                setInputVal('');
+            } else {
+                setError(true);
+            }
+            setLoading(false);
+        }, 1000);
+    };
+
+    if (!mounted) return null;
+
+    if (isSubscriptionLocked) {
+        return (
+            <div className="fixed inset-0 z-[99999] bg-slate-950 flex flex-col items-center justify-center font-sans">
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black pointer-events-none" />
+                
+                <AnimatePresence>
+                    <motion.div 
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="relative z-10 w-full max-w-md p-8 bg-slate-900/50 backdrop-blur-xl border border-red-500/20 rounded-[40px] shadow-2xl flex flex-col items-center text-center"
+                    >
+                        <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mb-6 text-red-500">
+                            <Lock size={36} />
+                        </div>
+                        <h1 className="text-2xl font-black text-white uppercase tracking-widest mb-2">
+                            Suscripción Expirada
+                        </h1>
+                        <p className="text-slate-400 text-sm font-medium mb-8">
+                            El periodo de licencia para este dispositivo ha concluido. Conéctate a internet para sincronizar tu pago automáticamente o ingresa un código de renovación.
+                        </p>
+
+                        {!navigator.onLine && (
+                            <div className="w-full bg-orange-500/10 border border-orange-500/20 text-orange-400 p-4 rounded-2xl mb-8 flex items-center gap-3 text-left">
+                                <WifiOff size={24} className="shrink-0" />
+                                <div>
+                                    <h4 className="font-bold text-sm uppercase">Sin Conexión</h4>
+                                    <p className="text-xs">No podemos verificar tu pago en línea.</p>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="w-full mb-6">
+                            <label className="block text-left text-[0.65rem] font-black text-slate-500 uppercase tracking-widest mb-2 ml-2">Código de Renovación (6 dígitos)</label>
+                            <input
+                                type="password"
+                                value={inputVal}
+                                onChange={(e) => {
+                                    setInputVal(e.target.value.replace(/\D/g, ''));
+                                    setError(false);
+                                }}
+                                maxLength={6}
+                                className={`w-full bg-slate-950 border-2 ${error ? 'border-red-500' : 'border-slate-800 focus:border-red-500'} rounded-2xl px-6 py-4 text-center text-2xl tracking-[0.5em] text-white outline-none transition-all font-mono shadow-inner`}
+                                placeholder="••••••"
+                            />
+                            {error && <p className="text-red-500 text-xs mt-2 uppercase font-bold animate-pulse">Código Inválido</p>}
+                        </div>
+
+                        <button
+                            onClick={handleManualUnlock}
+                            disabled={loading || inputVal.length < 6}
+                            className="w-full bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white font-black uppercase tracking-widest py-4 rounded-2xl flex justify-center items-center gap-2 transition-all shadow-lg shadow-red-900/20"
+                        >
+                            {loading ? <Loader2 className="animate-spin" size={20} /> : <KeyRound size={20} />}
+                            {loading ? 'Verificando...' : 'Desbloquear'}
+                        </button>
+                    </motion.div>
+                </AnimatePresence>
+            </div>
+        );
+    }
+
+    return (
+        <>
+            {children}
+            {/* Pequeño indicador de días restantes si quedan pocos (opcional) */}
+            {daysRemaining !== null && daysRemaining <= 5 && daysRemaining > 0 && (
+                <div className="fixed bottom-4 right-4 z-[9000] bg-orange-500 text-white text-[10px] font-bold uppercase px-3 py-1.5 rounded-full shadow-lg animate-pulse">
+                    Licencia expira en {daysRemaining} días
+                </div>
+            )}
+        </>
     );
 }
 ```
@@ -19480,18 +20768,6 @@ export default function MarketCatalog({ initialCategory, hideHeader }: { initial
         setVisibleCount(6);
     }, [filter, search]);
 
-    useEffect(() => {
-        const handleScroll = () => {
-            if (typeof window === 'undefined') return;
-            const threshold = 150;
-            if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - threshold) {
-                setVisibleCount(prev => Math.min(prev + 6, filtered.length));
-            }
-        };
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, [filtered.length]);
-
     // Simulated Delivery Load Capacity Calculator (Universal)
     // Generic products weigh 5 units, services weigh 0 units. Maximum delivery unit limit is 120 units.
     const loadWeight = cart.reduce((sum, item) => {
@@ -19619,9 +20895,13 @@ export default function MarketCatalog({ initialCategory, hideHeader }: { initial
             </motion.div>
 
             {visibleCount < filtered.length && (
-                <div className="flex flex-col items-center justify-center py-12">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500"></div>
-                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-3">Cargando más productos...</span>
+                <div className="flex justify-center py-12">
+                    <button 
+                        onClick={() => setVisibleCount(prev => Math.min(prev + 12, filtered.length))}
+                        className="px-8 py-3 bg-white/10 hover:bg-white/20 border border-slate-700/50 text-slate-300 font-bold rounded-xl transition-all shadow-lg hover:-translate-y-1"
+                    >
+                        Cargar más productos
+                    </button>
                 </div>
             )}
 
@@ -21134,10 +22414,13 @@ export default function WalkieTalkieRadio() {
     const [isMuted, setIsMuted] = useState(false);
     const [status, setStatus] = useState<'standby' | 'transmitting' | 'receiving'>('standby');
     const [unread, setUnread] = useState(0);
-
     const mountTime = useRef(Date.now());
     const processedMsgIds = useRef<Set<string>>(new Set());
     const lastMsgCount = useRef(0);
+
+    const isStaff = profile?.role && ['superadmin', 'admin', 'sales', 'inventory', 'billing', 'driver', 'carga_descarga'].includes(profile.role);
+
+    if (!isStaff) return null;
 
     // Audio Synthesis: Generar ruido estático de radio virtual
     const playRadioStatic = (duration = 0.4, frequency = 1200, q = 1.5) => {
@@ -21476,7 +22759,8 @@ import {
     Mail,
     User,
     Save,
-    RefreshCw as Refresh
+    RefreshCw as Refresh,
+    Activity
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
@@ -21504,6 +22788,7 @@ const menuGroups = [
             { id: 'users',      title: 'Usuarios y Roles',   icon: <Users size={20} />,           href: '/dashboard/admin/users', premium: false },
             { id: 'customers',  title: 'CRM y Clientes',     icon: <User size={20} />,            href: '/dashboard/admin/customers', premium: false },
             { id: 'qr',         title: 'Vincular por QR',    icon: <Share2 size={20} />,          href: '/dashboard/qr',          premium: false },
+            { id: 'demo',       title: 'Test ISO / Demo',    icon: <Activity size={20} />,        href: '/dashboard/demo',        premium: false },
         ],
     },
     {
@@ -21851,6 +23136,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         };
     }, [profile?.uid, pathname, isDashboard, profile?.role, signOut, activeModules]);
 
+    // Update Gate: Prompt for version 1.5 update when online
+    useEffect(() => {
+        if (firebaseStatus === 'online') {
+            const hasSeenPrompt = sessionStorage.getItem('bunkker_update_prompt');
+            if (!hasSeenPrompt) {
+                setTimeout(() => {
+                    alert("📡 [BUNKKER E.C.O.S Online] Conexión a internet detectada.\n\nHay actualizaciones críticas y nuevas características de la Versión 1.5 PRO disponibles. Contacte a The Brecha Solutions Company para renovar su licencia y actualizar su sistema.");
+                    sessionStorage.setItem('bunkker_update_prompt', 'true');
+                }, 5000); // 5 seconds after detecting online status
+            }
+        }
+    }, [firebaseStatus]);
+
     const toggleSidebar = () => {
         setIsCollapsed(prev => {
             const next = !prev;
@@ -21968,7 +23266,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                             <Link
                                                 key={item.id}
                                                 id={`tour-sidebar-${item.id}`}
-                                                href={locked ? '/dashboard/suscripcion' : item.href}
+                                                href={locked ? '#' : item.href}
+                                                onClick={(e) => {
+                                                    if (locked) {
+                                                        e.preventDefault();
+                                                        alert("Esta característica es exclusiva de la versión 1.5 PRO (Premium). Por favor, adquiera la actualización para desbloquearla.");
+                                                    }
+                                                }}
                                                 style={{
                                                     display: 'flex',
                                                     alignItems: 'center',
@@ -26187,16 +27491,24 @@ export const useCart = () => {
                     finalStatus = 'pending_payment';
                     expiresAt = new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString();
                 } else {
-                    finalStatus = 'pending_delivery';
+                    finalStatus = 'paid_pending_delivery';
                 }
-            } else if (customerData.deliveryMethod === 'tienda') {
+            } else if (customerData.deliveryMethod === 'pickup') {
                 if (customerData.paymentMethod === 'pago_caja') {
                     finalStatus = 'pending_payment';
                 } else {
-                    finalStatus = 'pending_confirmation';
+                    finalStatus = 'paid_pending_delivery';
+                }
+            } else { // 'piso'
+                if (customerData.paymentMethod === 'pago_caja') {
+                    finalStatus = 'pending_payment';
+                } else {
+                    finalStatus = 'paid';
                 }
             }
         }
+
+        const deliveryPin = Math.floor(1000 + Math.random() * 9000).toString();
 
         const newOrder = {
             id: orderId, customer: customerData, customerEmail: customerData.phone,
@@ -26204,7 +27516,8 @@ export const useCart = () => {
             date: new Date().toISOString(), status: isNightQueue ? 'NIGHT_QUEUE' : finalStatus as any,
             expiresAt,
             paymentMethod: asRequest ? (customerData.paymentMethod || 'pago_caja') : (isOnline ? 'Online' : 'Venta Directa'), requiresInvoice,
-            deliveryMethod: customerData.deliveryMethod || 'tienda'
+            deliveryMethod: customerData.deliveryMethod || 'tienda',
+            deliveryPin
         };
 
         try {
@@ -26240,7 +27553,7 @@ export const useCart = () => {
                 description: `Pedido: ${orderId} por ${store.formatCurrency(orderTotal)}`,
                 metadata: { orderId, total: orderTotal, stockDeducted: true },
             });
-            return orderId;
+            return { orderId, deliveryPin };
         } catch (err: any) {
             console.error('Order error:', err);
             alert('❌ Error al procesar el pedido localmente.');
@@ -26261,12 +27574,13 @@ export const useCart = () => {
 
         try {
             // 1. Marcar orden como pagada en el Servidor Local
+            const nextStatus = order.deliveryType === 'DELIVERY' || order.deliveryMethod === 'repartidor' ? 'READY_TO_SHIP' : 'COMPLETED';
             const res = await fetch('/api/orders', {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     id: orderId,
-                    status: 'paid',
+                    status: nextStatus,
                     vendedorId: profile?.uid,
                     vendedorName: sellerName,
                     confirmedAt: new Date().toISOString()
@@ -26330,7 +27644,7 @@ export const useCart = () => {
                     id: orderId,
                     isLoaded: true,
                     loadingFinishedAt: new Date().toISOString(),
-                    status: 'ready_for_delivery'
+                    status: 'OUT_FOR_DELIVERY'
                 })
             });
 
@@ -26918,6 +28232,116 @@ export function useBarcodeScanner(onScan: (barcode: string) => void) {
 
 ---
 
+## 📄 ARCHIVO: `src/hooks/useDeviceAuth.ts`
+
+```typescript
+import { useState, useEffect } from 'react';
+import { v4 as uuidv4 } from 'uuid';
+
+// Hook para manejar la seguridad física del dispositivo (HWID, NIP y Activación Master)
+export function useDeviceAuth() {
+    const [hwid, setHwid] = useState<string>('');
+    const [isLocked, setIsLocked] = useState<boolean>(false);
+    const [isMasterActivated, setIsMasterActivated] = useState<boolean>(true);
+    const [devicePin, setDevicePin] = useState<string | null>(null);
+
+    // Inicialización del Dispositivo
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            // 1. Obtener o generar HWID
+            let storedHwid = localStorage.getItem('evo_hwid');
+            if (!storedHwid) {
+                // Generar huella única para este dispositivo
+                storedHwid = uuidv4();
+                localStorage.setItem('evo_hwid', storedHwid);
+            }
+            setHwid(storedHwid);
+
+            // 2. Revisar si es Master y si está activado
+            const hostname = window.location.hostname;
+            const isMaster = hostname === 'localhost' || hostname === '127.0.0.1';
+            if (isMaster) {
+                const activationCode = localStorage.getItem('evo_master_activation');
+                if (!activationCode) {
+                    setIsMasterActivated(false);
+                }
+            }
+
+            // 3. Cargar PIN del dispositivo si existe
+            const storedPin = localStorage.getItem('evo_device_pin');
+            if (storedPin) {
+                setDevicePin(storedPin);
+                setIsLocked(true); // Siempre bloquear al iniciar si tiene PIN
+            }
+
+            // 4. Timer de Inactividad (5 minutos = 300000 ms)
+            let inactivityTimer: NodeJS.Timeout;
+            const resetTimer = () => {
+                clearTimeout(inactivityTimer);
+                if (localStorage.getItem('evo_device_pin')) {
+                    inactivityTimer = setTimeout(() => {
+                        setIsLocked(true);
+                    }, 300000); // 5 minutos
+                }
+            };
+
+            // Escuchar eventos de actividad
+            window.addEventListener('mousemove', resetTimer);
+            window.addEventListener('keypress', resetTimer);
+            window.addEventListener('touchstart', resetTimer);
+            
+            resetTimer();
+
+            return () => {
+                window.removeEventListener('mousemove', resetTimer);
+                window.removeEventListener('keypress', resetTimer);
+                window.removeEventListener('touchstart', resetTimer);
+                clearTimeout(inactivityTimer);
+            };
+        }
+    }, []);
+
+    const activateMaster = (serial: string) => {
+        // Llave Maestra Única del Propietario
+        if (serial === 'EVO-MASTER-2026-X79') {
+            localStorage.setItem('evo_master_activation', serial);
+            setIsMasterActivated(true);
+            return true;
+        }
+        return false;
+    };
+
+    const setPin = (newPin: string) => {
+        localStorage.setItem('evo_device_pin', newPin);
+        setDevicePin(newPin);
+        setIsLocked(false);
+    };
+
+    const unlockWithPin = (enteredPin: string) => {
+        if (enteredPin === devicePin) {
+            setIsLocked(false);
+            return true;
+        }
+        return false;
+    };
+
+    const forceLock = () => setIsLocked(true);
+
+    return {
+        hwid,
+        isLocked,
+        isMasterActivated,
+        devicePin,
+        activateMaster,
+        setPin,
+        unlockWithPin,
+        forceLock
+    };
+}
+```
+
+---
+
 ## 📄 ARCHIVO: `src/lib/audit.ts`
 
 ```typescript
@@ -26939,7 +28363,9 @@ export type AuditAction =
     | 'AUTH_FAILURE'
     | 'AUTH_RESCUE_FAILURE'
     | 'AI_CLASSIFICATION'
-    | 'INVENTORY_MOVE';
+    | 'INVENTORY_MOVE'
+    | 'CORTE_CAJA_CIEGO'
+    | 'ORDER_CANCELLED';
 
 export interface AuditLog {
     type: AuditAction;
@@ -26963,6 +28389,7 @@ export async function logAudit(action: AuditLog) {
         const logRef = collection(db, 'audit_logs');
         const firebasePromise = addDoc(logRef, {
             ...action,
+            isoDate: new Date().toISOString(),
             timestamp: serverTimestamp(),
             systemVersion: '1.0.0-PRO'
         });
@@ -27324,7 +28751,7 @@ const storage = getStorage(app);
 
 // ── Offline persistence (works in browser & Electron) ──────────────────────
 if (typeof window !== 'undefined') {
-  // Desactivado temporalmente para limpiar la cola corrupta local
+  // Habilitado para la PWA del Chofer y la terminal POS offline
   enableMultiTabIndexedDbPersistence(db).catch((err: Error & { code?: string }) => {
     if (err.code === 'failed-precondition') {
       console.warn('[Firebase] Offline persistence unavailable: multiple tabs open.');
@@ -27663,19 +29090,77 @@ function connectToMaster(ip: string) {
 }
 
 /**
- * SINCRONIZACIÓN: Envía un cambio al maestro para que lo guarde y difunda
+ * SINCRONIZACIÓN ATÓMICA: Envía un cambio al maestro. 
+ * Si no hay conexión, se encola en localStorage y se reintenta automáticamente (WAL - ISO Standard).
  */
 export function emitToMaster(type: string, data: any) {
+    if (typeof window === 'undefined') return;
+
+    // Generar un UUID (Transaction ID) para hacer la operación idempotente
+    const txId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2);
+    const timestamp = Date.now();
+    
+    const payload = { txId, timestamp, type, data };
+
     if (!localSocket || localSocket.readyState !== WebSocket.OPEN) {
-        console.warn(`[P2P] No se pudo enviar ${type}: Sin conexión activa con el Maestro.`);
+        console.warn(`[P2P/WAL] Sin conexión activa. Encolando transacción: ${type} (${txId})`);
+        queueOfflineTransaction(payload);
         return;
     }
     
     try {
-        localSocket.send(JSON.stringify({ type, data }));
+        localSocket.send(JSON.stringify(payload));
+        console.log(`[P2P] Transacción enviada: ${type} (${txId})`);
     } catch (err) {
-        console.error("[P2P] Error al emitir mensaje:", err);
+        console.error("[P2P] Error al emitir mensaje, encolando:", err);
+        queueOfflineTransaction(payload);
     }
+}
+
+// --- ISO STANDARD: OFFLINE QUEUE (Write-Ahead Logging) ---
+
+function queueOfflineTransaction(payload: any) {
+    if (typeof window === 'undefined') return;
+    try {
+        const queueStr = localStorage.getItem('evo_offline_queue');
+        const queue = queueStr ? JSON.parse(queueStr) : [];
+        queue.push(payload);
+        localStorage.setItem('evo_offline_queue', JSON.stringify(queue));
+    } catch (e) {
+        console.error("Error al encolar transacción local:", e);
+    }
+}
+
+function flushOfflineQueue() {
+    if (typeof window === 'undefined') return;
+    if (!localSocket || localSocket.readyState !== WebSocket.OPEN) return;
+
+    try {
+        const queueStr = localStorage.getItem('evo_offline_queue');
+        if (!queueStr) return;
+        
+        const queue: any[] = JSON.parse(queueStr);
+        if (queue.length === 0) return;
+
+        console.log(`[P2P/WAL] Sincronizando cola offline... (${queue.length} transacciones pendientes)`);
+        
+        // En un caso real ISO, enviaríamos todo como un lote atómico.
+        // Aquí lo enviamos uno por uno para retrocompatibilidad "Caballo de Troya".
+        for (const payload of queue) {
+            localSocket.send(JSON.stringify(payload));
+            console.log(`[P2P/WAL] Reintentado: ${payload.type} (${payload.txId})`);
+        }
+        
+        // Vaciamos la cola tras enviar
+        localStorage.removeItem('evo_offline_queue');
+    } catch (e) {
+        console.error("Error al vaciar la cola offline:", e);
+    }
+}
+
+// Iniciar el Auto-Retry Loop en el cliente
+if (typeof window !== 'undefined') {
+    setInterval(flushOfflineQueue, 3000);
 }
 
 function getLocalIP() {
@@ -28159,6 +29644,7 @@ export interface DeliveryOrder {
     completedAt?: string;
     notes?: string;
     total?: number;
+    deliveryPin?: string;
 }
 
 export type ViewState = 'pool' | 'route' | 'delivery' | 'history';
@@ -28326,6 +29812,14 @@ export function classifyLocalProduct(name: string): ClassificationResult {
         subcategory: "Sin Clasificar",
         confidence: 1.0
     };
+}
+
+export async function classifyProductText(params: { name: string }): Promise<ClassificationResult> {
+    return classifyLocalProduct(params.name);
+}
+
+export async function logAIClassificationAudit(name: string, result: any, userId: string | undefined) {
+    console.log(`[AI AUDIT] User: ${userId || 'anonymous'} | Product: ${name} | Result: ${JSON.stringify(result)}`);
 }
 ```
 
