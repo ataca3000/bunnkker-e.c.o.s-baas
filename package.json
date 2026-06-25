@@ -1,6 +1,8 @@
 {
-  "name": "evostore-erp",
+  "name": "bunkker-ecos-erp",
   "version": "1.0.0",
+  "description": "E.C.O.S (Ecosistema Comercial de Operaciones Simplificadas)",
+  "author": "BRECHA SOLUCIONES S.A de C.V",
   "private": true,
   "main": "electron-main.js",
   "scripts": {
@@ -23,8 +25,8 @@
     "update:file": "node scripts/update-file.js"
   },
   "build": {
-    "appId": "com.evostore.erp",
-    "productName": "EvoStore ERP",
+    "appId": "com.bunkker.ecos",
+    "productName": "BUNKKER E.C.O.S",
     "directories": {
       "output": "dist_electron"
     },
@@ -43,9 +45,9 @@
       }
     ],
     "win": {
+      "icon": "build/icon.png",
       "target": [
-        "nsis",
-        "portable"
+        "nsis"
       ]
     }
   },
@@ -55,6 +57,7 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@ducanh2912/next-pwa": "^10.2.9",
     "@prisma/client": "^5.22.0",
+    "@stripe/stripe-js": "^9.8.0",
     "@types/nodemailer": "^8.0.1",
     "@types/uuid": "^10.0.0",
     "electron-updater": "^6.8.9",
@@ -95,6 +98,7 @@
     "@types/natural": "^5.1.5",
     "@types/node": "^20.19.43",
     "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
     "electron": "^42.4.1",
     "electron-builder": "^26.15.3",
     "typescript": "^5.8.2",

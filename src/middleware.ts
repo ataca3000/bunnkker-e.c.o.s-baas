@@ -10,6 +10,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     '/dashboard/patio': ['superadmin', 'carga_descarga', 'driver', 'inventory'],
     '/dashboard/delivery': ['superadmin', 'driver', 'carga_descarga'],
     '/dashboard/marketing': ['superadmin', 'marketing', 'admin'], // edición de la market
+    '/dashboard/reports': ['superadmin'], // Cierres de caja y reportes forenses
 };
 
 // Dominios que NO deben tratarse como tenants
@@ -54,7 +55,7 @@ export default function middleware(request: NextRequest) {
         }
 
         const matchedEntry = Object.entries(ROLE_PERMISSIONS).find(([path]) => 
-            pathname.startsWith(path)
+            pathname.startsWith(path) && path !== '/dashboard'
         );
 
         if (matchedEntry) {
@@ -64,8 +65,19 @@ export default function middleware(request: NextRequest) {
                 return NextResponse.redirect(new URL('/login?error=unauthorized', request.url));
             }
         } else {
-            // Default Deny for unknown subpaths, but ALLOW the root /dashboard
-            if (pathname !== '/dashboard' && role !== 'superadmin' && role !== 'admin') {
+            // Manejo estricto de la raíz /dashboard
+            if (pathname === '/dashboard') {
+                if (role !== 'superadmin' && role !== 'admin') {
+                    // Buscar a qué módulo tiene acceso primario
+                    const primaryPath = Object.entries(ROLE_PERMISSIONS).find(([_, roles]) => roles.includes(role!))?.[0];
+                    if (primaryPath) {
+                        return NextResponse.redirect(new URL(primaryPath, request.url));
+                    }
+                    // Si no tiene ningún rol asignado válido, mandarlo a login
+                    return NextResponse.redirect(new URL('/login?error=unauthorized', request.url));
+                }
+                // Si es admin, lo dejamos pasar a /dashboard
+            } else if (role !== 'superadmin' && role !== 'admin') {
                 console.warn(`[Security] Default Deny: ${role} intentó entrar a ${pathname}`);
                 return NextResponse.redirect(new URL('/login?error=unauthorized', request.url));
             }

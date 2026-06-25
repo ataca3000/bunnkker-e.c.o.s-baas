@@ -411,6 +411,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         };
     }, [profile?.uid, pathname, isDashboard, profile?.role, signOut, activeModules]);
 
+    // Update Gate: Prompt for version 1.5 update when online
+    useEffect(() => {
+        if (firebaseStatus === 'online') {
+            const hasSeenPrompt = sessionStorage.getItem('bunkker_update_prompt');
+            if (!hasSeenPrompt) {
+                setTimeout(() => {
+                    alert("📡 [BUNKKER E.C.O.S Online] Conexión a internet detectada.\n\nHay actualizaciones críticas y nuevas características de la Versión 1.5 PRO disponibles. Contacte a The Brecha Solutions Company para renovar su licencia y actualizar su sistema.");
+                    sessionStorage.setItem('bunkker_update_prompt', 'true');
+                }, 5000); // 5 seconds after detecting online status
+            }
+        }
+    }, [firebaseStatus]);
+
     const toggleSidebar = () => {
         setIsCollapsed(prev => {
             const next = !prev;
@@ -528,7 +541,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                             <Link
                                                 key={item.id}
                                                 id={`tour-sidebar-${item.id}`}
-                                                href={locked ? '/dashboard/suscripcion' : item.href}
+                                                href={locked ? '#' : item.href}
+                                                onClick={(e) => {
+                                                    if (locked) {
+                                                        e.preventDefault();
+                                                        alert("Esta característica es exclusiva de la versión 1.5 PRO (Premium). Por favor, adquiera la actualización para desbloquearla.");
+                                                    }
+                                                }}
                                                 style={{
                                                     display: 'flex',
                                                     alignItems: 'center',

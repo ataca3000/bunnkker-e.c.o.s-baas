@@ -25,7 +25,7 @@ const storage = getStorage(app);
 
 // ── Offline persistence (works in browser & Electron) ──────────────────────
 if (typeof window !== 'undefined') {
-  // Desactivado temporalmente para limpiar la cola corrupta local
+  // Habilitado para la PWA del Chofer y la terminal POS offline
   enableMultiTabIndexedDbPersistence(db).catch((err: Error & { code?: string }) => {
     if (err.code === 'failed-precondition') {
       console.warn('[Firebase] Offline persistence unavailable: multiple tabs open.');

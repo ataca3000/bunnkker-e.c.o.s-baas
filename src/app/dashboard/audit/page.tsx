@@ -46,7 +46,9 @@ const Row = memo(({ index, style, data }: ListChildComponentProps<AuditRowData>)
                 [{log.isLocal ? 'LOCAL' : log.type}]
             </span>
             <span className="flex-1 truncate">{log.description}</span>
-            <span className="text-white/40">{new Date(log.timestamp?.seconds * 1000).toLocaleTimeString()}</span>
+            <span className="text-white/40">
+                {log.isoDate ? new Date(log.isoDate).toLocaleTimeString() : (log.timestamp ? new Date(log.timestamp.seconds * 1000).toLocaleTimeString() : 'N/A')}
+            </span>
         </div>
     );
 }, areEqual); // 3. areEqual compara cambios en props (incluyendo el objeto style inyectado)

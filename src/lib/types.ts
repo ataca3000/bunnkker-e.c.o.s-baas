@@ -87,6 +87,8 @@ export interface Order {
     billingId?: string;
     createdAt?: number | any;
     auditTrail?: any[];
+    deliveryType?: string;
+    deliveryMethod?: string;
 }
 
 export interface DeliveryOrder {
@@ -104,6 +106,7 @@ export interface DeliveryOrder {
     completedAt?: string;
     notes?: string;
     total?: number;
+    deliveryPin?: string;
 }
 
 export type ViewState = 'pool' | 'route' | 'delivery' | 'history';

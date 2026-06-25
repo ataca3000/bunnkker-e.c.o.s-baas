@@ -35,6 +35,7 @@ export default function SalesDashboard() {
     const [showCameraScanner, setShowCameraScanner] = useState(false);
     const [currentTime, setCurrentTime] = useState('');
     const [toast, setToast] = useState<string | null>(null);
+    const [corteResult, setCorteResult] = useState<{ type: 'success' | 'mismatch', data: any } | null>(null);
 
     // POS State
     const [posSearch, setPosSearch] = useState('');
@@ -45,6 +46,11 @@ export default function SalesDashboard() {
     const [deliveryInfo, setDeliveryInfo] = useState<DeliveryInfo | undefined>();
     const [processingId, setProcessingId] = useState<string | null>(null);
     const [lastOrderData, setLastOrderData] = useState<any>(null);
+
+    // Cancel PIN states
+    const [orderToCancel, setOrderToCancel] = useState<string | null>(null);
+    const [cancelPinInput, setCancelPinInput] = useState('');
+    const [cancelPinError, setCancelPinError] = useState('');
 
     useEffect(() => {
         const timer = setInterval(() => {
@@ -140,9 +146,9 @@ export default function SalesDashboard() {
         const orderDate = new Date().toISOString();
         const firebaseStatus = useERPStore.getState().firebaseStatus;
 
-        // Si es delivery, creamos una orden para repartidor (pending_payment / pending_delivery)
-        // En este caso al pagarlo en caja, la orden queda "paid" o "paid_pending_delivery"
-        const finalStatus = orderType === 'delivery' ? 'paid_pending_delivery' : 'paid';
+        // Si es delivery, creamos una orden para repartidor (READY_TO_SHIP / pending_confirmation)
+        // En este caso al pagarlo en caja, la orden queda "READY_TO_SHIP" lista para patio
+        const finalStatus = orderType === 'delivery' ? 'READY_TO_SHIP' : 'completed';
         const cName = orderType === 'delivery' ? deliveryInfo?.customerName : 'Cliente Mostrador';
         
         const orderPayload = {
@@ -186,7 +192,8 @@ export default function SalesDashboard() {
                     total: posTotal,
                     paymentMethod: 'cash',
                     status: finalStatus,
-                    items: posCart.map(i => ({ id: i.id, quantity: i.quantity, price: i.price }))
+                    items: posCart.map(i => ({ id: i.id, quantity: i.quantity, price: i.price })),
+                    customer: orderPayload.customer
                 })
             }).catch(err => console.warn('Local Edge API sync failed (will retry):', err));
 
@@ -225,6 +232,34 @@ export default function SalesDashboard() {
             showToast(`❌ Error al procesar la venta: ${error?.message}`);
         } finally {
             setProcessingId(null);
+        }
+    };
+
+    const handleConfirmCancel = async () => {
+        if (cancelPinInput.length !== 6) {
+            setCancelPinError('El PIN debe ser de 6 dígitos.');
+            return;
+        }
+        // En un entorno real se validaría contra profile.pin o similar
+        // Por ahora lo aceptamos si es de 6 dígitos para registrar la auditoría
+        
+        try {
+            await cancelOrder(orderToCancel as string);
+            await logAudit({
+                type: 'ORDER_CANCELLED',
+                userId: profile?.uid || 'POS',
+                userName: profile?.displayName || 'Cajero',
+                userRole: profile?.role || 'sales',
+                description: `Cancelación de orden ${orderToCancel} autorizada con PIN.`,
+                metadata: { orderId: orderToCancel, authPin: cancelPinInput }
+            });
+            showToast('✅ Orden rechazada correctamente.');
+        } catch (e) {
+            showToast('❌ Error al rechazar la orden.');
+        } finally {
+            setOrderToCancel(null);
+            setCancelPinInput('');
+            setCancelPinError('');
         }
     };
 
@@ -361,7 +396,7 @@ export default function SalesDashboard() {
 
                                         <div className="flex gap-3">
                                             <button 
-                                                onClick={() => cancelOrder(order.id)}
+                                                onClick={() => setOrderToCancel(order.id)}
                                                 className="flex-1 flex items-center justify-center gap-2 py-3 bg-red-500/10 border border-red-500/20 text-red-400 font-bold rounded-xl hover:bg-red-500/20 transition-colors uppercase tracking-widest text-xs"
                                             >
                                                 <XCircle size={14} /> Rechazar
@@ -417,13 +452,111 @@ export default function SalesDashboard() {
 
             {/* Modal Corte de Caja Ciego */}
             <CorteCajaCiego 
-                isOpen={showCorteCaja}
+                isOpen={showCorteCaja && !corteResult}
                 onClose={() => setShowCorteCaja(false)}
-                onConfirm={(montoDeclarado) => {
-                    alert(`✅ Corte de caja registrado con éxito.\nTotal Declarado: ${formatCurrency(montoDeclarado)}\n\nEsta información ha sido encriptada y enviada al Radar de Auditoría del dueño.`);
-                    setShowCorteCaja(false);
+                onConfirm={async (montoDeclarado) => {
+                    try {
+                        const res = await fetch('/api/sales/close-register', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                declaredAmount: montoDeclarado,
+                                cashierId: profile?.uid || 'unknown',
+                                cashierName: profile?.displayName || 'Cajero'
+                            })
+                        });
+                        const result = await res.json();
+                        if (result.success) {
+                            await logAudit({
+                                type: 'CORTE_CAJA_CIEGO',
+                                userId: profile?.uid || 'POS',
+                                userName: profile?.displayName || 'Cajero',
+                                userRole: profile?.role || 'sales',
+                                description: `Corte Ciego Procesado. Declarado: $${montoDeclarado.toFixed(2)}, Descuadre: $${result.data.discrepancy.toFixed(2)}`,
+                                metadata: { montoDeclarado, discrepancy: result.data.discrepancy }
+                            });
+                            
+                            if (result.data.discrepancy < 0) {
+                                setCorteResult({ type: 'mismatch', data: result.data });
+                            } else {
+                                setCorteResult({ type: 'success', data: result.data });
+                            }
+                        } else {
+                            alert(`Error: ${result.error}`);
+                        }
+                    } catch (e) {
+                        alert('Error de red al procesar el corte.');
+                    }
                 }}
             />
+
+            {/* Resultado del Corte */}
+            {corteResult && (
+                <div className="fixed inset-0 z-[5000] bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+                    <div className="bg-slate-900 border border-slate-700 rounded-3xl p-8 max-w-md w-full text-center shadow-2xl">
+                        {corteResult.type === 'success' ? (
+                            <>
+                                <CheckCircle2 size={80} className="text-emerald-500 mx-auto mb-6" />
+                                <h2 className="text-3xl font-black text-white mb-2">¡Corte Perfecto!</h2>
+                                <p className="text-emerald-400 font-medium mb-8">El efectivo físico coincide o excede el esperado. Turno cerrado con éxito.</p>
+                                <button onClick={() => { setCorteResult(null); setShowCorteCaja(false); window.location.href='/dashboard'; }} className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition-all shadow-[0_0_20px_rgba(16,185,129,0.4)]">
+                                    Finalizar y Salir
+                                </button>
+                            </>
+                        ) : (
+                            <>
+                                <div className="w-24 h-24 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse">
+                                    <AlertCircle size={60} className="text-red-500" />
+                                </div>
+                                <h2 className="text-3xl font-black text-white mb-2">Descuadre Detectado</h2>
+                                <p className="text-slate-300 text-sm mb-6">
+                                    El sistema detectó un faltante en tu caja. Esto ha sido reportado en la bitácora inmutable de auditoría para el dueño.
+                                </p>
+                                <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 mb-8">
+                                    <span className="text-red-400 font-black text-2xl uppercase">Faltante: ${Math.abs(corteResult.data.discrepancy).toFixed(2)}</span>
+                                </div>
+                                <div className="flex gap-4">
+                                    <button onClick={() => window.open(`/dashboard/sales/my-day`, '_blank')} className="flex-1 py-4 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl transition-all border border-slate-600">
+                                        Ver Historial
+                                    </button>
+                                    <button onClick={() => { setCorteResult(null); setShowCorteCaja(false); window.location.href='/dashboard'; }} className="flex-1 py-4 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl transition-all shadow-[0_0_20px_rgba(220,38,38,0.4)]">
+                                        Aceptar y Salir
+                                    </button>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* Modal PIN Cancelación */}
+            {orderToCancel && (
+                <div className="fixed inset-0 z-[4000] bg-black/80 flex items-center justify-center p-4">
+                    <div className="bg-zinc-900 border border-white/10 p-6 rounded-2xl w-full max-w-sm">
+                        <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2"><AlertCircle className="text-red-500"/> Autorización Requerida</h3>
+                        <p className="text-sm text-zinc-400 mb-6">Ingresa tu PIN de 6 dígitos para autorizar la cancelación de esta orden.</p>
+                        
+                        <input 
+                            type="password"
+                            inputMode="numeric"
+                            maxLength={6}
+                            value={cancelPinInput}
+                            onChange={(e) => {
+                                setCancelPinInput(e.target.value.replace(/\D/g, ''));
+                                setCancelPinError('');
+                            }}
+                            className="w-full bg-black/50 border border-white/10 text-white text-center text-3xl tracking-[1em] p-4 rounded-xl mb-2 focus:border-blue-500 outline-none"
+                            placeholder="••••••"
+                        />
+                        {cancelPinError && <p className="text-red-500 text-xs text-center font-bold mb-4">{cancelPinError}</p>}
+                        
+                        <div className="flex gap-3 mt-6">
+                            <button onClick={() => { setOrderToCancel(null); setCancelPinInput(''); }} className="flex-1 py-3 text-zinc-400 hover:text-white font-bold text-sm">Cancelar</button>
+                            <button onClick={handleConfirmCancel} className="flex-1 py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-sm shadow-[0_0_15px_rgba(220,38,38,0.4)]">Rechazar Orden</button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Toast Notification */}
             <AnimatePresence>

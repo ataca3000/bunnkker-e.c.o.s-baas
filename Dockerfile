@@ -1,21 +1,30 @@
-FROM node:18-alpine
+FROM node:20-alpine AS base
 
-WORKDIR /workspace
+# Dependencias para SQLite y Prisma
+RUN apk add --no-cache libc6-compat openssl
 
-# Install system dependencies if needed (e.g., for native addons)
-RUN apk add --no-cache libc6-compat
+WORKDIR /app
 
-# Copiamos solo los archivos de dependencias primero para optimizar la cache de Docker
-COPY package.json package-lock.json* ./
+# Set production environment
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
 
-# Instalar dependencias
-RUN npm install
+# Crear usuario no root por seguridad
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
 
-# Copiar el resto del código
-COPY . .
+# Copiar archivos generados por Next.js standalone
+COPY --chown=nextjs:nodejs .next/standalone ./
+COPY --chown=nextjs:nodejs .next/static ./.next/static
+COPY --chown=nextjs:nodejs public ./public
 
-# Exponer el puerto
+# Directorio de bases de datos locales
+RUN mkdir -p /app/prisma && chown -R nextjs:nodejs /app/prisma
+COPY --chown=nextjs:nodejs prisma ./prisma
+
+USER nextjs
+
 EXPOSE 3000
 
-# Iniciar la app en modo desarrollo
-CMD ["npm", "run", "dev"]
+CMD ["node", "server.js"]

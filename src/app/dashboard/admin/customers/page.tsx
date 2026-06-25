@@ -5,7 +5,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Users, Search, ChevronRight, User } from 'lucide-react';
 import { db } from '@/lib/firebase';
 import { collection, query, onSnapshot, where } from 'firebase/firestore';
-import ClientCRMModal from '@/components/admin/ClientCRMModal';
+import dynamic from 'next/dynamic';
+
+const ClientCRMModal = dynamic(() => import('@/components/admin/ClientCRMModal'), { ssr: false });
 
 export default function CustomersCRM() {
     const [clients, setClients] = useState<any[]>([]);
@@ -31,30 +33,30 @@ export default function CustomersCRM() {
     );
 
     return (
-        <div style={{ backgroundColor: '#f8fafc', minHeight: '100vh' }}>
-            <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+        <div className="bg-[#0f172a] min-h-screen text-slate-200">
+            <div className="max-w-[1200px] mx-auto p-8">
+                <div className="flex justify-between items-center mb-8">
                     <div>
-                        <h1 style={{ fontSize: '2.5rem', fontWeight: '900', color: '#0f172a', margin: 0, letterSpacing: '-0.025em' }}>CRM DE CLIENTES</h1>
-                        <p style={{ color: '#64748b', marginTop: '4px' }}>Historial, Quejas, Soporte y Base de Datos</p>
+                        <h1 className="text-4xl font-black text-white m-0 tracking-tight">CRM DE CLIENTES</h1>
+                        <p className="text-slate-400 mt-1">Historial, Quejas, Soporte y Base de Datos</p>
                     </div>
                 </div>
 
-                <div style={{ position: 'relative', marginBottom: '2rem' }}>
-                    <Search size={20} color="#94a3b8" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)' }} />
+                <div className="relative mb-8">
+                    <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input 
                         type="text" 
                         placeholder="Buscar clientes por nombre o correo..."
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
-                        style={{ width: '100%', padding: '16px 16px 16px 48px', borderRadius: '16px', border: '1px solid #cbd5e1', fontSize: '1rem', outline: 'none', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}
+                        className="w-full py-4 pl-12 pr-4 rounded-2xl border border-slate-700 bg-slate-800 text-white text-base outline-none shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
                     />
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '20px' }}>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                     {filteredClients.length === 0 && (
-                        <div style={{ padding: '2rem', textAlign: 'center', color: '#888', gridColumn: '1 / -1' }}>
-                            <User size={48} color="#cbd5e1" style={{ margin: '0 auto 10px auto', display: 'block' }} />
+                        <div className="col-span-full p-8 text-center text-slate-500">
+                            <User size={48} className="mx-auto mb-3 text-slate-600" />
                             <p>No se encontraron clientes.</p>
                             <small>Los usuarios que se registran desde la tienda online aparecerán aquí.</small>
                         </div>
@@ -62,21 +64,21 @@ export default function CustomersCRM() {
                     {filteredClients.map(user => (
                         <motion.div 
                             key={user.uid}
-                            whileHover={{ y: -4, boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}
+                            whileHover={{ y: -4, boxShadow: '0 20px 25px -5px rgba(0,0,0,0.3)' }}
                             onClick={() => setSelectedClient(user)}
-                            style={{ background: '#fff', borderRadius: '24px', padding: '24px', border: '1px solid #f1f5f9', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transition: 'all 0.2s' }}
+                            className="bg-slate-800 rounded-3xl p-6 border border-slate-700 cursor-pointer flex justify-between items-center transition-all"
                         >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                                <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: '#f8fafc', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8' }}>
+                            <div className="flex items-center gap-4">
+                                <div className="w-14 h-14 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center text-slate-400">
                                     <Users size={28} />
                                 </div>
                                 <div>
-                                    <div style={{ fontWeight: 'bold', fontSize: '1.1rem', color: '#0f172a' }}>{user.displayName || 'Cliente Anónimo'}</div>
-                                    <div style={{ fontSize: '0.9rem', color: '#64748b' }}>{user.email}</div>
-                                    <div style={{ fontSize: '0.8rem', color: '#0ea5e9', marginTop: '4px', fontWeight: 'bold' }}>VER CRM E HISTORIAL</div>
+                                    <div className="font-bold text-lg text-white">{user.displayName || 'Cliente Anónimo'}</div>
+                                    <div className="text-sm text-slate-400">{user.email}</div>
+                                    <div className="text-xs text-sky-400 mt-1 font-bold">VER CRM E HISTORIAL</div>
                                 </div>
                             </div>
-                            <ChevronRight size={24} color="#cbd5e1" />
+                            <ChevronRight size={24} className="text-slate-500" />
                         </motion.div>
                     ))}
                 </div>

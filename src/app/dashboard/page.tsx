@@ -134,17 +134,17 @@ const SuperAdminDashboard = ({
     yesterday.setDate(yesterday.getDate() - 1);
 
     const yesterdaySales = orders
-        .filter((o: any) => o.status === 'paid' && new Date(o.date).toDateString() === yesterday.toDateString())
+        .filter((o: any) => ['paid', 'COMPLETED', 'READY_TO_SHIP', 'OUT_FOR_DELIVERY', 'DELIVERED'].includes(o.status) && new Date(o.date).toDateString() === yesterday.toDateString())
         .reduce((sum: number, o: any) => sum + o.total, 0);
 
     const todaySales = orders
-        .filter((o: any) => o.status === 'paid' && new Date(o.date).toDateString() === new Date().toDateString())
+        .filter((o: any) => ['paid', 'COMPLETED', 'READY_TO_SHIP', 'OUT_FOR_DELIVERY', 'DELIVERED'].includes(o.status) && new Date(o.date).toDateString() === new Date().toDateString())
         .reduce((sum: number, o: any) => sum + o.total, 0);
 
     const salesDiff = yesterdaySales > 0 ? ((todaySales - yesterdaySales) / yesterdaySales) * 100 : (todaySales > 0 ? 100 : 0);
 
     const todayOrders = orders.filter((o: any) =>
-        o.status === 'paid' && new Date(o.date).toDateString() === new Date().toDateString()
+        ['paid', 'COMPLETED', 'READY_TO_SHIP', 'OUT_FOR_DELIVERY', 'DELIVERED'].includes(o.status) && new Date(o.date).toDateString() === new Date().toDateString()
     ).length;
 
     const chartData = useMemo(() => {
@@ -155,7 +155,7 @@ const SuperAdminDashboard = ({
             const dateStr = d.toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric' });
             
             const salesOnDate = orders
-                .filter((o: any) => o.status === 'paid' && new Date(o.date).toDateString() === d.toDateString())
+                .filter((o: any) => ['paid', 'COMPLETED', 'READY_TO_SHIP', 'OUT_FOR_DELIVERY', 'DELIVERED'].includes(o.status) && new Date(o.date).toDateString() === d.toDateString())
                 .reduce((sum: number, o: any) => sum + o.total, 0);
             
             data.push({ name: dateStr, ventas: salesOnDate });

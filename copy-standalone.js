@@ -41,4 +41,24 @@ if (fs.existsSync(publicSrc)) {
     console.log("✅ Carpeta public copiada al standalone.");
 }
 
+// CRÍTICO: Copiar módulo 'next' porque electron-builder a veces lo ignora o Next.js no lo traza bien en Windows
+const nextModuleSrc = path.join(__dirname, 'node_modules', 'next');
+const nextModuleDest = path.join(standaloneDir, 'node_modules', 'next');
+if (fs.existsSync(nextModuleSrc)) {
+    fs.cpSync(nextModuleSrc, nextModuleDest, { recursive: true, force: true });
+    console.log("✅ Módulo 'next' forzado en standalone/node_modules.");
+}
+
+// CRÍTICO: Renombrar node_modules a node_modules_backup para engañar a electron-builder
+const nmPath = path.join(standaloneDir, 'node_modules');
+const nmBackupPath = path.join(standaloneDir, 'node_modules_backup');
+if (fs.existsSync(nmPath)) {
+    // Si ya existe un backup de una corrida anterior, borrarlo
+    if (fs.existsSync(nmBackupPath)) {
+        fs.rmSync(nmBackupPath, { recursive: true, force: true });
+    }
+    fs.renameSync(nmPath, nmBackupPath);
+    console.log("✅ node_modules ocultado como node_modules_backup para el empaquetador.");
+}
+
 console.log("✅ Standalone preparado exitosamente.");

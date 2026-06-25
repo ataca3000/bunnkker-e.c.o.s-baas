@@ -50,18 +50,17 @@ export default function RegisterPage() {
     const [age, setAge] = useState('');
     const [gender, setGender] = useState('');
     const [address, setAddress] = useState('');
-    const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
     const [curpRfc, setCurpRfc] = useState('');
     const [password, setPassword] = useState('');
     const [confirm, setConfirm] = useState('');
 
     // ── Login ───────────────────────────────────────────────────────────────
-    const [loginEmail, setLoginEmail] = useState('');
+    const [loginPhone, setLoginPhone] = useState('');
     const [loginPass, setLoginPass] = useState('');
 
     // ── Recover ─────────────────────────────────────────────────────────────
-    const [recoverEmail, setRecoverEmail] = useState('');
+    const [recoverPhone, setRecoverPhone] = useState('');
 
     const reset = () => { setError(''); setSuccess(''); };
 
@@ -73,10 +72,11 @@ export default function RegisterPage() {
         if (password.length < 6) { setError('La contraseña debe tener al menos 6 caracteres.'); return; }
         setLoading(true);
         try {
-            const cred = await createUserWithEmailAndPassword(auth, email, password);
+            const fakeEmail = `${phone.replace(/\D/g, '')}@cliente.admin.com`;
+            const cred = await createUserWithEmailAndPassword(auth, fakeEmail, password);
             const uid = cred.user.uid;
             await setDoc(doc(db, 'users', uid), {
-                email,
+                email: fakeEmail,
                 displayName: name,
                 phone,
                 age: parseInt(age) || null,
@@ -91,8 +91,8 @@ export default function RegisterPage() {
             document.cookie = `msj-role=client; path=/; max-age=86400; SameSite=Lax`;
             window.location.href = '/cuenta';
         } catch (err: any) {
-            if (err.code === 'auth/email-already-in-use') setError('Este correo ya está registrado.');
-            else if (err.code === 'auth/weak-password') setError('La contraseña debe tener al menos 6 caracteres.');
+            if (err.code === 'auth/email-already-in-use') setError('Este número ya está registrado.');
+            else if (err.code === 'auth/weak-password') setError('El PIN/Contraseña debe tener al menos 6 caracteres.');
             else setError('Error al crear la cuenta. Intenta de nuevo.');
         } finally { setLoading(false); }
     };
@@ -103,10 +103,11 @@ export default function RegisterPage() {
         reset();
         setLoading(true);
         try {
-            await signInWithEmailAndPassword(auth, loginEmail, loginPass);
+            const fakeEmail = `${loginPhone.replace(/\D/g, '')}@cliente.admin.com`;
+            await signInWithEmailAndPassword(auth, fakeEmail, loginPass);
             window.location.href = '/cuenta';
         } catch {
-            setError('Correo o contraseña incorrectos.');
+            setError('Número o contraseña incorrectos.');
         } finally { setLoading(false); }
     };
 
@@ -114,19 +115,13 @@ export default function RegisterPage() {
     const handleRecover = async (e: React.FormEvent) => {
         e.preventDefault();
         reset();
-        setLoading(true);
-        try {
-            await sendPasswordResetEmail(auth, recoverEmail);
-            setSuccess('Te enviamos un correo para restablecer tu contraseña. Revisa tu bandeja de entrada.');
-        } catch {
-            setError('No encontramos ese correo. Verifica que esté bien escrito.');
-        } finally { setLoading(false); }
+        setError('Por seguridad, para recuperar acceso con tu número contacta directamente a la tienda.');
     };
 
     const titles: Record<Mode, { title: string; sub: string; icon: React.ReactNode; color: string }> = {
-        register: { title: 'Crear Cuenta', sub: 'Únete para hacer pedidos y guardar tu información', icon: <UserPlus size={44} />, color: 'purple' },
-        login:    { title: 'Bienvenido',   sub: 'Accede a tu cuenta para ver tus pedidos',           icon: <ShieldCheck size={44} />, color: 'sky' },
-        recover:  { title: 'Recuperar Acceso', sub: 'Te enviamos un enlace a tu correo',             icon: <KeyRound size={44} />, color: 'amber' },
+        register: { title: 'Crear Cuenta', sub: 'Guarda tus datos para pedir más rápido', icon: <UserPlus size={44} />, color: 'purple' },
+        login:    { title: 'Bienvenido',   sub: 'Accede con tu número celular',           icon: <ShieldCheck size={44} />, color: 'sky' },
+        recover:  { title: 'Recuperar Acceso', sub: 'Contacta a soporte',             icon: <KeyRound size={44} />, color: 'amber' },
     };
     const t = titles[mode];
     const accentMap: Record<string, string> = {
@@ -226,20 +221,11 @@ export default function RegisterPage() {
                             </Field>
 
                             {/* Teléfono */}
-                            <Field label="Número Telefónico" icon={<Phone size={10} />}>
+                            <Field label="Número Celular (Usuario)" icon={<Phone size={10} />}>
                                 <div className="relative">
                                     <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
-                                    <input type="tel" placeholder="55 1234 5678" required
+                                    <input type="tel" placeholder="10 dígitos (Ej. 5512345678)" required minLength={10} maxLength={10}
                                         value={phone} onChange={e => setPhone(e.target.value)} className={inputCls} />
-                                </div>
-                            </Field>
-
-                            {/* Correo */}
-                            <Field label="Correo Electrónico" icon={<Mail size={10} />}>
-                                <div className="relative">
-                                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
-                                    <input type="email" placeholder="tucorreo@ejemplo.com" required
-                                        value={email} onChange={e => setEmail(e.target.value)} className={inputCls} />
                                 </div>
                             </Field>
 
@@ -256,17 +242,17 @@ export default function RegisterPage() {
 
                             {/* Contraseña */}
                             <div className="grid grid-cols-2 gap-3">
-                                <Field label="Contraseña" icon={<Lock size={10} />}>
+                                <Field label="Contraseña / PIN" icon={<Lock size={10} />}>
                                     <div className="relative">
                                         <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
-                                        <input type="password" placeholder="••••••••" required minLength={6}
+                                        <input type="password" placeholder="Min. 6 caracteres" required minLength={6}
                                             value={password} onChange={e => setPassword(e.target.value)} className={inputCls} />
                                     </div>
                                 </Field>
                                 <Field label="Confirmar" icon={<Lock size={10} />}>
                                     <div className="relative">
                                         <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
-                                        <input type="password" placeholder="••••••••" required minLength={6}
+                                        <input type="password" placeholder="Repite contraseña" required minLength={6}
                                             value={confirm} onChange={e => setConfirm(e.target.value)} className={inputCls} />
                                     </div>
                                 </Field>
@@ -283,11 +269,11 @@ export default function RegisterPage() {
                     {mode === 'login' && (
                         <motion.form key="login" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                             onSubmit={handleLogin} className="space-y-4">
-                            <Field label="Correo Electrónico" icon={<Mail size={10} />}>
+                            <Field label="Número Celular" icon={<Phone size={10} />}>
                                 <div className="relative">
-                                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
-                                    <input type="email" placeholder="tucorreo@ejemplo.com" required
-                                        value={loginEmail} onChange={e => setLoginEmail(e.target.value)} className={inputCls} />
+                                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                                    <input type="tel" placeholder="10 dígitos (Ej. 5512345678)" required minLength={10} maxLength={10}
+                                        value={loginPhone} onChange={e => setLoginPhone(e.target.value)} className={inputCls} />
                                 </div>
                             </Field>
                             <Field label="Contraseña" icon={<Lock size={10} />}>
@@ -314,11 +300,11 @@ export default function RegisterPage() {
                     {mode === 'recover' && (
                         <motion.form key="recover" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                             onSubmit={handleRecover} className="space-y-4">
-                            <Field label="Correo Electrónico Registrado" icon={<Mail size={10} />}>
+                            <Field label="Número Celular Registrado" icon={<Phone size={10} />}>
                                 <div className="relative">
-                                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
-                                    <input type="email" placeholder="tucorreo@ejemplo.com" required
-                                        value={recoverEmail} onChange={e => setRecoverEmail(e.target.value)} className={inputCls} />
+                                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                                    <input type="tel" placeholder="10 dígitos" required
+                                        value={recoverPhone} onChange={e => setRecoverPhone(e.target.value)} className={inputCls} />
                                 </div>
                             </Field>
                             <button disabled={loading}

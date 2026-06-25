@@ -1,9 +1,9 @@
 @echo off
-title Servidor Local Admin.com
+title Servidor 
 cd /d "%~dp0"
 
 echo ==========================================
-echo    SERVIDOR LOCAL ADMIN.COM ACTIVO
+echo    SERVIDOR 
 echo ==========================================
 for /f "tokens=2 delims=:" %%i in ('ipconfig ^| findstr /i "IPv4"') do (
     set IP=%%i
@@ -15,12 +15,10 @@ echo Las demas PCs deben conectarse a esta IP.
 echo ==========================================
 
 :: Validar puertos. Si fallan (están libres), arrancar emuladores.
-call npm run validate:ports >nul 2>&1
+call npm run validate:ports >null 2>&1
 if %errorlevel% neq 0 (
   echo [!] La infraestructura no responde. Iniciando servicios locales...
   npm run emulate:local
 ) else (
   echo [OK] Servicios locales activos y funcionando.
 )
-
-pause

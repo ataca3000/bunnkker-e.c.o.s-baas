@@ -84,6 +84,22 @@ const createServer = () => {
         console.log('[Server] Iniciando desde:', serverPath);
         const serverDir = path.dirname(serverPath);
 
+        const fs = require('fs');
+        const logPath = path.join(app.getPath('userData'), 'server.log');
+        fs.appendFileSync(logPath, '\n\n=== NUEVO INICIO DE SERVIDOR ===\n');
+        
+        // Restaurar node_modules si fue ocultado por copy-standalone.js
+        const nmBackupPath = path.join(serverDir, 'node_modules_backup');
+        const nmPath = path.join(serverDir, 'node_modules');
+        if (fs.existsSync(nmBackupPath) && !fs.existsSync(nmPath)) {
+            try {
+                fs.renameSync(nmBackupPath, nmPath);
+                fs.appendFileSync(logPath, '[INFO] node_modules restaurado exitosamente.\n');
+            } catch (e) {
+                fs.appendFileSync(logPath, '[ERROR] Falló restauración de node_modules: ' + e.message + '\n');
+            }
+        }
+
         serverProcess = fork(serverPath, [], {
             cwd: serverDir,
             env: {
@@ -93,15 +109,39 @@ const createServer = () => {
                 NODE_ENV: 'production',
                 MACHINE_HWID: machineIdSync(true) // Inyecta el HWID para que Next.js valide la licencia
             },
-            stdio: 'inherit',
+            stdio: ['ignore', 'pipe', 'pipe', 'ipc']
+        });
+
+        let serverLogs = '';
+
+        serverProcess.stdout.on('data', (data) => {
+            const txt = data.toString();
+            serverLogs += txt;
+            fs.appendFileSync(logPath, '[STDOUT] ' + txt);
+            console.log(txt);
+        });
+
+        serverProcess.stderr.on('data', (data) => {
+            const txt = data.toString();
+            serverLogs += txt;
+            fs.appendFileSync(logPath, '[STDERR] ' + txt);
+            console.error(txt);
         });
 
         // Darle 5 segundos al servidor para arrancar bien
         setTimeout(resolve, 5000);
 
         serverProcess.on('error', (err) => {
-            console.error('[Server] Error crítico:', err);
+            fs.appendFileSync(logPath, '[ERROR CRITICO] ' + err.message);
+            dialog.showErrorBox('Error al iniciar Motor Interno', `Detalles:\n${err.message}\n\nLogs:\n${serverLogs}`);
             reject(err);
+        });
+
+        serverProcess.on('exit', (code, signal) => {
+            if (code !== 0) {
+                fs.appendFileSync(logPath, `[EXIT] Code: ${code}, Signal: ${signal}\n`);
+                dialog.showErrorBox('Motor Interno (Next.js) Detenido', `El servidor se cerró inesperadamente con código ${code}.\n\nLogs:\n${serverLogs.substring(serverLogs.length - 1000)}`);
+            }
         });
     });
 };
@@ -129,10 +169,13 @@ const createWindow = (urlHost = 'localhost') => {
     // Mantener la ruta principal (Market) como página de inicio
     mainWindow.loadURL(`http://${urlHost}:3000`);
 
-    mainWindow.webContents.on('did-fail-load', () => {
-        console.log('[Electron] Servidor aún no listo. Reintentando en 2 segundos...');
+    mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
+        // Ignorar ERR_ABORTED (-3), que ocurre normalmente al hacer clic rápido en enlaces o redirecciones
+        if (errorCode === -3) return;
+        
+        console.log(`[Electron] Error cargando ${validatedURL}: ${errorDescription}. Reintentando...`);
         setTimeout(() => {
-            if (mainWindow) mainWindow.loadURL(`http://${urlHost}:3000`);
+            if (mainWindow) mainWindow.loadURL(validatedURL);
         }, 2000);
     });
 

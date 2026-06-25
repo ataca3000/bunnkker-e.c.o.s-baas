@@ -41,7 +41,7 @@ function getCategoryIcon(catName: string) {
     return '🛠️';
 }
 
-function ProductCard({ p, onOpenDetails, onGenerateCFDI }: { p: Product, onOpenDetails: (p: Product) => void, onGenerateCFDI: (p: Product) => void }) {
+function ProductCard({ p, index, onOpenDetails, onGenerateCFDI }: { p: Product, index: number, onOpenDetails: (p: Product) => void, onGenerateCFDI: (p: Product) => void }) {
     const { addToCart } = useCart();
     const [qty, setQty] = useState(p.stock > 0 ? 1 : 0);
 
@@ -53,116 +53,111 @@ function ProductCard({ p, onOpenDetails, onGenerateCFDI }: { p: Product, onOpenD
     return (
         <motion.div
             layout
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-50px" }}
-            whileHover={{ y: -8 }}
-            className="relative flex flex-col cursor-pointer overflow-hidden rounded-2xl bg-slate-900/80 backdrop-blur-xl border border-white/10 border-b-4 border-b-orange-500 hover:border-orange-500/50 hover:shadow-[0_0_30px_rgba(249,115,22,0.3)] transition-all duration-300 ease-out group"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="flex flex-col bg-[#13111C] rounded-[24px] overflow-hidden border border-white/5 hover:border-purple-500/50 transition-all duration-300 group"
         >
+            {/* Imagen principal con fallback */}
             <button 
                 type="button"
-                className="h-[210px] w-full overflow-hidden relative block" 
+                className="w-full aspect-[4/3] relative block overflow-hidden bg-[#0A0810]" 
                 onClick={() => onOpenDetails(p)}
                 aria-label={`Ver detalles de ${p.name}`}
             >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                    src={p.image}
-                    alt={p.name}
-                    className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
-                />
+                {p.image ? (
+                    <img
+                        src={p.image}
+                        alt={p.name}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 opacity-80 group-hover:opacity-100"
+                        onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            if (e.currentTarget.nextElementSibling) {
+                                (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex';
+                            }
+                        }}
+                    />
+                ) : null}
+                
+                {/* Fallback en caso de no haber imagen o error */}
+                <div className={`absolute inset-0 flex items-center justify-center bg-slate-900/50 ${p.image ? 'hidden' : 'flex'}`}>
+                    <Package size={48} className="text-slate-700/50" />
+                </div>
+
                 {p.stock === 0 && (
-                    <div className="absolute inset-0 bg-slate-900/75 backdrop-blur-sm flex items-center justify-center text-white font-black text-xl tracking-widest">
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center text-red-500 font-black text-xl tracking-widest z-10 border-2 border-red-500/50 m-4 rounded-xl">
                         AGOTADO
                     </div>
                 )}
             </button>
 
-            <div className="p-6 flex-1 flex flex-col">
-                <div className="flex justify-between items-start">
-                    <button 
-                        type="button"
-                        onClick={() => onOpenDetails(p)} 
-                        className="text-[0.7rem] uppercase text-purple-400 font-bold tracking-wider hover:text-purple-300 transition-colors"
-                    >
+            <div className="p-5 flex flex-col flex-1 relative">
+                {/* CFDI y Categoría reacomodados para no encimarse */}
+                <div className="flex justify-between items-center mb-3">
+                    <span className="text-[0.65rem] font-bold tracking-widest uppercase text-purple-400 bg-purple-500/10 px-2 py-1 rounded-md">
                         {p.category}
-                    </button>
-                    <div className="flex gap-2.5">
+                    </span>
+                    <div className="flex gap-2">
                         <button 
                             type="button"
                             title="Generar Factura CFDI" 
                             onClick={(e) => { e.stopPropagation(); onGenerateCFDI(p); }} 
-                            className="cursor-pointer text-emerald-500 transition-transform hover:scale-125"
+                            className="text-emerald-400 hover:text-emerald-300 transition-colors bg-emerald-500/10 p-1.5 rounded-md"
                         >
                             <FileText size={16} />
                         </button>
-                        {p.hasVideo && (
-                            <div title="Ver Video Demo" className="cursor-pointer text-purple-600 hover:scale-125 transition-transform"><PlayCircle size={16} /></div>
-                        )}
                     </div>
                 </div>
 
-                <button 
-                    type="button"
-                    className="flex items-center gap-2 my-2 w-fit" 
-                    onClick={() => onOpenDetails(p)}
-                    aria-label={`${p.rating} estrellas, ${p.reviewCount || 0} reseñas`}
-                >
-                    {renderStars(p.rating)}
-                    <span className="text-[0.7rem] text-slate-500">({p.reviewCount || 0})</span>
-                </button>
-
-                <h3 className="text-base font-extrabold text-white mb-2 min-h-[2.8rem] leading-tight group-hover:text-purple-300 transition-colors">
-                    <button 
-                        type="button"
-                        onClick={() => onOpenDetails(p)}
-                        className="text-left"
-                    >
+                <h3 className="text-lg font-bold text-white mb-2 line-clamp-2 group-hover:text-purple-400 transition-colors">
+                    <button onClick={() => onOpenDetails(p)} className="text-left w-full">
                         {p.name}
                     </button>
                 </h3>
+                
+                <div className="flex items-center gap-2 mb-4 mt-auto">
+                    <div className="flex text-yellow-500">
+                        {renderStars(p.rating)}
+                    </div>
+                    <span className="text-xs text-slate-500">({p.reviewCount || 0})</span>
+                </div>
 
-                <div className="mt-auto flex justify-between items-center gap-2">
-                    <button 
-                        type="button"
-                        className="flex-1 text-left" 
-                        onClick={() => onOpenDetails(p)}
-                    >
-                        <div className="text-xl font-black text-white">${p.price.toLocaleString()}</div>
-                        <div className={`text-[0.7rem] flex items-center gap-1 font-bold mt-0.5 ${p.stock > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                            <Package size={12} /> {p.stock > 0 ? `${p.stock} disponibles` : 'Sin existencias'}
+                <div>
+                    <div className="flex justify-between items-end mb-4">
+                        <div>
+                            <div className="text-2xl font-black text-white">
+                                ${p.price.toLocaleString()}
+                            </div>
+                            <div className={`text-xs font-bold flex items-center gap-1 mt-1 ${p.stock > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                                <Package size={12} />
+                                {p.stock > 0 ? `${p.stock} disponibles` : 'Sin stock'}
+                            </div>
                         </div>
-                    </button>
+                    </div>
 
-                    <div className="flex items-center gap-1.5">
-                        <button
-                            className={`border border-white/20 bg-slate-800 text-white w-7 h-7 flex items-center justify-center rounded-md transition-all ${(qty <= 1 || p.stock === 0) ? 'opacity-40 cursor-not-allowed' : 'hover:bg-slate-700 active:scale-90 cursor-pointer'}`}
-                            title="Disminuir cantidad"
-                            aria-label="Disminuir cantidad"
-                            onClick={() => setQty(Math.max(1, qty - 1))}
-                            disabled={qty <= 1 || p.stock === 0}
-                        >
-                            <Minus size={12} />
-                        </button>
-
-                        <span className="font-black min-w-[18px] text-center text-sm text-white">{qty}</span>
-
-                        <button
-                            className={`border border-white/20 bg-slate-800 text-white w-7 h-7 flex items-center justify-center rounded-md transition-all ${(qty >= p.stock || p.stock === 0) ? 'opacity-40 cursor-not-allowed' : 'hover:bg-slate-700 active:scale-90 cursor-pointer'}`}
-                            title="Aumentar cantidad"
-                            aria-label="Aumentar cantidad"
-                            onClick={() => setQty(Math.min(p.stock, qty + 1))}
-                            disabled={qty >= p.stock || p.stock === 0}
-                        >
-                            <Plus size={12} />
-                        </button>
-
+                    <div className="flex items-center gap-3">
+                        <div className="flex items-center bg-white/5 rounded-xl p-1 border border-white/10">
+                            <button
+                                className={`w-8 h-8 flex items-center justify-center text-white transition-all rounded-lg ${(qty <= 1 || p.stock === 0) ? 'opacity-30 cursor-not-allowed' : 'hover:bg-white/10 active:scale-95'}`}
+                                onClick={() => setQty(Math.max(1, qty - 1))}
+                                disabled={qty <= 1 || p.stock === 0}
+                            >
+                                <Minus size={14} />
+                            </button>
+                            <span className="font-bold w-6 text-center text-sm text-white">{qty}</span>
+                            <button
+                                className={`w-8 h-8 flex items-center justify-center text-white transition-all rounded-lg ${(qty >= p.stock || p.stock === 0) ? 'opacity-30 cursor-not-allowed' : 'hover:bg-white/10 active:scale-95'}`}
+                                onClick={() => setQty(Math.min(p.stock, qty + 1))}
+                                disabled={qty >= p.stock || p.stock === 0}
+                            >
+                                <Plus size={14} />
+                            </button>
+                        </div>
                         <button
                             onClick={() => addToCart(p, qty)}
-                            title="Agregar al carrito"
-                            aria-label="Agregar al carrito"
                             disabled={p.stock === 0 || qty === 0}
-                            className={`btn-sanjose p-2 rounded-lg flex items-center justify-center min-w-[36px] min-h-[36px] ${p.stock === 0 ? 'grayscale opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}>
+                            className={`flex-1 flex items-center justify-center py-2.5 rounded-xl font-bold transition-all ${p.stock === 0 ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-500/20 active:scale-95'}`}
+                        >
                             <ShoppingCart size={18} />
                         </button>
                     </div>
@@ -238,18 +233,6 @@ export default function MarketCatalog({ initialCategory, hideHeader }: { initial
         setVisibleCount(6);
     }, [filter, search]);
 
-    useEffect(() => {
-        const handleScroll = () => {
-            if (typeof window === 'undefined') return;
-            const threshold = 150;
-            if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - threshold) {
-                setVisibleCount(prev => Math.min(prev + 6, filtered.length));
-            }
-        };
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, [filtered.length]);
-
     // Simulated Delivery Load Capacity Calculator (Universal)
     // Generic products weigh 5 units, services weigh 0 units. Maximum delivery unit limit is 120 units.
     const loadWeight = cart.reduce((sum, item) => {
@@ -308,15 +291,15 @@ export default function MarketCatalog({ initialCategory, hideHeader }: { initial
             )}
 
             {/* Categories filters (Mercado Libre Style) */}
-            <div className="flex gap-6 justify-start md:justify-center items-start w-full mb-14 overflow-x-auto py-4 scrollbar-hide no-scrollbar select-none">
+            <div className="flex gap-6 justify-start md:justify-center items-start w-full mb-14 overflow-x-auto py-4 scrollbar-hide no-scrollbar select-none px-4">
                 <button 
                     onClick={() => setFilter('Todos')}
-                    className="flex flex-col items-center group cursor-pointer focus:outline-none shrink-0 transition-transform active:scale-95"
+                    className="flex flex-col items-center gap-3 group cursor-pointer focus:outline-none shrink-0 transition-transform active:scale-95"
                 >
-                    <div className={`w-16 h-16 rounded-full border-2 flex items-center justify-center text-2xl transition-all duration-300 shadow-md ${filter === 'Todos' ? 'border-amber-400 bg-gradient-to-br from-amber-400 to-amber-600 text-white scale-110 shadow-amber-900/20' : 'bg-slate-800/60 border-white/10 text-slate-300 hover:border-amber-500/50 hover:bg-slate-700/60'}`}>
+                    <div className={`w-16 h-16 shrink-0 rounded-full border-2 flex items-center justify-center text-2xl transition-all duration-300 shadow-md ${filter === 'Todos' ? 'border-amber-400 bg-gradient-to-br from-amber-400 to-amber-600 text-white scale-110 shadow-amber-900/20' : 'bg-slate-800/60 border-white/10 text-slate-300 hover:border-amber-500/50 hover:bg-slate-700/60'}`}>
                         📦
                     </div>
-                    <span className={`text-[10px] font-black uppercase mt-3 tracking-widest text-center transition-colors ${filter === 'Todos' ? 'text-amber-400 font-extrabold' : 'text-slate-400 group-hover:text-slate-200'}`}>
+                    <span className={`text-[10px] font-black uppercase tracking-widest text-center transition-colors max-w-[80px] break-words leading-tight ${filter === 'Todos' ? 'text-amber-400 font-extrabold' : 'text-slate-400 group-hover:text-slate-200'}`}>
                         TODOS
                     </span>
                 </button>
@@ -327,12 +310,12 @@ export default function MarketCatalog({ initialCategory, hideHeader }: { initial
                         <button 
                             key={s.id} 
                             onClick={() => setFilter(s.id)}
-                            className="flex flex-col items-center group cursor-pointer focus:outline-none shrink-0 transition-transform active:scale-95"
+                            className="flex flex-col items-center gap-3 group cursor-pointer focus:outline-none shrink-0 transition-transform active:scale-95"
                         >
-                            <div className={`w-16 h-16 rounded-full border-2 flex items-center justify-center text-2xl transition-all duration-300 shadow-md ${isSelected ? 'border-amber-400 bg-gradient-to-br from-amber-400 to-amber-600 text-white scale-110 shadow-amber-900/20' : 'bg-slate-800/60 border-white/10 text-slate-300 hover:border-amber-500/50 hover:bg-slate-700/60'}`}>
+                            <div className={`w-16 h-16 shrink-0 rounded-full border-2 flex items-center justify-center text-2xl transition-all duration-300 shadow-md ${isSelected ? 'border-amber-400 bg-gradient-to-br from-amber-400 to-amber-600 text-white scale-110 shadow-amber-900/20' : 'bg-slate-800/60 border-white/10 text-slate-300 hover:border-amber-500/50 hover:bg-slate-700/60'}`}>
                                 {icon}
                             </div>
-                            <span className={`text-[10px] font-black uppercase mt-3 tracking-widest text-center transition-colors ${isSelected ? 'text-amber-400 font-extrabold' : 'text-slate-400 group-hover:text-slate-200'}`}>
+                            <span className={`text-[10px] font-black uppercase tracking-widest text-center transition-colors max-w-[80px] break-words leading-tight ${isSelected ? 'text-amber-400 font-extrabold' : 'text-slate-400 group-hover:text-slate-200'}`}>
                                 {s.title}
                             </span>
                         </button>
@@ -363,23 +346,35 @@ export default function MarketCatalog({ initialCategory, hideHeader }: { initial
                 </motion.div>
             )}
 
-            {/* Products Grid */}
-            <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                {filtered.length > 0 ? (
-                    filtered.slice(0, visibleCount).map(p => (
-                        <ProductCard key={p.id} p={p} onOpenDetails={setSelectedProduct} onGenerateCFDI={setCfdiProduct} />
-                    ))
-                ) : (
-                    <div className="col-span-full text-center py-16 text-slate-500 bg-slate-50/50 rounded-2xl border-2 border-dashed border-slate-700/20 font-bold italic">
-                        No se encontraron productos disponibles en esta sección.
-                    </div>
-                )}
-            </motion.div>
+            {/* Fondo negro perimetral exclusivo para el grid del catálogo */}
+            <div className="bg-[#050505] -mx-8 px-8 py-16 mt-8 border-t border-b border-white/10">
+                <div className="flex items-center gap-4 mb-10 border-l-8 border-purple-500 pl-4">
+                    <h2 className="text-4xl md:text-5xl font-black text-white italic uppercase tracking-tighter">
+                        NUESTRO <span className="text-purple-400">CATÁLOGO</span>
+                    </h2>
+                </div>
+
+                <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 auto-rows-auto">
+                    {filtered.length > 0 ? (
+                        filtered.slice(0, visibleCount).map((p, index) => (
+                            <ProductCard key={p.id} p={p} index={index} onOpenDetails={setSelectedProduct} onGenerateCFDI={setCfdiProduct} />
+                        ))
+                    ) : (
+                        <div className="col-span-full text-center py-16 text-slate-500 bg-slate-900/50 rounded-2xl border-2 border-dashed border-slate-700/50 font-bold italic">
+                            No se encontraron productos en esta sección.
+                        </div>
+                    )}
+                </motion.div>
+            </div>
 
             {visibleCount < filtered.length && (
-                <div className="flex flex-col items-center justify-center py-12">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500"></div>
-                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-3">Cargando más productos...</span>
+                <div className="flex justify-center py-12">
+                    <button 
+                        onClick={() => setVisibleCount(prev => Math.min(prev + 12, filtered.length))}
+                        className="px-8 py-3 bg-white/10 hover:bg-white/20 border border-slate-700/50 text-slate-300 font-bold rounded-xl transition-all shadow-lg hover:-translate-y-1"
+                    >
+                        Cargar más productos
+                    </button>
                 </div>
             )}
 

@@ -15,10 +15,11 @@ export default function WalkieTalkieRadio() {
     const [isMuted, setIsMuted] = useState(false);
     const [status, setStatus] = useState<'standby' | 'transmitting' | 'receiving'>('standby');
     const [unread, setUnread] = useState(0);
-
     const mountTime = useRef(Date.now());
     const processedMsgIds = useRef<Set<string>>(new Set());
     const lastMsgCount = useRef(0);
+
+    const isStaff = profile?.role && ['superadmin', 'admin', 'sales', 'inventory', 'billing', 'driver', 'carga_descarga'].includes(profile.role);
 
     // Audio Synthesis: Generar ruido estático de radio virtual
     const playRadioStatic = (duration = 0.4, frequency = 1200, q = 1.5) => {
@@ -175,8 +176,8 @@ export default function WalkieTalkieRadio() {
         if (!isOpen) setUnread(0);
     };
 
-    // Si no está autenticado o es un cliente, no se muestra el walkie-talkie
-    if (!profile || (profile.role as string) === 'customer' || profile.role === 'client') return null;
+    // Si no está autenticado o no es staff, no se muestra el walkie-talkie
+    if (!isStaff) return null;
 
     return (
         <div className="fixed bottom-6 left-6 z-[2500] font-sans">

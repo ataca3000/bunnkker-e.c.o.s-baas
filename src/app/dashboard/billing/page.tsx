@@ -154,6 +154,40 @@ function FacturacionContent() {
         }, 3000);
     };
 
+    const handleExportBillingCSV = async () => {
+        try {
+            const res = await fetch('/api/orders');
+            const data = await res.json();
+            const allOrders = data.data || [];
+            
+            const rows = [
+                ["Fecha", "ID Pedido", "Cliente", "Total", "Metodo Pago", "Estatus"]
+            ];
+            
+            allOrders.forEach((o: any) => {
+                rows.push([
+                    new Date(o.date).toLocaleDateString(),
+                    o.id,
+                    o.customer?.name || 'PUBLICO EN GENERAL',
+                    o.total,
+                    o.paymentMethod || '01',
+                    o.status
+                ]);
+            });
+
+            const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + rows.map(e => e.join(",")).join("\n");
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `Reporte_Facturacion_${new Date().toLocaleDateString().replace(/\//g,'-')}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        } catch(e) {
+            alert('Error al exportar.');
+        }
+    };
+
     const formatCurrency = (val: number) => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(val || 0);
 
     return (
@@ -322,6 +356,16 @@ function FacturacionContent() {
                                     <span className="text-sm text-emerald-700 font-medium">Costo por timbre</span>
                                     <span className="font-black text-lg text-emerald-600">$10.00 MXN</span>
                                 </div>
+                            </div>
+                            
+                            <div className="mt-6 border-t border-slate-700/50 pt-4">
+                                <p className="text-xs text-slate-400 mb-3">Versión 1.5: Descarga el reporte para tu contador si usas facturación externa.</p>
+                                <button 
+                                    onClick={handleExportBillingCSV}
+                                    className="w-full bg-slate-700 hover:bg-slate-600 text-white p-3 rounded-lg font-bold flex items-center justify-center gap-2 transition-colors text-sm"
+                                >
+                                    <Download size={16} /> Exportar Reporte para Contador (CSV)
+                                </button>
                             </div>
                         </div>
 

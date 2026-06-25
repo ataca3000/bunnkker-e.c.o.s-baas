@@ -18,9 +18,9 @@ export async function generateMetadata(): Promise<Metadata> {
 
   if (tenantId === 'default' || tenantId === 'admin.com') {
     return {
-      title: "LDS CONTADOR | Sistema Integral ERP",
-      description: "LDS CONTADOR - El mejor sistema de gestión empresarial, punto de venta y logística.",
-      keywords: ["LDS CONTADOR", "ERP", "punto de venta", "gestión empresarial", "facturación"],
+      title: "BUNKKER E.C.O.S | Sistema Integral ERP",
+      description: "BUNKKER E.C.O.S - Desarrollado por The Brecha Solutions Company S.A. de C.V. El mejor sistema de gestión empresarial, punto de venta y logística.",
+      keywords: ["BUNKKER E.C.O.S", "The Brecha Solutions Company", "ERP", "punto de venta", "gestión empresarial", "facturación"],
       manifest: '/manifest.json',
       verification: {
         google: 'CRRkmj4XJ1qPMAkpFbfzftUC4kS0viq_JgEFG_YvG3Y'
@@ -32,7 +32,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const storeName = tenantId.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   return {
     title: `${storeName} | Tienda`,
-    description: `Catálogo oficial de ${storeName}, impulsado de forma segura por EvoStore ERP.`,
+    description: `Catálogo oficial de ${storeName}, impulsado de forma segura por BUNKKER E.C.O.S.`,
     manifest: '/manifest.json',
     verification: {
       google: 'CRRkmj4XJ1qPMAkpFbfzftUC4kS0viq_JgEFG_YvG3Y'

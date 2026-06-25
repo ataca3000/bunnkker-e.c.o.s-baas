@@ -6,16 +6,18 @@ import { Truck, Package, CheckCircle2, Play, Loader2, Clock, Search, ArrowLeft, 
 import { motion } from 'framer-motion';
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
+import BarcodeScanner from '@/components/BarcodeScanner';
 
 export default function PatioDashboard() {
-    const { orders, startLoading, completeLoading } = useCart();
+    const { orders, startLoading, completeLoading, products } = useCart();
     const { profile } = useAuth();
     const [searchTerm, setSearchTerm] = useState('');
     const [processingId, setProcessingId] = useState<string | null>(null);
+    const [scanTargetId, setScanTargetId] = useState<string | null>(null);
 
     const pendingLoads = useMemo(() => {
         return orders.filter(o => {
-            const validStatus = o.status === 'paid' || o.status === 'PREPARANDO' || o.status === 'NIGHT_QUEUE' || o.status === 'PENDIENTE_LLEGADA';
+            const validStatus = o.status === 'READY_TO_SHIP' || o.status === 'PREPARANDO' || o.status === 'NIGHT_QUEUE' || o.status === 'PENDIENTE_LLEGADA';
             const notLoaded = !(o as any).isLoaded;
             const custName = o.customer?.name || o.customerName || 'Cliente';
             const matchesSearch = o.id.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -35,7 +37,7 @@ export default function PatioDashboard() {
             if (action === 'start') {
                 await startLoading(orderId);
             } else if (action === 'complete') {
-                await completeLoading(orderId);
+                setScanTargetId(orderId); // Activa el scanner en vez de completarlo directamente
             } else if (action === 'postpone') {
                 await fetch('/api/orders', {
                     method: 'PATCH',
@@ -81,6 +83,29 @@ export default function PatioDashboard() {
                 </div>
             </header>
 
+            {scanTargetId && (
+                <BarcodeScanner 
+                    isOpen={true} 
+                    onClose={() => setScanTargetId(null)} 
+                    onScanSuccess={async (decodedText) => {
+                        if (decodedText.trim() === scanTargetId) {
+                            setScanTargetId(null);
+                            setProcessingId(scanTargetId);
+                            try {
+                                await completeLoading(scanTargetId);
+                                alert("✅ Orden despachada con éxito.");
+                            } catch (e) {
+                                alert("Error al despachar la orden.");
+                            } finally {
+                                setProcessingId(null);
+                            }
+                        } else {
+                            alert(`❌ Código incorrecto. Esperaba: ${scanTargetId}, pero se escaneó: ${decodedText}`);
+                        }
+                    }} 
+                />
+            )}
+
             <div className="grid gap-6">
                 {pendingLoads.length === 0 ? (
                     <div className="bg-slate-800/80 border-2 border-dashed border-gray-200 rounded-3xl p-16 text-center">
@@ -125,11 +150,20 @@ export default function PatioDashboard() {
                                     Destino: {order.customer?.address || order.customerAddress || 'Retiro en Sucursal / Local'}
                                 </p>
                                 <div className="mt-2 flex flex-col gap-2">
-                                    {order.items.map((item: any, i: number) => (
-                                        <div key={i} className="flex justify-between items-center bg-blue-50 text-[#0ea5e9] px-3 py-2 rounded-lg text-sm font-bold border border-blue-100">
-                                            <span>{item.quantity}x {item.product?.name || item.name}</span>
-                                        </div>
-                                    ))}
+                                    {order.items.map((item: any, i: number) => {
+                                        const fullProduct = products.find((p: any) => p.id === (item.productId || item.id));
+                                        const loc = fullProduct?.location;
+                                        const locationStr = loc && loc.estante ? `📍 ${loc.estante} - ${loc.fila || 'N/A'}` : '📍 Bodega General';
+                                        
+                                        return (
+                                            <div key={i} className="flex flex-col bg-blue-50 text-[#0ea5e9] px-3 py-2 rounded-lg text-sm font-bold border border-blue-100">
+                                                <div className="flex justify-between items-center">
+                                                    <span>{item.quantity}x {item.product?.name || item.name || fullProduct?.name || 'Producto Desconocido'}</span>
+                                                </div>
+                                                <span className="text-xs text-blue-500/80 mt-1">{locationStr}</span>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             </div>
 

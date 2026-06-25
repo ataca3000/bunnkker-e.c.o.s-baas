@@ -34,7 +34,7 @@ if (!adminApps.length) {
         try {
             if (!(admin.apps || []).length) {
                 admin.initializeApp();
-                console.warn("⚠️ Firebase Admin inicializado sin credenciales explícitas.");
+                // Omitir el console.warn en producción/compilación para no ensuciar la consola
             }
         } catch (err: any) {
             console.warn("⚠️ No se pudo inicializar Firebase Admin standard:", err.message);

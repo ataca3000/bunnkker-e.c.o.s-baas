@@ -142,7 +142,7 @@ export default function Navbar() {
                             >
                                 <Camera size={20} color="#0ea5e9" />
                             </button>
-                            <button type="submit" className={styles.searchButtonInside}>
+                            <button type="submit" aria-label="Buscar" className={styles.searchButtonInside}>
                                 <Search size={20} color="#0ea5e9" />
                             </button>
                         </div>
@@ -195,7 +195,7 @@ export default function Navbar() {
                             >
                                 <Camera size={20} color="#0ea5e9" />
                             </button>
-                            <button type="submit" className={styles.searchButtonInside}>
+                            <button type="submit" aria-label="Buscar" className={styles.searchButtonInside}>
                                 <Search size={20} color="#0ea5e9" />
                             </button>
                         </div>
