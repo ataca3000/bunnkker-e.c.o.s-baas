@@ -19,12 +19,17 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL('/login?error=invalid_magic_link', request.url));
     }
 
-    // El token es un base64 de JSON { uid, pin }
+    // El token es un base64 de JSON { uid, pin, expiresAt }
     const decoded = Buffer.from(token, 'base64').toString('utf-8');
-    const { uid, pin } = JSON.parse(decoded);
+    const { uid, pin, expiresAt } = JSON.parse(decoded);
 
     if (!uid || !pin) {
       return NextResponse.redirect(new URL('/login?error=invalid_magic_link', request.url));
+    }
+
+    // Validar expiración del Magic Link (15 minutos)
+    if (expiresAt && Date.now() > expiresAt) {
+      return NextResponse.redirect(new URL('/login?error=expired_magic_link', request.url));
     }
 
     // Buscamos al usuario

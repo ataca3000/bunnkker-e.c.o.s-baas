@@ -34,32 +34,37 @@ export async function POST(request: NextRequest) {
 
     // ── Validación real contra la Base de Datos Local ──────────────────────
     if (pin) {
-      // 1. Buscar usuario — si tiene pinHash usamos bcrypt, si no, fallback legacy
-      const users = await prisma.user.findMany({ where: { active: true } });
+      // 1. Búsqueda directa del usuario por PIN único para mitigar el DoS de CPU
+      const user = await prisma.user.findFirst({ 
+        where: { pin: pin, active: true } 
+      });
 
-      let matchedUser = null;
-
-      for (const user of users) {
-        if (user.pinHash) {
-          // Verificación segura con bcrypt
-          const match = await bcrypt.compare(pin, user.pinHash);
-          if (match) { matchedUser = user; break; }
-        } else if (user.pin === pin) {
-          // Fallback legacy: coincidencia directa + migración automática al vuelo
-          matchedUser = user;
-          // Migrar el PIN a hash automáticamente
-          const pinHash = await bcrypt.hash(pin, SALT_ROUNDS);
-          await prisma.user.update({ where: { id: user.id }, data: { pinHash } });
-          break;
-        }
-      }
-
-      if (!matchedUser) {
+      if (!user) {
+        // Retardo intencional de 1 segundo para evitar brute-force rápido
+        await new Promise(r => setTimeout(r, 1000));
         return NextResponse.json(
           { success: false, error: 'PIN incorrecto o usuario no encontrado.' },
           { status: 401 }
         );
       }
+
+      if (user.pinHash) {
+        // Verificación de seguridad con bcrypt
+        const match = await bcrypt.compare(pin, user.pinHash);
+        if (!match) {
+          await new Promise(r => setTimeout(r, 1000));
+          return NextResponse.json(
+            { success: false, error: 'PIN incorrecto o usuario no encontrado.' },
+            { status: 401 }
+          );
+        }
+      } else {
+        // Migración automática al vuelo
+        const pinHash = await bcrypt.hash(pin, SALT_ROUNDS);
+        await prisma.user.update({ where: { id: user.id }, data: { pinHash } });
+      }
+
+      const matchedUser = user;
       
       // MACHINE FINGERPRINTING LOGIC
       if (deviceId) {
