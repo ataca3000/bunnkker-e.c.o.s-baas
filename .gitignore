@@ -35,3 +35,6 @@ mobile-app/dist/
 
 # Firebase local emulator data
 firebase_data/
+
+# Security scanning tool uploads
+Sn1per-master/
