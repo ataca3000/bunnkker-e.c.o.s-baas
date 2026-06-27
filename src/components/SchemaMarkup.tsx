@@ -7,13 +7,13 @@ export default function SchemaMarkup({ tenantId = 'default' }: { tenantId?: stri
   
   // Normalizar nombre de la tienda
   const storeName = isDefault 
-    ? "Brecha Soluciones" 
+    ? "Brecha Soluciones DS" 
     : tenantId.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 
   const baseUrl = isDefault ? "https://admin.com" : `https://${tenantId}.admin.com`;
   const description = isDefault 
     ? "Agencia de desarrollo de software y tecnología." 
-    : `Catálogo oficial de ${storeName}, impulsado de forma segura por BUNKKER E.C.O.S.`;
+    : `Catálogo oficial de ${storeName}, impulsado de forma segura por BUNKKER ECOS.`;
 
   const schemaData = {
     "@context": "https://schema.org",
@@ -22,7 +22,7 @@ export default function SchemaMarkup({ tenantId = 'default' }: { tenantId?: stri
         "@type": "Organization",
         "@id": `${baseUrl}/#organization`,
         "name": storeName,
-        "alternateName": isDefault ? "The Brecha Solutions Company S.A. de C.V." : storeName,
+        "alternateName": isDefault ? "Brecha Soluciones DS S.A. de C.V." : storeName,
         "url": baseUrl,
         "description": description,
         "telephone": "+52-765-833-5528",
@@ -37,7 +37,7 @@ export default function SchemaMarkup({ tenantId = 'default' }: { tenantId?: stri
       {
         "@type": "SoftwareApplication",
         "@id": `${baseUrl}/#software`,
-        "name": "BUNKKER E.C.O.S",
+        "name": "BUNKKER ECOS",
         "applicationCategory": "BusinessApplication",
         "operatingSystem": "Web, Windows, macOS, Linux, iOS, Android",
         "description": "Enterprise Control & Operating System. El mejor sistema de gestión empresarial, ERP, punto de venta y logística sin depender de la nube.",

@@ -417,9 +417,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             const hasSeenPrompt = sessionStorage.getItem('bunkker_update_prompt');
             if (!hasSeenPrompt) {
                 setTimeout(() => {
-                    alert("📡 [BUNKKER E.C.O.S Online] Conexión a internet detectada.\n\nHay actualizaciones críticas y nuevas características de la Versión 1.5 PRO disponibles. Contacte a The Brecha Solutions Company para renovar su licencia y actualizar su sistema.");
+                    alert("📡 [BUNKKER ECOS Online] Conexión a internet detectada.\n\nHay actualizaciones críticas y nuevas características de la Versión 1.5 PRO disponibles. Contacte a Brecha Soluciones DS para renovar su licencia y actualizar su sistema.");
                     sessionStorage.setItem('bunkker_update_prompt', 'true');
-                }, 5000); // 5 seconds after detecting online status
+                }, 5000);
             }
         }
     }, [firebaseStatus]);
