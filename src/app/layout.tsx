@@ -6,6 +6,7 @@ import AdminAsistente from "@/components/AdminAsistente";
 import AdminLayout from "@/components/admin/AdminLayout";
 import UpdateNotification from "@/components/UpdateNotification";
 import ConnectionStatus from "@/components/ConnectionStatus";
+import SchemaMarkup from "@/components/SchemaMarkup";
 
 const inter = { className: "font-sans" };
 
@@ -59,6 +60,7 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={inter.className}>
+          <SchemaMarkup />
           <AntiDevTools />
           <AuthProvider>
             <DeviceLockScreen>
