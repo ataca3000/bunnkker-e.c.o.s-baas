@@ -77,7 +77,11 @@ export default function UserAccount() {
             });
             const data = await res.json();
             if (data.success) {
-                fetchProfile();
+                if (data.redirect) {
+                    window.location.href = data.redirect;
+                } else {
+                    fetchProfile();
+                }
             } else {
                 setAuthError(data.error);
             }
@@ -172,9 +176,7 @@ export default function UserAccount() {
                         </button>
                         
                         <div className="mt-4 pt-4 border-t border-slate-800">
-                            <a href="/login" className="text-xs font-bold text-slate-500 hover:text-amber-400 uppercase tracking-widest transition-colors flex items-center justify-center gap-2">
-                                <Lock size={12} /> Acceso a Personal / Admin
-                            </a>
+                            {/* Hidden backdoor, no text link */}
                         </div>
                     </div>
                 </div>
@@ -185,64 +187,67 @@ export default function UserAccount() {
 
     // PANTALLA DE PERFIL
     return (
-        <div className="min-h-screen bg-[#F8F9FA] py-12 px-4">
-            <div className="max-w-[1000px] mx-auto grid grid-cols-1 md:grid-cols-[minmax(250px,1fr)_3fr] gap-8">
+        <div className="min-h-screen bg-[#0a0514] py-12 px-4 relative overflow-hidden">
+            {/* Background glow */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-sky-500/10 blur-[120px] rounded-full pointer-events-none"></div>
+
+            <div className="max-w-[1000px] mx-auto grid grid-cols-1 md:grid-cols-[minmax(250px,1fr)_3fr] gap-8 relative z-10">
                 
                 {/* Sidebar Navigation */}
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 self-start">
+                <div className="bg-slate-900/60 backdrop-blur-xl rounded-2xl shadow-xl border border-slate-700/50 p-6 self-start">
                     <div className="text-center mb-8">
-                        <div className="w-20 h-20 bg-[#2563EB] text-white rounded-full flex items-center justify-center mx-auto mb-4 text-3xl font-bold">
+                        <div className="w-20 h-20 bg-gradient-to-tr from-sky-500 to-indigo-500 text-white rounded-full flex items-center justify-center mx-auto mb-4 text-3xl font-bold shadow-lg shadow-sky-500/20">
                             {customer.name?.charAt(0) || 'C'}
                         </div>
-                        <h2 className="text-xl font-bold m-0">{customer.name}</h2>
-                        <p className="text-gray-500 text-sm">{customer.phone}</p>
+                        <h2 className="text-xl font-bold text-white m-0">{customer.name}</h2>
+                        <p className="text-slate-400 text-sm mt-1">{customer.phone}</p>
                     </div>
 
                     <div className="flex flex-col gap-2">
-                        <button onClick={() => setActiveTab('orders')} className={`px-4 py-2.5 text-left rounded-lg border-none flex items-center gap-3 transition-colors ${activeTab === 'orders' ? 'bg-[#2563EB] text-white font-bold' : 'bg-transparent text-gray-700 cursor-pointer hover:bg-gray-50'}`}>
+                        <button onClick={() => setActiveTab('orders')} className={`px-4 py-2.5 text-left rounded-lg border-none flex items-center gap-3 transition-colors ${activeTab === 'orders' ? 'bg-sky-500 text-white font-bold shadow-md shadow-sky-500/25' : 'bg-transparent text-slate-300 cursor-pointer hover:bg-slate-800'}`}>
                             <ShoppingBag size={18} /> Mis Compras
                         </button>
-                        <button onClick={() => setActiveTab('profile')} className={`px-4 py-2.5 text-left rounded-lg border-none flex items-center gap-3 transition-colors ${activeTab === 'profile' ? 'bg-[#2563EB] text-white font-bold' : 'bg-transparent text-gray-700 cursor-pointer hover:bg-gray-50'}`}>
+                        <button onClick={() => setActiveTab('profile')} className={`px-4 py-2.5 text-left rounded-lg border-none flex items-center gap-3 transition-colors ${activeTab === 'profile' ? 'bg-sky-500 text-white font-bold shadow-md shadow-sky-500/25' : 'bg-transparent text-slate-300 cursor-pointer hover:bg-slate-800'}`}>
                             <FileText size={18} /> Datos de Facturación
                         </button>
-                        <hr className="my-4 border-gray-100" />
-                        <button onClick={handleLogout} className="px-4 py-2.5 text-left rounded-lg border-none bg-red-50 text-red-600 cursor-pointer flex items-center gap-3 font-bold transition-colors hover:bg-red-100">
+                        <hr className="my-4 border-slate-700/50" />
+                        <button onClick={handleLogout} className="px-4 py-2.5 text-left rounded-lg border-none bg-red-500/10 text-red-400 cursor-pointer flex items-center gap-3 font-bold transition-colors hover:bg-red-500/20">
                             <LogOut size={18} /> Salir (Ir al Catálogo)
                         </button>
                     </div>
                 </div>
 
                 {/* Main Content Area */}
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+                <div className="bg-slate-900/60 backdrop-blur-xl rounded-2xl shadow-xl border border-slate-700/50 p-8">
                     <AnimatePresence mode="wait">
                         {activeTab === 'orders' && (
                             <motion.div key="orders" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                                <h3 className="text-2xl font-bold mb-6 text-[#1a1a1a] flex items-center gap-3">
-                                    <ShoppingBag color="#2563EB" /> Mis Compras (Tickets)
+                                <h3 className="text-2xl font-bold mb-6 text-white flex items-center gap-3">
+                                    <ShoppingBag className="text-sky-400" /> Mis Compras (Tickets)
                                 </h3>
                                 {orders.length === 0 ? (
-                                    <div className="text-center py-12 text-gray-500">
+                                    <div className="text-center py-12 text-slate-500">
                                         <p>Aún no tienes compras registradas en mostrador.</p>
                                     </div>
                                 ) : (
                                     <div className="space-y-4">
                                         {orders.map((order: any) => (
-                                            <div key={order.id} className="border border-gray-100 rounded-xl p-5 hover:shadow-md transition">
-                                                <div className="flex justify-between items-start mb-3 border-b border-gray-50 pb-3">
+                                            <div key={order.id} className="border border-slate-700/50 bg-slate-800/40 rounded-xl p-5 hover:bg-slate-800/80 hover:shadow-lg hover:border-slate-600 transition-all">
+                                                <div className="flex justify-between items-start mb-3 border-b border-slate-700/50 pb-3">
                                                     <div>
-                                                        <span className="text-xs text-gray-400 font-mono">{order.id}</span>
-                                                        <p className="font-bold text-gray-800 mt-1">{new Date(order.date).toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                                                        <span className="text-xs text-slate-500 font-mono">{order.id}</span>
+                                                        <p className="font-bold text-slate-200 mt-1">{new Date(order.date).toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
                                                     </div>
                                                     <div className="text-right">
-                                                        <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold">{order.status}</span>
-                                                        <p className="font-black text-lg mt-1">${order.total?.toFixed(2)}</p>
+                                                        <span className="bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded text-xs font-bold border border-emerald-500/20">{order.status}</span>
+                                                        <p className="font-black text-lg text-white mt-1">${order.total?.toFixed(2)}</p>
                                                     </div>
                                                 </div>
-                                                <div className="text-sm text-gray-600">
+                                                <div className="text-sm text-slate-400">
                                                     {order.items?.map((i: any) => (
                                                         <div key={i.id} className="flex justify-between mt-1">
                                                             <span>{i.cantidad}x {i.product?.name || 'Producto eliminado'}</span>
-                                                            <span>${i.precio?.toFixed(2)}</span>
+                                                            <span className="text-slate-300">${i.precio?.toFixed(2)}</span>
                                                         </div>
                                                     ))}
                                                 </div>
@@ -255,58 +260,58 @@ export default function UserAccount() {
 
                         {activeTab === 'profile' && (
                             <motion.div key="profile" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                                <h3 className="text-2xl font-bold mb-6 text-[#1a1a1a] flex items-center gap-3">
-                                    <FileText color="#2563EB" /> Datos de Facturación (CFDI)
+                                <h3 className="text-2xl font-bold mb-6 text-white flex items-center gap-3">
+                                    <FileText className="text-sky-400" /> Datos de Facturación (CFDI)
                                 </h3>
-                                <p className="text-sm text-gray-500 mb-6">Llena estos datos para que, cuando realices una compra, podamos enviarte tu factura de manera automática.</p>
+                                <p className="text-sm text-slate-400 mb-6">Llena estos datos para que, cuando realices una compra, podamos enviarte tu factura de manera automática.</p>
                                 
                                 <form onSubmit={handleSaveProfile} className="space-y-4">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-1">RFC</label>
-                                            <input type="text" value={profileData.rfc} onChange={e => setProfileData({...profileData, rfc: e.target.value})} className="w-full p-3 border rounded-xl uppercase" placeholder="XAXX010101000" />
+                                            <label className="block text-xs font-bold text-slate-300 uppercase tracking-widest ml-1 mb-1.5">RFC</label>
+                                            <input type="text" value={profileData.rfc} onChange={e => setProfileData({...profileData, rfc: e.target.value})} className="w-full p-4 bg-slate-800/60 border border-slate-700 text-white rounded-2xl focus:border-sky-500 focus:ring-1 focus:ring-sky-500 outline-none transition-all uppercase placeholder-slate-600" placeholder="XAXX010101000" />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-1">Razón Social</label>
-                                            <input type="text" value={profileData.razonSocial} onChange={e => setProfileData({...profileData, razonSocial: e.target.value})} className="w-full p-3 border rounded-xl uppercase" placeholder="PÚBLICO EN GENERAL" />
+                                            <label className="block text-xs font-bold text-slate-300 uppercase tracking-widest ml-1 mb-1.5">Razón Social</label>
+                                            <input type="text" value={profileData.razonSocial} onChange={e => setProfileData({...profileData, razonSocial: e.target.value})} className="w-full p-4 bg-slate-800/60 border border-slate-700 text-white rounded-2xl focus:border-sky-500 focus:ring-1 focus:ring-sky-500 outline-none transition-all uppercase placeholder-slate-600" placeholder="PÚBLICO EN GENERAL" />
                                         </div>
                                     </div>
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-1">Régimen Fiscal</label>
-                                            <select value={profileData.regimenFiscal} onChange={e => setProfileData({...profileData, regimenFiscal: e.target.value})} className="w-full p-3 border rounded-xl">
-                                                <option value="">Selecciona...</option>
-                                                <option value="601">601 - General de Ley Personas Morales</option>
-                                                <option value="612">612 - Personas Físicas con Actividades Empresariales y Profesionales</option>
-                                                <option value="626">626 - Régimen Simplificado de Confianza (RESICO)</option>
-                                                <option value="616">616 - Sin obligaciones fiscales</option>
+                                            <label className="block text-xs font-bold text-slate-300 uppercase tracking-widest ml-1 mb-1.5">Régimen Fiscal</label>
+                                            <select value={profileData.regimenFiscal} onChange={e => setProfileData({...profileData, regimenFiscal: e.target.value})} className="w-full p-4 bg-slate-800/60 border border-slate-700 text-white rounded-2xl focus:border-sky-500 focus:ring-1 focus:ring-sky-500 outline-none transition-all appearance-none">
+                                                <option value="" className="bg-slate-900">Selecciona...</option>
+                                                <option value="601" className="bg-slate-900">601 - General de Ley Personas Morales</option>
+                                                <option value="612" className="bg-slate-900">612 - Personas Físicas con Actividades Empresariales y Profesionales</option>
+                                                <option value="626" className="bg-slate-900">626 - Régimen Simplificado de Confianza (RESICO)</option>
+                                                <option value="616" className="bg-slate-900">616 - Sin obligaciones fiscales</option>
                                             </select>
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-1">Uso de CFDI</label>
-                                            <select value={profileData.usoCFDI} onChange={e => setProfileData({...profileData, usoCFDI: e.target.value})} className="w-full p-3 border rounded-xl">
-                                                <option value="">Selecciona...</option>
-                                                <option value="G01">G01 - Adquisición de mercancías</option>
-                                                <option value="G03">G03 - Gastos en general</option>
-                                                <option value="S01">S01 - Sin efectos fiscales</option>
+                                            <label className="block text-xs font-bold text-slate-300 uppercase tracking-widest ml-1 mb-1.5">Uso de CFDI</label>
+                                            <select value={profileData.usoCFDI} onChange={e => setProfileData({...profileData, usoCFDI: e.target.value})} className="w-full p-4 bg-slate-800/60 border border-slate-700 text-white rounded-2xl focus:border-sky-500 focus:ring-1 focus:ring-sky-500 outline-none transition-all appearance-none">
+                                                <option value="" className="bg-slate-900">Selecciona...</option>
+                                                <option value="G01" className="bg-slate-900">G01 - Adquisición de mercancías</option>
+                                                <option value="G03" className="bg-slate-900">G03 - Gastos en general</option>
+                                                <option value="S01" className="bg-slate-900">S01 - Sin efectos fiscales</option>
                                             </select>
                                         </div>
                                     </div>
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-1">Código Postal (Fiscal)</label>
-                                            <input type="text" value={profileData.codigoPostal} onChange={e => setProfileData({...profileData, codigoPostal: e.target.value})} maxLength={5} className="w-full p-3 border rounded-xl" placeholder="12345" />
+                                            <label className="block text-xs font-bold text-slate-300 uppercase tracking-widest ml-1 mb-1.5">Código Postal (Fiscal)</label>
+                                            <input type="text" value={profileData.codigoPostal} onChange={e => setProfileData({...profileData, codigoPostal: e.target.value})} maxLength={5} className="w-full p-4 bg-slate-800/60 border border-slate-700 text-white rounded-2xl focus:border-sky-500 focus:ring-1 focus:ring-sky-500 outline-none transition-all placeholder-slate-600" placeholder="12345" />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-1">Dirección de Entrega</label>
-                                            <input type="text" value={profileData.address} onChange={e => setProfileData({...profileData, address: e.target.value})} className="w-full p-3 border rounded-xl" placeholder="Calle, Colonia, Ciudad" />
+                                            <label className="block text-xs font-bold text-slate-300 uppercase tracking-widest ml-1 mb-1.5">Dirección de Entrega</label>
+                                            <input type="text" value={profileData.address} onChange={e => setProfileData({...profileData, address: e.target.value})} className="w-full p-4 bg-slate-800/60 border border-slate-700 text-white rounded-2xl focus:border-sky-500 focus:ring-1 focus:ring-sky-500 outline-none transition-all placeholder-slate-600" placeholder="Calle, Colonia, Ciudad" />
                                         </div>
                                     </div>
 
-                                    <div className="pt-4 border-t border-gray-100 mt-6">
-                                        <button type="submit" disabled={savingProfile} className="flex items-center gap-2 bg-[#2563EB] text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-700 transition disabled:opacity-50">
+                                    <div className="pt-6 border-t border-slate-700/50 mt-8">
+                                        <button type="submit" disabled={savingProfile} className="flex items-center justify-center gap-2 w-full md:w-auto bg-gradient-to-r from-sky-500 to-indigo-500 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-sm hover:from-sky-400 hover:to-indigo-400 transition-all shadow-lg shadow-sky-500/25 active:scale-[0.98] disabled:opacity-50">
                                             {savingProfile ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
                                             Guardar Perfil
                                         </button>
