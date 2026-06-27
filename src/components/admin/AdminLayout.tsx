@@ -331,11 +331,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 if (docSnap.exists()) {
                     const data = docSnap.data();
                     setSiteConfig(data);
-                    if (data.activeModules) {
+                    if (data.activeModules && Array.isArray(data.activeModules) && data.activeModules.length > 0) {
                         setActiveModules(data.activeModules);
                     } else {
-                        // Default fallback if not defined
-                        setActiveModules(['sales', 'users', 'customers', 'inventory', 'delivery', 'pickup', 'design', 'marketing', 'billing', 'audit', 'dashboard', 'tests', 'subscription']);
+                        // Default fallback if not defined or empty
+                        setActiveModules(['sales', 'users', 'customers', 'qr', 'demo', 'inventory', 'delivery', 'pickup', 'design', 'marketing', 'billing', 'audit', 'dashboard', 'tests', 'subscription']);
                     }
                 }
             } catch (err) {
@@ -372,7 +372,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         }
 
         // Active Modules Block Check
-        if (activeModules) {
+        if (activeModules && profile.role !== 'superadmin') {
             // Find which module id matches the current pathname
             const matchingItem = menuGroups.flatMap(g => g.items).find(i => pathname?.startsWith(i.href) && i.href !== '/dashboard');
             if (matchingItem && !activeModules.includes(matchingItem.id)) {
@@ -510,6 +510,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                 item.id === 'dashboard' || 
                                 item.id === 'subscription' || 
                                 item.id === 'tests' || 
+                                profile?.role === 'superadmin' ||
                                 (activeModules ? activeModules.includes(item.id) : true)
                             );
 

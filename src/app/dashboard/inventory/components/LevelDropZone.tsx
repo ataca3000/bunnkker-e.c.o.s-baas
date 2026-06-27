@@ -28,7 +28,7 @@ export default function LevelDropZone({ shelfName, levelName, products, onProduc
         {onAddProductClick && (
            <button 
              onClick={() => onAddProductClick(shelfName, levelName)}
-             className="bg-slate-800 border border-slate-700 hover:bg-[#0ea5e9] hover:border-[#0ea5e9] hover:text-white text-sky-400 p-1.5 rounded-md transition-all animate-pulse hover:animate-none shadow-lg"
+             className="bg-[#0ea5e9]/20 border border-[#0ea5e9]/40 hover:bg-[#0ea5e9] hover:border-[#0ea5e9] hover:text-white text-[#0ea5e9] p-1.5 rounded-lg transition-all shadow-md"
              title={`Agregar producto al ${levelName}`}
            >
              <Plus size={14} strokeWidth={3} />

@@ -12,13 +12,16 @@ import {
     AlertCircle, Calculator, PackageCheck, ScanLine, Clock, Route,
     AlertTriangle, MapPin, LogOut, Play, Loader2, QrCode, Palette,
     ArrowUpRight, ArrowDownRight, Minus, TrendingDown,
-    BarChart3, Headphones, ReceiptText, BookOpen
+    BarChart3, Headphones, ReceiptText, BookOpen, Cloud, CloudOff, Terminal
 } from 'lucide-react';
 import Link from 'next/link';
 import BarcodeScanner from '@/components/BarcodeScanner';
 import { useAuth } from '@/context/AuthContext';
 import StaffRankingWidget from '@/components/admin/StaffRankingWidget';
 import RestockAlertWidget from '@/components/admin/RestockAlertWidget';
+import TrendBadge from '@/components/admin/TrendBadge';
+import ModuleSection from '@/components/admin/ModuleSection';
+import KPICard from '@/components/admin/KPICard';
 
 /* ─── Shared premium button style ─────────────────────────────────────────── */
 const premiumBtn: React.CSSProperties = {
@@ -36,99 +39,13 @@ const premiumBtn: React.CSSProperties = {
     userSelect:      'none',
 };
 
-/* ─── Trend Badge ─────────────────────────────────────────────────────────── */
-function TrendBadge({
-    value,
-    label,
-    positive,
-    neutral,
-}: {
-    value: string;
-    label: string;
-    positive?: boolean;
-    neutral?: boolean;
-}) {
-    const bg    = neutral ? '#f1f5f9' : positive ? '#ecfdf5' : '#fef2f2';
-    const color = neutral ? '#64748b' : positive ? '#065f46' : '#991b1b';
-    const Icon  = neutral ? Minus : positive ? ArrowUpRight : ArrowDownRight;
 
-    return (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '10px' }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '4px', backgroundColor: bg, color, fontSize: '0.68rem', fontWeight: '800', padding: '3px 8px', borderRadius: '20px' }}>
-                <Icon size={11} />
-                {value}
-            </span>
-            <span style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: '600' }}>{label}</span>
-        </div>
-    );
-}
-
-/* ─── Module Category Section ─────────────────────────────────────────────── */
-function ModuleSection({
-    title,
-    accentColor,
-    items,
-}: {
-    title: string;
-    accentColor: string;
-    items: { id: string; title: string; icon: React.ReactNode; color: string; href: string; desc: string }[];
-}) {
-    return (
-        <div style={{ marginBottom: '2.5rem' }}>
-            {/* Section title */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1.2rem' }}>
-                <div style={{ width: '4px', height: '20px', borderRadius: '4px', backgroundColor: accentColor }} />
-                <h3 style={{ margin: 0, fontSize: '0.75rem', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#64748b' }}>
-                    {title}
-                </h3>
-                <div style={{ flex: 1, height: '1px', backgroundColor: '#f1f5f9' }} />
-            </div>
-
-            {/* Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '1rem' }}>
-                {items.map((node, i) => (
-                    <motion.div
-                        key={node.id}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.04 }}
-                        whileHover={{ y: -4, scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                    >
-                        <Link href={node.href} style={{ textDecoration: 'none', display: 'block' }}>
-                            <div className="glass-module hover-lift" style={{
-                                height: '100%',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                justifyContent: 'space-between',
-                                cursor: 'pointer',
-                                borderTop: `3px solid ${node.color}`,
-                                padding: '1.2rem',
-                                borderRadius: '16px',
-                                transition: 'box-shadow 0.2s',
-                            }}>
-                                <div>
-                                    <div style={{ color: node.color, marginBottom: '12px' }}>{node.icon}</div>
-                                    <h4 style={{ fontSize: '0.88rem', fontWeight: '900', color: '#fff', margin: '0 0 4px' }}>{node.title}</h4>
-                                    <p style={{ fontSize: '0.7rem', color: '#94a3b8', margin: 0, lineHeight: '1.4' }}>{node.desc}</p>
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginTop: '1rem', fontSize: '0.72rem', fontWeight: '800', color: node.color, gap: '3px' }}>
-                                    ACCEDER <ChevronRight size={14} />
-                                </div>
-                            </div>
-                        </Link>
-                    </motion.div>
-                ))}
-            </div>
-        </div>
-    );
-}
 
 /* ─── 1. SUPER ADMIN / ADMIN DASHBOARD ─────────────────────────────────────── */
 const SuperAdminDashboard = ({
     profile, userName, greeting, products, orders,
     maintenanceBalance, ownerBalance, siteConfig,
-    formatCurrency, isScannerOpen, setIsScannerOpen, handleAdminScan,
+    formatCurrency, isScannerOpen, setIsScannerOpen, handleAdminScan
 }: any) => {
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
@@ -200,6 +117,7 @@ const SuperAdminDashboard = ({
         { id: 'audit',     title: 'Registro Auditoría',  icon: <Map size={26} />,            color: '#ef4444', href: '/dashboard/audit',         desc: 'Bitácora inmutable de operaciones y caja.' },
         { id: 'reports',   title: 'Reportes',             icon: <BarChart3 size={26} />,      color: '#0ea5e9', href: '/dashboard/reports',       desc: 'Análisis de ventas, KPIs y exportación de datos.' },
         { id: 'soporte',   title: 'Soporte y Tickets',   icon: <Headphones size={26} />,     color: '#14b8a6', href: '/dashboard/soporte',       desc: 'Gestión de tickets de soporte y quejas de clientes.' },
+        { id: 'tests',     title: 'Laboratorio de Estrés',icon: <Terminal size={26} />,      color: '#f97316', href: '/dashboard/tests',         desc: 'Simulaciones de carga y concurrencia local.' },
     ].filter(m => isModuleActive(m.id));
 
     /* ── KPI cards config ── */
@@ -252,9 +170,14 @@ const SuperAdminDashboard = ({
                     <h1 className="tornasol-text" style={{ fontSize: '2.2rem', margin: 0, letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '10px' }}>
                         PANEL MAESTRO
                     </h1>
-                    <p style={{ color: '#64748b', marginTop: '6px', fontSize: '0.9rem' }}>
-                        {greeting}, <b style={{ color: '#1e293b' }}>{userName}</b> · {siteConfig.businessName}
-                    </p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '6px' }}>
+                        <p style={{ color: '#64748b', fontSize: '0.9rem', margin: 0 }}>
+                            {greeting}, <b style={{ color: '#1e293b' }}>{userName}</b> · {siteConfig.businessName}
+                        </p>
+                        <span className="flex items-center gap-1 bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full text-[10px] font-bold border border-blue-200">
+                            <Cloud size={12} /> SQLITE LOCAL
+                        </span>
+                    </div>
                 </div>
 
                 <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -320,34 +243,21 @@ const SuperAdminDashboard = ({
             <div style={{
  display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem', marginBottom: '3rem' }}>
                 {kpis.map((kpi, i) => (
-                    <motion.div
+                    <KPICard
                         key={kpi.label}
-                        initial={{ opacity: 0, y: 12 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.06 }}
-                        className="bg-[#1a1d2d] border border-white/5 shadow-[0_0_15px_rgba(14,165,233,0.05)] hover:shadow-[0_0_20px_rgba(14,165,233,0.15)] transition-shadow"
-                        style={{ borderLeft: `4px solid ${kpi.color}`, padding: '1.4rem', borderRadius: '16px' }}
-                    >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                            <div>
-                                <p style={{ color: '#94a3b8', fontSize: '0.7rem', textTransform: 'uppercase', fontWeight: '800', margin: '0 0 6px', letterSpacing: '0.07em' }}>
-                                    {kpi.label}
-                                </p>
-                                <h3 style={{ fontSize: '1.9rem', fontWeight: '900', color: kpi.color, margin: 0, letterSpacing: '-0.02em' }}>
-                                    {kpi.value}
-                                </h3>
-                                <TrendBadge
-                                    value={kpi.badge.value}
-                                    label={kpi.badge.label}
-                                    positive={kpi.badge.positive}
-                                    neutral={(kpi.badge as any).neutral}
-                                />
-                            </div>
-                            <div style={{ background: kpi.bg, padding: '10px', borderRadius: '12px', flexShrink: 0 }}>
-                                {kpi.icon}
-                            </div>
-                        </div>
-                    </motion.div>
+                        label={kpi.label}
+                        value={kpi.value}
+                        color={kpi.color}
+                        bg={kpi.bg}
+                        icon={kpi.icon}
+                        badge={{
+                            value: kpi.badge.value,
+                            label: kpi.badge.label,
+                            positive: kpi.badge.positive,
+                            neutral: (kpi.badge as any).neutral
+                        }}
+                        delayIndex={i}
+                    />
                 ))}
             </div>
 
@@ -847,7 +757,7 @@ const DeliveryDashboardWorker = ({ userName, greeting, orders, signOut }: any) =
 
 /* ─── MAIN ROUTER ─────────────────────────────────────────────────────────── */
 export default function DashboardRouter() {
-    const { orders, products, maintenanceBalance, ownerBalance, siteConfig, firebaseStatus, formatCurrency, startLoading, completeLoading } = useCart();
+    const { orders, products, maintenanceBalance, ownerBalance, siteConfig, formatCurrency, startLoading, completeLoading } = useCart();
     const { profile, signOut } = useAuth();
     const [isScannerOpen, setIsScannerOpen] = useState(false);
 
@@ -902,7 +812,6 @@ export default function DashboardRouter() {
                 maintenanceBalance={maintenanceBalance}
                 ownerBalance={ownerBalance}
                 siteConfig={siteConfig}
-                firebaseStatus={firebaseStatus}
                 formatCurrency={formatCurrency}
                 isScannerOpen={isScannerOpen}
                 setIsScannerOpen={setIsScannerOpen}

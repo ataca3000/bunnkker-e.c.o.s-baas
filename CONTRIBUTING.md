@@ -1,6 +1,6 @@
 # Guía de Contribución
 
-¡Gracias por tu interés en contribuir a **Multiservicios Veracruz**!
+¡Gracias por tu interés en contribuir a **BUNKKER E.C.O.S ERP**!
 
 ## Estándares de Código
 
@@ -31,4 +31,4 @@ Si encuentras un error, por favor abre un issue describiendo:
 - Capturas de pantalla (si aplica).
 
 ---
-*Equipo de Desarrollo Multiservicios Veracruz*
+*Equipo de Desarrollo BUNKKER E.C.O.S ERP*

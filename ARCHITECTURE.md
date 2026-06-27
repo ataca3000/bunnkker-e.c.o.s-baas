@@ -1,73 +1,64 @@
-# Arquitectura del Sistema Multiservicios Veracruz
+# Arquitectura del Sistema BUNKKER E.C.O.S ERP
 
-## 1\. Visión General
+## 1. Visión General
 
-Multiservicios Veracruz es una plataforma integral de gestión de recursos empresariales (ERP) diseñada para la infraestructura de alumbrado público y logística. El sistema utiliza una arquitectura **Serverless** basada en eventos para garantizar escalabilidad y bajo mantenimiento.
+BUNKKER E.C.O.S (Ecosistema Comercial de Operaciones Simplificadas) es una plataforma integral de gestión de recursos empresariales (ERP) y Punto de Venta (POS) con diseño **Local-First**, soporte de red local P2P y sincronización automática en la nube (BaaS) mediante Firebase. El sistema está diseñado para funcionar en condiciones de conectividad inestable o nula, garantizando la continuidad operativa de los negocios.
 
-## 2\. Stack Tecnológico
+## 2. Stack Tecnológico
 
-### Frontend
+### Frontend & Runtimes
 
-* **Framework:** [Next.js 14](https://nextjs.org/) (App Router)
-* **Lenguaje:** TypeScript (Tipado estático estricto)
-* **UI/UX:** React, Framer Motion (Animaciones), Lucide Icons
-* **Estado Global:** React Context API (`CartContext`, `AuthContext`)
+* **Framework:** [Next.js 15](https://nextjs.org/) (App Router)
+* **React:** React 19 (Tipado estático estricto y renderizado optimizado)
+* **Entorno de Escritorio:** Electron (Distribución nativa para PC de mostrador)
+* **Estado Global:** Zustand (`useERPStore` para datos unificados) con adaptadores `CartContext` y `AuthContext` para retrocompatibilidad de UI.
 
-### Backend (BaaS)
+### Backend & Almacenamiento Local-First
 
-* **Base de Datos:** Google Cloud Firestore (NoSQL, tiempo real)
-* **Autenticación:** Firebase Admin Auth
-* **Infraestructura:** Vercel / Firebase Hosting
+* **Base de Datos Local:** SQLite (Prisma ORM) con cola de transacciones Write-Ahead Logging (WAL) offline.
+* **Base de Datos Cloud:** Google Cloud Firestore (NoSQL, sincronización en tiempo real).
+* **Autenticación:** Firebase Admin Auth y endpoints locales protegidos mediante firmas criptográficas.
 
-## 3\. Estructura del Código Fuente
+## 3. Estructura del Código Fuente
 
 ```bash
 src/
 ├── app/                  # Rutas y Vistas (Next.js App Router)
-│   ├── dashboard/        # Panel administrativo protegido
+│   ├── dashboard/        # Panel administrativo protegido (RBAC)
 │   ├── login/            # Autenticación unificada
-│   └── api/              # Endpoints API (Edge Functions)
+│   └── api/              # Endpoints API (Verificación, Facturación, Reportes)
 ├── components/           # Componentes UI Reutilizables
-│   ├── admin/            # Layouts y tablas de administración
-│   └── SanJoseAI.tsx     # Módulo de Asistencia Técnica (Chatbot)
-├── context/              # Gestión de Estado (Patrón Provider)
-├── lib/                  # Lógica de Negocio Pura y Configuraciones
-│   ├── firebase.ts       # Singleton de conexión a DB
-│   └── audit.ts          # Sistema de Logs de Auditoría
+│   ├── admin/            # KPICard, TrendBadge, ModuleSection y tablas admin
+│   └── AdminAsistente.tsx # Módulo de Asistencia Técnica (Chatbot con IA)
+├── context/              # Gestión de Estado (Patrones Provider de compatibilidad)
+├── store/                # Zustand Stores (Estado unificado y reactivo principal)
+├── lib/                  # Lógica de Negocio y Utilidades
+│   ├── apiAuth.ts        # Validador de sesión firmada con HMAC
+│   ├── license.ts        # Sistema de Licencias y Fingerprint físico (node-machine-id)
+│   ├── localSync.ts      # Sincronización P2P por mDNS + WebSockets
+│   └── audit.ts          # Sistema de Logs de Auditoría Inmutables
 ```
 
-## 4\. Patrones de Diseño Implementados
+## 4. Patrones de Diseño Implementados
 
-### A. Gestión de Estado Singleton
+### A. Local-First con Write-Ahead Logging (WAL)
 
-El uso de `CartContext` actúa como un **Singleton** para el estado de la aplicación, manejando la persistencia del carrito, la configuración del sitio y los créditos del usuario en una sola fuente de verdad.
+El sistema opera de forma autónoma sin conexión a internet. Las operaciones se guardan localmente en SQLite. Las transacciones pendientes de sincronización se encolan en una cola de Write-Ahead Logging (WAL) en `localStorage` (limitada a 500 registros para evitar quota overflow) y se reintentan de forma cíclica al recuperar la conexión.
 
-### B. Optimistic Updates (Actualizaciones Optimistas)
+### B. Seguridad de Cookies con Firmas Criptográficas (HMAC SHA-256)
 
-La interfaz de usuario refleja los cambios (como agregar al carrito o cambiar configuraciones) instantáneamente mediante `React State`, mientras la sincronización con Firestore ocurre en segundo plano de manera asíncrona.
+Para prevenir la manipulación de roles (vulnerabilidad de bypass en cliente), el sistema firma la cookie de rol (`msj-role`) mediante un HMAC SHA-256 (`msj-role-sig`) utilizando la variable `INTERNAL_API_SECRET`. El middleware de Next.js y los helpers de la API verifican la firma de manera sincrónica en cada petición.
 
-### C. Estrategia de Seguridad (Defense in Depth)
+### C. Descubrimiento y Sincronización P2P en Red Local
 
-1. **Nivel Aplicación:** `LicenseGuard.tsx` (Validación de licencia en cliente).
-2. **Nivel Datos:** Validación de tipos en TypeScript y saneamiento de entradas.
-3. **Nivel Acceso:** Roles RBAC (`superadmin`, `admin`, `driver`) gestionados en `AuthContext`.
+Usando `multicast-dns` (mDNS) y WebSockets, el **Nodo Maestro** (servidor local de la tienda) anuncia su presencia y los **Nodos Esclavos** se conectan automáticamente en la red local Wi-Fi/LAN, permitiendo actualización de inventarios en tiempo real sin salir a internet.
 
-## 5\. Modelo de Datos (Firestore)
+### D. Estrategia de Seguridad (Defense in Depth)
 
-* **users:** Perfiles de usuario y roles.
-* **products:** Inventario en tiempo real con control de concurrencia.
-* **orders:** Transacciones inmutables de ventas y servicios.
-* **audit\_logs:** Trazabilidad completa de acciones del sistema (Compliance).
+1. **Nivel Aplicación (Cliente):** `LicenseGuard.tsx` (Validación de licencia vinculada al HWID real de la máquina vía IPC).
+2. **Nivel Datos:** Validación de tipos en TypeScript, tipado estructurado de auditoría forense y control de transacciones ACID en Prisma.
+3. **Nivel Acceso:** Middleware de Next.js con validación RBAC (roles `superadmin`, `admin`, `sales`, `delivery`, `carga_descarga`, etc.) verificado contra firmas HMAC de servidor.
 
-## 6\. Flujo de Datos Crítico
+---
 
-1. **Usuario** interactúa con la UI.
-2. **Context API** captura la intención y dispara la acción lógica.
-3. **Optimistic UI** actualiza la vista.
-4. **Firebase Web SDK** transmite el cambio a la nube.
-5. **Audit System** registra la transacción paralelamente.
-
-\---
-
-*Documentación generada automáticamente para Multiservicios Veracruz V2.0*
-
+*Documentación de Arquitectura de BUNKKER E.C.O.S ERP v1.0-PRO*

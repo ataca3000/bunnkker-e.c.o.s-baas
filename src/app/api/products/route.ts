@@ -1,5 +1,7 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { requireRole, WRITE_ROLES } from '@/lib/apiAuth';
+
 
 export async function GET() {
     try {
@@ -10,7 +12,10 @@ export async function GET() {
     }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+    const auth = requireRole(request, WRITE_ROLES);
+    if (!auth.ok) return auth.response;
+
     try {
         const body = await request.json();
         
@@ -35,7 +40,10 @@ export async function POST(request: Request) {
     }
 }
 
-export async function PATCH(request: Request) {
+export async function PATCH(request: NextRequest) {
+    const auth = requireRole(request, WRITE_ROLES);
+    if (!auth.ok) return auth.response;
+
     try {
         const body = await request.json();
         const { id, stockIncrement } = body;
@@ -66,7 +74,10 @@ export async function PATCH(request: Request) {
     }
 }
 
-export async function DELETE(request: Request) {
+export async function DELETE(request: NextRequest) {
+    const auth = requireRole(request, ['superadmin', 'admin', 'inventory']);
+    if (!auth.ok) return auth.response;
+
     try {
         const { searchParams } = new URL(request.url);
         const id = searchParams.get('id');

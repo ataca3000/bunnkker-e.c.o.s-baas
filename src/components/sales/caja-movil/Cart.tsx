@@ -18,10 +18,11 @@ export function Cart({ items, orderType, setOrderType, updateQuantity, removeIte
   const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
-  const handleInputChange = (id: string, e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = parseInt(e.target.value, 10);
+  const handleInputChange = (item: any, e: React.ChangeEvent<HTMLInputElement>) => {
+    let val = item.isBulk ? parseFloat(e.target.value) : parseInt(e.target.value, 10);
+    if (e.target.value === '') val = 0;
     if (!isNaN(val) && val >= 0) {
-      updateQuantity(id, val);
+      updateQuantity(item.id, val);
     }
   };
 
@@ -33,15 +34,6 @@ export function Cart({ items, orderType, setOrderType, updateQuantity, removeIte
           <h2 className="text-lg font-display font-bold text-white">Pedido Actual</h2>
           <p className="text-xs text-zinc-400">{itemCount} artículos en carrito</p>
         </div>
-        {items.length > 0 && (
-          <button 
-            onClick={onClear}
-            className="p-2 text-zinc-500 hover:text-red-400 hover:bg-white/5 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-red-500/50"
-            title="Limpiar pedido"
-          >
-            <Trash2 className="h-5 w-5" />
-          </button>
-        )}
       </div>
 
       {/* Cart Items */}
@@ -80,13 +72,14 @@ export function Cart({ items, orderType, setOrderType, updateQuantity, removeIte
                    </button>
                    <input
                       type="number"
+                      step={item.isBulk ? "any" : "1"}
                       value={item.quantity === 0 ? '' : item.quantity}
-                      onChange={(e) => handleInputChange(item.id, e)}
+                      onChange={(e) => handleInputChange(item, e)}
                       onBlur={(e) => {
                          if (!e.target.value) updateQuantity(item.id, 1);
                          if (item.quantity === 0) removeItem(item.id);
                       }}
-                      className="w-10 text-center text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-blue-500/50 rounded bg-transparent text-white hide-arrows"
+                      className="w-12 text-center text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-blue-500/50 rounded bg-transparent text-white hide-arrows"
                    />
                    <button 
                      onClick={() => updateQuantity(item.id, item.quantity + 1)}
@@ -145,22 +138,37 @@ export function Cart({ items, orderType, setOrderType, updateQuantity, removeIte
            </div>
          </div>
 
-         <button
-           onClick={onCheckout}
-           disabled={items.length === 0}
-           className={`w-full py-4 rounded-xl flex items-center justify-center text-lg font-bold transition-all relative overflow-hidden ${
-             items.length === 0 
-               ? 'bg-white/5 text-zinc-600 border border-white/5 cursor-not-allowed'
-               : 'bg-blue-600 text-white hover:bg-blue-500 shadow-[0_0_20px_rgba(37,99,235,0.4)] border border-blue-500/50 transform hover:-translate-y-0.5'
-           }`}
-         >
-           {items.length > 0 ? (
-             <>
-               <div className="absolute inset-0 bg-gradient-to-r from-blue-600/0 via-white/20 to-blue-600/0 translate-x-[-100%] animate-[shimmer_2s_infinite]"></div>
-               {orderType === 'delivery' ? 'Sig. Datos de Envío' : `Cobrar $${total.toFixed(2)}`}
-             </>
-           ) : 'Cobrar'}
-         </button>
+         <div className="flex gap-3">
+           <button
+             onClick={onClear}
+             disabled={items.length === 0}
+             className={`flex-[1] py-5 rounded-2xl flex items-center justify-center text-sm font-black tracking-widest uppercase transition-all ${
+               items.length === 0
+                 ? 'bg-white/5 text-zinc-600 border border-white/5 cursor-not-allowed'
+                 : 'bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/30 active:scale-95'
+             }`}
+           >
+             <X className="mr-1" size={18} /> Cancelar
+           </button>
+           
+           <button
+             onClick={onCheckout}
+             disabled={items.length === 0}
+             className={`flex-[2] py-5 rounded-2xl flex flex-col items-center justify-center text-xl font-black uppercase tracking-wider transition-all relative overflow-hidden ${
+               items.length === 0 
+                 ? 'bg-white/5 text-zinc-600 border border-white/5 cursor-not-allowed'
+                 : 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white hover:from-emerald-400 hover:to-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.4)] border border-emerald-400/50 active:scale-95'
+             }`}
+           >
+             {items.length > 0 ? (
+               <>
+                 <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] animate-[shimmer_2s_infinite]"></div>
+                 {orderType === 'delivery' ? 'Datos Envío' : 'Cobrar'}
+                 <span className="text-sm font-bold opacity-80">${total.toFixed(2)}</span>
+               </>
+             ) : 'Cobrar'}
+           </button>
+         </div>
       </div>
 
       <style dangerouslySetInnerHTML={{__html:`

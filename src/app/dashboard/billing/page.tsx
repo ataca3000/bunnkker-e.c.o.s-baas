@@ -72,7 +72,17 @@ function FacturacionContent() {
         setLoading(true);
         setOrderFound(null);
         try {
-            // Fetch from API instead
+            // 1. Buscar primero en las órdenes de memoria local en el CartContext
+            const foundInLocal = orders?.find((o: any) => o.id === orderId);
+            if (foundInLocal) {
+                setOrderFound(foundInLocal);
+                if (foundInLocal.customer?.email) setCustomerEmail(foundInLocal.customer.email);
+                else if (foundInLocal.customerEmail) setCustomerEmail(foundInLocal.customerEmail);
+                setLoading(false);
+                return;
+            }
+
+            // 2. Fallback: Buscar en la API del servidor local
             const res = await fetch('/api/orders');
             const data = await res.json();
             const foundInApi = data.data?.find((o: any) => o.id === orderId);
@@ -81,7 +91,7 @@ function FacturacionContent() {
                 setOrderFound(foundInApi);
                 if (foundInApi.customer?.email) setCustomerEmail(foundInApi.customer.email);
             } else {
-                alert("❌ Orden no encontrada en el servidor local.");
+                alert("❌ Orden no encontrada en la base de datos o en memoria.");
             }
         } catch (err) {
             console.error("Error searching order", err);

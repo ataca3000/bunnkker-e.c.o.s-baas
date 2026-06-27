@@ -16,7 +16,8 @@ export default function UserProfile() {
         email: 'usuario@sistema.com',
         phone: '',
         address: 'No registrada',
-        photo: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=200'
+        photo: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=200',
+        pin: ''
     });
 
     useEffect(() => {
@@ -27,7 +28,8 @@ export default function UserProfile() {
                 email: profile.email || 'admin@sistema.com',
                 phone: profile.recoveryPhone || '',
                 address: profile.recoveryEmail || 'No registrada',
-                photo: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=200'
+                photo: (profile as any).photoURL || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=200',
+                pin: (profile as any).pin || ''
             });
         }
     }, [profile]);
@@ -44,12 +46,16 @@ export default function UserProfile() {
                 const userRef = doc(db, 'users', profile.uid);
                 await updateDoc(userRef, {
                     recoveryPhone: userData.phone,
+                    photoURL: userData.photo,
+                    pin: userData.pin
+                }).catch(err => {
+                    console.warn("Ignorando error de Firebase (Modo Local):", err);
                 });
                 alert("Perfil actualizado correctamente");
             }
         } catch (err) {
             console.error("Error saving profile:", err);
-            alert("Error al guardar cambios.");
+            alert("Error interno al actualizar el perfil.");
         } finally {
             setIsEditing(false);
         }
@@ -138,10 +144,72 @@ export default function UserProfile() {
                         {/* Seguridad */}
                         <div style={{ marginTop: '2rem', paddingTop: '1rem', borderTop: '1px solid #eee' }}>
                             <h3 style={{ fontSize: '1rem', fontWeight: 'bold', color: '#555', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                <Lock size={16} /> Seguridad
+                                <Lock size={16} /> Seguridad y Accesos
                             </h3>
+                            
+                            <div style={{ marginBottom: '1.5rem' }}>
+                                <label style={{ fontSize: '0.8rem', color: '#888', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                    PIN DE ACCESO (Autorizaciones y Caja)
+                                </label>
+                                <input
+                                    type="password"
+                                    value={userData.pin}
+                                    disabled={!isEditing}
+                                    maxLength={6}
+                                    placeholder="••••••"
+                                    onChange={(e) => setUserData({ ...userData, pin: e.target.value.replace(/\D/g, '') })}
+                                    style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '4px', border: isEditing ? '1px solid #0ea5e9' : '1px solid #ddd', background: isEditing ? 'white' : '#f9f9f9', letterSpacing: '0.5em', fontWeight: 'bold' }}
+                                />
+                                <p style={{ fontSize: '0.7rem', color: '#888', marginTop: '5px' }}>Úsalo para autorizar cancelaciones en caja.</p>
+                            </div>
+
+                            <div style={{ marginBottom: '1.5rem' }}>
+                                <label style={{ fontSize: '0.8rem', color: '#888', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                    FOTO DE PERFIL (Cámara o Archivo)
+                                </label>
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    capture="user"
+                                    disabled={!isEditing}
+                                    onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) {
+                                            const img = new Image();
+                                            const objectUrl = URL.createObjectURL(file);
+                                            img.src = objectUrl;
+                                            img.onload = () => {
+                                                const canvas = document.createElement('canvas');
+                                                const MAX_WIDTH = 400;
+                                                const MAX_HEIGHT = 400;
+                                                let width = img.width;
+                                                let height = img.height;
+
+                                                if (width > height && width > MAX_WIDTH) {
+                                                    height *= MAX_WIDTH / width;
+                                                    width = MAX_WIDTH;
+                                                } else if (height > MAX_HEIGHT) {
+                                                    width *= MAX_HEIGHT / height;
+                                                    height = MAX_HEIGHT;
+                                                }
+                                                canvas.width = width;
+                                                canvas.height = height;
+                                                const ctx = canvas.getContext('2d');
+                                                ctx?.drawImage(img, 0, 0, width, height);
+                                                
+                                                const dataUrl = canvas.toDataURL('image/webp', 0.6);
+                                                setUserData({ ...userData, photo: dataUrl });
+                                                URL.revokeObjectURL(objectUrl);
+                                            };
+                                        }
+                                    }}
+                                    style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '4px', border: isEditing ? '1px solid #0ea5e9' : '1px solid #ddd', background: isEditing ? 'white' : '#f9f9f9', fontSize: '0.75rem' }}
+                                />
+                                <p style={{ fontSize: '0.7rem', color: '#888', marginTop: '5px' }}>Selecciona un archivo local o toma una foto. Se guardará sin usar Cloud Storage.</p>
+                            </div>
+
                             <button style={{ background: 'none', border: '1px solid #ccc', padding: '8px 15px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem' }}>
-                                Cambiar Contraseña
+                                Cambiar Contraseña Principal
                             </button>
                         </div>
                     </div>

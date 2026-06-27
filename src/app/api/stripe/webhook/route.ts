@@ -1,23 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { adminDb } from '@/lib/firebase-admin';
+import { prisma } from '@/lib/prisma'; // Database local
 
 export async function POST(req: NextRequest) {
     try {
         const bodyText = await req.text();
         const signature = req.headers.get('stripe-signature') as string;
 
-        // 1. Fetch config from Firestore to get Webhook Secret
-        const secretSnap = await adminDb.doc('secrets/billing').get();
-        if (!secretSnap.exists) {
-            console.error("[Stripe Webhook] Error: Secretos no configurados");
-            return NextResponse.json({ error: 'Configuración de Stripe faltante' }, { status: 400 });
+        // 1. Fetch config from local environment
+        const secretKey = process.env.STRIPE_SECRET_KEY;
+        const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+        if (!secretKey || !webhookSecret) {
+            console.error("[Stripe Webhook] Error: Secretos no configurados en .env");
+            return NextResponse.json({ error: 'Configuración de Stripe faltante en .env' }, { status: 400 });
         }
         
-        const secretData = secretSnap.data() as any;
-        const secretKey = secretData.stripe_secret_key;
-        const webhookSecret = secretData.stripe_webhook_secret || ''; // Debe añadirse en el futuro en setup, pero por ahora podemos procesar sin validación si no hay webhookSecret o ignorar
-
         const stripe = new Stripe(secretKey, { apiVersion: '2026-05-27.dahlia' });
 
         let event: Stripe.Event;
@@ -38,16 +36,26 @@ export async function POST(req: NextRequest) {
             const orderId = session.metadata?.orderId;
 
             if (orderId) {
-                // Marcar orden como PAGADA en Firebase
-                await adminDb.doc(`orders/${orderId}`).update({
-                    status: 'paid',
-                    paymentDetails: {
-                        provider: 'stripe',
-                        id: session.payment_intent,
-                        paidAt: new Date().toISOString()
+                // Marcar orden como PAGADA en Prisma (SQLite local)
+                await prisma.order.update({
+                    where: { id: orderId },
+                    data: {
+                        status: 'paid',
+                        paymentMethod: 'stripe'
                     }
                 });
-                console.log(`[Stripe Webhook] Orden ${orderId} marcada como PAGADA.`);
+                
+                // Opcional: También registramos en Auditoría para que el sistema local sepa
+                await prisma.auditLog.create({
+                    data: {
+                        action: 'PAYMENT_RECEIVED',
+                        details: `Stripe PaymentIntent: ${session.payment_intent}`,
+                        userId: 'SYSTEM',
+                        synced: false
+                    }
+                });
+
+                console.log(`[Stripe Webhook] Orden local ${orderId} marcada como PAGADA a través del Túnel.`);
             }
         }
 

@@ -1,7 +1,10 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { requireRole } from '@/lib/apiAuth';
 import { prisma } from '@/lib/prisma';
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
+    const auth = requireRole(request, ['superadmin', 'admin', 'billing']);
+    if (!auth.ok) return auth.response;
     try {
         const tenantId = request.headers.get('x-tenant-id') || 'default-local';
         

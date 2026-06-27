@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, CheckCircle2, DollarSign } from 'lucide-react';
+import { X, CheckCircle2, DollarSign, Camera } from 'lucide-react';
 import type { OrderType } from './Cart';
 
 interface PaymentModalProps {
@@ -7,16 +7,18 @@ interface PaymentModalProps {
   onClose: () => void;
   total: number;
   orderType: OrderType;
-  onConfirm: (amountReceived: number, change: number) => void;
+  onConfirm: (amountReceived: number, change: number, evidencePhoto?: string) => void;
   isProcessing: boolean;
 }
 
 export function PaymentModal({ isOpen, onClose, total, orderType, onConfirm, isProcessing }: PaymentModalProps) {
   const [received, setReceived] = useState<string>('');
+  const [evidencePhoto, setEvidencePhoto] = useState<string>('');
 
   useEffect(() => {
     if (isOpen) {
       setReceived('');
+      setEvidencePhoto('');
     }
   }, [isOpen]);
 
@@ -35,7 +37,7 @@ export function PaymentModal({ isOpen, onClose, total, orderType, onConfirm, isP
 
   const handleConfirm = () => {
     if (!isValid || isProcessing) return;
-    onConfirm(receivedAmount, change);
+    onConfirm(receivedAmount, change, evidencePhoto);
   };
 
   return (
@@ -106,6 +108,43 @@ export function PaymentModal({ isOpen, onClose, total, orderType, onConfirm, isP
              <span className={`text-xl font-bold ${isValid ? 'text-green-400' : 'text-zinc-500'}`}>
                ${receivedAmount >= total ? change.toFixed(2) : '---'}
              </span>
+          </div>
+
+          {/* Evidence Photo */}
+          <div className="space-y-3">
+             <label className="block text-sm font-medium text-zinc-300">Evidencia (Foto Opcional)</label>
+             <div className="flex flex-col gap-2">
+                 <input 
+                     type="file" 
+                     accept="image/*"
+                     capture="environment"
+                     onChange={(e) => {
+                         const file = e.target.files?.[0];
+                         if (file) {
+                             const img = new Image();
+                             const objectUrl = URL.createObjectURL(file);
+                             img.src = objectUrl;
+                             img.onload = () => {
+                                 const canvas = document.createElement('canvas');
+                                 let width = img.width, height = img.height;
+                                 if (width > height && width > 600) { height *= 600 / width; width = 600; }
+                                 else if (height > 600) { width *= 600 / height; height = 600; }
+                                 canvas.width = width; canvas.height = height;
+                                 canvas.getContext('2d')?.drawImage(img, 0, 0, width, height);
+                                 setEvidencePhoto(canvas.toDataURL('image/webp', 0.5));
+                                 URL.revokeObjectURL(objectUrl);
+                             };
+                         }
+                     }}
+                     className="block w-full text-sm text-zinc-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-white/10 file:text-white hover:file:bg-white/20 cursor-pointer" 
+                 />
+                 {evidencePhoto && (
+                     <div className="h-24 w-24 rounded-lg overflow-hidden border border-white/20">
+                         {/* eslint-disable-next-line @next/next/no-img-element */}
+                         <img src={evidencePhoto} alt="Evidencia" className="w-full h-full object-cover" />
+                     </div>
+                 )}
+             </div>
           </div>
 
           <button

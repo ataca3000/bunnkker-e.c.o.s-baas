@@ -48,9 +48,16 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
     }, [profile]);
 
     const handleCheckout = async () => {
+        // Validación estándar
         if (!formData.name || !formData.phone || (formData.deliveryMethod === 'repartidor' && !formData.address)) {
-            alert("Por favor completa los datos obligatorios de entrega.");
-            return;
+            // Si es un empleado (cajero, admin, superadmin), le perdonamos la validación si escogió piso o pickup y auto-rellenamos
+            if ((profile as any)?.role === 'sales' || (profile as any)?.role === 'admin' || (profile as any)?.role === 'superadmin') {
+                if (!formData.name) formData.name = 'Cliente Mostrador';
+                if (!formData.phone) formData.phone = '0000000000';
+            } else {
+                alert("Por favor completa los datos obligatorios de entrega.");
+                return;
+            }
         }
         setIsProcessing(true);
         try {
@@ -62,6 +69,23 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
             const { orderId, deliveryPin } = result;
 
             const finalTotal = total + formData.tip;
+
+            if (formData.paymentMethod === 'tarjeta_stripe') {
+                const stripeRes = await fetch('/api/stripe/create-intent', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ amount: finalTotal, orderId, customer: formData })
+                });
+                const stripeData = await stripeRes.json();
+                
+                if (stripeData.url) {
+                    window.location.href = stripeData.url;
+                    return; // Detener ejecución para que redirija a Stripe
+                } else {
+                    alert('❌ Error al iniciar el pago con Stripe: ' + (stripeData.error || 'Desconocido'));
+                    return;
+                }
+            }
 
             alert(`¡Pedido Confirmado! \nOrden: ${orderId}\nTotal a Pagar: $${finalTotal.toFixed(2)}\n\nTu PIN de Entrega (OTP): ${deliveryPin}\nConsérvalo, el repartidor te lo pedirá al entregar tu producto.\n\nSe ha enviado un WhatsApp con los detalles a ${formData.phone}.`);
             setStep('cart');
@@ -162,7 +186,7 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
                                                         📦 Pick Up
                                                     </button>
                                                     <button 
-                                                        onClick={() => setFormData({ ...formData, deliveryMethod: 'repartidor', paymentMethod: 'tarjeta_mp' })}
+                                                        onClick={() => setFormData({ ...formData, deliveryMethod: 'repartidor', paymentMethod: 'pago_caja' })}
                                                         className={styles.methodBtn} 
                                                         style={{ flex: 1, padding: '10px 5px', borderRadius: '8px', border: formData.deliveryMethod === 'repartidor' ? '2px solid #0ea5e9' : '1px solid #ddd', background: formData.deliveryMethod === 'repartidor' ? '#e0f2fe' : '#fff', color: '#111', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.75rem' }}
                                                     >
@@ -232,6 +256,7 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
                                                     style={{ width: '100%' }}
                                                 >
                                                     <option value="pago_caja">💵 Pago en Caja (Sucursal)</option>
+                                                    <option value="tarjeta_stripe">💳 Pago con Tarjeta (Stripe)</option>
                                                     <option value="creditos">🪙 Pagar con Créditos</option>
                                                 </select>
                                                 
@@ -252,9 +277,19 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
                                             </div>
                                         </div>
 
-                                        <h3 className={styles.checkoutTitle}>Datos de Cliente</h3>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <h3 className={styles.checkoutTitle} style={{ margin: 0 }}>Datos de Cliente</h3>
+                                            {((profile as any)?.role === 'sales' || (profile as any)?.role === 'admin' || (profile as any)?.role === 'superadmin') && (
+                                                <button
+                                                    onClick={() => setFormData({ ...formData, name: 'Cliente Mostrador', phone: '0000000000', address: 'Mostrador', deliveryMethod: 'piso' })}
+                                                    className="bg-zinc-800 text-white text-xs px-3 py-1 rounded-full font-bold hover:bg-zinc-700 transition"
+                                                >
+                                                    ⚡ Venta Rápida
+                                                </button>
+                                            )}
+                                        </div>
 
-                                        <div className={styles.formFields}>
+                                        <div className={styles.formFields} style={{ marginTop: '15px' }}>
                                             <input
                                                 type="text"
                                                 placeholder="Nombre Completo / Razón Social"

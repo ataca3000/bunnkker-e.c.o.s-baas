@@ -163,12 +163,12 @@ export default function Navbar() {
 
                         {/* Entry point for Login / Cuenta / Dashboard */}
                         <Link
-                            href={user ? (profile?.role === 'client' ? '/cuenta' : '/dashboard/profile') : '/login'}
-                            title={user ? (profile?.role === 'client' ? "Mi Perfil y Pedidos" : "Mi Cuenta") : "Acceso al Sistema"}
+                            href="/cuenta"
+                            title="Mi Cuenta / Cliente"
                             className={styles.adminLock}
                             style={{ display: 'flex', alignItems: 'center', gap: '5px' }}
                         >
-                            {user ? <User size={18} color="#0ea5e9" /> : <User size={18} color="#0ea5e9" />}
+                            <User size={18} color="#0ea5e9" />
                         </Link>
 
                         <div className={styles.mobileToggle} onClick={() => setIsMenuOpen(!isMenuOpen)}>

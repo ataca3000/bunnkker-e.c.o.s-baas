@@ -256,7 +256,7 @@ export default function MarketCatalog({ initialCategory, hideHeader }: { initial
     }
 
     return (
-        <section id="catalogo" className="py-20 px-8 max-w-[1200px] mx-auto">
+        <section id="catalogo" className="py-16 px-4 sm:px-8 w-full">
             
             {/* Real-time Delivery Capacity Simulator (Option B Widget) */}
             <AnimatePresence>
@@ -347,14 +347,14 @@ export default function MarketCatalog({ initialCategory, hideHeader }: { initial
             )}
 
             {/* Fondo negro perimetral exclusivo para el grid del catálogo */}
-            <div className="bg-[#050505] -mx-8 px-8 py-16 mt-8 border-t border-b border-white/10">
+            <div className="bg-[#050505] -mx-4 sm:-mx-8 px-4 sm:px-8 py-16 mt-8 border-t border-b border-white/10">
                 <div className="flex items-center gap-4 mb-10 border-l-8 border-purple-500 pl-4">
                     <h2 className="text-4xl md:text-5xl font-black text-white italic uppercase tracking-tighter">
                         NUESTRO <span className="text-purple-400">CATÁLOGO</span>
                     </h2>
                 </div>
 
-                <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 auto-rows-auto">
+                <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 auto-rows-auto">
                     {filtered.length > 0 ? (
                         filtered.slice(0, visibleCount).map((p, index) => (
                             <ProductCard key={p.id} p={p} index={index} onOpenDetails={setSelectedProduct} onGenerateCFDI={setCfdiProduct} />

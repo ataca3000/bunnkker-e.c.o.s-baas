@@ -1,4 +1,5 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { validateApiSession } from '@/lib/apiAuth';
 import Facturapi from 'facturapi';
 import { db, auth } from '@/lib/firebase-admin';
 
@@ -13,7 +14,9 @@ async function getFacturapiKey() {
     return null;
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+    const sessionAuth = validateApiSession(req);
+    if (!sessionAuth.ok) return sessionAuth.response;
     try {
         // 1. VERIFICACIÓN DE IDENTIDAD (SECURITY GATE)
         const authHeader = req.headers.get('Authorization');

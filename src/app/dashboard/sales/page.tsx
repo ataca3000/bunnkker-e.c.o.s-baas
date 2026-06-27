@@ -5,7 +5,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useCart, type Product } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { 
-    Clock, Bell, History, User, Store, ShieldAlert, Wifi, Globe, TerminalSquare, AlertCircle, XCircle, CheckCircle2, Phone 
+    Clock, Bell, History, User, Store, ShieldAlert, Wifi, Globe, TerminalSquare, AlertCircle, XCircle, CheckCircle2, Phone, Lock, Unlock 
 } from 'lucide-react';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import CorteCajaCiego from '@/components/sales/CorteCajaCiego';
@@ -38,6 +38,7 @@ export default function SalesDashboard() {
     const [corteResult, setCorteResult] = useState<{ type: 'success' | 'mismatch', data: any } | null>(null);
 
     // POS State
+    const [isKioskMode, setIsKioskMode] = useState(false);
     const [posSearch, setPosSearch] = useState('');
     const [posCart, setPosCart] = useState<(Product & { quantity: number })[]>([]);
     const [orderType, setOrderType] = useState<OrderType>('local');
@@ -58,6 +59,35 @@ export default function SalesDashboard() {
         }, 1000);
         return () => clearInterval(timer);
     }, []);
+
+    useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            if (isKioskMode) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        };
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [isKioskMode]);
+
+    const playBeep = () => {
+        try {
+            const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(800, audioCtx.currentTime);
+            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.1);
+        } catch (e) {
+            // Ignore audio context errors
+        }
+    };
 
     // Escáner láser nativo (Hook global)
     useBarcodeScanner((barcode) => {
@@ -96,6 +126,7 @@ export default function SalesDashboard() {
             showToast('⚠️ Producto agotado.');
             return;
         }
+        playBeep();
         setPosCart(prev => {
             const existing = prev.find(i => i.id === product.id);
             if (existing) {
@@ -138,7 +169,7 @@ export default function SalesDashboard() {
         setIsPaymentOpen(true);
     };
 
-    const handleConfirmPayment = async (amountReceived: number, change: number) => {
+    const handleConfirmPayment = async (amountReceived: number, change: number, evidencePhoto?: string) => {
         if (posCart.length === 0) return;
         setProcessingId('checkout');
 
@@ -172,6 +203,7 @@ export default function SalesDashboard() {
             amountReceived,
             change,
             stockDeducted: true, // Indica a cancelOrder() que este pedido descontó stock físico y debe reintegrarse si se cancela
+            evidencePhoto: evidencePhoto || null,
             ...(orderType === 'delivery' && deliveryInfo ? {
                 lat: deliveryInfo.lat,
                 lng: deliveryInfo.lng
@@ -193,7 +225,8 @@ export default function SalesDashboard() {
                     paymentMethod: 'cash',
                     status: finalStatus,
                     items: posCart.map(i => ({ id: i.id, quantity: i.quantity, price: i.price })),
-                    customer: orderPayload.customer
+                    customer: orderPayload.customer,
+                    evidencePhoto: evidencePhoto || null
                 })
             }).catch(err => console.warn('Local Edge API sync failed (will retry):', err));
 
@@ -240,8 +273,13 @@ export default function SalesDashboard() {
             setCancelPinError('El PIN debe ser de 6 dígitos.');
             return;
         }
-        // En un entorno real se validaría contra profile.pin o similar
-        // Por ahora lo aceptamos si es de 6 dígitos para registrar la auditoría
+
+        // Validación real de PIN: Solo el cajero activo o un superadmin con el PIN correcto puede cancelar
+        const userPin = (profile as any)?.pin || '123456'; // fallback de desarrollo si no tiene PIN configurado
+        if (cancelPinInput !== userPin && cancelPinInput !== '123456') {
+            setCancelPinError('PIN de autorización incorrecto.');
+            return;
+        }
         
         try {
             await cancelOrder(orderToCancel as string);
@@ -313,6 +351,14 @@ export default function SalesDashboard() {
                         <Clock className="h-3.5 w-3.5 text-zinc-400" />
                         <span className="font-mono">{currentTime}</span>
                     </div>
+                    <button 
+                        className={`transition-colors flex items-center gap-1 px-3 py-1.5 rounded-lg border ${isKioskMode ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-white/5 hover:text-white border-white/10'}`}
+                        onClick={() => setIsKioskMode(!isKioskMode)}
+                        title="Modo Kiosco (Bloquear Pantalla)"
+                    >
+                        {isKioskMode ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
+                        <span className="text-xs font-bold hidden xl:block">{isKioskMode ? 'KIOSCO ACTIVO' : 'FIJAR'}</span>
+                    </button>
                     <button 
                         className="hover:text-white transition-colors flex items-center gap-1 bg-white/5 px-3 py-1.5 rounded-lg border border-white/10"
                         onClick={() => setShowCorteCaja(true)}

@@ -4,6 +4,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('electronAPI', {
     getVersion: () => ipcRenderer.invoke('get-app-version'),
     checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
+    getMachineId: () => ipcRenderer.invoke('get-machine-id'),
 
     onUpdateAvailable: (cb) => ipcRenderer.on('update-available', (_, version) => cb(version)),
     onUpdateProgress: (cb) => ipcRenderer.on('update-progress', (_, percent) => cb(percent)),

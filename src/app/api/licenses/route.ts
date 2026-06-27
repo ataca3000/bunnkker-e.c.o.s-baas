@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { validateApiSession } from '@/lib/apiAuth';
 import { adminDb } from '@/lib/firebase-admin';
 
 // ── Helper: generate license key ADMIN-XXXX-XXXX-XXXX ─────────────────────
@@ -9,6 +10,8 @@ function generateKey(): string {
 
 // ── POST /api/licenses — Create a new license ──────────────────────────────
 export async function POST(req: NextRequest) {
+    const auth = validateApiSession(req);
+    if (!auth.ok) return auth.response;
     try {
         const { clientName, email, maxMachines = 1, expiresAt = null, devSecret } = await req.json();
 

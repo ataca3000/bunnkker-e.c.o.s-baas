@@ -43,7 +43,8 @@ function getMachineId(): string {
     // if (process.env.NODE_ENV === 'production') return 'server_id'; // This line was problematic for Electron
     let id = localStorage.getItem(MACHINE_KEY);
     if (!id) {
-        const raw = `${navigator.userAgent || 'unknown'}|${window.screen?.width || 0}x${window.screen?.height || 0}|${navigator.language || 'en'}|${Date.now()}`;
+        // Deterministic browser fingerprint (removed Date.now() so it remains stable if localStorage is cleared)
+        const raw = `${navigator.userAgent || 'unknown'}|${window.screen?.width || 0}x${window.screen?.height || 0}|${navigator.language || 'en'}`;
         id = btoa(raw).replace(/[^a-zA-Z0-9]/g, '').slice(0, 32);
         localStorage.setItem(MACHINE_KEY, id);
     }
@@ -95,9 +96,24 @@ async function validateOnline(
     machineId: string
 ): Promise<{ valid: boolean; clientName?: string; expiresAt?: number | null }> {
     // FALLBACK LOCAL: Si no hay internet, buscar en el servidor maestro de la red local
-    if (!navigator.onLine) {
+    if (typeof window !== 'undefined' && !navigator.onLine) {
         console.log("Validando licencia vía Red Local (Offline)...");
-        // Aquí llamarías a una función que consulte al Nodo Maestro vía localSync.ts
+        try {
+            const masterIp = localStorage.getItem('FIREBASE_MASTER_IP') || 'localhost';
+            const res = await fetch(`http://${masterIp}:3000/api/license/verify`);
+            if (res.ok) {
+                const data = await res.json();
+                if (data.isValid) {
+                    return {
+                        valid: true,
+                        clientName: data.message || 'Offline Local Node',
+                        expiresAt: data.remainingDays ? (Date.now() + data.remainingDays * 24 * 3600 * 1000) : null
+                    };
+                }
+            }
+        } catch (e) {
+            console.error("Error en validación offline local:", e);
+        }
     }
 
     try {

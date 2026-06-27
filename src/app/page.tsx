@@ -21,7 +21,7 @@ export default function HomePage() {
   // La plantilla siempre carga el renderer, independientemente de si es admin.com (default) o un inquilino
   // El contenido de "default" simplemente será el lienzo que configuren en la BD.
   return (
-    <main className="w-full bg-[#F5F5F5] pb-20">
+    <main className="w-full min-h-screen pb-20" style={{ background: 'rgb(var(--background-rgb))' }}>
       <AmbientMusic />
       <MarketingCanvasRenderer pageId="inicio" />
     </main>
