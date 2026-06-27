@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { validateApiSession } from '@/lib/apiAuth';
+import { validateApiSession, hashPinSha256 } from '@/lib/apiAuth';
 import bcrypt from 'bcryptjs';
 
 const SALT_ROUNDS = 10;
@@ -45,21 +45,27 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ success: false, error: 'El PIN debe tener al menos 4 dígitos.' }, { status: 400 });
         }
 
-        // Verificar PIN duplicado
-        const existingPin = await prisma.user.findUnique({ where: { pin } });
+        const pinSha = hashPinSha256(pin);
+
+        // Verificar PIN duplicado usando el hash SHA-256
+        const existingPin = await prisma.user.findFirst({ 
+            where: { 
+                pin: { in: [pinSha, pin] }
+            } 
+        });
         if (existingPin) {
             return NextResponse.json({ success: false, error: 'PIN ya está en uso por otro empleado.' }, { status: 400 });
         }
 
-        // Hashear el PIN antes de guardar
+        // Hashear el PIN antes de guardar con bcrypt
         const pinHash = await bcrypt.hash(pin, SALT_ROUNDS);
 
         const newUser = await prisma.user.create({
             data: {
                 name,
                 email: email || null,
-                pin,      // campo legacy requerido por unique constraint
-                pinHash,  // hash seguro para autenticación
+                pin: pinSha,      // se guarda hasheado en SHA-256
+                pinHash,          // hash seguro para autenticación
                 role,
             }
         });

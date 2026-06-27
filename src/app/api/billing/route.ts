@@ -95,13 +95,48 @@ export async function POST(req: NextRequest) {
         });
 
         // 4. GENERAR FACTURA CON DATOS VERIFICADOS
-        const invoice = await facturapi.invoices.create({
-            customer,
-            items: verifiedItems, // Array construido y verificado en el servidor
-            payment_form,
-            use,
-            type: 'I',
-        });
+        let invoice;
+        let isQueued = false;
+
+        try {
+            invoice = await facturapi.invoices.create({
+                customer,
+                items: verifiedItems, // Array construido y verificado en el servidor
+                payment_form,
+                use,
+                type: 'I',
+            });
+        } catch (apiError: any) {
+            console.error("Facturapi is offline or failed. Queuing invoice generation:", apiError);
+            
+            await prisma.syncQueue.create({
+                data: {
+                    collection: 'invoices',
+                    action: 'CREATE',
+                    payload: JSON.stringify({
+                        customer,
+                        items: verifiedItems,
+                        payment_form,
+                        use,
+                        type: 'I',
+                        uid,
+                        userEmail: decodedToken?.email || 'unknown',
+                        tenantId
+                    }),
+                    status: 'PENDING',
+                    errorMsg: apiError.message
+                }
+            });
+            isQueued = true;
+        }
+
+        if (isQueued) {
+            return NextResponse.json({ 
+                success: true, 
+                queued: true, 
+                message: 'La factura ha sido encolada para timbrado automático debido a una caída temporal del SAT o Facturapi. Se enviará por correo una vez emitida.' 
+            });
+        }
 
         // 5. ENVÍO AUTOMÁTICO DE CORREO (NOTIFICACIÓN)
         try {

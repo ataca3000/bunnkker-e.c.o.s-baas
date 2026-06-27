@@ -3,7 +3,7 @@ config({ path: '.env.local' });
 
 import { PrismaClient } from '@prisma/client';
 import { initializeApp } from 'firebase/app';
-import { getFirestore, doc, setDoc, updateDoc, increment } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, updateDoc, increment, getDoc } from 'firebase/firestore';
 
 const prisma = new PrismaClient();
 
@@ -78,6 +78,33 @@ async function processQueue() {
                             data: { synced: true }
                         });
                     }
+                } else if (task.collection === 'invoices' && task.action === 'CREATE') {
+                    const Facturapi = require('facturapi').default || require('facturapi');
+                    let apiKey = process.env.FACTURAPI_KEY;
+
+                    try {
+                        const secretSnap = await getDoc(doc(db, 'tenants', payload.tenantId || 'default', 'secrets', 'keys'));
+                        if (secretSnap.exists() && secretSnap.data()?.facturapi_key) {
+                            apiKey = secretSnap.data().facturapi_key;
+                        }
+                    } catch (e) {
+                        console.error("[Worker] Error leyendo keys de firestore para reintento:", e);
+                    }
+
+                    if (!apiKey) {
+                        throw new Error("API Key de Facturapi no disponible en el entorno del worker.");
+                    }
+
+                    const facturapiInstance = new Facturapi(apiKey);
+                    const invoice = await facturapiInstance.invoices.create({
+                        customer: payload.customer,
+                        items: payload.items,
+                        payment_form: payload.payment_form,
+                        use: payload.use,
+                        type: payload.type,
+                    });
+
+                    console.log(`[Worker] ✅ Factura creada con éxito en Facturapi (Reintento) ID: ${invoice.id}`);
                 } else if (task.action === 'UPDATE' || task.action === 'UPSERT') {
                     const docId = task.documentId || task.id;
                     await setDoc(doc(db, task.collection, docId), {

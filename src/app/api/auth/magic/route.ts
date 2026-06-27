@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { signRole, decryptToken } from '@/lib/apiAuth';
 import { prisma } from '@/lib/prisma';
-import { signRole } from '@/lib/apiAuth';
 
 const COOKIE_OPTS = {
   httpOnly: true,
@@ -19,9 +19,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL('/login?error=invalid_magic_link', request.url));
     }
 
-    // El token es un base64 de JSON { uid, pin, expiresAt }
-    const decoded = Buffer.from(token, 'base64').toString('utf-8');
-    const { uid, pin, expiresAt } = JSON.parse(decoded);
+    // El token está cifrado con AES-256-CBC
+    const payload = decryptToken(token);
+    if (!payload) {
+      return NextResponse.redirect(new URL('/login?error=invalid_magic_link', request.url));
+    }
+
+    const { uid, pin, expiresAt } = payload;
 
     if (!uid || !pin) {
       return NextResponse.redirect(new URL('/login?error=invalid_magic_link', request.url));

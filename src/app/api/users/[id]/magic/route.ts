@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { validateApiSession } from '@/lib/apiAuth';
+import { validateApiSession, encryptToken } from '@/lib/apiAuth';
 
 export async function GET(request: NextRequest, props: { params: Promise<{ id: string }> }) {
     const params = await props.params;
@@ -19,12 +19,12 @@ export async function GET(request: NextRequest, props: { params: Promise<{ id: s
             return NextResponse.json({ success: false, error: 'Usuario no encontrado' }, { status: 404 });
         }
 
-        // Generar el payload con el UID y el PIN real de la base de datos (expira en 15 minutos)
-        const payload = Buffer.from(JSON.stringify({ 
+        // Generar el payload cifrado con el UID y el PIN real de la base de datos (expira en 15 minutos)
+        const payload = encryptToken({ 
             uid: user.id, 
             pin: user.pin,
             expiresAt: Date.now() + 15 * 60 * 1000 
-        })).toString('base64');
+        });
 
         return NextResponse.json({ success: true, payload });
 
