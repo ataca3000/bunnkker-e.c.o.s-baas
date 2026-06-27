@@ -1,0 +1,152 @@
+/* APIKeyManager Component Styles */
+.container {
+    border-top: 6px solid var(--sanjose-blue);
+}
+
+.headerRow {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 1.5rem;
+}
+
+.headerIcon {
+    background-color: #f0f7ff;
+    padding: 10px;
+    border-radius: 8px;
+}
+
+.headerTitle {
+    font-size: 1.2rem;
+    font-weight: 900;
+    color: #1a1a1a;
+}
+
+.headerSub {
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.formArea {
+    background-color: #f9f9f9;
+    padding: 1.5rem;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+}
+
+.twoColGrid {
+    margin-bottom: 1.5rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.fieldLabel {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.fieldInput {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    text-transform: uppercase;
+}
+
+.divider {
+    border: none;
+    border-top: 1px solid #eee;
+    margin: 1.5rem 0;
+}
+
+.keyLabel {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 8px;
+}
+
+.keyRow {
+    position: relative;
+    display: flex;
+    gap: 10px;
+}
+
+.keyInputWrap {
+    position: relative;
+    flex: 1;
+}
+
+.keyIcon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #888;
+}
+
+.keyInput {
+    width: 100%;
+    padding: 12px 40px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.9rem;
+}
+
+.toggleKey {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #888;
+}
+
+.saveBtn {
+    padding: 0 25px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.successMsg {
+    margin-top: 1rem;
+    color: #27ae60;
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.warningRow {
+    margin-top: 1.5rem;
+    display: flex;
+    gap: 15px;
+    align-items: flex-start;
+}
+
+.warningText {
+    font-size: 0.75rem;
+    color: #666;
+    line-height: 1.4;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.spin {
+    animation: spin 1s linear infinite;
+}

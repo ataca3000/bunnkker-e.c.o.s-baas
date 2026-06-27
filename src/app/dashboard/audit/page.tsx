@@ -11,7 +11,7 @@ import { db, auth } from '@/lib/firebase';
 import { onAuthStateChanged, type User } from 'firebase/auth';
 import VirtualizedAuditList, { type AuditRowData } from '@/components/VirtualizedAuditList';
 import { type AuditLog } from '@/types/audit';
-// @ts-ignore
+// @ts-expect-error - react-window types not resolved
 import { areEqual, type ListChildComponentProps } from 'react-window';
 import Link from 'next/link';
 import { Settings } from 'lucide-react';
@@ -27,7 +27,6 @@ const Row = memo(({ index, style, data }: ListChildComponentProps<AuditRowData>)
     // necesario en la virtualización, por lo que el uso de estilos inline es requerido aquí.
     if (index === logs.length && hasMore) {
         // hint-disable-next-line no-inline-styles
-        // @ts-ignore - Inline styles required by react-window virtualization
         return (
             <div style={style} className="flex items-center justify-center text-white/50 text-sm">
                 {loading ? "Cargando más..." : "Desliza para cargar más"}
@@ -40,7 +39,6 @@ const Row = memo(({ index, style, data }: ListChildComponentProps<AuditRowData>)
     
     return (
         // hint-disable-next-line no-inline-styles
-        // @ts-ignore - Inline styles required by react-window virtualization
         <div style={style} className="border-b border-white/5 px-4 flex items-center gap-4 text-xs">
             <span className={`font-mono ${log.isLocal ? 'text-amber-400' : 'text-blue-400'}`}>
                 [{log.isLocal ? 'LOCAL' : log.type}]
@@ -88,9 +86,11 @@ export default function RadarAuditPage() {
     const getLocalLogs = useCallback(() => {
         if (!isNode) return [];
         try {
-            const fs = eval('require')('fs');
-            const path = eval('require')('path');
-            const os = eval('require')('os');
+            const req = (globalThis as any).require;
+            if (!req) return [];
+            const fs = req('fs');
+            const path = req('path');
+            const os = req('os');
             const logFile = path.join(os.homedir(), '.admincom_erp', 'audit_local.jsonl');
 
             if (!fs.existsSync(logFile)) return [];

@@ -1,9 +1,13 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { validateApiSession } from '@/lib/apiAuth';
 import { prisma } from '@/lib/prisma';
 import { db as firestore } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { calculateExpectedAmount, calculateDiscrepancy, ALLOWED_CLOSE_STATUSES } from '@/lib/financial';
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+    const auth = validateApiSession(request);
+    if (!auth.ok) return auth.response;
     try {
         const tenantId = request.headers.get('x-tenant-id') || 'default-local';
         const body = await request.json();
@@ -23,7 +27,7 @@ export async function POST(request: Request) {
         const whereClause: any = {
             tenantId,
             paymentMethod: 'cash',
-            status: { in: ['READY_TO_SHIP', 'OUT_FOR_DELIVERY', 'DELIVERED', 'COMPLETED'] }
+            status: { in: ALLOWED_CLOSE_STATUSES }
         };
 
         if (lastLog) {
@@ -39,8 +43,8 @@ export async function POST(request: Request) {
             where: whereClause
         });
 
-        const expectedAmount = ordersToCount.reduce((sum, order) => sum + order.total, 0);
-        const discrepancy = declaredAmount - expectedAmount;
+        const expectedAmount = calculateExpectedAmount(ordersToCount);
+        const discrepancy = calculateDiscrepancy(declaredAmount, expectedAmount);
 
         // 3. Registrar de forma inmutable en Prisma
         const log = await prisma.cashRegisterLog.create({

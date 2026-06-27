@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminDb } from '@/lib/firebase-admin';
 import Stripe from 'stripe';
 
 export async function POST(req: NextRequest) {
@@ -7,17 +6,11 @@ export async function POST(req: NextRequest) {
         const body = await req.json();
         const { amount, orderId, customer } = body;
 
-        // 1. Fetch config from Firestore Vault
-        const secretSnap = await adminDb.doc('secrets/billing').get();
-        if (!secretSnap.exists) {
-            return NextResponse.json({ error: 'Configuración no encontrada. El dueño no ha configurado Stripe.' }, { status: 400 });
-        }
-        
-        const secretData = secretSnap.data() as any;
-        const secretKey = secretData.stripe_secret_key;
+        // 1. Fetch config from local environment
+        const secretKey = process.env.STRIPE_SECRET_KEY;
 
         if (!secretKey) {
-            return NextResponse.json({ error: 'Stripe no está configurado por el administrador' }, { status: 400 });
+            return NextResponse.json({ error: 'Stripe no está configurado (STRIPE_SECRET_KEY faltante en .env)' }, { status: 400 });
         }
 
         // 2. Initialize Stripe

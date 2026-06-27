@@ -1,8 +1,11 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { requireRole } from '@/lib/apiAuth';
 import { db } from '@/lib/firebase';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+    const auth = requireRole(request, ['superadmin']);
+    if (!auth.ok) return auth.response;
     try {
         const body = await request.json();
         const { clientName, adminEmail, modules, country, currency } = body;

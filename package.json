@@ -22,11 +22,15 @@
     "validate:ports": "node src/lib/check-ports.js",
     "validate:comm": "node src/lib/validate-comm.js",
     "test:logic": "node scripts/test-logic.js",
+    "test": "vitest run",
     "update:file": "node scripts/update-file.js"
   },
   "build": {
     "appId": "com.bunkker.ecos",
     "productName": "BUNKKER E.C.O.S",
+    "electronDownload": {
+      "mirror": "https://npmmirror.com/mirrors/electron/"
+    },
     "directories": {
       "output": "dist_electron"
     },
@@ -92,6 +96,9 @@
   },
   "devDependencies": {
     "@babel/core": "^7.29.7",
+    "@eslint/eslintrc": "^3.3.5",
+    "@eslint/js": "^10.0.1",
+    "@next/eslint-plugin-next": "^16.2.9",
     "@tailwindcss/postcss": "^4.0.8",
     "@types/leaflet": "^1.9.21",
     "@types/multicast-dns": "^7.2.2",
@@ -101,7 +108,12 @@
     "@types/react-dom": "^19.2.3",
     "electron": "^42.4.1",
     "electron-builder": "^26.15.3",
+    "eslint": "^10.5.0",
+    "eslint-config-next": "^16.2.9",
+    "eslint-plugin-react-hooks": "^7.1.1",
     "typescript": "^5.8.2",
+    "typescript-eslint": "^8.62.0",
+    "vitest": "^4.1.9",
     "webpack-obfuscator": "^3.6.1"
   }
 }

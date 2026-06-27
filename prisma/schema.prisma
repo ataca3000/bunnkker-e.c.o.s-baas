@@ -17,6 +17,17 @@ model Customer {
   address      String?  // Dirección completa para el chofer
   references   String?  // Ejemplo: "Portón azul, junto a la tienda"
   gpsCoords    String?  // Latitud y longitud capturadas por la PWA
+  
+  // Login para Catálogo
+  pin          String?  // PIN de 4 dígitos para acceso rápido
+
+  // Datos de Facturación (Opcionales)
+  rfc          String?
+  razonSocial  String?
+  regimenFiscal String?
+  usoCFDI      String?
+  codigoPostal String?
+
   createdAt    DateTime @default(now())
   
   orders       Order[]  // Relación directa para armar su historial
@@ -89,6 +100,18 @@ model AuditLog {
   synced    Boolean  @default(false)
 }
 
+// Tickets de Soporte / Quejas IA
+model SupportTicket {
+  id            String   @id @default(uuid())
+  folio         String   @unique
+  customerEmail String
+  customerName  String
+  message       String
+  status        String   @default("Pendiente")
+  createdAt     DateTime @default(now())
+  synced        Boolean  @default(false)
+}
+
 // Corte de Caja Ciego Inmutable
 model CashRegisterLog {
   id              String   @id @default(uuid())
@@ -100,4 +123,16 @@ model CashRegisterLog {
   discrepancy     Float    // Diferencia (Negativo = Falta dinero)
   createdAt       DateTime @default(now())
   synced          Boolean  @default(false)
+}
+
+// Empleados y Usuarios del Sistema (Local)
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String?  @unique
+  pin       String   @unique
+  role      String   @default("sales") // superadmin, admin, sales, inventory, marketing, driver
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  synced    Boolean  @default(false)
 }

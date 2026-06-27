@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+// Catálogo Local (copia del Cloud o maestro local)
+model Customer {
+  id           String   @id @default(uuid())
+  tenantId     String   @default("default") // Aislamiento multi-tenant
+  name         String
+  phone        String   @unique // Clave de búsqueda rápida en el mostrador
+  email        String?
+  address      String?  // Dirección completa para el chofer
+  references   String?  // Ejemplo: "Portón azul, junto a la tienda"
+  gpsCoords    String?  // Latitud y longitud capturadas por la PWA
+  createdAt    DateTime @default(now())
+  
+  orders       Order[]  // Relación directa para armar su historial
+}
+
+model Product {
+  id          String   @id // Coincide con ID de Firebase o generado
+  name        String
+  price       Float
+  stock       Int      @default(0)
+  category    String?
+  image       String?
+  rating      Float?
+  reviewCount Int?
+  barcode     String?
+  description String?
+  
+  orderItems  OrderItem[]
+}
+
+// Historial Local de Ventas
+model Order {
+  id            String   @id @default(uuid())
+  tenantId      String   @default("default")
+  total         Float
+  paymentMethod String
+  status        String   @default("paid") // PENDING_PAYMENT, READY_TO_SHIP, OUT_FOR_DELIVERY, DELIVERED
+  deliveryType  String   @default("LOCAL") // PICKUP, PATIO, DELIVERY
+  date          DateTime @default(now())
+  offline       Boolean  @default(true) // True porque nació offline
+  synced        Boolean  @default(false) // Si ya subió a Firebase
+  
+  customerId    String?
+  customer      Customer? @relation(fields: [customerId], references: [id])
+  
+  items         OrderItem[]
+}
+
+// Detalle de la Venta Local
+model OrderItem {
+  id        String  @id @default(uuid())
+  orderId   String
+  productId String
+  cantidad  Int
+  precio    Float
+
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id])
+}
+
+// Cola de Sincronización (Worker Sync)
+model SyncQueue {
+  id         String   @id @default(uuid())
+  collection String   // "orders", "audit_logs", etc.
+  documentId String?  // ID de firebase
+  action     String   // "CREATE", "UPDATE", "DELETE"
+  payload    String   // JSON con los datos a mandar
+  createdAt  DateTime @default(now())
+  status     String   @default("PENDING") // PENDING, PROCESSING, FAILED
+  errorMsg   String?
+}
+
+// Registro de Auditoría Local
+model AuditLog {
+  id        String   @id @default(uuid())
+  action    String
+  details   String?
+  userId    String
+  timestamp DateTime @default(now())
+  synced    Boolean  @default(false)
+}
+
+// Corte de Caja Ciego Inmutable
+model CashRegisterLog {
+  id              String   @id @default(uuid())
+  tenantId        String
+  cashierId       String
+  cashierName     String
+  declaredAmount  Float    // Lo que el cajero contó físicamente
+  expectedAmount  Float    // Lo que Prisma sumó de las ventas
+  discrepancy     Float    // Diferencia (Negativo = Falta dinero)
+  createdAt       DateTime @default(now())
+  synced          Boolean  @default(false)
+}

@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, updateDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { ShieldCheck, Lock, Loader2, QrCode, KeyRound, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -29,19 +27,9 @@ export default function LoginPage() {
         }
 
         const initApp = async () => {
-            try {
-                const { getDoc, doc } = await import('firebase/firestore');
-                const confSnap = await getDoc(doc(db, 'settings', 'site_config'));
-                if (confSnap.exists()) {
-                    const data = confSnap.data();
-                    if (data.businessName) setHostname(data.businessName);
-                    if (data.loginBackgroundUrl) setBgImage(data.loginBackgroundUrl);
-                }
-            } catch (err) {
-                console.error("Error init login:", err);
-            } finally {
-                setCheckingSetup(false);
-            }
+            // Ya no buscamos configuración en Firebase para el login
+            // Todo corre de manera local (BUNKKER E.C.O.S)
+            setCheckingSetup(false);
         };
         initApp();
     }, []);
@@ -92,49 +80,26 @@ export default function LoginPage() {
         setLoading(true);
         setError('');
 
-        // BYPASS DE DESARROLLO / DEMO (PIN: 123456 o admin)
-        if (code === '123456' || code === 'admin') {
-            document.cookie = `msj-session=local_owner; path=/; max-age=86400; SameSite=Lax`;
-            document.cookie = `msj-role=superadmin; path=/; max-age=86400; SameSite=Lax`;
-            window.location.href = '/dashboard';
-            return;
-        }
-
         try {
-            // Buscamos al usuario por su PIN (el PIN se guarda en password por ahora, o en campo pin)
-            // Primero intentamos buscar por 'pin', luego por 'password'
-            let qUsers = query(collection(db, 'users'), where('pin', '==', code));
-            let querySnap = await getDocs(qUsers);
+            // Llamar directamente al servidor local que validará el PIN contra SQLite
+            const res = await fetch('/api/auth/session', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pin: code })
+            });
+            const data = await res.json();
 
-            if (querySnap.empty) {
-                qUsers = query(collection(db, 'users'), where('password', '==', code));
-                querySnap = await getDocs(qUsers);
-            }
-
-            if (!querySnap.empty) {
-                const userDoc = querySnap.docs[0];
-                const userData = userDoc.data();
-
-                // Validamos que sea personal
-                if (userData.role === 'client') {
-                    setError('Acceso denegado. Este portal es solo para personal.');
-                    setLoading(false);
-                    return;
-                }
-
+            if (res.ok && data.success) {
+                // Actualizar sessionId en localStorage para la red local (P2P) si se necesita
                 const newSessionId = Math.random().toString(36).substring(2);
-                updateDoc(userDoc.ref, { currentSessionId: newSessionId }).catch(console.error);
                 localStorage.setItem('msj-session-id', newSessionId);
-                
-                document.cookie = `msj-session=${userDoc.id}; path=/; max-age=86400; SameSite=Lax`;
-                document.cookie = `msj-role=${userData.role || 'node'}; path=/; max-age=86400; SameSite=Lax`;
+
                 window.location.href = '/dashboard';
             } else {
-                setError('Credencial/PIN inválido.');
+                setError(data.error || 'PIN incorrecto o acceso denegado.');
             }
-        } catch (err: any) {
-            console.error(err);
-            setError('Error de conexión o validación.');
+        } catch (err) {
+            setError('Error de conexión con el servidor local.');
         } finally {
             setLoading(false);
         }
@@ -205,7 +170,7 @@ export default function LoginPage() {
                             <div className="relative">
                                 <Lock className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
                                 <input 
-                                    type="password" placeholder="••••••" required minLength={6} maxLength={6}
+                                    type="password" placeholder="••••••" required minLength={4} maxLength={8}
                                     value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
                                     className="w-full py-5 pl-[68px] pr-6 bg-slate-800/80 border border-slate-700/50 rounded-2xl focus:border-amber-500 focus:bg-slate-800 focus:ring-1 focus:ring-amber-500 outline-none transition-all font-mono text-2xl text-center tracking-[1em] text-white placeholder-slate-600" 
                                 />
@@ -213,7 +178,7 @@ export default function LoginPage() {
                         </div>
 
                         <button 
-                            disabled={loading || pin.length < 6}
+                            disabled={loading || pin.length < 4}
                             className="w-full mt-4 text-slate-900 py-5 rounded-2xl font-black uppercase tracking-widest text-sm shadow-xl active:scale-[0.98] transition-all flex justify-center items-center gap-3 disabled:opacity-50 border bg-gradient-to-r from-amber-400 to-amber-600 hover:from-amber-300 hover:to-amber-500 shadow-amber-900/30 border-amber-500/30"
                         >
                             {loading ? <Loader2 className="animate-spin" /> : "Desbloquear Sistema"}
@@ -221,10 +186,32 @@ export default function LoginPage() {
                     </motion.form>
                 ) : (
                     <motion.div key="qr" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center">
-                        <div className="w-full aspect-square bg-black/50 rounded-3xl overflow-hidden border-2 border-dashed border-slate-600 relative flex items-center justify-center mb-4">
-                            <div id="reader" className="w-full h-full"></div>
+                        <style dangerouslySetInnerHTML={{__html: `
+                            #reader { border: none !important; background: transparent !important; }
+                            #reader__dashboard_section_csr span { color: #94a3b8 !important; font-size: 0.8rem; font-family: monospace; }
+                            #reader__dashboard_section_csr button { 
+                                background: #f59e0b !important; color: #1e293b !important; 
+                                border: none !important; padding: 10px 20px !important; 
+                                border-radius: 12px !important; font-weight: 800 !important; 
+                                text-transform: uppercase !important; font-size: 0.75rem !important;
+                                margin: 10px 0 !important; cursor: pointer; transition: all 0.2s;
+                            }
+                            #reader__dashboard_section_csr button:hover { opacity: 0.9 !important; transform: scale(0.98); }
+                            #reader select { 
+                                background: #1e293b !important; color: #cbd5e1 !important; 
+                                border: 1px solid #334155 !important; padding: 8px !important; 
+                                border-radius: 8px !important; outline: none; margin-bottom: 10px;
+                            }
+                            #reader__camera_selection { max-width: 100%; }
+                            #reader video { border-radius: 16px !important; object-fit: cover !important; }
+                            #html5-qrcode-anchor-scan-type-change { color: #38bdf8 !important; text-decoration: none !important; font-size: 0.75rem !important; }
+                        `}} />
+                        <div className="w-full aspect-square bg-slate-900/80 rounded-[24px] overflow-hidden border border-slate-700/50 shadow-inner relative flex items-center justify-center mb-6">
+                            <div id="reader" className="w-full h-full p-2"></div>
                         </div>
-                        <p className="text-slate-400 text-xs text-center">Coloca tu código QR de acceso frente a la cámara para desbloquear el portal de tu área.</p>
+                        <p className="text-slate-400 text-xs text-center px-4 leading-relaxed font-medium">
+                            Coloca tu <strong className="text-amber-400">código QR</strong> frente a la cámara para desbloquear el portal de tu área.
+                        </p>
                     </motion.div>
                 )}
 

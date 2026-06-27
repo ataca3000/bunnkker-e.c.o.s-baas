@@ -163,8 +163,10 @@ const createWindow = (urlHost = 'localhost') => {
         },
     });
 
-    mainWindow.maximize();
-    mainWindow.show();
+    mainWindow.once('ready-to-show', () => {
+        mainWindow.show();
+        mainWindow.maximize();
+    });
 
     // Mantener la ruta principal (Market) como página de inicio
     mainWindow.loadURL(`http://${urlHost}:3000`);
@@ -189,6 +191,7 @@ const createWindow = (urlHost = 'localhost') => {
 
 // ─── IPC Handlers ───────────────────────────────────────────────────────────
 ipcMain.handle('get-app-version', () => app.getVersion());
+ipcMain.handle('get-machine-id', () => machineIdSync(true));
 
 /**
  * Abre la configuración de red para que el admin vea su IP

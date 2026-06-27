@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useCart, type Product } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { db } from '@/lib/firebase';
-import { doc, setDoc, updateDoc, serverTimestamp, collection, addDoc, getDocs, query, where, orderBy, onSnapshot } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, serverTimestamp, collection, addDoc, getDocs, query, where, orderBy, onSnapshot, writeBatch } from 'firebase/firestore';
 import { logAudit } from '@/lib/audit';
 import { QRCodeSVG } from 'qrcode.react';
 import { 
@@ -22,6 +22,7 @@ import BarcodeScanner from '@/components/BarcodeScanner';
 import Link from 'next/link';
 import ShelfColumn from './components/ShelfColumn';
 import ProductCard from './components/ProductCard';
+import { arrayMove } from '@dnd-kit/sortable';
 
 export default function InventoryDashboard() {
     const { products, formatCurrency } = useCart();
@@ -32,6 +33,13 @@ export default function InventoryDashboard() {
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
     const [editingProductId, setEditingProductId] = useState<string | null>(null);
+    const [localProducts, setLocalProducts] = useState<Product[]>([]);
+
+    useEffect(() => {
+        // Sort products by orderIndex to keep them stable
+        const sorted = [...products].sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0));
+        setLocalProducts(sorted);
+    }, [products]);
 
     // Tabs
     const [activeTab, setActiveTab] = useState<'shelves' | 'transfer' | 'shrinkage'>('shelves');
@@ -69,48 +77,128 @@ export default function InventoryDashboard() {
         barcode: '', image: '',
         estante: '', fila: '',
         price: '', stock: '',
-        warranty: '', unitType: 'PZA'
+        warranty: '', unitType: 'PZA', isBulk: false
     });
 
     const sensors = useSensors(
-        useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+        useSensor(PointerSensor, { activationConstraint: { delay: 250, tolerance: 5 } }),
         useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
     );
 
+    const handleDragOver = (event: any) => {
+        const { active, over } = event;
+        if (!over) return;
+        const activeId = active.id;
+        const overId = over.id;
+        if (activeId === overId) return;
+
+        setLocalProducts(prev => {
+            const activeIndex = prev.findIndex(p => p.id === activeId);
+            const activeProduct = prev[activeIndex];
+            if (!activeProduct) return prev;
+
+            let targetShelfName = activeProduct.location?.estante || 'Sin Asignar';
+            let targetLevelName = activeProduct.location?.fila || 'Nivel 1';
+
+            if (typeof overId === 'string' && overId.includes('::')) {
+                const parts = overId.split('::');
+                targetShelfName = parts[0];
+                targetLevelName = parts[1];
+            } else {
+                const overProduct = prev.find(p => p.id === overId);
+                if (overProduct) {
+                    targetShelfName = overProduct.location?.estante || 'Sin Asignar';
+                    targetLevelName = overProduct.location?.fila || 'Nivel 1';
+                }
+            }
+
+            const currentShelfName = activeProduct.location?.estante || 'Sin Asignar';
+            const currentLevelName = activeProduct.location?.fila || 'Nivel 1';
+
+            if (targetShelfName !== currentShelfName || targetLevelName !== currentLevelName) {
+                // Moving between lists
+                const newProducts = [...prev];
+                newProducts[activeIndex] = {
+                    ...activeProduct,
+                    location: {
+                        estante: targetShelfName === 'Sin Asignar' ? '' : targetShelfName,
+                        fila: targetLevelName
+                    }
+                };
+                return newProducts;
+            }
+            return prev;
+        });
+    };
+
     const handleDragEnd = async (event: DragEndEvent) => {
         const { active, over } = event;
+        setDraggedProductId(null);
         if (!over) return;
 
         const productId = active.id as string;
-        const overId = over.id as string; // Could be "ShelfName::LevelName" or a ProductId
+        const overId = over.id as string;
         
-        const product = products.find(p => p.id === productId);
-        if (!product) return;
-
         let targetShelfName = '';
         let targetLevelName = '';
+        let overIndex = localProducts.findIndex(p => p.id === overId);
 
         if (overId.includes('::')) {
-            // Es un LevelDropZone
             const parts = overId.split('::');
             targetShelfName = parts[0];
             targetLevelName = parts[1];
         } else {
-            // Over another product
-            const targetProduct = products.find(p => p.id === overId);
+            const targetProduct = localProducts.find(p => p.id === overId);
             if (targetProduct) {
                 targetShelfName = targetProduct.location?.estante || 'Sin Asignar';
                 targetLevelName = targetProduct.location?.fila || 'Nivel 1';
             }
         }
 
+        const activeIndex = localProducts.findIndex(p => p.id === productId);
+        const product = localProducts[activeIndex];
+        if (!product) return;
+
         const currentShelfName = product.location?.estante || 'Sin Asignar';
         const currentLevelName = product.location?.fila || 'Nivel 1';
 
-        if (targetShelfName && (targetShelfName !== currentShelfName || targetLevelName !== currentLevelName)) {
+        // Reordering within the same level
+        if (targetShelfName === currentShelfName && targetLevelName === currentLevelName) {
+            if (active.id !== over.id) {
+                const newProducts = arrayMove(localProducts, activeIndex, overIndex);
+                // Update indexes for products in this level
+                const levelProducts = newProducts.filter(p => 
+                    (p.location?.estante || 'Sin Asignar') === currentShelfName && 
+                    (p.location?.fila || 'Nivel 1') === currentLevelName
+                );
+                
+                setLocalProducts(newProducts);
+
+                try {
+                    const batch = writeBatch(db);
+                    levelProducts.forEach((p, idx) => {
+                        batch.update(doc(db, 'products', p.id), {
+                            orderIndex: idx
+                        });
+                    });
+                    await batch.commit();
+                } catch (error) {
+                    console.error('Error actualizando orden:', error);
+                }
+            }
+        } else {
+            // Reubicación entre niveles (Cross-list drop)
             try {
                 const finalShelfName = targetShelfName === 'Sin Asignar' ? '' : targetShelfName;
                 
+                // Optimizamos localmente
+                const newProducts = [...localProducts];
+                newProducts[activeIndex] = {
+                    ...product,
+                    location: { estante: finalShelfName, fila: targetLevelName }
+                };
+                setLocalProducts(newProducts);
+
                 await updateDoc(doc(db, 'products', productId), {
                     'location.estante': finalShelfName,
                     'location.fila': targetLevelName,
@@ -132,6 +220,10 @@ export default function InventoryDashboard() {
         }
     };
 
+    const handleDragStart = (event: DragStartEvent) => {
+        setDraggedProductId(event.active.id as string);
+    };
+
     const handleExportJSON = () => {
         try {
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(products, null, 2));
@@ -146,7 +238,7 @@ export default function InventoryDashboard() {
         }
     };
 
-    const handleImportJSON = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
         const fileReader = new FileReader();
         const file = e.target.files?.[0];
         if (!file) return;
@@ -156,9 +248,42 @@ export default function InventoryDashboard() {
 
         fileReader.onload = (event) => {
             try {
-                const parsed = JSON.parse(event.target?.result as string);
-                if (!Array.isArray(parsed)) {
-                    alert('Formato inválido. El archivo debe contener un arreglo de productos.');
+                const resultStr = event.target?.result as string;
+                let parsed: any[] = [];
+
+                if (file.name.endsWith('.csv')) {
+                    // Basic CSV Parser
+                    const lines = resultStr.split(/\r?\n/).filter(line => line.trim());
+                    if (lines.length > 0) {
+                        const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+                        const nameIdx = headers.findIndex(h => h.includes('nombre') || h.includes('name'));
+                        const priceIdx = headers.findIndex(h => h.includes('precio') || h.includes('price'));
+                        const stockIdx = headers.findIndex(h => h.includes('stock') || h.includes('cantidad'));
+                        const catIdx = headers.findIndex(h => h.includes('categor') || h.includes('category'));
+                        const barIdx = headers.findIndex(h => h.includes('codigo') || h.includes('bar'));
+
+                        parsed = lines.slice(1).map((line, idx) => {
+                            // Match commas not inside quotes
+                            const cols = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^"|"$/g, '').trim());
+                            return {
+                                id: `CSV-PROD-${Date.now()}-${idx}`,
+                                name: nameIdx !== -1 && cols[nameIdx] ? cols[nameIdx] : `Producto Importado ${idx}`,
+                                price: priceIdx !== -1 && cols[priceIdx] ? Number(cols[priceIdx]) : 0,
+                                stock: stockIdx !== -1 && cols[stockIdx] ? Number(cols[stockIdx]) : 0,
+                                category: catIdx !== -1 && cols[catIdx] ? cols[catIdx] : 'General',
+                                barcode: barIdx !== -1 && cols[barIdx] ? cols[barIdx] : ''
+                            };
+                        });
+                    }
+                } else {
+                    parsed = JSON.parse(resultStr);
+                    if (!Array.isArray(parsed)) {
+                        throw new Error('JSON format invalid: expected an array.');
+                    }
+                }
+
+                if (!Array.isArray(parsed) || parsed.length === 0) {
+                    alert('Archivo vacío o formato inválido.');
                     setIsAnalyzing(false);
                     return;
                 }
@@ -167,7 +292,7 @@ export default function InventoryDashboard() {
 
                 const list: any[] = [];
                 parsed.forEach((imported: any) => {
-                    const local = products.find(p => p.id === imported.id || p.name.toLowerCase() === imported.name.toLowerCase());
+                    const local = products.find(p => p.id === imported.id || p.name.toLowerCase() === imported.name.toLowerCase() || (imported.barcode && p.barcode === imported.barcode));
                     if (!local) {
                         list.push({
                             type: 'new',
@@ -203,7 +328,7 @@ export default function InventoryDashboard() {
                 });
 
                 products.forEach((local) => {
-                    const existsInImport = parsed.some((imported: any) => imported.id === local.id || imported.name.toLowerCase() === local.name.toLowerCase());
+                    const existsInImport = parsed.some((imported: any) => imported.id === local.id || imported.name.toLowerCase() === local.name.toLowerCase() || (imported.barcode && imported.barcode === local.barcode));
                     if (!existsInImport) {
                         list.push({
                             type: 'missing_in_import',
@@ -217,7 +342,8 @@ export default function InventoryDashboard() {
 
                 setImportDiscrepancies(list);
             } catch (err) {
-                alert('Error al leer el archivo JSON.');
+                console.error(err);
+                alert('Error al leer el archivo. Asegúrate de que sea un JSON válido o un CSV delimitado por comas.');
             } finally {
                 setIsAnalyzing(false);
             }
@@ -380,7 +506,8 @@ export default function InventoryDashboard() {
             price: String(p.price),
             stock: String(p.stock),
             warranty: (p as any).warranty || '',
-            unitType: p.unitType || 'PZA'
+            unitType: p.unitType || 'PZA',
+            isBulk: !!p.isBulk
         });
         setIsCreating(true);
         setStep(1);
@@ -420,7 +547,8 @@ export default function InventoryDashboard() {
                 fila: formData.fila || 'PISO/GRANEL'
             },
             warranty: formData.warranty || '',
-            unitType: (formData as any).unitType || 'PZA'
+            unitType: (formData as any).unitType || 'PZA',
+            isBulk: !!(formData as any).isBulk
         };
 
         try {
@@ -456,7 +584,7 @@ export default function InventoryDashboard() {
             setIsCreating(false);
             setEditingProductId(null);
             setStep(1);
-            setFormData({ name: '', category: '', description: '', barcode: '', image: '', estante: '', fila: '', price: '', stock: '', warranty: '', unitType: 'PZA' });
+            setFormData({ name: '', category: '', description: '', barcode: '', image: '', estante: '', fila: '', price: '', stock: '', warranty: '', unitType: 'PZA', isBulk: false });
         } catch (error: any) {
             console.error(error);
             alert('Error al guardar el producto: ' + (error.message || 'Error desconocido'));
@@ -534,7 +662,7 @@ export default function InventoryDashboard() {
                 name: '', category: '', description: '',
                 barcode: code, image: '',
                 estante: '', fila: '',
-                price: '', stock: '', warranty: '', unitType: 'PZA'
+                price: '', stock: '', warranty: '', unitType: 'PZA', isBulk: false
             });
             setIsCreating(true);
             setStep(1);
@@ -543,7 +671,7 @@ export default function InventoryDashboard() {
     };
 
     // Filtrar y agrupar productos por Estante (Folder)
-    const filteredProducts = products.filter(p => 
+    const filteredProducts = localProducts.filter(p => 
         p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
         p.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
         p.barcode?.includes(searchTerm)
@@ -749,6 +877,19 @@ export default function InventoryDashboard() {
                                                 <option value="BOLSA">Bolsa</option>
                                                 <option value="CAJA">Caja</option>
                                             </select>
+                                            <div className="mt-4 flex items-center gap-3 bg-blue-950/30 p-3 rounded-lg border border-blue-500/20">
+                                                <input 
+                                                    type="checkbox" 
+                                                    id="isBulk"
+                                                    disabled={profile?.role === 'marketing'} 
+                                                    checked={formData.isBulk}
+                                                    onChange={e => setFormData({...formData, isBulk: e.target.checked})}
+                                                    className="w-5 h-5 accent-blue-500 rounded bg-slate-800 border-blue-500/30"
+                                                />
+                                                <label htmlFor="isBulk" className="text-[11px] font-bold text-blue-300 uppercase tracking-wide cursor-pointer">
+                                                    Venta a Granel (Fracciones)
+                                                </label>
+                                            </div>
                                         </div>
                                         <div className="bg-amber-900/20 border border-amber-500/20 p-6 rounded-2xl">
                                             <label className="text-xs font-black text-amber-400 uppercase tracking-widest mb-2 block">Stock Físico *</label>
@@ -877,6 +1018,8 @@ export default function InventoryDashboard() {
                                         <DndContext
                                             sensors={sensors}
                                             collisionDetection={closestCorners}
+                                            onDragStart={handleDragStart}
+                                            onDragOver={handleDragOver}
                                             onDragEnd={handleDragEnd}
                                         >
                                             {allEstantes.length === 0 && (
@@ -895,6 +1038,18 @@ export default function InventoryDashboard() {
                                                     />
                                                 );
                                             })}
+                                            <button 
+                                                onClick={() => setShowNewEstanteModal(true)} 
+                                                className="w-[340px] flex-shrink-0 flex flex-col items-center justify-center bg-slate-900/40 border-2 border-dashed border-slate-700/50 hover:border-[#0ea5e9] hover:bg-[#0ea5e9]/10 rounded-2xl h-full transition-all group"
+                                            >
+                                                <Plus size={48} className="text-slate-600 group-hover:text-[#0ea5e9] mb-4 transition-colors" />
+                                                <span className="text-sm font-bold text-slate-500 group-hover:text-[#0ea5e9] uppercase tracking-widest transition-colors">Añadir Estante</span>
+                                            </button>
+                                            <DragOverlay>
+                                                {draggedProductId ? (
+                                                    <ProductCard product={products.find(p => p.id === draggedProductId)!} />
+                                                ) : null}
+                                            </DragOverlay>
                                         </DndContext>
                                     </div>
                                 </>
@@ -927,17 +1082,17 @@ export default function InventoryDashboard() {
                                             <div className="bg-emerald-50 text-emerald-600 p-4 rounded-2xl w-fit mb-6">
                                                 <Upload size={28} />
                                             </div>
-                                            <h3 className="text-xl font-black text-white uppercase tracking-tight mb-2">Importar Inventario</h3>
+                                            <h3 className="text-xl font-black text-white uppercase tracking-tight mb-2">Importar Inventario Massivo</h3>
                                             <p className="text-sm text-slate-400 font-medium leading-relaxed mb-6">
-                                                Arrastra o selecciona un archivo JSON para cargar y analizar diferencias. AI Sentinel revisará si hay discrepancias en precios o stock.
+                                                Sube un archivo <strong>CSV o JSON</strong> para cargar tus productos masivamente. Columnas recomendadas: Nombre, Precio, Stock, Categoria.
                                             </p>
                                             <label className="border-2 border-dashed border-slate-700/50 hover:border-[#0ea5e9] rounded-2xl p-8 flex flex-col items-center justify-center cursor-pointer transition-colors text-center group">
                                                 <Database size={32} className="text-slate-400 group-hover:text-[#0ea5e9] mb-2 transition-colors" />
-                                                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider group-hover:text-slate-200">Seleccionar archivo JSON</span>
+                                                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider group-hover:text-slate-200">Seleccionar CSV o JSON</span>
                                                 <input 
                                                     type="file" 
-                                                    accept=".json"
-                                                    onChange={handleImportJSON}
+                                                    accept=".json,.csv"
+                                                    onChange={handleImportFile}
                                                     className="hidden" 
                                                 />
                                             </label>
@@ -1044,30 +1199,30 @@ export default function InventoryDashboard() {
                                 <div className="space-y-8">
                                     {/* AI Sentinel Panel & Header */}
                                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                                        <div className="lg:col-span-2 bg-gradient-to-r from-red-500 to-red-600 p-8 rounded-[32px] text-white shadow-xl flex flex-col justify-between relative overflow-hidden">
+                                        <div className="lg:col-span-2 bg-gradient-to-r from-red-500 to-red-600 p-8 rounded-2xl text-white shadow-xl flex flex-col justify-between relative overflow-hidden">
                                             <div className="absolute right-0 bottom-0 opacity-10 pointer-events-none">
                                                 <TrendingDown size={300} />
                                             </div>
                                             <div className="relative z-10">
-                                                <div className="flex items-center gap-2 mb-4 bg-slate-800/80/10 px-3 py-1 rounded-full w-fit border border-white/20">
-                                                    <Sparkles size={14} className="text-red-200" />
-                                                    <span className="text-[10px] font-black uppercase tracking-widest text-red-100">AI Sentinel Inteligencia</span>
+                                                <div className="flex items-center gap-2 mb-4 bg-white/20 px-3 py-1 rounded-lg w-fit border border-white/30">
+                                                    <Sparkles size={14} className="text-white" />
+                                                    <span className="text-[10px] font-black uppercase tracking-widest text-white">AI Sentinel Inteligencia</span>
                                                 </div>
                                                 <h3 className="text-2xl font-black uppercase tracking-tight mb-2">Estimado de Pérdida por Robo Hormiga</h3>
-                                                <p className="text-red-100 text-sm font-medium mb-6 max-w-lg leading-relaxed">
+                                                <p className="text-red-50 text-sm font-medium mb-6 max-w-lg leading-relaxed">
                                                     AI Sentinel monitorea las discrepancias físicas registradas por el personal y calcula la pérdida financiera total basada en costos de reposición y precios de venta.
                                                 </p>
                                             </div>
                                             <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 relative z-10 mt-4">
                                                 <div>
-                                                    <span className="text-[10px] font-bold text-red-200 uppercase tracking-wider">Pérdida Total Acumulada</span>
-                                                    <h4 className="text-4xl font-[900] tracking-tighter">
+                                                    <span className="text-[10px] font-bold text-red-100 uppercase tracking-wider">Pérdida Total Acumulada</span>
+                                                    <h4 className="text-4xl font-[900] tracking-tighter text-white">
                                                         {formatCurrency(shrinkageLogs.reduce((acc, curr) => acc + (curr.estimatedLoss || 0), 0))}
                                                     </h4>
                                                 </div>
                                                 <button 
                                                     onClick={() => setIsReportModalOpen(true)}
-                                                    className="px-6 py-4 bg-slate-800/80 text-red-600 font-bold uppercase text-xs tracking-widest rounded-2xl hover:bg-red-50 transition-colors shadow-lg active:scale-95 text-center flex items-center justify-center gap-2"
+                                                    className="px-6 py-4 bg-white text-red-700 font-black uppercase text-xs tracking-widest rounded-lg hover:bg-slate-100 transition-colors shadow-lg active:scale-95 text-center flex items-center justify-center gap-2"
                                                 >
                                                     <AlertTriangle size={16} /> Reportar Producto Fantasma
                                                 </button>

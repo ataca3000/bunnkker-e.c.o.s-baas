@@ -1,4 +1,5 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { validateApiSession } from '@/lib/apiAuth';
 import Facturapi from 'facturapi';
 import { auth } from '@/lib/firebase-admin';
 
@@ -12,7 +13,9 @@ async function getFacturapiKey() {
     return null;
 }
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
+    const sessionAuth = validateApiSession(req);
+    if (!sessionAuth.ok) return sessionAuth.response;
     try {
         // 1. Verificación de identidad
         const authHeader = req.headers.get('Authorization');

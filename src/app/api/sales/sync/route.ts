@@ -1,4 +1,5 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { validateApiSession } from '@/lib/apiAuth';
 import { auth, db } from '@/lib/firebase-admin';
 import crypto from 'crypto';
 
@@ -11,7 +12,9 @@ interface OfflineSale {
     previousHash: string;
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+    const sessionAuth = validateApiSession(req);
+    if (!sessionAuth.ok) return sessionAuth.response;
     try {
         const tenantId = req.headers.get('x-tenant-id');
         if (!tenantId) {

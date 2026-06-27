@@ -6,8 +6,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { usePathname } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
-import { db } from '@/lib/firebase';
-import { collection, addDoc, getDocs, serverTimestamp } from 'firebase/firestore';
 import styles from './AdminAsistente.module.css';
 
 export default function AdminAsistente() {
@@ -75,12 +73,17 @@ export default function AdminAsistente() {
                     const lowStock = products ? products.filter((p: any) => p.stock < 5) : [];
                     let ticketText = "";
                     try {
-                        const ticketsSnap = await getDocs(collection(db, 'tickets'));
-                        const pending = ticketsSnap.docs.filter((d: any) => d.data().status === 'pendiente');
-                        if (pending.length > 0) {
-                            ticketText = ` Además, tienes ${pending.length} quejas/tickets de soporte pendientes de revisión.`;
+                        const res = await fetch('/api/tickets');
+                        if (res.ok) {
+                            const tickets = await res.json();
+                            const pending = tickets.filter((t: any) => t.status === 'Pendiente (IA)' || t.status === 'Pendiente');
+                            if (pending.length > 0) {
+                                ticketText = ` Además, tienes ${pending.length} quejas/tickets de soporte pendientes de revisión.`;
+                            }
                         }
-                    } catch (e) {}
+                    } catch (e) {
+                        console.error('Error fetching tickets', e);
+                    }
 
                     if (lowStock.length > 0) {
                         botReply = `Jefe, tenemos alertas de inventario bajo. Los siguientes productos tienen menos de 5 unidades:\n\n` + 
@@ -115,14 +118,21 @@ export default function AdminAsistente() {
                 const complaintMsg = userMsg.replace(/^(queja|ticket):\s*/i, '').trim();
                 if (complaintMsg) {
                     const folio = `TKT-${Math.floor(1000 + Math.random() * 9000)}`;
-                    await addDoc(collection(db, 'support_tickets'), {
-                        folio,
-                        customerEmail: profile?.email || user?.email || 'anonimo@tienda.com',
-                        customerName: profile?.displayName || user?.displayName || 'Anónimo',
-                        message: complaintMsg,
-                        status: 'Pendiente (IA)',
-                        createdAt: serverTimestamp()
-                    });
+                    try {
+                        await fetch('/api/tickets', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                folio,
+                                customerEmail: profile?.email || user?.email || 'anonimo@tienda.com',
+                                customerName: profile?.displayName || user?.displayName || 'Anónimo',
+                                message: complaintMsg
+                            })
+                        });
+                    } catch (e) {
+                        console.error('Error saving ticket', e);
+                    }
+                    
                     setMessages(prev => [...prev, { 
                         role: 'assistant', 
                         content: `✅ **Ticket Registrado:** ${folio}\nHe recibido tu caso y lo he asignado a mi bandeja. Buscaré solucionarlo o lo enviaré al equipo humano de ${siteConfig?.businessName || 'la tienda'}.` 

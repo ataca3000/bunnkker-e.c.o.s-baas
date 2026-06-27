@@ -1,21 +1,8 @@
 "use client";
 
 import { createContext, useContext, useEffect, useCallback, useMemo } from 'react';
-import { db } from '@/lib/firebase';
-import {
-    collection,
-    getDocs,
-    doc,
-    setDoc,
-    updateDoc,
-    onSnapshot,
-    serverTimestamp,
-    increment,
-    writeBatch
-} from 'firebase/firestore';
 import { logAudit } from '@/lib/audit';
 import { useAuth } from './AuthContext';
-import { reportError, handleFirestoreError, OperationType } from '@/lib/errorMonitor';
 import { useERPStore, fallbackProducts, defaultSiteConfig } from '@/store/useERPStore';
 import type { BlockConfig } from '@/components/marketing/builder/Types';
 import type { Product, CartItem, Order } from '@/lib/types';
@@ -187,50 +174,16 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         return () => clearInterval(pollInterval);
     }, [authLoading, setProducts, setOrders, setFirebaseStatus, setLoading]);
 
-    // ─── Real-time Firebase listeners ONLY for Command Center (Settings) ──────
+    // ─── Local Settings Init ──────────────────────────────────────────────────
     useEffect(() => {
-        if (firebaseStatus !== 'online' || authLoading) return;
-
-        const handleError = (err: any, op: OperationType, path: string) => {
-            console.warn(`[Admin.com ERP] Listener error on ${path}:`, err?.code);
-        };
-
-        const unsubs: (() => void)[] = [];
-
-        // Listeners Públicos de Respaldo (Firebase)
-        unsubs.push(
-            onSnapshot(doc(db, 'settings', 'site_config'), (snap: any) => {
-                if (snap.exists()) {
-                    _setSiteConfig({ ...defaultSiteConfig, ...(snap.data() as SiteConfig) });
-                    localStorage.setItem('_admincom_site_config', JSON.stringify(snap.data()));
-                }
-            }, (err: any) => handleError(err, OperationType.GET, 'settings/site_config'))
-        );
-
-        // Listeners Privados (requieren auth)
-        if (profile) {
-            unsubs.push(
-                onSnapshot(doc(db, 'settings', 'owner_config'), (snap: any) => {
-                    if (snap.exists()) {
-                        const d = snap.data() as any;
-                        setOwnerConfig(d.invoiceCredits || 0, d.automationProfit || 0, d.maintenanceCredits || 0);
-                    }
-                }, (err: any) => handleError(err, OperationType.GET, 'settings/owner_config'))
-            );
-        }
-
-        return () => unsubs.forEach(unsub => unsub());
-    }, [firebaseStatus, authLoading, profile, setOwnerConfig, _setSiteConfig]);
-
-    // ─── Offline: restore siteConfig from localStorage ────────────────────────
-    useEffect(() => {
-        if (firebaseStatus === 'offline') {
-            try {
-                const local = localStorage.getItem('_admincom_site_config');
-                if (local) _setSiteConfig({ ...defaultSiteConfig, ...JSON.parse(local) });
-            } catch { }
-        }
-    }, [firebaseStatus, _setSiteConfig]);
+        try {
+            const local = localStorage.getItem('_admincom_site_config');
+            if (local) _setSiteConfig({ ...defaultSiteConfig, ...JSON.parse(local) });
+            // By default, owner configuration can just be zeroed out locally
+            // until a proper local SQLite table is created for settings.
+            setOwnerConfig(0, 0, 0);
+        } catch { }
+    }, [_setSiteConfig, setOwnerConfig]);
 
     return <>{children}</>;
 }
@@ -324,17 +277,13 @@ export const useCart = () => {
                 })
             });
 
-            if (!res.ok) throw new Error('Error al guardar en el servidor local');
-
-            // 2. Descontar créditos de mantenimiento si es venta online en la Nube
-            if (isOnline) {
-                try {
-                    await updateDoc(doc(db, 'settings', 'owner_config'), {
-                        maintenanceCredits: increment(-developerFee),
-                        automationProfit: increment(ownerAutomationFee),
-                    });
-                } catch (e) { console.warn('Error syncing owner config to cloud', e); }
+            if (!res.ok) {
+                const errData = await res.json().catch(() => ({}));
+                throw new Error(errData.error || 'Error al guardar en el servidor local');
             }
+
+            // 2. Local-only: We are no longer syncing maintenanceCredits to the cloud automatically.
+            // Owner balance/credits can be managed via local SQLite later if needed.
 
             store.clearCart();
             await logAudit({
@@ -347,9 +296,9 @@ export const useCart = () => {
             return { orderId, deliveryPin };
         } catch (err: any) {
             console.error('Order error:', err);
-            alert('❌ Error al procesar el pedido localmente.');
+            alert(`❌ Venta rechazada:\n${err.message}`);
+            throw err;
         }
-
     };
 
     const confirmRequest = async (orderId: string) => {
@@ -380,12 +329,8 @@ export const useCart = () => {
 
             if (!res.ok) throw new Error('Error actualizando orden localmente');
 
-            // 2. Sumar KPI al vendedor que confirmó (en Firebase, centralizado)
-            if (profile?.uid) {
-                try {
-                    await updateDoc(doc(db, 'users', profile.uid), { kpiScore: increment(order.total || 1) });
-                } catch (e) { console.warn('No se pudo subir KPI a Firebase (offline)'); }
-            }
+            // 2. (Deprecado) Sumar KPI al vendedor que confirmó (en Firebase, centralizado)
+            // Esto ahora se calculará sumando localmente las órdenes en lugar de guardar un contador aislado.
 
             await logAudit({
                 type: 'ORDER_CREATE', userId: profile?.uid || 'SYSTEM',
@@ -439,11 +384,8 @@ export const useCart = () => {
                 })
             });
 
-            if (profile?.uid) {
-                try {
-                    await updateDoc(doc(db, 'users', profile.uid), { kpiScore: increment(50) }); // 50 points per load
-                } catch (e) {}
-            }
+            // (Deprecado) Update KPI score in Firebase
+            // KPI calculation should be done by aggregating local orders.
 
             await logAudit({
                 type: 'CONFIG_UPDATE', userId: profile?.uid || 'SYSTEM',
@@ -533,15 +475,14 @@ export const useCart = () => {
 
     const purchaseCredits = async (amount: number, type: 'invoice' | 'maintenance') => {
         if (isReadOnly) { alert('🔒 MODO DEMOSTRACIÓN.'); return; }
-        if (store.firebaseStatus === 'offline') { alert('⚠️ Sin conexión.'); return; }
         try {
-            const field = type === 'invoice' ? 'invoiceCredits' : 'maintenanceCredits';
-            await updateDoc(doc(db, 'settings', 'owner_config'), { [field]: increment(amount) });
+            // Local fallback logic can be placed here if settings table is created.
             await logAudit({
                 type: 'CONFIG_UPDATE', userId: 'SYSTEM', userName: 'Admin', userRole: 'admin',
                 description: `Recarga ${type}: +${amount}`, metadata: { amount, type },
             });
-        } catch (err: any) { try { handleFirestoreError(err, OperationType.UPDATE, 'settings/owner_config'); } catch { } }
+            alert('Recarga local registrada (Pendiente de implementación en SQLite)');
+        } catch (err: any) { console.error(err); }
     };
 
     const cancelOrder = async (orderId: string) => {
@@ -560,13 +501,7 @@ export const useCart = () => {
                 })
             });
 
-            // Reembolsar fee en la nube
-            try {
-                await updateDoc(doc(db, 'settings', 'owner_config'), {
-                    maintenanceCredits: increment(order.developerFee || 0),
-                    automationProfit: increment(-(order.ownerAutomationFee || 0)),
-                });
-            } catch (e) {}
+            // Reembolsar fee en la nube (Desactivado en versión local)
 
             // Devolver stock localmente si aplica
             if ((order as any).stockDeducted === true) {
@@ -591,18 +526,14 @@ export const useCart = () => {
         if (isReadOnly) return;
         const merged = { ...store.siteConfig, ...config };
         store.setSiteConfig(merged); // optimistic
-        if (store.firebaseStatus === 'offline') {
-            try { localStorage.setItem('_admincom_site_config', JSON.stringify(merged)); } catch { }
-            return;
-        }
-        try {
-            await setDoc(doc(db, 'settings', 'site_config'), merged, { merge: true });
+        try { 
+            localStorage.setItem('_admincom_site_config', JSON.stringify(merged)); 
             await logAudit({
                 type: 'CONFIG_UPDATE', userId: profile?.uid || 'SYSTEM',
                 userName: profile?.displayName || 'Admin', userRole: profile?.role || 'admin',
-                description: 'Configuración de sitio actualizada', metadata: { config },
+                description: 'Configuración de sitio actualizada localmente', metadata: { config },
             });
-        } catch (err: any) { try { handleFirestoreError(err, OperationType.UPDATE, 'settings/site_config'); } catch { } }
+        } catch (e) { console.error(e); }
     };
 
     return {

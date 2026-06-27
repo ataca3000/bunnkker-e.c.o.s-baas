@@ -22,6 +22,7 @@ export default function DeliveryDashboard() {
     const [activeDeliveryId, setActiveDeliveryId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [panicLoading, setPanicLoading] = useState(false);
+    const [driverLocation, setDriverLocation] = useState<{lat: number, lng: number} | null>(null);
     
     const lastGpsUpdate = useRef<number>(0);
     const GPS_THROTTLE_MS = 15000;
@@ -38,6 +39,7 @@ export default function DeliveryDashboard() {
                 try {
                     const { latitude, longitude } = pos.coords;
                     lastGpsUpdate.current = now;
+                    setDriverLocation({ lat: latitude, lng: longitude });
 
                     await setDoc(doc(db, 'tracking_fleet', profile?.uid), {
                         driverId: profile?.uid,
@@ -226,7 +228,7 @@ export default function DeliveryDashboard() {
             </header>
 
             <main className="flex-1 w-full max-w-lg mx-auto p-4 overflow-y-auto pb-28 relative z-10">
-                {currentView === 'pool' && <OrderPool orders={availableOrders} onClaim={handleClaim} loading={loading} />}
+                {currentView === 'pool' && <OrderPool orders={availableOrders} onClaim={handleClaim} loading={loading} driverLocation={driverLocation} />}
                 {currentView === 'route' && <MyRoute orders={currentRoute} onStartDelivery={startDelivery} setOrders={setOrders} onBackToPool={() => setCurrentView('pool')} />}
                 {currentView === 'delivery' && activeDeliveryId && (
                     <DeliveryView 

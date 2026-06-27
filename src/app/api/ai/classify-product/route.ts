@@ -1,4 +1,5 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { validateApiSession } from '@/lib/apiAuth';
 import { classifyProductText, logAIClassificationAudit } from '@/lib/ai/productClassifier';
 import { cookies, headers } from 'next/headers';
 
@@ -6,7 +7,9 @@ import { cookies, headers } from 'next/headers';
  * Endpoint de Clasificación Inteligente
  * POST /api/ai/classify-product
  */
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+    const auth = validateApiSession(request);
+    if (!auth.ok) return auth.response;
     try {
         // Detectar si la petición viene por túnel seguro (HTTPS)
         const headersList = await headers();

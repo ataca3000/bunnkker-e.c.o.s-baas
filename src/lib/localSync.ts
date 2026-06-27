@@ -9,9 +9,12 @@ const isNode = typeof window === 'undefined' || !!(window as any).electronAPI;
 const getMdnsBrowser = () => {
     if (isNode) {
         try {
-            // Usamos eval('require') para que Webpack ignore esta dependencia durante el build
-            const mdns = eval('require')('multicast-dns');
-            return (mdns.default || mdns)();
+            // Usamos globalThis.require para evitar eval y silenciar Webpack
+            const req = (globalThis as any).require;
+            if (req) {
+                const mdns = req('multicast-dns');
+                return (mdns.default || mdns)();
+            }
         } catch (e) { return null; }
     }
     return null;
@@ -148,7 +151,11 @@ function queueOfflineTransaction(payload: any) {
     if (typeof window === 'undefined') return;
     try {
         const queueStr = localStorage.getItem('evo_offline_queue');
-        const queue = queueStr ? JSON.parse(queueStr) : [];
+        let queue = queueStr ? JSON.parse(queueStr) : [];
+        if (queue.length >= 500) {
+            console.warn("[P2P/WAL] Límite de cola offline alcanzado (500 transacciones). Descartando la más antigua para evitar quota overflow.");
+            queue.shift(); // Descartar la más antigua para mantener tamaño controlado
+        }
         queue.push(payload);
         localStorage.setItem('evo_offline_queue', JSON.stringify(queue));
     } catch (e) {
@@ -194,8 +201,13 @@ function getLocalIP() {
     
     let os: any;
     try {
-        // Ocultamos el módulo nativo 'os' del análisis estático de Webpack
-        os = eval('require')('os');
+        // Usamos globalThis.require para evitar eval
+        const req = (globalThis as any).require;
+        if (req) {
+            os = req('os');
+        } else {
+            return '127.0.0.1';
+        }
     } catch (e) { return '127.0.0.1'; }
 
     const interfaces = os.networkInterfaces();

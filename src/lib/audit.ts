@@ -26,7 +26,22 @@ export interface AuditLog {
     userName: string;
     userRole: string;
     description: string;
-    metadata?: any;
+    metadata?: {
+        total?: number;
+        paymentMethod?: string;
+        cashierId?: string;
+        cashierName?: string;
+        declaredAmount?: number;
+        expectedAmount?: number;
+        discrepancy?: number;
+        productId?: string;
+        productName?: string;
+        oldPrice?: number;
+        newPrice?: number;
+        stockIncrement?: number;
+        errorDetails?: string;
+        [key: string]: unknown;
+    };
     timestamp?: any;
     isLocal?: boolean; // Campo extra para identificar el origen en la UI
 }
@@ -50,9 +65,11 @@ export async function logAudit(action: AuditLog) {
         // Si estamos en Electron, guardamos una copia local inmediata (Local-First)
         if (isNode) {
             try {
-                const fs = eval('require')('fs');
-                const path = eval('require')('path');
-                const os = eval('require')('os');
+                const req = (globalThis as any).require;
+                if (!req) return;
+                const fs = req('fs');
+                const path = req('path');
+                const os = req('os');
 
                 const logsDir = path.join(os.homedir(), '.admincom_erp');
                 const logFile = path.join(logsDir, 'audit_local.jsonl');
