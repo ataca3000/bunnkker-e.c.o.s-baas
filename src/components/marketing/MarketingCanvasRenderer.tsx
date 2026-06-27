@@ -336,16 +336,16 @@ export default function MarketingCanvasRenderer({ pageId }: { pageId: string }) 
             </section>
 
             {/* 2. CATALOG SECTION */}
-            <section id="catalogo-section" className="py-24 bg-slate-50 relative">
+            <section id="catalogo-section" className="py-24 bg-slate-950 relative">
                 <div className="max-w-7xl mx-auto px-6">
                     <div className="text-center mb-16">
-                        <h2 className="text-4xl font-extrabold text-slate-900 mb-4">Nuestro Catálogo</h2>
+                        <h2 className="text-4xl font-extrabold text-white mb-4">Nuestro Catálogo</h2>
                         <div className="w-24 h-1 bg-orange-500 mx-auto rounded-full mb-6" />
-                        <p className="text-slate-500 text-lg">Explora nuestra selección premium de productos.</p>
+                        <p className="text-slate-400 text-lg">Explora nuestra selección premium de productos.</p>
                     </div>
                     
                     {/* The Catalog Component */}
-                    <div className="bg-white rounded-[2rem] shadow-xl p-6 md:p-10 border border-slate-100">
+                    <div className="bg-[#0a0514] rounded-[2rem] shadow-2xl p-6 md:p-10 border border-white/5">
                         <MarketCatalog hideHeader={true} />
                     </div>
                 </div>
