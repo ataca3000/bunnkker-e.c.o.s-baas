@@ -25,9 +25,9 @@ export async function generateMetadata(): Promise<Metadata> {
 
   if (tenantId === 'default' || tenantId === 'admin.com') {
     return {
-      title: "BUNKKER E.C.O.S | Sistema Integral ERP",
-      description: "BUNKKER E.C.O.S - Desarrollado por The Brecha Solutions Company S.A. de C.V. El mejor sistema de gestión empresarial, punto de venta y logística.",
-      keywords: ["BUNKKER E.C.O.S", "The Brecha Solutions Company", "ERP", "punto de venta", "gestión empresarial", "facturación"],
+      title: "BUNKKER ECOS | Sistema Integral ERP",
+      description: "BUNKKER ECOS - Desarrollado por Brecha Soluciones DS. El mejor sistema de gestión empresarial, punto de venta y logística.",
+      keywords: ["BUNKKER ECOS", "Brecha Soluciones DS", "ERP", "punto de venta", "gestión empresarial", "facturación"],
       manifest: '/manifest.json',
       verification: defaultVerification,
       alternates: {
@@ -38,10 +38,10 @@ export async function generateMetadata(): Promise<Metadata> {
         follow: true,
       },
       openGraph: {
-        title: "BUNKKER E.C.O.S | Sistema Integral ERP",
-        description: "BUNKKER E.C.O.S - Desarrollado por The Brecha Solutions Company S.A. de C.V. El mejor sistema de gestión empresarial, punto de venta y logística.",
+        title: "BUNKKER ECOS | Sistema Integral ERP",
+        description: "BUNKKER ECOS - Desarrollado por Brecha Soluciones DS. El mejor sistema de gestión empresarial, punto de venta y logística.",
         url: baseUrl,
-        siteName: "BUNKKER E.C.O.S",
+        siteName: "BUNKKER ECOS",
         locale: "es_MX",
         type: "website",
       }
@@ -52,7 +52,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const storeName = tenantId.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   return {
     title: `${storeName} | Tienda`,
-    description: `Catálogo oficial de ${storeName}, impulsado de forma segura por BUNKKER E.C.O.S.`,
+    description: `Catálogo oficial de ${storeName}, impulsado de forma segura por BUNKKER ECOS.`,
     manifest: '/manifest.json',
     verification: defaultVerification,
     alternates: {
@@ -64,7 +64,7 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     openGraph: {
       title: `${storeName} | Tienda`,
-      description: `Catálogo oficial de ${storeName}, impulsado de forma segura por BUNKKER E.C.O.S.`,
+      description: `Catálogo oficial de ${storeName}, impulsado de forma segura por BUNKKER ECOS.`,
       url: baseUrl,
       siteName: storeName,
       locale: "es_MX",
