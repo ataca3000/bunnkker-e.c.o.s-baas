@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { ShieldCheck, UserPlus, Trash2, RefreshCw, Users, Key, Crown, Zap, Package, TrendingUp, Truck, Megaphone, Circle } from 'lucide-react';
+import { ShieldCheck, UserPlus, Trash2, RefreshCw, Users, Key, Crown, Zap, Package, TrendingUp, Truck, Megaphone, Circle, QrCode, X, Copy } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import QRCode from 'react-qr-code';
 
 interface UserData {
     id: string;
@@ -26,6 +27,8 @@ export default function TeamManagement() {
     const [users, setUsers] = useState<UserData[]>([]);
     const [loading, setLoading] = useState(true);
     const [editingUserId, setEditingUserId] = useState<string | null>(null);
+    const [qrUser, setQrUser] = useState<UserData | null>(null);
+    const [magicUrl, setMagicUrl] = useState<string>('');
     const [selectedRole, setSelectedRole] = useState<string>('');
     const [newName, setNewName] = useState('');
     const [newPin, setNewPin] = useState('');
@@ -116,6 +119,25 @@ export default function TeamManagement() {
         }
     };
 
+    const handleOpenQr = async (user: UserData) => {
+        setQrUser(user);
+        setMagicUrl(''); // Reset
+        try {
+            const res = await fetch(`/api/users/${user.id}/magic`);
+            const data = await res.json();
+            if (data.success && typeof window !== 'undefined') {
+                const host = window.location.origin;
+                setMagicUrl(`${host}/api/auth/magic?token=${data.payload}`);
+            } else {
+                alert('No se pudo generar la llave mágica.');
+                setQrUser(null);
+            }
+        } catch {
+            alert('Error de conexión al generar la llave.');
+            setQrUser(null);
+        }
+    };
+
     if (loading) return (
         <div className="min-h-screen bg-[#0f111a] flex items-center justify-center">
             <RefreshCw className="animate-spin text-[#0ea5e9]" size={40} />
@@ -190,6 +212,12 @@ export default function TeamManagement() {
                                                                 </div>
                                                             ) : (
                                                                 <>
+                                                                    <button
+                                                                        onClick={() => handleOpenQr(user)}
+                                                                        className="flex-1 text-center bg-slate-900/50 hover:bg-purple-500/20 text-purple-400 text-[10px] font-black uppercase tracking-widest py-1.5 rounded-lg transition-colors border border-purple-500/10 flex items-center justify-center gap-1"
+                                                                    >
+                                                                        <QrCode size={12} /> Llave
+                                                                    </button>
                                                                     <button
                                                                         onClick={() => { setEditingUserId(user.id); setSelectedRole(user.role); }}
                                                                         className="flex-1 text-center bg-slate-900/50 hover:bg-sky-500/20 text-sky-400 text-[10px] font-black uppercase tracking-widest py-1.5 rounded-lg transition-colors border border-sky-500/10"
@@ -303,6 +331,52 @@ export default function TeamManagement() {
                     </div>
                 </div>
             </div>
+
+            {/* Modal de Llave QR Mágica */}
+            {qrUser && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                    <div className="bg-slate-900 border border-slate-700 rounded-3xl p-8 max-w-sm w-full relative flex flex-col items-center">
+                        <button 
+                            onClick={() => setQrUser(null)}
+                            className="absolute top-4 right-4 text-slate-400 hover:text-white bg-slate-800 p-2 rounded-full"
+                        >
+                            <X size={20} />
+                        </button>
+                        <div className="bg-purple-500/20 text-purple-400 p-3 rounded-2xl mb-4">
+                            <Key size={32} />
+                        </div>
+                        <h2 className="text-2xl font-black text-white text-center mb-1">Llave de Acceso</h2>
+                        <p className="text-slate-400 text-sm text-center mb-6">Para: <b>{qrUser.name}</b></p>
+                        
+                        <div className="bg-white p-4 rounded-2xl mb-6 min-h-[232px] flex items-center justify-center">
+                            {magicUrl ? (
+                                <QRCode 
+                                    value={magicUrl} 
+                                    size={200}
+                                />
+                            ) : (
+                                <RefreshCw className="animate-spin text-slate-300" size={32} />
+                            )}
+                        </div>
+
+                        <p className="text-xs text-slate-500 text-center mb-6 px-4">
+                            Pide a {qrUser.name.split(' ')[0]} que escanee este código con su celular para iniciar sesión automáticamente.
+                        </p>
+
+                        <button 
+                            disabled={!magicUrl}
+                            onClick={() => {
+                                navigator.clipboard.writeText(magicUrl);
+                                alert('¡Enlace copiado al portapapeles!');
+                            }}
+                            className="w-full bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 border border-slate-600 transition-colors"
+                        >
+                            <Copy size={16} />
+                            Copiar Enlace Directo
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
