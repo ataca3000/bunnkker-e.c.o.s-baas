@@ -82,6 +82,20 @@ async function processQueue() {
                     const Facturapi = require('facturapi').default || require('facturapi');
                     let apiKey = process.env.FACTURAPI_KEY;
 
+                    // Evitar bucles infinitos: cancelar tarea si pasa de 5 intentos
+                    const attempts = payload._attempts || 0;
+                    if (attempts >= 5) {
+                        await prisma.syncQueue.update({
+                            where: { id: task.id },
+                            data: { 
+                                status: 'FAILED_PERMANENTLY',
+                                errorMsg: 'Superado el límite de 5 intentos automáticos. Error de cliente permanente (RFC o datos inválidos).'
+                            }
+                        });
+                        console.log(`[Worker] ❌ Tarea ${task.id} de facturación cancelada permanentemente (5 reintentos fallidos).`);
+                        continue;
+                    }
+
                     try {
                         const secretSnap = await getDoc(doc(db, 'tenants', payload.tenantId || 'default', 'secrets', 'keys'));
                         if (secretSnap.exists() && secretSnap.data()?.facturapi_key) {
@@ -134,12 +148,22 @@ async function processQueue() {
                 }
 
                 console.error(`[Worker] ❌ Error procesando tarea ${task.id}:`, err.message);
-                // Si falla, lo devolvemos a FAILED con el mensaje de error
+                // Si falla, incrementamos intentos si es factura y lo devolvemos a FAILED con el mensaje de error
                 try {
+                    let nextPayload = task.payload;
+                    if (task.collection === 'invoices') {
+                        try {
+                            const parsed = JSON.parse(task.payload);
+                            parsed._attempts = (parsed._attempts || 0) + 1;
+                            nextPayload = JSON.stringify(parsed);
+                        } catch (e) {}
+                    }
+
                     await prisma.syncQueue.update({
                         where: { id: task.id },
                         data: { 
                             status: 'FAILED',
+                            payload: nextPayload,
                             errorMsg: err.message
                         }
                     });

@@ -24,6 +24,20 @@ const COOKIE_OPTS = {
 
 const SALT_ROUNDS = 10;
 
+// Evitar inundación de RAM y timers en el event loop ante ataques de denegación de servicio (DDoS)
+let activeDelays = 0;
+const MAX_CONCURRENT_DELAYS = 100;
+
+async function throttleDelay() {
+  if (activeDelays >= MAX_CONCURRENT_DELAYS) return; // Si la cola está llena, retorna rápido sin encolar timers
+  activeDelays++;
+  try {
+    await new Promise(r => setTimeout(r, 1000));
+  } finally {
+    activeDelays--;
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -45,8 +59,8 @@ export async function POST(request: NextRequest) {
       });
 
       if (!user) {
-        // Retardo intencional de 1 segundo para evitar brute-force rápido
-        await new Promise(r => setTimeout(r, 1000));
+        // Retardo intencional controlado para evitar brute-force rápido
+        await throttleDelay();
         return NextResponse.json(
           { success: false, error: 'PIN incorrecto o usuario no encontrado.' },
           { status: 401 }
@@ -57,7 +71,7 @@ export async function POST(request: NextRequest) {
         // Verificación de seguridad con bcrypt
         const match = await bcrypt.compare(pin, user.pinHash);
         if (!match) {
-          await new Promise(r => setTimeout(r, 1000));
+          await throttleDelay();
           return NextResponse.json(
             { success: false, error: 'PIN incorrecto o usuario no encontrado.' },
             { status: 401 }
