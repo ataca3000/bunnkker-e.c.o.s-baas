@@ -5,7 +5,23 @@ import type { NextRequest } from 'next/server';
 // No importamos de @/lib/apiAuth para evitar el warning de Node crypto en Edge.
 // Usamos SubtleCrypto que está disponible en todos los runtimes (Edge, Node, browser).
 
-const COOKIE_SECRET = process.env.INTERNAL_API_SECRET || 'fallback-secret-key-12345';
+// ── Cookie Secret — igual que apiAuth.ts, NUNCA tiene fallback inseguro ───────
+// Edge runtime no puede usar Node crypto, por lo que la validación se hace con
+// SubtleCrypto (Web Crypto API). El secreto se resuelve en tiempo de ejecución.
+const COOKIE_SECRET = (() => {
+  const s = process.env.INTERNAL_API_SECRET;
+  if (!s || s.trim() === '') {
+    if (process.env.NODE_ENV === 'production') {
+      // En producción, un secreto ausente es un error de despliegue.
+      // Devolvemos un valor vacío pero todas las verificaciones HMAC fallarán,
+      // lo que redirigirá a /login — comportamiento seguro por defecto.
+      console.error('[SECURITY] INTERNAL_API_SECRET no configurado en producción. Todas las sesiones serán rechazadas.');
+      return '';
+    }
+    return 'dev-only-secret-never-use-in-production';
+  }
+  return s;
+})();
 
 function hexToUint8Array(hex: string): Uint8Array | null {
   if (!hex || hex.length % 2 !== 0) return null;
@@ -40,24 +56,24 @@ async function verifyHmac(role: string, uid: string, sig: string): Promise<boole
 
 const ROLE_PERMISSIONS: Record<string, string[]> = {
   '/dashboard/guia':      ['superadmin'],
-  '/dashboard/inventory': ['superadmin', 'admin', 'inventory'],
-  '/dashboard/sales':     ['superadmin', 'admin', 'sales'],
-  '/dashboard/admin/sales': ['superadmin', 'admin', 'sales'],
-  '/dashboard/admin/customers': ['superadmin', 'admin', 'sales'],
-  '/dashboard/audit':     ['superadmin', 'admin', 'billing'],
-  '/dashboard/billing':   ['superadmin', 'admin', 'billing'],
-  '/dashboard/users':     ['superadmin', 'admin'],
-  '/dashboard/admin/users': ['superadmin', 'admin'],
+  '/dashboard/inventory': ['superadmin', 'inventory'],
+  '/dashboard/sales':     ['superadmin', 'sales'],
+  '/dashboard/admin/sales': ['superadmin', 'sales'],
+  '/dashboard/admin/customers': ['superadmin', 'sales'],
+  '/dashboard/audit':     ['superadmin', 'billing'],
+  '/dashboard/billing':   ['superadmin', 'billing'],
+  '/dashboard/users':     ['superadmin'],
+  '/dashboard/admin/users': ['superadmin'],
   '/dashboard/patio':     ['superadmin', 'carga_descarga', 'driver', 'delivery', 'inventory'],
   '/dashboard/pickup':    ['superadmin', 'carga_descarga', 'driver', 'delivery', 'inventory'],
   '/dashboard/delivery':  ['superadmin', 'driver', 'delivery', 'carga_descarga'],
-  '/dashboard/marketing': ['superadmin', 'marketing', 'admin'],
-  '/dashboard/design':    ['superadmin', 'marketing', 'admin'],
+  '/dashboard/marketing': ['superadmin', 'marketing'],
+  '/dashboard/design':    ['superadmin', 'marketing'],
   '/dashboard/reports':   ['superadmin'],
-  '/dashboard/qr':        ['superadmin', 'admin', 'marketing', 'sales'],
-  '/dashboard/demo':      ['superadmin', 'admin'],
-  '/dashboard/suscripcion': ['superadmin', 'admin'],
-  '/dashboard/tests':     ['superadmin', 'admin'],
+  '/dashboard/qr':        ['superadmin', 'marketing', 'sales'],
+  '/dashboard/demo':      ['superadmin'],
+  '/dashboard/suscripcion': ['superadmin'],
+  '/dashboard/tests':     ['superadmin'],
 };
 
 const PUBLIC_DOMAINS = [
@@ -125,14 +141,14 @@ export default async function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL('/login?error=unauthorized', request.url));
       }
     } else if (pathname === '/dashboard') {
-      if (role !== 'superadmin' && role !== 'admin') {
+      if (role !== 'superadmin') {
         const primaryPath = Object.entries(ROLE_PERMISSIONS).find(
           ([_, roles]) => roles.includes(role)
         )?.[0];
         if (primaryPath) return NextResponse.redirect(new URL(primaryPath, request.url));
         return NextResponse.redirect(new URL('/login?error=unauthorized', request.url));
       }
-    } else if (role !== 'superadmin' && role !== 'admin') {
+    } else if (role !== 'superadmin') {
       return NextResponse.redirect(new URL('/login?error=unauthorized', request.url));
     }
   }

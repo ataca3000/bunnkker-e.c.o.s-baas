@@ -1,8 +1,67 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // ARQUITECTURA: El sistema usa auth propio (PIN + cookie), NO Firebase Auth.
+    // Por eso no se usa request.auth. Las reglas protegen por TIPO DE OPERACIÓN:
+    //   - Cliente: solo leer y hacer append
+    //   - Admin SDK (servidor): acceso total, bypasea estas reglas
+    // ─────────────────────────────────────────────────────────────────────────
+
+    // ── Licencias ─────────────────────────────────────────────────────────────
+    // El cliente lee su licencia para validarla (ya tiene la clave).
+    // Solo el servidor puede crear/modificar licencias vía Admin SDK.
+    match /licenses/{licenseId} {
+      allow get:   if true;
+      allow list:  if false;
+      allow write: if false;
+    }
+
+    // ── Logs de Auditoría — Append-Only (Inmutables) ──────────────────────────
+    // El cliente puede registrar eventos pero NUNCA editarlos ni borrarlos.
+    // Esto garantiza que el rastro de auditoría no se pueda manipular.
+    match /audit_logs/{logId} {
+      allow create: if true;
+      allow read:   if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    // ── Órdenes / Ventas ──────────────────────────────────────────────────────
+    // El POS crea órdenes, el chofer actualiza el estado de entrega.
+    // Borrar no está permitido (inmutabilidad fiscal).
+    match /orders/{orderId} {
+      allow get, create, update: if true;
+      allow list:                 if false;
+      allow delete:               if false;
+    }
+
+    // ── Productos / Catálogo ──────────────────────────────────────────────────
+    // El catálogo es público (PWA de ventas, catálogo web).
+    // Solo el servidor actualiza precios/stock vía Admin SDK.
+    match /products/{productId} {
+      allow read:  if true;
+      allow write: if false;
+    }
+
+    // ── Configuración de Tienda ───────────────────────────────────────────────
+    // La app lee la config al iniciar. El servidor la escribe.
+    match /stores/{storeId} {
+      allow read:  if true;
+      allow write: if false;
+    }
+
+    // ── Tenants ───────────────────────────────────────────────────────────────
+    match /tenants/{tenantId} {
+      allow read:  if true;
+      allow write: if false;
+    }
+
+    // ── Bloqueo total por defecto ─────────────────────────────────────────────
+    // Cualquier colección que no esté listada arriba queda denegada.
     match /{document=**} {
-      allow read, write: if true;
+      allow read, write: if false;
     }
   }
 }

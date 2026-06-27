@@ -15,12 +15,10 @@ const nextConfig: NextConfig = {
   // @ts-ignore
   turbopack: {},
   eslint: {
-    // Lint errors won't block production builds (CI/CD or Electron packaging)
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
   },
   typescript: {
-    // Type errors won't block production builds — type safety enforced in dev
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
 };
 

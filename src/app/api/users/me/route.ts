@@ -17,20 +17,6 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ success: false, error: 'Invalid signature' }, { status: 401 });
         }
 
-        if (session === 'local_owner' && role === 'superadmin') {
-            return NextResponse.json({
-                success: true,
-                user: {
-                    id: 'local_owner',
-                    name: 'SuperAdmin Local',
-                    role: 'superadmin',
-                    active: true,
-                    uid: 'local_owner',
-                    displayName: 'SuperAdmin Local'
-                }
-            });
-        }
-
         const user = await prisma.user.findUnique({
             where: { id: session }
         });

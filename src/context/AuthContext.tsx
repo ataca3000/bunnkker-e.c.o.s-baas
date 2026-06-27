@@ -68,6 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                             displayName: data.user.name,
                             role: data.user.role,
                             nodeAccess: [],
+                            lastLogin: Date.now(),
                             isPremium: true
                         });
                     } else {
@@ -102,7 +103,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
     };
 
-    const isAdmin = profile?.role === 'admin' || profile?.role === 'superadmin';
+    const isAdmin = profile?.role === 'superadmin';
     const isSuperAdmin = profile?.role === 'superadmin';
 
     return (

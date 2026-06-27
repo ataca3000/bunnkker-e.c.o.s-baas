@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
-import { ShieldAlert, Database, DollarSign, Store, Lock, Key, Plus, RefreshCw, CheckCircle, XCircle, Copy, Trash2 } from 'lucide-react';
+import { ShieldAlert, Database, DollarSign, Store, Lock, Key, Plus, RefreshCw, CheckCircle, XCircle, Copy, Trash2, LogIn, Loader2 } from 'lucide-react';
 
 interface License {
     key: string;
@@ -15,38 +15,81 @@ interface License {
 }
 
 export default function SysAdmin() {
-    const [accessCode, setAccessCode] = useState('');
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    // ── Auth State ─────────────────────────────────────────────────────────
+    // La autenticación se verifica contra el servidor (cookie de sesión).
+    // El panel solo se muestra si el usuario tiene rol 'superadmin' válido.
+    const [authState, setAuthState] = useState<'loading' | 'unauthenticated' | 'authenticated'>('loading');
+    const [loginPin, setLoginPin] = useState('');
+    const [loginLoading, setLoginLoading] = useState(false);
+    const [loginError, setLoginError] = useState('');
+
     const [tab, setTab] = useState<'main' | 'licenses'>('main');
 
     // License management state
-    const [licenses, setLicenses]   = useState<License[]>([]);
+    const [licenses, setLicenses]     = useState<License[]>([]);
     const [licLoading, setLicLoading] = useState(false);
-    const [newForm, setNewForm]     = useState({ clientName: '', email: '', maxMachines: 1 });
-    const [newKey, setNewKey]       = useState<string | null>(null);
-    const [msg, setMsg]             = useState('');
+    const [newForm, setNewForm]       = useState({ clientName: '', email: '', maxMachines: 1 });
+    const [newKey, setNewKey]         = useState<string | null>(null);
+    const [msg, setMsg]               = useState('');
 
-    const DEV_CODE = process.env.NEXT_PUBLIC_DEV_ACCESS_CODE || '';
-    const devSecret = process.env.NEXT_PUBLIC_DEV_ACCESS_CODE || ''; // reuse for demo
+    // ── Verify session on mount ─────────────────────────────────────────────
+    useEffect(() => {
+        fetch('/api/users/me')
+            .then(r => r.json())
+            .then(data => {
+                if (data.success && data.user?.role === 'superadmin') {
+                    setAuthState('authenticated');
+                } else {
+                    setAuthState('unauthenticated');
+                }
+            })
+            .catch(() => setAuthState('unauthenticated'));
+    }, []);
 
-    const handleLogin = () => {
-        if (accessCode === DEV_CODE) setIsAuthenticated(true);
-        else alert("Acceso Denegado: Código incorrecto");
+    // ── Login via PIN contra la DB local ────────────────────────────────────
+    const handleLogin = async () => {
+        if (!loginPin.trim()) return;
+        setLoginLoading(true);
+        setLoginError('');
+        try {
+            const res = await fetch('/api/auth/session', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pin: loginPin }),
+            });
+            const data = await res.json();
+            if (data.success && data.role === 'superadmin') {
+                setAuthState('authenticated');
+            } else if (data.success && data.role !== 'superadmin') {
+                setLoginError('Acceso denegado: se requiere rol superadmin.');
+            } else {
+                setLoginError(data.error || 'PIN incorrecto.');
+            }
+        } catch {
+            setLoginError('Error de conexión. Verifica que el servidor esté corriendo.');
+        } finally {
+            setLoginLoading(false);
+        }
     };
 
+    // ── License API calls (usan cookies de sesión automáticamente) ──────────
     const fetchLicenses = useCallback(async () => {
         setLicLoading(true);
         try {
-            const res = await fetch(`/api/licenses?secret=${encodeURIComponent(devSecret)}`);
+            const res = await fetch('/api/licenses');
+            if (res.status === 401 || res.status === 403) {
+                setAuthState('unauthenticated');
+                return;
+            }
             const data = await res.json();
             setLicenses(data.licenses ?? []);
         } catch { setMsg('Error cargando licencias'); }
         finally { setLicLoading(false); }
-    }, [devSecret]);
+    }, []);
 
     useEffect(() => {
-        if (isAuthenticated && tab === 'licenses') fetchLicenses();
-    }, [isAuthenticated, tab, fetchLicenses]);
+        if (authState === 'authenticated' && tab === 'licenses') fetchLicenses();
+    }, [authState, tab, fetchLicenses]);
 
     const createLicense = async () => {
         if (!newForm.clientName || !newForm.email) { setMsg('Rellena todos los campos'); return; }
@@ -55,7 +98,7 @@ export default function SysAdmin() {
             const res = await fetch('/api/licenses', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...newForm, devSecret }),
+                body: JSON.stringify(newForm),
             });
             const data = await res.json();
             if (data.success) {
@@ -75,7 +118,7 @@ export default function SysAdmin() {
             await fetch('/api/licenses', {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ key, isActive: !isActive, devSecret }),
+                body: JSON.stringify({ key, isActive: !isActive }),
             });
             fetchLicenses();
         } catch { setMsg('Error actualizando licencia'); }
@@ -86,37 +129,57 @@ export default function SysAdmin() {
             await fetch('/api/licenses', {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ key, resetMachines: true, devSecret }),
+                body: JSON.stringify({ key, resetMachines: true }),
             });
             fetchLicenses();
             setMsg(`✅ Máquinas reseteadas para ${key}`);
         } catch { setMsg('Error'); }
     };
 
-    if (!isAuthenticated) {
+    // ── Loading screen ──────────────────────────────────────────────────────
+    if (authState === 'loading') {
+        return (
+            <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#111', color: '#0f0', fontFamily: 'monospace' }}>
+                <Loader2 size={48} style={{ animation: 'spin 1s linear infinite' }} />
+                <p style={{ marginLeft: '1rem' }}>Verificando sesión...</p>
+            </div>
+        );
+    }
+
+    // ── Login screen ────────────────────────────────────────────────────────
+    if (authState === 'unauthenticated') {
         return (
             <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#111', color: '#0f0', fontFamily: 'monospace' }}>
                 <div style={{ textAlign: 'center' }}>
                     <ShieldAlert size={64} style={{ marginBottom: '1rem' }} />
                     <h1 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>ADMIN.COM ERP</h1>
-                    <p style={{ color: '#555', marginBottom: '2rem', fontSize: '0.8rem' }}>PANEL DE CONTROL DEL DESARROLLADOR</p>
+                    <p style={{ color: '#555', marginBottom: '2rem', fontSize: '0.8rem' }}>PANEL DE CONTROL — REQUIERE SUPERADMIN</p>
                     <input
                         type="password"
-                        value={accessCode}
-                        onChange={(e) => setAccessCode(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
-                        placeholder="CÓDIGO MAESTRO"
+                        value={loginPin}
+                        onChange={(e) => setLoginPin(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && !loginLoading && handleLogin()}
+                        placeholder="PIN SUPERADMIN"
                         style={{ background: 'black', border: '1px solid #0f0', color: '#0f0', padding: '12px 20px', width: '300px', textAlign: 'center', outline: 'none', fontSize: '1rem' }}
                     />
+                    {loginError && (
+                        <p style={{ color: '#E30613', fontSize: '0.8rem', marginTop: '8px' }}>{loginError}</p>
+                    )}
                     <br />
-                    <button onClick={handleLogin} style={{ marginTop: '1rem', background: '#0f0', color: 'black', border: 'none', padding: '12px 30px', fontWeight: 'bold', cursor: 'pointer', fontSize: '1rem' }}>
-                        ACCEDER
+                    <button
+                        onClick={handleLogin}
+                        disabled={loginLoading}
+                        style={{ marginTop: '1rem', background: loginLoading ? '#555' : '#0f0', color: 'black', border: 'none', padding: '12px 30px', fontWeight: 'bold', cursor: loginLoading ? 'not-allowed' : 'pointer', fontSize: '1rem', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+                    >
+                        {loginLoading ? <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> : <LogIn size={18} />}
+                        {loginLoading ? 'VERIFICANDO...' : 'ACCEDER'}
                     </button>
                 </div>
             </div>
         );
     }
 
+    // ── Authenticated panel ─────────────────────────────────────────────────
     return (
         <div style={{ backgroundColor: '#f0f2f5', minHeight: '100vh', padding: '2rem' }}>
             <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
@@ -142,7 +205,7 @@ export default function SysAdmin() {
                         <div className="card-sanjose" style={{ borderLeft: '5px solid #27ae60' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1rem' }}>
                                 <DollarSign size={24} color="#27ae60" />
-                                <h3 style={{ fontWeight: 'bold' }}>Suscripción & Licencia</h3>
+                                <h3 style={{ fontWeight: 'bold' }}>Suscripción &amp; Licencia</h3>
                             </div>
                             <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '1rem' }}>Controla el estado de pago. Activa o desactiva el sistema remotamente.</p>
                             <button onClick={() => setTab('licenses')} className="btn-sanjose-secondary" style={{ width: '100%', fontSize: '0.85rem' }}>GESTIONAR LICENCIAS</button>
@@ -171,7 +234,7 @@ export default function SysAdmin() {
                                 <li>Para crear una licencia nueva → pestaña <strong>LICENCIAS</strong>.</li>
                                 <li>Cada licencia genera una clave <code>ADMIN-XXXX-XXXX-XXXX</code> única.</li>
                                 <li>Una licencia = 1 PC (1 machineId). Puedes aumentar <code>maxMachines</code>.</li>
-                                <li>Si el cliente cambia de PC → usa <strong>"Reset Máquinas"</strong>.</li>
+                                <li>Si el cliente cambia de PC → usa <strong>&ldquo;Reset Máquinas&rdquo;</strong>.</li>
                                 <li>Para desactivar acceso inmediato → toggle <strong>Activa/Inactiva</strong>.</li>
                             </ul>
                         </div>

@@ -13,9 +13,15 @@ const inter = { className: "font-sans" };
 import { headers } from "next/headers";
 
 export async function generateMetadata(): Promise<Metadata> {
-  // En Next.js 15, await headers() es necesario
   const headersList = await headers();
   const tenantId = headersList.get('x-tenant-id') || 'default';
+  const host = headersList.get('host') || 'admin.com';
+  const protocol = process.env.NODE_ENV === 'development' ? 'http' : 'https';
+  const baseUrl = `${protocol}://${host}`;
+
+  const defaultVerification = {
+    google: 'CRRkmj4XJ1qPMAkpFbfzftUC4kS0viq_JgEFG_YvG3Y'
+  };
 
   if (tenantId === 'default' || tenantId === 'admin.com') {
     return {
@@ -23,8 +29,21 @@ export async function generateMetadata(): Promise<Metadata> {
       description: "BUNKKER E.C.O.S - Desarrollado por The Brecha Solutions Company S.A. de C.V. El mejor sistema de gestión empresarial, punto de venta y logística.",
       keywords: ["BUNKKER E.C.O.S", "The Brecha Solutions Company", "ERP", "punto de venta", "gestión empresarial", "facturación"],
       manifest: '/manifest.json',
-      verification: {
-        google: 'CRRkmj4XJ1qPMAkpFbfzftUC4kS0viq_JgEFG_YvG3Y'
+      verification: defaultVerification,
+      alternates: {
+        canonical: baseUrl,
+      },
+      robots: {
+        index: true,
+        follow: true,
+      },
+      openGraph: {
+        title: "BUNKKER E.C.O.S | Sistema Integral ERP",
+        description: "BUNKKER E.C.O.S - Desarrollado por The Brecha Solutions Company S.A. de C.V. El mejor sistema de gestión empresarial, punto de venta y logística.",
+        url: baseUrl,
+        siteName: "BUNKKER E.C.O.S",
+        locale: "es_MX",
+        type: "website",
       }
     };
   }
@@ -35,8 +54,21 @@ export async function generateMetadata(): Promise<Metadata> {
     title: `${storeName} | Tienda`,
     description: `Catálogo oficial de ${storeName}, impulsado de forma segura por BUNKKER E.C.O.S.`,
     manifest: '/manifest.json',
-    verification: {
-      google: 'CRRkmj4XJ1qPMAkpFbfzftUC4kS0viq_JgEFG_YvG3Y'
+    verification: defaultVerification,
+    alternates: {
+      canonical: baseUrl,
+    },
+    robots: {
+      index: true,
+      follow: true,
+    },
+    openGraph: {
+      title: `${storeName} | Tienda`,
+      description: `Catálogo oficial de ${storeName}, impulsado de forma segura por BUNKKER E.C.O.S.`,
+      url: baseUrl,
+      siteName: storeName,
+      locale: "es_MX",
+      type: "website",
     }
   };
 }
@@ -52,15 +84,18 @@ import ClickSoundProvider from "@/components/ClickSoundProvider";
 import AntiDevTools from "@/components/AntiDevTools";
 import DeviceLockScreen from "@/components/DeviceLockScreen";
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const headersList = await headers();
+  const tenantId = headersList.get('x-tenant-id') || 'default';
+
   return (
     <html lang="es">
       <body className={inter.className}>
-          <SchemaMarkup />
+          <SchemaMarkup tenantId={tenantId} />
           <AntiDevTools />
           <AuthProvider>
             <DeviceLockScreen>

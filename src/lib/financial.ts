@@ -11,7 +11,7 @@ export const ALLOWED_CLOSE_STATUSES = ['READY_TO_SHIP', 'OUT_FOR_DELIVERY', 'DEL
 export function calculateExpectedAmount(orders: { total: number; paymentMethod: string; status: string }[]): number {
   return orders
     .filter(order => 
-      order.paymentMethod === 'cash' && 
+      ['cash', 'CASH', 'efectivo', 'EFECTIVO'].includes(order.paymentMethod) && 
       ALLOWED_CLOSE_STATUSES.includes(order.status)
     )
     .reduce((sum, order) => sum + order.total, 0);

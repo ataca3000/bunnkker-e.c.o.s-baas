@@ -12,7 +12,28 @@ export type ApiAuthResult =
 const WRITE_ROLES = ['superadmin', 'admin', 'inventory', 'sales', 'billing'];
 const DELIVERY_ROLES = ['superadmin', 'admin', 'delivery', 'driver', 'carga_descarga'];
 
-const COOKIE_SECRET = process.env.INTERNAL_API_SECRET || 'fallback-secret-key-12345';
+// ── Cookie Secret — NUNCA tiene fallback inseguro ─────────────────────────────
+// Si INTERNAL_API_SECRET no está configurado en producción, el servidor falla
+// explícitamente en lugar de usar un secreto conocido públicamente.
+const COOKIE_SECRET = (() => {
+  const secret = process.env.INTERNAL_API_SECRET;
+  if (!secret || secret.trim() === '') {
+    if (process.env.NODE_ENV === 'production') {
+      // En producción, un secreto ausente es un error fatal de configuración.
+      throw new Error(
+        '[SECURITY] INTERNAL_API_SECRET no está configurado. ' +
+        'Define esta variable de entorno antes de iniciar el servidor en producción.'
+      );
+    }
+    // En desarrollo, usamos un secreto local con advertencia clara.
+    console.warn(
+      '[SECURITY WARNING] INTERNAL_API_SECRET no configurado. ' +
+      'Usando secreto de desarrollo local. NO inicies en producción sin configurarlo.'
+    );
+    return 'dev-only-secret-never-use-in-production-' + process.env.NODE_ENV;
+  }
+  return secret;
+})();
 
 /**
  * Genera una firma HMAC segura para un rol y UID dados.

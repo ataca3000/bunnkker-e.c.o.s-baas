@@ -3,7 +3,7 @@ import { requireRole } from '@/lib/apiAuth';
 import { prisma } from '@/lib/prisma';
 
 export async function GET(request: NextRequest) {
-    const auth = requireRole(request, ['superadmin', 'admin', 'billing']);
+    const auth = requireRole(request, ['superadmin', 'billing']);
     if (!auth.ok) return auth.response;
     try {
         const tenantId = request.headers.get('x-tenant-id') || 'default-local';

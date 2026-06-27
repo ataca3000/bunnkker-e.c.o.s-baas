@@ -7,7 +7,7 @@ export async function GET(request: NextRequest, props: { params: Promise<{ id: s
     try {
         // Solo el superadmin puede pedir la llave mágica
         const auth = validateApiSession(request);
-        if (!auth.ok || (auth.role !== 'admin' && auth.role !== 'superadmin')) {
+        if (!auth.ok || auth.role !== 'superadmin') {
             return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 403 });
         }
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { validateApiSession } from '@/lib/apiAuth';
+import { requireRole } from '@/lib/apiAuth';
 import { adminDb } from '@/lib/firebase-admin';
 
 // ── Helper: generate license key ADMIN-XXXX-XXXX-XXXX ─────────────────────
@@ -9,15 +9,14 @@ function generateKey(): string {
 }
 
 // ── POST /api/licenses — Create a new license ──────────────────────────────
+// Requiere rol superadmin autenticado via cookie de sesión
 export async function POST(req: NextRequest) {
-    const auth = validateApiSession(req);
+    const auth = requireRole(req, ['superadmin']);
     if (!auth.ok) return auth.response;
-    try {
-        const { clientName, email, maxMachines = 1, expiresAt = null, devSecret } = await req.json();
 
-        if (devSecret !== process.env.DEV_SECRET) {
-            return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-        }
+    try {
+        const { clientName, email, maxMachines = 1, expiresAt = null } = await req.json();
+
         if (!clientName || !email) {
             return NextResponse.json({ error: 'clientName y email son requeridos' }, { status: 400 });
         }
@@ -43,11 +42,10 @@ export async function POST(req: NextRequest) {
 }
 
 // ── GET /api/licenses — List all licenses ─────────────────────────────────
+// Requiere rol superadmin autenticado via cookie de sesión
 export async function GET(req: NextRequest) {
-    const devSecret = req.nextUrl.searchParams.get('secret');
-    if (devSecret !== process.env.DEV_SECRET) {
-        return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
+    const auth = requireRole(req, ['superadmin']);
+    if (!auth.ok) return auth.response;
 
     try {
         const snap = await adminDb.collection('licenses').orderBy('createdAt', 'desc').get();
@@ -60,13 +58,14 @@ export async function GET(req: NextRequest) {
 }
 
 // ── PATCH /api/licenses — Activate / Deactivate ────────────────────────────
+// Requiere rol superadmin autenticado via cookie de sesión
 export async function PATCH(req: NextRequest) {
-    try {
-        const { key, isActive, devSecret, resetMachines } = await req.json();
+    const auth = requireRole(req, ['superadmin']);
+    if (!auth.ok) return auth.response;
 
-        if (devSecret !== process.env.DEV_SECRET) {
-            return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-        }
+    try {
+        const { key, isActive, resetMachines } = await req.json();
+
         if (!key) {
             return NextResponse.json({ error: 'key requerida' }, { status: 400 });
         }

@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
         const userRole = userData?.role;
         const isPremium = userData?.isPremium === true;
 
-        if (userRole !== 'admin' && userRole !== 'superadmin' && userRole !== 'billing') {
+        if (userRole !== 'superadmin' && userRole !== 'billing') {
             return NextResponse.json({ error: 'Permisos insuficientes para facturar' }, { status: 403 });
         }
 

@@ -48,12 +48,12 @@ export default function UserProfile() {
                     recoveryPhone: userData.phone,
                     photoURL: userData.photo,
                     pin: userData.pin
-                }).catch(err => {
+                }).catch((err: any) => {
                     console.warn("Ignorando error de Firebase (Modo Local):", err);
                 });
                 alert("Perfil actualizado correctamente");
             }
-        } catch (err) {
+        } catch (err: unknown) {
             console.error("Error saving profile:", err);
             alert("Error interno al actualizar el perfil.");
         } finally {

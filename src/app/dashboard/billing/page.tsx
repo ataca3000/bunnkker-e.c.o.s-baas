@@ -9,7 +9,7 @@ import { db, auth } from '@/lib/firebase';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 
 function FacturacionContent() {
-    const { ownerCredits, purchaseCredits, siteConfig } = useCart();
+    const { ownerCredits, purchaseCredits, siteConfig, orders } = useCart();
     const router = useRouter();
     const searchParams = useSearchParams();
     const [loading, setLoading] = useState(false);
@@ -76,8 +76,8 @@ function FacturacionContent() {
             const foundInLocal = orders?.find((o: any) => o.id === orderId);
             if (foundInLocal) {
                 setOrderFound(foundInLocal);
-                if (foundInLocal.customer?.email) setCustomerEmail(foundInLocal.customer.email);
-                else if (foundInLocal.customerEmail) setCustomerEmail(foundInLocal.customerEmail);
+                if ((foundInLocal.customer as any)?.email) setCustomerEmail((foundInLocal.customer as any).email);
+                else if ((foundInLocal as any).customerEmail) setCustomerEmail((foundInLocal as any).customerEmail);
                 setLoading(false);
                 return;
             }
@@ -89,7 +89,7 @@ function FacturacionContent() {
 
             if (foundInApi) {
                 setOrderFound(foundInApi);
-                if (foundInApi.customer?.email) setCustomerEmail(foundInApi.customer.email);
+                if ((foundInApi.customer as any)?.email) setCustomerEmail((foundInApi.customer as any).email);
             } else {
                 alert("❌ Orden no encontrada en la base de datos o en memoria.");
             }

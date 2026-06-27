@@ -75,7 +75,7 @@ export async function PATCH(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-    const auth = requireRole(request, ['superadmin', 'admin', 'inventory']);
+    const auth = requireRole(request, ['superadmin', 'inventory']);
     if (!auth.ok) return auth.response;
 
     try {

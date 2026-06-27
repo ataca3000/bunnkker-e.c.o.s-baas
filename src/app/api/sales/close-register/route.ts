@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
         // 2. Sumar todas las ventas en efectivo (cash) completadas/enviadas desde ese momento
         const whereClause: any = {
             tenantId,
-            paymentMethod: 'cash',
+            paymentMethod: { in: ['cash', 'CASH', 'efectivo', 'EFECTIVO'] },
             status: { in: ALLOWED_CLOSE_STATUSES }
         };
 

@@ -484,10 +484,11 @@ export default function InventoryDashboard() {
         setFormData({
             name: '', category: '', description: '',
             barcode: '', image: '',
-            estante: shelfName === 'Sin Asignar' ? '' : shelfName, 
+            estante: shelfName === 'Sin Asignar' ? '' : shelfName,
             fila: levelName,
             price: '', stock: '',
-            warranty: '', unitType: 'PZA'
+            warranty: '', unitType: 'PZA',
+            isBulk: false
         });
         setIsCreating(true);
         setStep(1);
@@ -598,7 +599,7 @@ export default function InventoryDashboard() {
             alert('Modo Demostración: Operación no permitida.');
             return;
         }
-        if (profile?.role !== 'superadmin' && profile?.role !== 'admin') {
+        if (profile?.role !== 'superadmin') {
             alert('Solo el dueño o administrador general puede eliminar productos permanentemente.');
             return;
         }
@@ -612,7 +613,7 @@ export default function InventoryDashboard() {
                     type: 'SECURITY_ALERT',
                     userId: profile?.uid || 'SYSTEM',
                     userName: profile?.displayName || 'Dueño',
-                    userRole: profile?.role || 'admin',
+                    userRole: profile?.role || 'superadmin',
                     description: `Producto Eliminado Definitivamente (Resolución de Pérdida): ${productName}`,
                     metadata: { productId, action: 'delete_product' }
                 });

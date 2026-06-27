@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
         const role = decodedToken.role; // Asumiendo custom claims
 
         // Regla: Solo Caja y Patio pueden sincronizar datos locales (Ventas o Entregas)
-        if (role !== 'superadmin' && role !== 'admin' && role !== 'sales' && role !== 'patio') {
+        if (role !== 'superadmin' && role !== 'sales' && role !== 'patio') {
             return NextResponse.json({ error: 'Rol no autorizado para sincronización offline' }, { status: 403 });
         }
 
