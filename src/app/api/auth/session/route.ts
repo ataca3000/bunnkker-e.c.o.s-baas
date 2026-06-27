@@ -10,7 +10,7 @@
  *      genera el hash automáticamente para migrarlo en el momento.
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { signRole } from '@/lib/apiAuth';
+import { signRole, hashPinSha256 } from '@/lib/apiAuth';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 
@@ -34,9 +34,14 @@ export async function POST(request: NextRequest) {
 
     // ── Validación real contra la Base de Datos Local ──────────────────────
     if (pin) {
-      // 1. Búsqueda directa del usuario por PIN único para mitigar el DoS de CPU
+      const pinSha = hashPinSha256(pin);
+
+      // 1. Búsqueda directa del usuario por PIN único hasheado (o fallback legacy en texto plano)
       const user = await prisma.user.findFirst({ 
-        where: { pin: pin, active: true } 
+        where: { 
+          pin: { in: [pinSha, pin] },
+          active: true 
+        } 
       });
 
       if (!user) {
@@ -58,10 +63,15 @@ export async function POST(request: NextRequest) {
             { status: 401 }
           );
         }
-      } else {
-        // Migración automática al vuelo
-        const pinHash = await bcrypt.hash(pin, SALT_ROUNDS);
-        await prisma.user.update({ where: { id: user.id }, data: { pinHash } });
+      }
+
+      // Migrar el campo legacy 'pin' a SHA-256 e inyectar 'pinHash' si no existe
+      if (user.pin === pin) {
+        const pinHash = user.pinHash || await bcrypt.hash(pin, SALT_ROUNDS);
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { pin: pinSha, pinHash }
+        });
       }
 
       const matchedUser = user;

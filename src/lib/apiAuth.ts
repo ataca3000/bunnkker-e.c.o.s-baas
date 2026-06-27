@@ -100,3 +100,40 @@ export function requireRole(
 }
 
 export { WRITE_ROLES, DELIVERY_ROLES };
+
+/**
+ * Hashea un PIN usando SHA-256 de forma determinista para la columna 'pin' de la base de datos local.
+ */
+export function hashPinSha256(pin: string): string {
+  return crypto.createHash('sha256').update(pin).digest('hex');
+}
+
+/**
+ * Encripta un objeto JSON usando AES-256-CBC y el COOKIE_SECRET para enlaces mágicos seguros.
+ */
+export function encryptToken(data: any): string {
+  const key = crypto.createHash('sha256').update(COOKIE_SECRET).digest();
+  const iv = crypto.randomBytes(16);
+  const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
+  let encrypted = cipher.update(JSON.stringify(data), 'utf8', 'hex');
+  encrypted += cipher.final('hex');
+  return `${iv.toString('hex')}:${encrypted}`;
+}
+
+/**
+ * Desencripta un token AES-256-CBC seguro del enlace mágico.
+ */
+export function decryptToken(token: string): any {
+  try {
+    const [ivHex, encryptedHex] = token.split(':');
+    if (!ivHex || !encryptedHex) return null;
+    const key = crypto.createHash('sha256').update(COOKIE_SECRET).digest();
+    const iv = Buffer.from(ivHex, 'hex');
+    const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
+    let decrypted = decipher.update(encryptedHex, 'hex', 'utf8');
+    decrypted += decipher.final('utf8');
+    return JSON.parse(decrypted);
+  } catch (e) {
+    return null;
+  }
+}
