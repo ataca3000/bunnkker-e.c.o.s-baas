@@ -361,7 +361,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         if (!profile?.uid || profile.uid === 'local_owner') return;
 
         // RBAC Check
-        const isMasterAdmin = profile.role === 'admin' || profile.role === 'superadmin';
+        const isMasterAdmin = profile.role === 'superadmin';
         if (!isMasterAdmin && isDashboard) {
             const paths = rolePaths[profile.role] || [];
             const isAllowed = paths.some(p => pathname?.startsWith(p));
@@ -440,7 +440,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         return <>{children}</>;
     }
 
-    const isMasterAdmin = profile?.role === 'admin' || profile?.role === 'superadmin';
+    const isMasterAdmin = profile?.role === 'superadmin';
     const sidebarWidth  = isCollapsed ? '90px' : '280px';
 
     /* ── Breadcrumbs helper ───────────────────────────────────── */

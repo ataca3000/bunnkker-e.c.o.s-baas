@@ -188,37 +188,39 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     return <>{children}</>;
 }
 
-// Custom hook que puentea Zustand para no romper los 32 archivos existentes
 export const useCart = () => {
     const { isReadOnly, profile } = useAuth();
+    
+    // Al no suscribir a useERPStore() completo, evitamos re-renders en cascada.
+    // Solo extraemos getters para las funciones, o devolvemos todo el store proxy
+    // NOTA: Para mantener la API intacta sin reescribir docenas de archivos,
+    // exportaremos el proxy del store COMPLETO, pero los componentes usarán selectores 
+    // específicos para su estado, y estas funciones NO causarán renders internos aquí.
     const store = useERPStore();
 
-    // Re-creamos las funciones de negocio aquí para que tengan acceso a profile/auth
-    const createOrder = async (
+    const createOrder = useCallback(async (
         customerData: { name: string; phone: string; address: string; rfc?: string; regimenFiscal?: string; usoCFDI?: string; deliveryMethod?: string; paymentMethod?: string; tip?: number; lat?: number; lng?: number; pickupTime?: string },
         requiresInvoice: boolean = false,
         isOnline: boolean = false,
         asRequest: boolean = false 
     ) => {
+        const state = useERPStore.getState();
         if (isReadOnly) { alert('🔒 MODO DEMOSTRACIÓN: Los pedidos no se guardan.'); return; }
-        if (store.firebaseStatus === 'offline') { console.warn('⚠️ Sin conexión. El pedido se encolará localmente.'); }
-        if (store.cart.length === 0) { alert('⚠️ El carrito está vacío.'); return; }
+        if (state.firebaseStatus === 'offline') { console.warn('⚠️ Sin conexión. El pedido se encolará localmente.'); }
+        if (state.cart.length === 0) { alert('⚠️ El carrito está vacío.'); return; }
 
         const orderId = `ORD-${Date.now().toString().slice(-6)}`;
-        let orderTotal = store.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        let orderTotal = state.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
         orderTotal += (customerData.tip || 0);
-        
-        const developerFee = 0;
-        const ownerAutomationFee = 0;
 
         let isNightQueue = false;
-        if (store.siteConfig.businessHours?.isNightModeSimulated) {
+        if (state.siteConfig.businessHours?.isNightModeSimulated) {
             isNightQueue = true;
-        } else if (store.siteConfig.businessHours?.open && store.siteConfig.businessHours?.close) {
+        } else if (state.siteConfig.businessHours?.open && state.siteConfig.businessHours?.close) {
             const now = new Date();
             const currentMinutes = now.getHours() * 60 + now.getMinutes();
-            const [openH, openM] = store.siteConfig.businessHours.open.split(':').map(Number);
-            const [closeH, closeM] = store.siteConfig.businessHours.close.split(':').map(Number);
+            const [openH, openM] = state.siteConfig.businessHours.open.split(':').map(Number);
+            const [closeH, closeM] = state.siteConfig.businessHours.close.split(':').map(Number);
             const openMinutes = openH * 60 + openM;
             const closeMinutes = closeH * 60 + closeM;
             if (currentMinutes < openMinutes || currentMinutes > closeMinutes) {
@@ -256,7 +258,7 @@ export const useCart = () => {
 
         const newOrder = {
             id: orderId, customer: customerData, customerEmail: customerData.phone,
-            items: [...store.cart], total: orderTotal,
+            items: [...state.cart], total: orderTotal,
             date: new Date().toISOString(), status: isNightQueue ? 'NIGHT_QUEUE' : finalStatus as any,
             expiresAt,
             paymentMethod: asRequest ? (customerData.paymentMethod || 'pago_caja') : (isOnline ? 'Online' : 'Venta Directa'), requiresInvoice,
@@ -265,7 +267,6 @@ export const useCart = () => {
         };
 
         try {
-            // ── LOCAL API SYNC ──
             const res = await fetch('/api/orders', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -273,7 +274,7 @@ export const useCart = () => {
                     ...newOrder,
                     id: orderId,
                     stockDeducted: true,
-                    items: store.cart.map(i => ({ id: i.id, quantity: i.quantity, price: i.price }))
+                    items: state.cart.map(i => ({ id: i.id, quantity: i.quantity, price: i.price }))
                 })
             });
 
@@ -282,15 +283,12 @@ export const useCart = () => {
                 throw new Error(errData.error || 'Error al guardar en el servidor local');
             }
 
-            // 2. Local-only: We are no longer syncing maintenanceCredits to the cloud automatically.
-            // Owner balance/credits can be managed via local SQLite later if needed.
-
-            store.clearCart();
+            state.clearCart();
             await logAudit({
                 type: 'ORDER_CREATE', userId: profile?.uid || 'GUEST',
                 userName: profile?.displayName || customerData.name,
                 userRole: profile?.role || 'customer',
-                description: `Pedido: ${orderId} por ${store.formatCurrency(orderTotal)}`,
+                description: `Pedido: ${orderId} por ${state.formatCurrency(orderTotal)}`,
                 metadata: { orderId, total: orderTotal, stockDeducted: true },
             });
             return { orderId, deliveryPin };
@@ -299,21 +297,21 @@ export const useCart = () => {
             alert(`❌ Venta rechazada:\n${err.message}`);
             throw err;
         }
-    };
+    }, [isReadOnly, profile]);
 
-    const confirmRequest = async (orderId: string) => {
+    const confirmRequest = useCallback(async (orderId: string) => {
+        const state = useERPStore.getState();
         if (isReadOnly) return;
-        if (store.firebaseStatus === 'offline') console.warn('⚠️ Sin conexión. La confirmación se encolará.');
+        if (state.firebaseStatus === 'offline') console.warn('⚠️ Sin conexión. La confirmación se encolará.');
         
-        const order = store.orders.find(o => o.id === orderId);
+        const order = state.orders.find(o => o.id === orderId);
         if (!order) return;
 
         const sellerName = profile?.displayName || 'Vendedor';
         const timestamp = new Date().toISOString().replace('T', ' ').split('.')[0];
-        const plainAudit = `[${timestamp}] ${sellerName.toUpperCase()}: CONFIRMÓ COBRO ${orderId} - TOTAL ${store.formatCurrency(order.total)}`;
+        const plainAudit = `[${timestamp}] ${sellerName.toUpperCase()}: CONFIRMÓ COBRO ${orderId} - TOTAL ${state.formatCurrency(order.total)}`;
 
         try {
-            // 1. Marcar orden como pagada en el Servidor Local
             const nextStatus = order.deliveryType === 'DELIVERY' || order.deliveryMethod === 'repartidor' ? 'READY_TO_SHIP' : 'COMPLETED';
             const res = await fetch('/api/orders', {
                 method: 'PATCH',
@@ -329,9 +327,6 @@ export const useCart = () => {
 
             if (!res.ok) throw new Error('Error actualizando orden localmente');
 
-            // 2. (Deprecado) Sumar KPI al vendedor que confirmó (en Firebase, centralizado)
-            // Esto ahora se calculará sumando localmente las órdenes en lugar de guardar un contador aislado.
-
             await logAudit({
                 type: 'ORDER_CREATE', userId: profile?.uid || 'SYSTEM',
                 userName: sellerName, userRole: 'sales',
@@ -339,10 +334,11 @@ export const useCart = () => {
                 metadata: { orderId }
             });
         } catch (err) { console.error("Error confirmando cobro:", err); }
-    };
+    }, [isReadOnly, profile]);
 
-    const startLoading = async (orderId: string) => {
-        if (isReadOnly || store.firebaseStatus === 'offline') return;
+    const startLoading = useCallback(async (orderId: string) => {
+        const state = useERPStore.getState();
+        if (isReadOnly || state.firebaseStatus === 'offline') return;
         const workerName = profile?.displayName || 'Cargador';
         const timestamp = new Date().toISOString().replace('T', ' ').split('.')[0];
         const plainAudit = `[${timestamp}] ${workerName.toUpperCase()}: INICIÓ CARGA DE ORDEN ${orderId}`;
@@ -364,10 +360,11 @@ export const useCart = () => {
                 description: plainAudit, metadata: { orderId, action: 'start_loading' }
             });
         } catch (err) { throw err; }
-    };
+    }, [isReadOnly, profile]);
 
-    const completeLoading = async (orderId: string) => {
-        if (isReadOnly || store.firebaseStatus === 'offline') return;
+    const completeLoading = useCallback(async (orderId: string) => {
+        const state = useERPStore.getState();
+        if (isReadOnly || state.firebaseStatus === 'offline') return;
         const workerName = profile?.displayName || 'Cargador';
         const timestamp = new Date().toISOString().replace('T', ' ').split('.')[0];
         const plainAudit = `[${timestamp}] ${workerName.toUpperCase()}: FINALIZÓ CARGA DE ORDEN ${orderId}`;
@@ -384,21 +381,19 @@ export const useCart = () => {
                 })
             });
 
-            // (Deprecado) Update KPI score in Firebase
-            // KPI calculation should be done by aggregating local orders.
-
             await logAudit({
                 type: 'CONFIG_UPDATE', userId: profile?.uid || 'SYSTEM',
                 userName: workerName, userRole: 'carga_descarga',
                 description: plainAudit, metadata: { orderId, action: 'complete_loading' }
             });
         } catch (err) { throw err; }
-    };
+    }, [isReadOnly, profile]);
 
-    const exportInventoryToCSV = () => {
-        if (store.products.length === 0) return;
+    const exportInventoryToCSV = useCallback(() => {
+        const state = useERPStore.getState();
+        if (state.products.length === 0) return;
         const headers = ['ID', 'Nombre', 'Categoria', 'Precio', 'Stock', 'Barcode'];
-        const rows = store.products.map(p => [
+        const rows = state.products.map(p => [
             p.id, p.name, p.category, p.price, p.stock, p.barcode || ''
         ]);
         const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
@@ -410,36 +405,38 @@ export const useCart = () => {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-    };
+    }, []);
 
-    const sendDailyClosing = async () => {
+    const sendDailyClosing = useCallback(async () => {
+        const state = useERPStore.getState();
         if (isReadOnly) return;
         const today = new Date().toISOString().split('T')[0];
-        const todaysOrders = store.orders.filter(o => (o.date || '').startsWith(today) && o.status === 'paid');
+        const todaysOrders = state.orders.filter(o => (o.date || '').startsWith(today) && o.status === 'paid');
         const totalSales = todaysOrders.reduce((sum, o) => sum + o.total, 0);
         const salesCount = todaysOrders.length;
-        const reportText = `CORTE DE CAJA - ${today}\n---------------------------\nVentas Totales: ${store.formatCurrency(totalSales)}\nNúmero de Pedidos: ${salesCount}\nVendedor Activo: ${profile?.displayName || 'Admin'}\n`;
+        const reportText = `CORTE DE CAJA - ${today}\n---------------------------\nVentas Totales: ${state.formatCurrency(totalSales)}\nNúmero de Pedidos: ${salesCount}\nVendedor Activo: ${profile?.displayName || 'Admin'}\n`;
 
         try {
             await fetch('/api/admin/daily-closing', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ report: reportText, ownerEmail: store.siteConfig.businessPhone })
+                body: JSON.stringify({ report: reportText, ownerEmail: state.siteConfig.businessPhone })
             });
             await logAudit({
                 type: 'CONFIG_UPDATE', userId: profile?.uid || 'SYSTEM',
                 userName: profile?.displayName || 'Admin', userRole: 'admin',
-                description: `CORTE DE CAJA GENERADO: Total ${store.formatCurrency(totalSales)}`,
+                description: `CORTE DE CAJA GENERADO: Total ${state.formatCurrency(totalSales)}`,
                 metadata: { total: totalSales, count: salesCount }
             });
             alert("✅ Corte de caja enviado al correo del dueño.");
         } catch (e) { console.error(e); }
-    };
+    }, [isReadOnly, profile]);
 
-    const updateProductPrice = async (productId: string, newPrice: number, adminName: string) => {
+    const updateProductPrice = useCallback(async (productId: string, newPrice: number, adminName: string) => {
+        const state = useERPStore.getState();
         if (isReadOnly) { alert('🔒 MODO DEMOSTRACIÓN.'); return; }
-        if (store.firebaseStatus === 'offline') { alert('⚠️ Sin conexión.'); return; }
-        const product = store.products.find(p => p.id === productId);
+        if (state.firebaseStatus === 'offline') { alert('⚠️ Sin conexión.'); return; }
+        const product = state.products.find(p => p.id === productId);
         if (!product) return;
         try {
             await fetch('/api/products', {
@@ -449,16 +446,17 @@ export const useCart = () => {
             });
             await logAudit({
                 type: 'PRICE_CHANGE', userId: adminName, userName: adminName, userRole: 'admin',
-                description: `Precio ${product.name}: ${store.formatCurrency(product.price)} → ${store.formatCurrency(newPrice)}`,
+                description: `Precio ${product.name}: ${state.formatCurrency(product.price)} → ${state.formatCurrency(newPrice)}`,
                 metadata: { productId, oldPrice: product.price, newPrice },
             });
         } catch (err: any) { console.error('Error', err); }
-    };
+    }, [isReadOnly]);
 
-    const updateProduct = async (productId: string, updates: Partial<Product>, adminName: string) => {
+    const updateProduct = useCallback(async (productId: string, updates: Partial<Product>, adminName: string) => {
+        const state = useERPStore.getState();
         if (isReadOnly) { alert('🔒 MODO DEMOSTRACIÓN.'); return; }
-        if (store.firebaseStatus === 'offline') { alert('⚠️ Sin conexión.'); return; }
-        const product = store.products.find(p => p.id === productId);
+        if (state.firebaseStatus === 'offline') { alert('⚠️ Sin conexión.'); return; }
+        const product = state.products.find(p => p.id === productId);
         if (!product) return;
         try {
             await fetch('/api/products', {
@@ -471,26 +469,25 @@ export const useCart = () => {
                 description: `Producto editado: ${product.name}`, metadata: { productId, updates },
             });
         } catch (err: any) { console.error('Error', err); }
-    };
+    }, [isReadOnly, profile]);
 
-    const purchaseCredits = async (amount: number, type: 'invoice' | 'maintenance') => {
+    const purchaseCredits = useCallback(async (amount: number, type: 'invoice' | 'maintenance') => {
         if (isReadOnly) { alert('🔒 MODO DEMOSTRACIÓN.'); return; }
         try {
-            // Local fallback logic can be placed here if settings table is created.
             await logAudit({
                 type: 'CONFIG_UPDATE', userId: 'SYSTEM', userName: 'Admin', userRole: 'admin',
                 description: `Recarga ${type}: +${amount}`, metadata: { amount, type },
             });
             alert('Recarga local registrada (Pendiente de implementación en SQLite)');
         } catch (err: any) { console.error(err); }
-    };
+    }, [isReadOnly]);
 
-    const cancelOrder = async (orderId: string) => {
-        if (isReadOnly || store.firebaseStatus === 'offline') return;
-        const order = store.orders.find(o => o.id === orderId);
+    const cancelOrder = useCallback(async (orderId: string) => {
+        const state = useERPStore.getState();
+        if (isReadOnly || state.firebaseStatus === 'offline') return;
+        const order = state.orders.find(o => o.id === orderId);
         if (!order) return;
         try {
-            // Cancelar la orden localmente
             await fetch('/api/orders', {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
@@ -501,9 +498,6 @@ export const useCart = () => {
                 })
             });
 
-            // Reembolsar fee en la nube (Desactivado en versión local)
-
-            // Devolver stock localmente si aplica
             if ((order as any).stockDeducted === true) {
                 for (const item of order.items) {
                     await fetch('/api/products', {
@@ -520,12 +514,13 @@ export const useCart = () => {
                 description: `Pedido cancelado: ${orderId}`, metadata: { orderId, refundTotal: order.total },
             });
         } catch (err: any) { console.error('Error', err); }
-    };
+    }, [isReadOnly, profile]);
 
-    const updateSiteConfig = async (config: Partial<SiteConfig>) => {
+    const updateSiteConfig = useCallback(async (config: Partial<SiteConfig>) => {
+        const state = useERPStore.getState();
         if (isReadOnly) return;
-        const merged = { ...store.siteConfig, ...config };
-        store.setSiteConfig(merged); // optimistic
+        const merged = { ...state.siteConfig, ...config };
+        state.setSiteConfig(merged);
         try { 
             localStorage.setItem('_admincom_site_config', JSON.stringify(merged)); 
             await logAudit({
@@ -534,7 +529,7 @@ export const useCart = () => {
                 description: 'Configuración de sitio actualizada localmente', metadata: { config },
             });
         } catch (e) { console.error(e); }
-    };
+    }, [isReadOnly, profile]);
 
     return {
         ...store,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { ShieldCheck, UserPlus, Trash2, RefreshCw, Users, Key, Crown, Zap, Package, TrendingUp, Truck, Megaphone, Circle, QrCode, X, Copy } from 'lucide-react';
+import { ShieldCheck, UserPlus, Trash2, RefreshCw, Users, Key, Crown, Zap, Package, TrendingUp, Truck, Megaphone, Circle, QrCode, X, Copy, Smartphone } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import QRCode from 'react-qr-code';
 
@@ -36,7 +36,6 @@ export default function TeamManagement() {
     const [sending, setSending] = useState(false);
 
     const roles = [
-        { id: 'admin',     label: 'Gerente / Admin' },
         { id: 'inventory', label: 'Gestor de Inventario' },
         { id: 'sales',     label: 'Caja / Ventas' },
         { id: 'delivery',  label: 'Repartidor / Chofer' },
@@ -125,8 +124,15 @@ export default function TeamManagement() {
         try {
             const res = await fetch(`/api/users/${user.id}/magic`);
             const data = await res.json();
+            
+            const ipRes = await fetch('/api/network-ip');
+            const ipData = await ipRes.json();
+            
             if (data.success && typeof window !== 'undefined') {
-                const host = window.location.origin;
+                const protocol = window.location.protocol;
+                const port = window.location.port ? `:${window.location.port}` : '';
+                const host = ipData.success ? `${protocol}//${ipData.ip}${port}` : window.location.origin;
+                
                 setMagicUrl(`${host}/api/auth/magic?token=${data.payload}`);
             } else {
                 alert('No se pudo generar la llave mágica.');
@@ -135,6 +141,22 @@ export default function TeamManagement() {
         } catch {
             alert('Error de conexión al generar la llave.');
             setQrUser(null);
+        }
+    };
+
+    const handleResetDevice = async (userId: string) => {
+        if (!confirm('¿Seguro que deseas desvincular el dispositivo de este usuario? Tendrá que volver a iniciar sesión en su teléfono.')) return;
+        
+        try {
+            const res = await fetch(`/api/users/${userId}/reset-device`, { method: 'POST' });
+            const data = await res.json();
+            if (data.success) {
+                alert('Dispositivo desvinculado con éxito.');
+            } else {
+                alert('Error al desvincular: ' + data.error);
+            }
+        } catch (err: any) {
+            alert('Error de conexión');
         }
     };
 
@@ -223,6 +245,13 @@ export default function TeamManagement() {
                                                                         className="flex-1 text-center bg-slate-900/50 hover:bg-sky-500/20 text-sky-400 text-[10px] font-black uppercase tracking-widest py-1.5 rounded-lg transition-colors border border-sky-500/10"
                                                                     >
                                                                         Rol
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => handleResetDevice(user.id)}
+                                                                        className="flex-1 text-center bg-slate-900/50 hover:bg-orange-500/20 text-orange-400 text-[10px] font-black uppercase tracking-widest py-1.5 rounded-lg transition-colors border border-orange-500/10 flex items-center justify-center"
+                                                                        title="Desvincular Dispositivo"
+                                                                    >
+                                                                        <Smartphone size={12} />
                                                                     </button>
                                                                     <button
                                                                         onClick={() => handleDeleteUser(user.id)}

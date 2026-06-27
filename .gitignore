@@ -1,16 +1,28 @@
-dist-final/
-dist-final/
+# Build outputs
 .next/
-node_modules/
-dist-final/
-dist-final/
-.next/
-node_modules/
 dist/
 build/
+dist-final/
+dist_electron/
+
+# Dependencies
+node_modules/
+
+# Logs
 *.log
-.env.local/
-node_modules
+
+# Environment — NUNCA commitar .env.local con secrets reales
+.env.local
+.env.*.local
+
+# SQLite — La base de datos local contiene PINs y datos de clientes
+# Cada instalación genera su propia DB via: npx prisma migrate dev
+prisma/dev.db
+prisma/dev.db-shm
+prisma/dev.db-wal
+prisma/*.db
+prisma/*.db-shm
+prisma/*.db-wal
 
 # Electron outputs
 dist_electron/

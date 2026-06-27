@@ -30,7 +30,7 @@ export default function QRGeneratorPage() {
         window.print();
     };
 
-    if (!profile || (profile.role !== 'admin' && profile.role !== 'superadmin')) {
+    if (!profile || profile.role !== 'superadmin') {
         return <div className="p-8 text-white">No tienes permisos para ver esta página.</div>;
     }
 

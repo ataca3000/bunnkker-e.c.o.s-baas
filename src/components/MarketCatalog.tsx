@@ -272,6 +272,11 @@ export default function MarketCatalog({ initialCategory, hideHeader }: { initial
 
                     <div className="flex gap-3 items-center flex-wrap">
                         <button
+                            onClick={() => window.location.href = '/login'}
+                            className="btn-sanjose px-5 py-3 flex items-center gap-2 rounded-xl text-sm shadow-lg shadow-purple-900/10 bg-purple-600/20 text-purple-300 border border-purple-500/30 hover:bg-purple-600/40 transition-colors">
+                            🔑 INICIAR SESIÓN
+                        </button>
+                        <button
                             onClick={() => setShowScanner(true)}
                             className="btn-sanjose px-5 py-3 flex items-center gap-2 rounded-xl text-sm shadow-lg shadow-blue-900/10">
                             <QrCode size={18} /> ESCANEAR

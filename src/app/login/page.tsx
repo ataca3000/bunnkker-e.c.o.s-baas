@@ -81,11 +81,14 @@ export default function LoginPage() {
         setError('');
 
         try {
+            const { getDeviceFingerprint } = await import('@/lib/fingerprint');
+            const deviceId = getDeviceFingerprint();
+            
             // Llamar directamente al servidor local que validará el PIN contra SQLite
             const res = await fetch('/api/auth/session', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ pin: code })
+                body: JSON.stringify({ pin: code, deviceId })
             });
             const data = await res.json();
 

@@ -19,7 +19,7 @@ export default function WalkieTalkieRadio() {
     const processedMsgIds = useRef<Set<string>>(new Set());
     const lastMsgCount = useRef(0);
 
-    const isStaff = profile?.role && ['superadmin', 'admin', 'sales', 'inventory', 'billing', 'driver', 'carga_descarga'].includes(profile.role);
+    const isStaff = profile?.role && ['superadmin', 'sales', 'inventory', 'billing', 'driver', 'carga_descarga'].includes(profile.role);
 
     // Audio Synthesis: Generar ruido estático de radio virtual
     const playRadioStatic = (duration = 0.4, frequency = 1200, q = 1.5) => {

@@ -1,4 +1,4 @@
-export type Role = 'superadmin' | 'admin' | 'inventory' | 'billing' | 'marketing' | 'sales' | 'delivery' | 'customer' | 'node';
+export type Role = 'superadmin' | 'inventory' | 'billing' | 'marketing' | 'sales' | 'delivery' | 'customer' | 'node';
 
 export type Permission = 
   | 'ADMIN_PANEL'
@@ -20,11 +20,6 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'ADMIN_PANEL', 'USERS_MANAGE', 'INVENTORY_VIEW', 'INVENTORY_MANAGE', 
     'ORDERS_VIEW', 'ORDERS_MANAGE', 'BILLING_MANAGE', 'MARKETING_MANAGE', 
     'SALES_VIEW', 'DELIVERY_MANAGE', 'CUSTOMER_BUY', 'SYSTEM_LOGS', 'CONFIG_SENSITIVE'
-  ],
-  admin: [
-    'ADMIN_PANEL', 'USERS_MANAGE', 'INVENTORY_VIEW', 'INVENTORY_MANAGE', 
-    'ORDERS_VIEW', 'ORDERS_MANAGE', 'BILLING_MANAGE', 'MARKETING_MANAGE', 
-    'SALES_VIEW', 'DELIVERY_MANAGE', 'CUSTOMER_BUY'
   ],
   inventory: [
     'ADMIN_PANEL', 'INVENTORY_VIEW', 'INVENTORY_MANAGE', 'ORDERS_VIEW'

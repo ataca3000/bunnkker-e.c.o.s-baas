@@ -23,6 +23,12 @@ export function getTenantId(): string {
         return 'default';
     }
 
+    // Expresión regular para detectar si es una dirección IP (IPv4) y evitar asignación errónea en LAN
+    const isIP = /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/.test(hostname);
+    if (isIP) {
+        return 'default';
+    }
+
     // Ejemplo: ferreteriasol.admin.com -> ["ferreteriasol", "admin", "com"] -> "ferreteriasol"
     const parts = hostname.split('.');
     if (parts.length >= 3) {
