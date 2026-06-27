@@ -354,7 +354,7 @@ export default function MarketCatalog({ initialCategory, hideHeader }: { initial
                     </h2>
                 </div>
 
-                <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 auto-rows-auto">
+                <motion.div layout className="grid grid-cols-1 sm:grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-6 auto-rows-auto">
                     {filtered.length > 0 ? (
                         filtered.slice(0, visibleCount).map((p, index) => (
                             <ProductCard key={p.id} p={p} index={index} onOpenDetails={setSelectedProduct} onGenerateCFDI={setCfdiProduct} />

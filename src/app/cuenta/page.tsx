@@ -123,53 +123,62 @@ export default function UserAccount() {
     // PANTALLA DE LOGIN / REGISTRO
     if (!customer) {
         return (
-            <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
-                <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md">
+            <div className="min-h-screen bg-[#0a0514] flex flex-col items-center justify-center p-4 relative overflow-hidden">
+                {/* Background glow */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-sky-500/10 blur-[120px] rounded-full pointer-events-none"></div>
+
+                <div className="bg-slate-900/60 backdrop-blur-2xl border border-slate-700/50 p-8 rounded-[32px] shadow-2xl shadow-black/50 w-full max-w-md relative z-10">
                     <div className="text-center mb-8">
-                        <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <User size={32} className="text-blue-600" />
+                        <div className="w-16 h-16 bg-gradient-to-tr from-sky-500 to-indigo-500 rounded-[20px] shadow-lg shadow-sky-500/20 flex items-center justify-center mx-auto mb-5">
+                            <User size={32} className="text-white" />
                         </div>
-                        <h1 className="text-2xl font-bold text-gray-800">Acceso a Clientes</h1>
-                        <p className="text-gray-500 text-sm mt-2">Ingresa tu número para ver tus compras y facturas</p>
+                        <h1 className="text-3xl font-black text-white tracking-tight">Acceso a Clientes</h1>
+                        <p className="text-slate-400 text-sm mt-2 font-medium">Ingresa tu número para ver tus compras y facturas</p>
                     </div>
 
                     <form onSubmit={handleAuth} className="space-y-4">
                         {isRegistering && (
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Nombre Completo</label>
-                                <input type="text" value={name} onChange={e => setName(e.target.value)} required className="w-full p-3 border rounded-xl" placeholder="Juan Pérez" />
+                            <div className="space-y-1.5">
+                                <label className="block text-xs font-bold text-slate-300 uppercase tracking-widest ml-1">Nombre Completo</label>
+                                <input type="text" value={name} onChange={e => setName(e.target.value)} required className="w-full p-4 bg-slate-800/80 border border-slate-700 text-white rounded-2xl focus:border-sky-500 focus:ring-1 focus:ring-sky-500 outline-none transition-all" placeholder="Ej. Juan Pérez" />
                             </div>
                         )}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono Móvil (10 dígitos)</label>
+                        <div className="space-y-1.5">
+                            <label className="block text-xs font-bold text-slate-300 uppercase tracking-widest ml-1">Teléfono Móvil (10 dígitos)</label>
                             <div className="relative">
-                                <Phone size={18} className="absolute left-3 top-3.5 text-gray-400" />
-                                <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} required maxLength={10} className="w-full p-3 pl-10 border rounded-xl" placeholder="5551234567" />
+                                <Phone size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                                <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} required maxLength={10} className="w-full p-4 pl-12 bg-slate-800/80 border border-slate-700 text-white rounded-2xl focus:border-sky-500 focus:ring-1 focus:ring-sky-500 outline-none transition-all font-mono tracking-wider" placeholder="5551234567" />
                             </div>
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">PIN de Seguridad (4 dígitos)</label>
+                        <div className="space-y-1.5">
+                            <label className="block text-xs font-bold text-slate-300 uppercase tracking-widest ml-1">PIN de Seguridad (4 dígitos)</label>
                             <div className="relative">
-                                <Lock size={18} className="absolute left-3 top-3.5 text-gray-400" />
-                                <input type="password" value={pin} onChange={e => setPin(e.target.value)} required maxLength={4} className="w-full p-3 pl-10 border rounded-xl" placeholder="••••" />
+                                <Lock size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                                <input type="password" value={pin} onChange={e => setPin(e.target.value)} required maxLength={4} minLength={4} className="w-full p-4 pl-12 bg-slate-800/80 border border-slate-700 text-white rounded-2xl focus:border-sky-500 focus:ring-1 focus:ring-sky-500 outline-none transition-all font-mono tracking-widest text-lg" placeholder="••••" />
                             </div>
                         </div>
-
-                        {authError && <p className="text-red-500 text-sm font-bold text-center">{authError}</p>}
-
-                        <button type="submit" className="w-full bg-blue-600 text-white font-bold p-3 rounded-xl hover:bg-blue-700 transition">
+                        
+                        {authError && <div className="p-3 bg-red-500/10 border border-red-500/30 text-red-400 text-sm font-medium rounded-xl text-center">{authError}</div>}
+                        
+                        <button type="submit" className="w-full bg-gradient-to-r from-sky-500 to-indigo-500 hover:from-sky-400 hover:to-indigo-400 text-white font-black py-4 rounded-2xl transition-all shadow-lg shadow-sky-500/25 active:scale-[0.98] uppercase tracking-widest text-sm mt-4">
                             {isRegistering ? 'Crear mi cuenta' : 'Entrar a mi cuenta'}
                         </button>
                     </form>
 
-                    <p className="text-center text-sm text-gray-500 mt-6">
-                        {isRegistering ? '¿Ya tienes cuenta?' : '¿Eres nuevo aquí?'}
-                        <button onClick={() => { setIsRegistering(!isRegistering); setAuthError(''); }} className="text-blue-600 font-bold ml-1">
-                            {isRegistering ? 'Inicia sesión' : 'Regístrate'}
+                    <div className="mt-8 text-center border-t border-slate-700/50 pt-6">
+                        <button type="button" onClick={() => setIsRegistering(!isRegistering)} className="text-slate-400 hover:text-white text-sm font-medium transition-colors">
+                            {isRegistering ? '¿Ya tienes cuenta? Inicia sesión' : '¿Eres nuevo aquí? '}
+                            {!isRegistering && <span className="text-sky-400 font-bold hover:text-sky-300">Regístrate</span>}
                         </button>
-                    </p>
+                        
+                        <div className="mt-4 pt-4 border-t border-slate-800">
+                            <a href="/login" className="text-xs font-bold text-slate-500 hover:text-amber-400 uppercase tracking-widest transition-colors flex items-center justify-center gap-2">
+                                <Lock size={12} /> Acceso a Personal / Admin
+                            </a>
+                        </div>
+                    </div>
                 </div>
-                <button onClick={() => router.push('/catalogo')} className="mt-8 text-gray-500 font-bold hover:text-gray-800">Volver al Catálogo</button>
+                <button onClick={() => router.push('/catalogo')} className="mt-8 text-slate-500 font-bold hover:text-slate-300">Volver al Catálogo</button>
             </div>
         );
     }
