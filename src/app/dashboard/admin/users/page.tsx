@@ -49,57 +49,56 @@ export default function UserManagement() {
     };
 
     return (
-        <div style={{ backgroundColor: '#f8fafc', minHeight: '100vh' }}>
-            <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+        <div className="bg-transparent min-h-screen text-slate-200">
+            <div className="max-w-[1200px] mx-auto p-8">
+                <div className="flex justify-between items-center mb-8">
                     <div>
-                        <h1 style={{ fontSize: '2.5rem', fontWeight: '900', color: '#0f172a', margin: 0, letterSpacing: '-0.025em' }}>EQUIPO Y CLIENTES</h1>
-                        <p style={{ color: '#64748b', marginTop: '4px' }}>Gestión de Personal Activo y Módulo CRM</p>
+                        <h1 className="text-4xl font-black text-white m-0 tracking-tight">EQUIPO Y CLIENTES</h1>
+                        <p className="text-slate-400 mt-1">Gestión de Personal Activo y Módulo CRM</p>
                     </div>
                 </div>
 
-
-
                 {/* Search */}
-                <div style={{ position: 'relative', marginBottom: '2rem' }}>
-                    <Search size={20} color="#94a3b8" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)' }} />
+                <div className="relative mb-8">
+                    <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input 
                         type="text" 
-                        placeholder={`Buscar empleados por nombre o correo...`}
+                        placeholder="Buscar empleados por nombre o correo..."
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
-                        style={{ width: '100%', padding: '16px 16px 16px 48px', borderRadius: '16px', border: '1px solid #cbd5e1', fontSize: '1rem', outline: 'none', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}
+                        className="w-full py-4 pl-12 pr-4 rounded-2xl border border-slate-700 bg-slate-800 text-white text-base outline-none shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
                     />
                 </div>
 
                 {/* Content: Personal */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-                        {Object.keys(groupedStaff).length === 0 && <p>No se encontraron resultados.</p>}
-                        {Object.entries(groupedStaff).map(([role, usersInRole]) => {
-                            const roleUsers = usersInRole as any[];
-                            const badge = getRoleBadge(role);
-                            return (
-                                <div key={role} style={{ background: '#fff', borderRadius: '24px', padding: '24px', border: '1px solid #f1f5f9', boxShadow: '0 10px 25px rgba(0,0,0,0.02)' }}>
-                                    <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '0 0 20px 0', color: '#1e293b', fontSize: '1.2rem', textTransform: 'uppercase', fontWeight: 'bold' }}>
-                                        <Shield size={20} color={badge.bg} /> {badge.text} <span style={{ background: '#f1f5f9', color: '#64748b', padding: '2px 8px', borderRadius: '12px', fontSize: '0.9rem' }}>{roleUsers.length}</span>
-                                    </h3>
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
-                                        {roleUsers.map((user: any) => (
-                                            <div key={user.uid} style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '16px', border: '1px solid #e2e8f0', borderRadius: '16px', background: '#fafaf9' }}>
-                                                <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: badge.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 'bold', fontSize: '1.2rem' }}>
-                                                    {user.displayName?.charAt(0).toUpperCase() || <User size={24} />}
-                                                </div>
-                                                <div>
-                                                    <div style={{ fontWeight: 'bold', color: '#0f172a' }}>{user.displayName || 'Sin Nombre'}</div>
-                                                    <div style={{ fontSize: '0.85rem', color: '#64748b' }}>{user.email}</div>
-                                                </div>
+                <div className="flex flex-col gap-8">
+                    {Object.keys(groupedStaff).length === 0 && <p className="text-slate-500">No se encontraron resultados.</p>}
+                    {Object.entries(groupedStaff).map(([role, usersInRole]) => {
+                        const roleUsers = usersInRole as any[];
+                        const badge = getRoleBadge(role);
+
+                        return (
+                            <div key={role} className="bg-[#0f172a]/50 backdrop-blur-md border border-slate-700/50 rounded-3xl p-6 shadow-xl">
+                                <h3 className="flex items-center gap-2 m-0 mb-5 text-white text-lg uppercase font-bold">
+                                    <Shield size={20} color={badge.bg} /> {badge.text} <span className="bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full text-sm ml-2">{roleUsers.length}</span>
+                                </h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    {roleUsers.map((user: any) => (
+                                        <div key={user.uid} className="flex items-center gap-4 p-4 border border-slate-700/50 rounded-2xl bg-slate-900/40">
+                                            <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg" style={{ background: badge.bg }}>
+                                                {user.displayName?.charAt(0).toUpperCase() || <User size={24} />}
                                             </div>
-                                        ))}
-                                    </div>
+                                            <div>
+                                                <div className="font-bold text-white">{user.displayName || 'Sin Nombre'}</div>
+                                                <div className="text-sm text-slate-400">{user.email}</div>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
-                            );
-                        })}
-                    </div>
+                            </div>
+                        );
+                    })}
+                </div>
 
                 <AnimatePresence>
                     {selectedClient && (
