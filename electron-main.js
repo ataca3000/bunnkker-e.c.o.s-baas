@@ -109,7 +109,7 @@ const createServer = () => {
                 HOSTNAME: '0.0.0.0', // Permite conexiones externas (WiFi/LAN)
                 NODE_ENV: 'production',
                 MACHINE_HWID: machineIdSync(true), // Inyecta el HWID para que Next.js valide la licencia
-                INTERNAL_API_SECRET: process.env.INTERNAL_API_SECRET || 'bunkker-ecos-default-secret-key-123456789'
+                INTERNAL_API_SECRET: process.env.INTERNAL_API_SECRET || 'terraform-default-secret-key-123456789'
             },
             stdio: ['ignore', 'pipe', 'pipe', 'ipc']
         });

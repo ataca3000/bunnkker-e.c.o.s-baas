@@ -6,13 +6,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { usePathname } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
+import Link from 'next/link';
 import styles from './AdminAsistente.module.css';
 
 export default function AdminAsistente() {
     const { siteConfig, products, formatCurrency, orders } = useCart();
     const [isOpen, setIsOpen] = useState(false);
     const [showGreeting, setShowGreeting] = useState(true);
-    const [messages, setMessages] = useState<Array<{ role: string; content: string }>>([]);
+    const [messages, setMessages] = useState<Array<{ role: string; content: React.ReactNode }>>([]);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -60,8 +61,39 @@ export default function AdminAsistente() {
         setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
         setInput('');
         setIsTyping(true);
-
         try {
+            // --- PASO PREVIO: RESOLUCIÓN SEMÁNTICA LOCAL POR TÓPICOS ---
+            if (isOwner) {
+                try {
+                    const intentRes = await fetch('/api/ai/resolve-intent', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ query: userMsg })
+                    });
+                    if (intentRes.ok) {
+                        const intentData = await intentRes.json();
+                        if (intentData.success && intentData.data && intentData.data.intent !== 'unknown' && intentData.data.confidence >= 0.6) {
+                            const { label, redirect, confidence } = intentData.data;
+                            setMessages(prev => [...prev, { 
+                                role: 'assistant', 
+                                content: (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                        <p>Jefe, detecto que deseas realizar operaciones en: <strong>{label}</strong> (Confianza semántica local: {Math.round(confidence * 100)}%).</p>
+                                        <Link href={redirect} onClick={() => setIsOpen(false)} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#38bdf8', fontWeight: 'bold', textDecoration: 'underline' }}>
+                                            👉 Acceder a {label}
+                                        </Link>
+                                    </div>
+                                )
+                            }]);
+                            setIsTyping(false);
+                            return; // Detener ejecución para no ir a la IA remota
+                        }
+                    }
+                } catch (intentErr) {
+                    console.warn("[Asistente] Error en resolvedor semántico local:", intentErr);
+                }
+            }
+
             let botReply = "";
             const queryText = userMsg.toLowerCase();
             const bName = siteConfig.businessName || 'nuestro negocio';
@@ -101,7 +133,7 @@ export default function AdminAsistente() {
             }
 
             // Build Context
-            let contextData: any = { businessName: siteConfig?.businessName || 'BUNKKER E.C.O.S' };
+            let contextData: any = { businessName: siteConfig?.businessName || 'TERRAFORM ERP' };
             if (aiRole === 'superadmin') {
                 contextData.products = products?.map((p:any) => ({name: p.name, stock: p.stock, price: p.price}));
                 contextData.ordersCount = orders?.length;
