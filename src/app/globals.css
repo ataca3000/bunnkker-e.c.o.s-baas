@@ -53,15 +53,14 @@ body {
 
 /* Glassmorphic & Holographic SaaS Cards */
 .card-sanjose {
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(30, 41, 59, 0.5);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.05);
   padding: 32px;
   border-radius: 20px;
   box-shadow: 
-    0 10px 40px -10px rgba(15, 23, 42, 0.08),
-    0 4px 6px -4px rgba(15, 23, 42, 0.05);
+    0 10px 40px -10px rgba(0, 0, 0, 0.5);
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
   overflow: hidden;
@@ -77,7 +76,7 @@ body {
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(255, 255, 255, 0.8),
+    rgba(255, 255, 255, 0.1),
     transparent
   );
   transform: skewX(-20deg);
@@ -90,28 +89,6 @@ body {
 
 .card-sanjose:hover {
   /* No hover effects for data cards */
-}
-
-@media (prefers-color-scheme: dark) {
-  .card-sanjose {
-    background: rgba(30, 41, 59, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    box-shadow: 
-      0 10px 40px -10px rgba(0, 0, 0, 0.5);
-  }
-  
-  .card-sanjose:hover {
-    /* No hover effect */
-  }
-
-  .card-sanjose::after {
-    background: linear-gradient(
-      90deg,
-      transparent,
-      rgba(255, 255, 255, 0.1),
-      transparent
-    );
-  }
 }
 
 /* Premium Dynamic Buttons */
@@ -139,51 +116,30 @@ body {
 }
 
 .btn-sanjose-secondary {
-  background: white;
-  color: var(--sanjose-gray-dark);
-  border: 1px solid rgba(15, 23, 42, 0.1);
+  background: rgba(30, 41, 59, 0.8);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   padding: 14px 28px;
   font-weight: 600;
   letter-spacing: 0.02em;
   border-radius: 12px;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 4px rgba(15, 23, 42, 0.02);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
 }
 
 .btn-sanjose-secondary:hover {
-  background: #F8FAFC;
-  border-color: rgba(15, 23, 42, 0.2);
+  background: rgba(51, 65, 85, 0.9);
+  border-color: rgba(255, 255, 255, 0.2);
   transform: translateY(-2px);
-  box-shadow: 0 6px 15px rgba(15, 23, 42, 0.05);
-}
-
-@media (prefers-color-scheme: dark) {
-  .btn-sanjose-secondary {
-    background: rgba(30, 41, 59, 0.8);
-    color: white;
-    border-color: rgba(255, 255, 255, 0.1);
-  }
-  .btn-sanjose-secondary:hover {
-    background: rgba(51, 65, 85, 0.9);
-    border-color: rgba(255, 255, 255, 0.2);
-  }
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
 }
 
 .heading-sanjose {
   font-weight: 800;
-  color: var(--sanjose-gray-dark);
   margin-bottom: 1.5rem;
-  background: linear-gradient(135deg, var(--sanjose-gray-dark) 0%, var(--saas-primary) 100%);
+  background: linear-gradient(135deg, #FFFFFF 0%, var(--saas-primary) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-}
-
-@media (prefers-color-scheme: dark) {
-  .heading-sanjose {
-    background: linear-gradient(135deg, #FFFFFF 0%, var(--saas-primary) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
 }
 
 /* Spin animation for loading states */
