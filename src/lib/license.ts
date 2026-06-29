@@ -26,24 +26,31 @@ interface StoredLicense {
     activatedAt?: number;
     expiresAt?: number | null;
     clientName?: string;
+    lastCheckedTime?: number; // Anti-Tampering clock check
 }
 
 const STORAGE_KEY = '_admincom_v1_lic';
 const MACHINE_KEY = '_admincom_v1_mid';
 const TRIAL_DAYS  = 7;
 
+// Deterministic positive 6-digit hash helper for offline PINs
+export function generatePinForHardware(machineId: string, expDateStr: string): string {
+    const salt = "terraform-secret-salt-2026";
+    const input = `${machineId}-${expDateStr}-${salt}`;
+    let hash = 0;
+    for (let i = 0; i < input.length; i++) {
+        const char = input.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // Convert to 32bit integer
+    }
+    return String(Math.abs(hash) % 1000000).padStart(6, '0');
+}
+
 // ─── Machine fingerprint ─────────────────────────────────────────────────────
 function getMachineId(): string {
-    // In a browser environment, localStorage is used.
-    // For Electron/desktop apps, a more robust, persistent, and truly unique
-    // machine ID (e.g., UUID stored in app data directory) should be implemented.
-    // The current implementation is primarily for browser-based identification.
-    if (typeof window === 'undefined') return 'server_id'; // For SSR environments
-
-    // if (process.env.NODE_ENV === 'production') return 'server_id'; // This line was problematic for Electron
+    if (typeof window === 'undefined') return 'server_id';
     let id = localStorage.getItem(MACHINE_KEY);
     if (!id) {
-        // Deterministic browser fingerprint (removed Date.now() so it remains stable if localStorage is cleared)
         const raw = `${navigator.userAgent || 'unknown'}|${window.screen?.width || 0}x${window.screen?.height || 0}|${navigator.language || 'en'}`;
         id = btoa(raw).replace(/[^a-zA-Z0-9]/g, '').slice(0, 32);
         localStorage.setItem(MACHINE_KEY, id);
@@ -51,7 +58,7 @@ function getMachineId(): string {
     return id;
 }
 
-// ─── Local storage (obfuscated, not crypto — use in conjunction with Firestore) ─
+// ─── Local storage ────────────────────────────────────────────────────────────
 function saveLocal(data: StoredLicense): void {
     if (typeof window === 'undefined') return;
     try {
@@ -79,6 +86,7 @@ export function initTrial(): StoredLicense {
         trialStart: Date.now(),
         machineId: getMachineId(),
         status: 'trial',
+        lastCheckedTime: Date.now(),
     };
     saveLocal(fresh);
     return fresh;
@@ -94,8 +102,7 @@ export function getTrialDaysRemaining(trialStart: number): number {
 async function validateOnline(
     key: string,
     machineId: string
-): Promise<{ valid: boolean; clientName?: string; expiresAt?: number | null }> {
-    // FALLBACK LOCAL: Si no hay internet, buscar en el servidor maestro de la red local
+): Promise<{ valid: boolean; clientName?: string; expiresAt?: number | null; connectionError?: boolean }> {
     if (typeof window !== 'undefined' && !navigator.onLine) {
         console.log("Validando licencia vía Red Local (Offline)...");
         try {
@@ -114,6 +121,7 @@ async function validateOnline(
         } catch (e) {
             console.error("Error en validación offline local:", e);
         }
+        return { valid: false, connectionError: true };
     }
 
     try {
@@ -126,7 +134,6 @@ async function validateOnline(
         if (!data.isActive) return { valid: false };
         if (data.expiresAt && data.expiresAt < Date.now()) return { valid: false };
 
-        // Register machine ID if not already registered
         const machines: string[] = data.machineIds || [];
         if (!machines.includes(machineId)) {
             const maxMachines: number = data.maxMachines ?? 1;
@@ -141,8 +148,9 @@ async function validateOnline(
             clientName: data.clientName ?? undefined,
             expiresAt:  data.expiresAt  ?? null,
         };
-    } catch {
-        return { valid: false };
+    } catch (e: any) {
+        const isNetwork = !navigator.onLine || /network|connection|failed to fetch|offline/i.test(e.message || '');
+        return { valid: false, connectionError: isNetwork };
     }
 }
 
@@ -156,6 +164,10 @@ export async function activateLicense(
 
     const online = await validateOnline(key, machineId);
 
+    if (online.connectionError) {
+        return { success: false, message: 'Error de conexión: No se pudo verificar la licencia con el servidor.' };
+    }
+
     if (!online.valid) {
         return { success: false, message: 'Clave inválida, inactiva o máquina no autorizada.' };
     }
@@ -167,6 +179,7 @@ export async function activateLicense(
         activatedAt: Date.now(),
         expiresAt:   online.expiresAt,
         clientName:  online.clientName,
+        lastCheckedTime: Date.now(),
     };
     saveLocal(activated);
 
@@ -176,26 +189,82 @@ export async function activateLicense(
     };
 }
 
+// ─── Activate Offline via 6-digit PIN ────────────────────────────────────────
+export function activateLicenseOffline(pin: string): { success: boolean; message: string } {
+    const machineId = getMachineId();
+    const cleanPin = pin.trim();
+
+    // Buscar en los próximos 60 días si hay un PIN que coincida
+    for (let offset = 1; offset <= 60; offset++) {
+        const testDate = new Date();
+        testDate.setDate(testDate.getDate() + offset);
+        const dateStr = testDate.toISOString().split('T')[0]; // "YYYY-MM-DD"
+        const expected = generatePinForHardware(machineId, dateStr);
+
+        if (expected === cleanPin) {
+            const existing = loadLocal() ?? initTrial();
+            const expiresAt = testDate.getTime();
+
+            const activated: StoredLicense = {
+                ...existing,
+                status: 'active',
+                activatedAt: Date.now(),
+                expiresAt,
+                clientName: 'Offline Activated Tenant',
+                key: `OFFLINE-PIN-${cleanPin}`,
+                lastCheckedTime: Date.now(),
+            };
+            saveLocal(activated);
+
+            return {
+                success: true,
+                message: `✅ Desbloqueo offline exitoso. Suscripción válida hasta ${dateStr}.`
+            };
+        }
+    }
+
+    return {
+        success: false,
+        message: '❌ El PIN ingresado no es válido para esta máquina.'
+    };
+}
+
 // ─── Check current license status ─────────────────────────────────────────────
 export function checkLicenseStatus(): LicenseState {
     const lic = loadLocal() ?? initTrial();
+    const now = Date.now();
 
-    if (lic.status === 'active') {
-        // Check if active license has expired
-        if (lic.expiresAt && lic.expiresAt < Date.now()) {
+    // Anti-Tampering Check: Si la fecha del sistema es menor al último registro guardado
+    if (lic.lastCheckedTime && now < lic.lastCheckedTime) {
+        console.warn("⚠️ Reloj del sistema alterado hacia atrás. Bloqueando acceso por seguridad.");
+        if (lic.status !== 'expired') {
             saveLocal({ ...lic, status: 'expired' });
-            return { status: 'expired' };
         }
-        return { status: 'active', clientName: lic.clientName, key: lic.key, expiresAt: lic.expiresAt };
-    }
-
-    const daysRemaining = getTrialDaysRemaining(lic.trialStart);
-
-    if (daysRemaining <= 0) {
-        if (lic.status !== 'expired') saveLocal({ ...lic, status: 'expired' });
         return { status: 'expired' };
     }
 
+    // Actualizar última fecha de revisión para la próxima comprobación
+    const updatedLic = { ...lic, lastCheckedTime: now };
+
+    if (updatedLic.status === 'active') {
+        if (updatedLic.expiresAt && updatedLic.expiresAt < now) {
+            saveLocal({ ...updatedLic, status: 'expired' });
+            return { status: 'expired' };
+        }
+        saveLocal(updatedLic);
+        return { status: 'active', clientName: updatedLic.clientName, key: updatedLic.key, expiresAt: updatedLic.expiresAt };
+    }
+
+    const daysRemaining = getTrialDaysRemaining(updatedLic.trialStart);
+
+    if (daysRemaining <= 0) {
+        if (updatedLic.status !== 'expired') {
+            saveLocal({ ...updatedLic, status: 'expired' });
+        }
+        return { status: 'expired' };
+    }
+
+    saveLocal(updatedLic);
     return { status: 'trial', daysRemaining };
 }
 
@@ -204,10 +273,25 @@ export async function syncLicenseOnline(): Promise<void> {
     const lic = loadLocal();
     if (!lic?.key || lic.status !== 'active') return;
 
+    if (typeof window !== 'undefined' && !navigator.onLine) {
+        console.log("[Licencia] Dispositivo offline, se conserva el estado local activo.");
+        return;
+    }
+
+    // Saltar validación si es una licencia activada offline
+    if (lic.key.startsWith('OFFLINE-PIN-')) {
+        return;
+    }
+
     const result = await validateOnline(lic.key, lic.machineId);
+    if (result.connectionError) {
+        console.warn("[Licencia] Error de conexión al validar online. Se conserva el estado de licencia local.");
+        return;
+    }
+
     if (!result.valid) {
         saveLocal({ ...lic, status: 'expired' });
     } else {
-        saveLocal({ ...lic, expiresAt: result.expiresAt, clientName: result.clientName });
+        saveLocal({ ...lic, expiresAt: result.expiresAt, clientName: result.clientName, lastCheckedTime: Date.now() });
     }
 }
