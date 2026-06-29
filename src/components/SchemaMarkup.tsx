@@ -13,7 +13,7 @@ export default function SchemaMarkup({ tenantId = 'default' }: { tenantId?: stri
   const baseUrl = isDefault ? "https://admin.com" : `https://${tenantId}.admin.com`;
   const description = isDefault 
     ? "Agencia de desarrollo de software y tecnología." 
-    : `Catálogo oficial de ${storeName}, impulsado de forma segura por BUNKKER ECOS.`;
+    : `Catálogo oficial de ${storeName}, impulsado de forma segura por TERRAFORM ERP.`;
 
   const schemaData = {
     "@context": "https://schema.org",
@@ -37,7 +37,7 @@ export default function SchemaMarkup({ tenantId = 'default' }: { tenantId?: stri
       {
         "@type": "SoftwareApplication",
         "@id": `${baseUrl}/#software`,
-        "name": "BUNKKER ECOS",
+        "name": "TERRAFORM ERP",
         "applicationCategory": "BusinessApplication",
         "operatingSystem": "Web, Windows, macOS, Linux, iOS, Android",
         "description": "Enterprise Control & Operating System. El mejor sistema de gestión empresarial, ERP, punto de venta y logística sin depender de la nube.",

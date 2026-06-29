@@ -411,14 +411,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         };
     }, [profile?.uid, pathname, isDashboard, profile?.role, signOut, activeModules]);
 
-    // Update Gate: Prompt for version 1.5 update when online
     useEffect(() => {
         if (firebaseStatus === 'online') {
-            const hasSeenPrompt = sessionStorage.getItem('bunkker_update_prompt');
+            const hasSeenPrompt = sessionStorage.getItem('terraform_update_prompt');
             if (!hasSeenPrompt) {
                 setTimeout(() => {
-                    alert("📡 [BUNKKER ECOS Online] Conexión a internet detectada.\n\nHay actualizaciones críticas y nuevas características de la Versión 1.5 PRO disponibles. Contacte a Brecha Soluciones DS para renovar su licencia y actualizar su sistema.");
-                    sessionStorage.setItem('bunkker_update_prompt', 'true');
+                    alert("📡 [TERRAFORM ERP Online] Conexión a internet detectada.\n\nHay actualizaciones críticas y nuevas características disponibles. Contacte a Brecha Soluciones DS para renovar su licencia y actualizar su sistema.");
+                    sessionStorage.setItem('terraform_update_prompt', 'true');
                 }, 5000);
             }
         }

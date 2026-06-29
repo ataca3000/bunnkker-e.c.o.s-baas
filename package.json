@@ -1,7 +1,7 @@
 {
-  "name": "bunkker-ecos-erp",
+  "name": "terraform-ecos-erp",
   "version": "1.0.0",
-  "description": "E.C.O.S (Ecosistema Comercial de Operaciones Simplificadas)",
+  "description": "Terraform ERP (Ecosistema Comercial de Operaciones Simplificadas)",
   "author": "BRECHA SOLUCIONES S.A de C.V",
   "private": true,
   "main": "electron-main.js",
@@ -26,8 +26,8 @@
     "update:file": "node scripts/update-file.js"
   },
   "build": {
-    "appId": "com.bunkker.ecos",
-    "productName": "BUNKKER E.C.O.S",
+    "appId": "com.terraform.ecos",
+    "productName": "Terraform ERP",
     "electronDownload": {
       "mirror": "https://npmmirror.com/mirrors/electron/"
     },
