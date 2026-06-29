@@ -4,13 +4,16 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Settings, Key, Landmark, MapPin, CheckCircle, User, Lock, CreditCard } from 'lucide-react';
 import APIKeyManager from '@/components/admin/APIKeyManager';
+import InteractiveTerraMap from '@/components/admin/InteractiveTerraMap';
 import { db } from '@/lib/firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { useAuth } from '@/context/AuthContext';
+import { useCart } from '@/context/CartContext';
 import Link from 'next/link';
 
 export default function SetupWizard() {
     const { isPremium } = useAuth();
+    const { siteConfig, updateSiteConfig } = useCart();
     const [step, setStep] = useState(1);
     const [config, setConfig] = useState({
         api_key: '',
@@ -29,13 +32,21 @@ export default function SetupWizard() {
         mp_public_key: '',
         stripe_secret_key: '',
         stripe_publishable_key: '',
-        activeModules: ['sales', 'users', 'customers', 'inventory', 'delivery', 'pickup', 'design', 'marketing', 'billing', 'audit']
+        activeModules: ['sales', 'users', 'crm', 'inventory', 'delivery', 'design', 'marketing', 'billing', 'audit']
     });
     const [isSaving, setIsSaving] = useState(false);
 
     // Cargar configuración existente
     useEffect(() => {
         const fetchConfig = async () => {
+            // Inicializar con siteConfig local por si estamos offline
+            let baseData = {
+                businessName: siteConfig?.businessName || '',
+                whatsapp: siteConfig?.businessPhone || '',
+                location: siteConfig?.businessAddress || '',
+                activeModules: siteConfig?.activeModules || ['sales', 'users', 'crm', 'inventory', 'delivery', 'design', 'marketing', 'billing', 'audit']
+            };
+
             try {
                 const docSnap = await getDoc(doc(db, 'settings', 'site_config'));
                 let publicData = {};
@@ -56,24 +67,30 @@ export default function SetupWizard() {
 
                 setConfig(prev => ({
                     ...prev,
+                    ...baseData,
                     ...publicData,
                     ...secretData
                 }));
             } catch (err) {
                 console.error("Error loading config:", err);
+                // Si falla la red, usar lo local
+                setConfig(prev => ({
+                    ...prev,
+                    ...baseData
+                }));
             }
         };
         fetchConfig();
-    }, []);
+    }, [siteConfig]);
 
     const handleSave = async () => {
         setIsSaving(true);
         try {
-            // 1. Guardar Configuración Pública
+            // 1. Guardar Configuración Pública en Firestore
             const { stripe_secret_key, facturapi_key, stripe_webhook_secret, ...publicConfig } = config as any;
             await setDoc(doc(db, 'settings', 'site_config'), publicConfig, { merge: true });
 
-            // 2. Guardar Secretos en Bóveda
+            // 2. Guardar Secretos en Bóveda Firestore
             const secretConfig = {
                 ...(stripe_secret_key && { stripe_secret_key }),
                 ...(facturapi_key && { facturapi_key }),
@@ -82,6 +99,15 @@ export default function SetupWizard() {
             if (Object.keys(secretConfig).length > 0) {
                 await setDoc(doc(db, 'secrets', 'billing'), secretConfig, { merge: true });
             }
+
+            // 3. Guardar localmente en localStorage (para funcionamiento offline)
+            await updateSiteConfig({
+                businessName: config.businessName,
+                businessPhone: config.whatsapp,
+                businessAddress: config.location,
+                activeModules: config.activeModules
+            });
+
             alert('Configuración guardada correctamente. Sincronización en curso...');
         } catch (error) {
             console.error("Error guardando setup:", error);
@@ -307,37 +333,10 @@ export default function SetupWizard() {
                                 </div>
 
                             <div className="mt-8 border-t border-slate-700/50 pt-8">
-                                <h3 className="text-lg font-bold text-white mb-4">Módulos Activos (Feature Toggles)</h3>
-                                <p className="text-sm text-slate-400 mb-4">Selecciona qué módulos estarán disponibles en el panel de control. Esto limpia la interfaz ocultando lo que no necesitas.</p>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                                    {[
-                                        { id: 'sales', label: 'Ventas y POS' },
-
-                                        { id: 'customers', label: 'CRM Clientes' },
-                                        { id: 'inventory', label: 'Inventario' },
-                                        { id: 'delivery', label: 'Logística / Reparto' },
-                                        { id: 'design', label: 'Diseño y Branding' },
-                                        { id: 'marketing', label: 'Marketing QR' },
-                                        { id: 'billing', label: 'Facturación SAT' }
-                                    ].map(mod => (
-                                        <label key={mod.id} className="flex items-center gap-3 p-3 border border-slate-700/50 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors">
-                                            <input 
-                                                type="checkbox" 
-                                                className="w-5 h-5 rounded text-[#0ea5e9] focus:ring-[#0ea5e9]"
-                                                checked={config.activeModules?.includes(mod.id) ?? true}
-                                                onChange={(e) => {
-                                                    const current = config.activeModules || [];
-                                                    if (e.target.checked) {
-                                                        setConfig({ ...config, activeModules: [...current, mod.id] });
-                                                    } else {
-                                                        setConfig({ ...config, activeModules: current.filter(x => x !== mod.id) });
-                                                    }
-                                                }}
-                                            />
-                                            <span className="text-sm font-medium text-slate-200">{mod.label}</span>
-                                        </label>
-                                    ))}
-                                </div>
+                                <InteractiveTerraMap 
+                                    value={config.activeModules || []} 
+                                    onChange={(val) => setConfig({ ...config, activeModules: val })} 
+                                />
                             </div>
                             </>
                             )}
