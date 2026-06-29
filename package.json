@@ -2,7 +2,7 @@
   "name": "terraform-ecos-erp",
   "version": "1.0.0",
   "description": "Terraform ERP (Ecosistema Comercial de Operaciones Simplificadas)",
-  "author": "BRECHA SOLUCIONES S.A de C.V",
+  "author": "brechaopensource",
   "private": true,
   "main": "electron-main.js",
   "scripts": {

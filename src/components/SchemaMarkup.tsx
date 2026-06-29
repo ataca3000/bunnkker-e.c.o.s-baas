@@ -7,7 +7,7 @@ export default function SchemaMarkup({ tenantId = 'default' }: { tenantId?: stri
   
   // Normalizar nombre de la tienda
   const storeName = isDefault 
-    ? "Brecha Soluciones DS" 
+    ? "brechaopensource" 
     : tenantId.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 
   const baseUrl = isDefault ? "https://admin.com" : `https://${tenantId}.admin.com`;
@@ -22,7 +22,7 @@ export default function SchemaMarkup({ tenantId = 'default' }: { tenantId?: stri
         "@type": "Organization",
         "@id": `${baseUrl}/#organization`,
         "name": storeName,
-        "alternateName": isDefault ? "Brecha Soluciones DS S.A. de C.V." : storeName,
+        "alternateName": isDefault ? "brechaopensource" : storeName,
         "url": baseUrl,
         "description": description,
         "telephone": "+52-765-833-5528",

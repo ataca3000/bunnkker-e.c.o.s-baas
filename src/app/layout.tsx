@@ -26,8 +26,8 @@ export async function generateMetadata(): Promise<Metadata> {
   if (tenantId === 'default' || tenantId === 'admin.com') {
     return {
       title: "TERRAFORM ERP | Sistema Integral",
-      description: "TERRAFORM ERP - Desarrollado por Brecha Soluciones DS. El mejor sistema de gestión empresarial, punto de venta y logística.",
-      keywords: ["TERRAFORM ERP", "Brecha Soluciones DS", "ERP", "punto de venta", "gestión empresarial", "facturación"],
+      description: "TERRAFORM ERP - Desarrollado por brechaopensource. El mejor sistema de gestión empresarial, punto de venta y logística.",
+      keywords: ["TERRAFORM ERP", "brechaopensource", "ERP", "punto de venta", "gestión empresarial", "facturación"],
       manifest: '/manifest.json',
       verification: defaultVerification,
       alternates: {
@@ -39,7 +39,7 @@ export async function generateMetadata(): Promise<Metadata> {
       },
       openGraph: {
         title: "TERRAFORM ERP | Sistema Integral",
-        description: "TERRAFORM ERP - Desarrollado por Brecha Soluciones DS. El mejor sistema de gestión empresarial, punto de venta y logística.",
+        description: "TERRAFORM ERP - Desarrollado por brechaopensource. El mejor sistema de gestión empresarial, punto de venta y logística.",
         url: baseUrl,
         siteName: "TERRAFORM ERP",
         locale: "es_MX",
