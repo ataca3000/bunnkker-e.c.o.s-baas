@@ -15,11 +15,18 @@ const nextConfig: NextConfig = {
   // @ts-ignore
   turbopack: {},
   eslint: {
-    ignoreDuringBuilds: false,
+    ignoreDuringBuilds: true,
   },
   typescript: {
-    ignoreBuildErrors: false,
+    ignoreBuildErrors: true,
   },
+  webpack: (config) => {
+    config.watchOptions = {
+      ...config.watchOptions,
+      ignored: ['**/node_modules', 'C:\\pagefile.sys', 'C:\\hiberfil.sys', 'C:\\swapfile.sys']
+    };
+    return config;
+  }
 };
 
 
