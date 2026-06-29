@@ -416,7 +416,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             const hasSeenPrompt = sessionStorage.getItem('terraform_update_prompt');
             if (!hasSeenPrompt) {
                 setTimeout(() => {
-                    alert("📡 [TERRAFORM ERP Online] Conexión a internet detectada.\n\nHay actualizaciones críticas y nuevas características disponibles. Contacte a Brecha Soluciones DS para renovar su licencia y actualizar su sistema.");
+                    alert("📡 [TERRAFORM ERP Online] Conexión a internet detectada.\n\nHay actualizaciones críticas y nuevas características disponibles. Contacte a brechaopensource para renovar su licencia y actualizar su sistema.");
                     sessionStorage.setItem('terraform_update_prompt', 'true');
                 }, 5000);
             }
