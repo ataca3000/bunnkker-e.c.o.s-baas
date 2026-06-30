@@ -9,10 +9,9 @@ services:
       - .:/workspace:cached
       - node_modules:/workspace/node_modules
     ports:
-      - "3000:3000"
+      - "3030:3000"
     environment:
-      - NODE_ENV=development
-    command: npm run dev
+      - NODE_ENV=production
 
 volumes:
   node_modules:
