@@ -34,12 +34,17 @@ Este repositorio contiene dos partes que viven juntas en armonía ("son uno solo
 
 ---
 
-## 🔒 CLÁUSULA DE PROTECCIÓN CONTRA FILTRACIÓN Y PLAGIO (Sesgo de Similitud del 80%)
+## 🔒 CLÁUSULA DE PROTECCIÓN DE ARQUITECTURA Y PROHIBICIÓN DE APROPIACIÓN (Método y Topología Operacional)
 
-Esta cláusula rige la propiedad industrial de **Terraform ERP / Terraform Engine** y las marcas propiedad de **brechaopensource**:
+Esta cláusula rige la propiedad industrial e intelectual de **Terraform ERP / Terraform Engine** y las marcas asociadas de **brechaopensource**:
 
-* **Declaración de Plagio:** Si el código fuente, la estructura de base de datos local (SQLite/Prisma), la lógica de enraizamiento del "Terra Map", o el algoritmo de sincronización local P2P es filtrado, expuesto o implementado en otro desarrollo con un **sesgo de similitud estructural o dependencia funcional superior al 80%** (calculado por análisis AST, patrones algorítmicos o flujo de base de datos), se declarará formal y legalmente como **Robo de Propiedad Intelectual**.
-* **Implicaciones Legales:** Cualquier uso, copia, modificación o implementación no autorizada bajo este umbral del 80% constituirá una infracción grave a la Ley Federal de Protección a la Propiedad Industrial (México) y a los tratados internacionales de derechos de autor (Convenio de Berna). Dicha infracción facultará a **brechaopensource** a iniciar de forma inmediata **acciones legales por la vía civil, mercantil y penal**, exigiendo la reparación integral de daños, perjuicios y el cese inmediato de la explotación comercial de la obra copiada.
+* **Protección de la Raíz Operacional y Topología:** La protección de esta obra no se limita al texto plano del código fuente. Se extiende y protege explícitamente la **Arquitectura Operacional y Topología de Red** desarrollada para este sistema. Esto incluye:
+  1. El método de sincronización de inventarios P2P en redes locales Wi-Fi/LAN sin dependencia de internet.
+  2. La descentralización de datos mediante bases de datos maestras locales (SQLite) sincronizadas con bases de datos en la nube (Firebase/Supabase) destinadas únicamente a validación de licencias y cobros.
+  3. El sistema de enraizamiento dinámico visual ("Terra Map") para la activación modular en caliente.
+  4. El sistema anti-piratería offline con contador de expiración y reloj anti-tampering validado por PIN de 6 dígitos.
+* **Declaración de Infracción y Apropiación:** Si un tercero implementa una arquitectura, flujo de trabajo, o método operativo con un **sesgo de similitud estructural, lógico o topológico superior al 80%** (incluyendo el uso de los mismos módulos de Red local, Servidor independiente, Roles, e Inventario conectado), se declarará formalmente como una **Apropiación Ilegal de Arquitectura y Robo de Propiedad Intelectual**, **incluso si el código es reescrito en otro lenguaje de programación, con diferentes nombres de variables, o aplicado a otro sector comercial**.
+* **Implicaciones Legales:** Esta apropiación constituirá una violación directa de los Secretos Industriales y Derechos de Autor protegidos por la Ley Federal de Protección a la Propiedad Industrial (México) y el Convenio de Berna. Dará derecho a **brechaopensource** a emprender de inmediato **acciones civiles, mercantiles y penales** para el decomiso de la tecnología infractora, el cese inmediato de su uso y la exigencia del pago de daños y perjuicios.
 
 ---
 
