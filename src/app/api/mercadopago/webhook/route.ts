@@ -5,8 +5,21 @@ import { MercadoPagoConfig, Payment } from 'mercadopago';
 export async function POST(req: NextRequest) {
     try {
         const url = new URL(req.url);
-        const type = url.searchParams.get('type') || url.searchParams.get('topic');
-        const dataId = url.searchParams.get('data.id') || url.searchParams.get('id');
+        let type = url.searchParams.get('type') || url.searchParams.get('topic');
+        let dataId = url.searchParams.get('data.id') || url.searchParams.get('id');
+
+        // Si no vienen en los parámetros de la URL, intentamos leer del body JSON (Webhook estándar)
+        if (!type || !dataId) {
+            try {
+                const body = await req.json();
+                if (body) {
+                    type = type || body.type || (body.action ? body.action.split('.')[0] : null);
+                    dataId = dataId || (body.data?.id ? String(body.data.id) : (body.id ? String(body.id) : null));
+                }
+            } catch (e) {
+                // No hay body JSON o no se pudo parsear
+            }
+        }
 
         if (type === 'payment' && dataId) {
             // 1. Fetch config from Firestore

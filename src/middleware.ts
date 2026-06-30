@@ -18,7 +18,7 @@ const COOKIE_SECRET = (() => {
       console.error('[SECURITY] INTERNAL_API_SECRET no configurado en producción. Todas las sesiones serán rechazadas.');
       return '';
     }
-    return 'dev-only-secret-never-use-in-production';
+    return 'dev-only-secret-never-use-in-production-development';
   }
   return s;
 })();
@@ -87,16 +87,35 @@ export default async function middleware(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
   const hostname = request.headers.get('host') || '';
 
-  // --- 0. FIREWALL: Bloqueo de Túneles Públicos ---
-  // Si se accede mediante un dominio de túnel (ngrok, localtunnel, etc.) bloqueamos rutas de admin
-  const isProtectedPath = pathname.startsWith('/dashboard') || pathname.startsWith('/login') || pathname.startsWith('/api/users');
+  // --- 0. FIREWALL: Bloqueo de Túneles Públicos (Bypass para trabajadores por IP Virtual) ---
+  // Las rutas de administración y endpoints sensibles están protegidas
+  const isProtectedPath = pathname.startsWith('/dashboard') || pathname.startsWith('/api/users');
   
-  // Expresión regular para detectar si el host es una IP (ej. 192.168.1.5) o localhost
-  const isLocalHostOrIP = /^localhost(:\d+)?$/.test(hostname) || /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}(:\d+)?$/.test(hostname);
-  
-  if (!isLocalHostOrIP && isProtectedPath) {
-    console.warn(`[FIREWALL] Bloqueando intento de acceso desde túnel público (${hostname}) a la ruta ${pathname}`);
-    return NextResponse.redirect(new URL('/catalogo', request.url));
+  // Expresión regular para detectar si el host es una IP local (ej. 192.168.1.5), mDNS (.local) o localhost
+  const isLocalHostOrIP = /^localhost(:\d+)?$/.test(hostname) || 
+                          hostname.endsWith('.local') ||
+                          /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}(:\d+)?$/.test(hostname) ||
+                          /^127\.0\.0\.1(:\d+)?$/.test(hostname);
+
+  // Si acceden a administración, forzar que sea local o solo permitir al superadmin de forma remota
+  if (isProtectedPath) {
+    const session = request.cookies.get('msj-session')?.value;
+    const role    = request.cookies.get('msj-role')?.value;
+    const sig     = request.cookies.get('msj-role-sig')?.value;
+
+    let isSuperAdmin = false;
+    if (session && role && sig) {
+      const validSig = await verifyHmac(role, session, sig);
+      if (validSig && role === 'superadmin') {
+        isSuperAdmin = true;
+      }
+    }
+
+    // Bloquear acceso a trabajadores fuera de la red local (WiFi/LAN física de la sucursal)
+    if (!isLocalHostOrIP && !isSuperAdmin) {
+      console.warn(`[FIREWALL] Acceso denegado a la ruta administrativa ${pathname} desde túnel externo (${hostname}). Requiere conexión local Wi-Fi/LAN de la sucursal.`);
+      return NextResponse.redirect(new URL('/catalogo', request.url));
+    }
   }
 
   // --- 1. MULTI-TENANT ---

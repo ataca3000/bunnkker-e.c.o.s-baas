@@ -18,19 +18,15 @@ const DELIVERY_ROLES = ['superadmin', 'admin', 'delivery', 'driver', 'carga_desc
 const COOKIE_SECRET = (() => {
   const secret = process.env.INTERNAL_API_SECRET;
   if (!secret || secret.trim() === '') {
-    if (process.env.NODE_ENV === 'production') {
-      // En producción, un secreto ausente es un error fatal de configuración.
+    const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build' || process.env.NEXT_PHASE === 'phase-export' || process.env.IS_BUILD === 'true';
+    if (process.env.NODE_ENV === 'production' && !isBuildPhase) {
+      // En producción, un secreto ausente es un error fatal de configuración en ejecución.
       throw new Error(
         '[SECURITY] INTERNAL_API_SECRET no está configurado. ' +
         'Define esta variable de entorno antes de iniciar el servidor en producción.'
       );
     }
-    // En desarrollo, usamos un secreto local con advertencia clara.
-    console.warn(
-      '[SECURITY WARNING] INTERNAL_API_SECRET no configurado. ' +
-      'Usando secreto de desarrollo local. NO inicies en producción sin configurarlo.'
-    );
-    return 'dev-only-secret-never-use-in-production-' + process.env.NODE_ENV;
+    return 'dev-only-secret-never-use-in-production-development';
   }
   return secret;
 })();

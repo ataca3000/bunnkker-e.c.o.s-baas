@@ -299,7 +299,7 @@ export const useCart = () => {
         }
     }, [isReadOnly, profile]);
 
-    const confirmRequest = useCallback(async (orderId: string) => {
+    const confirmRequest = useCallback(async (orderId: string, locationAssignment?: { ventanilla?: string; cajon?: string }) => {
         const state = useERPStore.getState();
         if (isReadOnly) return;
         if (state.firebaseStatus === 'offline') console.warn('⚠️ Sin conexión. La confirmación se encolará.');
@@ -312,7 +312,7 @@ export const useCart = () => {
         const plainAudit = `[${timestamp}] ${sellerName.toUpperCase()}: CONFIRMÓ COBRO ${orderId} - TOTAL ${state.formatCurrency(order.total)}`;
 
         try {
-            const nextStatus = order.deliveryType === 'DELIVERY' || order.deliveryMethod === 'repartidor' ? 'READY_TO_SHIP' : 'COMPLETED';
+            const nextStatus = order.deliveryType === 'DELIVERY' || order.deliveryMethod === 'repartidor' ? 'READY_TO_SHIP' : 'READY_TO_SHIP'; // Cambiar a READY_TO_SHIP para que pase por almacen
             const res = await fetch('/api/orders', {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
@@ -321,7 +321,8 @@ export const useCart = () => {
                     status: nextStatus,
                     vendedorId: profile?.uid,
                     vendedorName: sellerName,
-                    confirmedAt: new Date().toISOString()
+                    confirmedAt: new Date().toISOString(),
+                    ...locationAssignment
                 })
             });
 

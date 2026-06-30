@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { validateApiSession } from '@/lib/apiAuth';
 import { prisma } from '@/lib/prisma';
-import { db as firestore } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { db as firestoreAdmin } from '@/lib/firebase-admin';
+import { FieldValue } from 'firebase-admin/firestore';
 import { calculateExpectedAmount, calculateDiscrepancy, ALLOWED_CLOSE_STATUSES } from '@/lib/financial';
 
 export async function POST(request: NextRequest) {
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
         // 4. Si hay descuadre negativo (faltante), mandamos alerta push silenciosa a Firebase
         if (discrepancy < 0) {
             try {
-                await addDoc(collection(firestore, 'alerts'), {
+                await firestoreAdmin.collection('alerts').add({
                     type: 'CASH_MISMATCH',
                     tenantId,
                     cashierId,
@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
                     expectedAmount,
                     declaredAmount,
                     discrepancy,
-                    timestamp: serverTimestamp(),
+                    timestamp: FieldValue.serverTimestamp(),
                     read: false
                 });
             } catch (err) {

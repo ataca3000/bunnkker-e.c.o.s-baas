@@ -1,3 +1,5 @@
+const { execSync } = require('child_process');
+
 function testPipelineDomicilioOffline() {
     console.log("\n--- 🧪 TEST: PIPELINE DE REPARTO DOMICILIO (VERSION GRATUITA) ---");
     
@@ -35,14 +37,30 @@ function testPipelineDomicilioOffline() {
     console.log(` -> Firma capturada forense: ${orden.signature ? "OK" : "ERROR"}`);
     
     if (orden.status === "DELIVERED" && orden.signature) {
-        console.log("\n🏁 TEST LOGÍSTICO COMPLETO: Los estados fluyen sin errores y el negocio está blindado para producción.");
+        console.log("🏁 TEST LOGÍSTICO COMPLETO: Los estados fluyen sin errores.");
     } else {
         throw new Error("Fallo en la consistencia de estados del pipeline de entrega.");
     }
 }
 
+function testSecurityAndClassifier() {
+    console.log("\n--- 🧪 TEST: AUDITORÍA DE SEGURIDAD Y CLASIFICADOR LOCAL (VITEST) ---");
+    try {
+        // Ejecutar las pruebas reales de la base de datos, clasificador local e intentos fallidos
+        const output = execSync('npx vitest run src/__tests__/security_and_classifier.test.ts', { encoding: 'utf-8' });
+        console.log(output);
+        console.log("✅ AUDITORÍA DE SEGURIDAD Y CLASIFICADOR: COMPLETADA CON ÉXITO");
+    } catch (error) {
+        console.error("❌ ERROR EN LA AUDITORÍA DE SEGURIDAD O CLASIFICADOR:\n", error.stdout || error.message);
+        process.exit(1);
+    }
+}
+
 try {
     testPipelineDomicilioOffline();
+    testSecurityAndClassifier();
+    console.log("\n🚀 TODOS LOS TEST COMPLETADOS: El sistema está blindado y verificado para producción.\n");
 } catch (e) {
-    console.error(e.message);
+    console.error("❌ Fallo crítico en las pruebas:", e.message);
+    process.exit(1);
 }

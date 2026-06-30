@@ -48,6 +48,9 @@ export default function SalesDashboard() {
     const [processingId, setProcessingId] = useState<string | null>(null);
     const [lastOrderData, setLastOrderData] = useState<any>(null);
 
+    // Assignments for pickup location (ventanilla/cajon)
+    const [assignments, setAssignments] = useState<Record<string, { type: 'ventanilla' | 'cajon'; number: string }>>({});
+
     // Cancel PIN states
     const [orderToCancel, setOrderToCancel] = useState<string | null>(null);
     const [cancelPinInput, setCancelPinInput] = useState('');
@@ -301,7 +304,7 @@ export default function SalesDashboard() {
         }
     };
 
-    const pendingOrders = orders.filter(o => o.status === 'pending_confirmation' || o.status === 'pending_payment');
+    const pendingOrders = orders.filter(o => o.status === 'pending_confirmation' || o.status === 'pending_payment' || o.status === 'READY_TO_SHIP');
 
     return (
         <div className="fixed inset-0 z-50 flex flex-col h-screen bg-zinc-950 text-white overflow-hidden font-sans">
@@ -440,20 +443,104 @@ export default function SalesDashboard() {
                                             <span className="text-xl font-extrabold text-blue-400">{formatCurrency(order.total)}</span>
                                         </div>
 
-                                        <div className="flex gap-3">
-                                            <button 
-                                                onClick={() => setOrderToCancel(order.id)}
-                                                className="flex-1 flex items-center justify-center gap-2 py-3 bg-red-500/10 border border-red-500/20 text-red-400 font-bold rounded-xl hover:bg-red-500/20 transition-colors uppercase tracking-widest text-xs"
-                                            >
-                                                <XCircle size={14} /> Rechazar
-                                            </button>
-                                            <button 
-                                                onClick={() => confirmRequest(order.id)}
-                                                className="flex-[2] py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-500 uppercase tracking-widest text-xs shadow-[0_0_15px_rgba(37,99,235,0.4)] flex justify-center items-center gap-2 transition-all"
-                                            >
-                                                <CheckCircle2 size={16} /> Confirmar Cobro
-                                            </button>
-                                        </div>
+                                        {/* Estado y Acciones de la Fila */}
+                                        {order.status === 'pending_payment' ? (
+                                            <>
+                                                {/* Selector de Punto de Entrega */}
+                                                <div className="mb-4 bg-black/20 p-3 rounded-xl border border-white/5">
+                                                    <label className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1.5">Asignar punto de entrega</label>
+                                                    <div className="flex gap-2">
+                                                        <select 
+                                                            value={assignments[order.id]?.type || 'ventanilla'}
+                                                            onChange={(e) => setAssignments(prev => ({
+                                                                ...prev,
+                                                                [order.id]: {
+                                                                    type: e.target.value as 'ventanilla' | 'cajon',
+                                                                    number: prev[order.id]?.number || '1'
+                                                                }
+                                                            }))}
+                                                            className="flex-1 bg-zinc-950 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs font-bold text-white focus:outline-none focus:border-blue-500"
+                                                        >
+                                                            <option value="ventanilla">🚪 Ventanilla</option>
+                                                            <option value="cajon">🚗 Cajón</option>
+                                                        </select>
+                                                        <select 
+                                                            value={assignments[order.id]?.number || '1'}
+                                                            onChange={(e) => setAssignments(prev => ({
+                                                                ...prev,
+                                                                [order.id]: {
+                                                                    type: prev[order.id]?.type || 'ventanilla',
+                                                                    number: e.target.value
+                                                                }
+                                                            }))}
+                                                            className="flex-1 bg-zinc-950 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs font-bold text-white focus:outline-none focus:border-blue-500"
+                                                        >
+                                                            <option value="1">Número 1</option>
+                                                            <option value="2">Número 2</option>
+                                                            <option value="3">Número 3</option>
+                                                            <option value="4">Número 4</option>
+                                                            <option value="5">Número 5</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex gap-3">
+                                                    <button 
+                                                        onClick={() => setOrderToCancel(order.id)}
+                                                        className="flex-1 flex items-center justify-center gap-2 py-3 bg-red-500/10 border border-red-500/20 text-red-400 font-bold rounded-xl hover:bg-red-500/20 transition-colors uppercase tracking-widest text-xs"
+                                                    >
+                                                        <XCircle size={14} /> Rechazar
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => {
+                                                            const ass = assignments[order.id] || { type: 'ventanilla', number: '1' };
+                                                            confirmRequest(order.id, { [ass.type]: ass.number });
+                                                        }}
+                                                        className="flex-[2] py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-500 uppercase tracking-widest text-xs shadow-[0_0_15px_rgba(79,70,229,0.4)] flex justify-center items-center gap-2 transition-all"
+                                                    >
+                                                        <CheckCircle2 size={16} /> Listo para Cobro
+                                                    </button>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <>
+                                                {/* Indicación de Ubicación Asignada */}
+                                                <div className="mb-4 bg-emerald-500/10 p-3 rounded-xl border border-emerald-500/20 text-center">
+                                                    <span className="block text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-1">PUNTO ASIGNADO</span>
+                                                    <span className="text-sm font-extrabold text-white">
+                                                        {order.ventanilla ? `🚪 Ventanilla ${order.ventanilla}` : `🚗 Cajón ${order.cajon}`}
+                                                    </span>
+                                                </div>
+
+                                                <div className="flex gap-3">
+                                                    <button 
+                                                        onClick={() => setOrderToCancel(order.id)}
+                                                        className="flex-1 flex items-center justify-center gap-2 py-3 bg-red-500/10 border border-red-500/20 text-red-400 font-bold rounded-xl hover:bg-red-500/20 transition-colors uppercase tracking-widest text-xs"
+                                                    >
+                                                        <XCircle size={14} /> Cancelar
+                                                    </button>
+                                                    <button 
+                                                        onClick={async () => {
+                                                            try {
+                                                                const res = await fetch('/api/orders', {
+                                                                    method: 'PATCH',
+                                                                    headers: { 'Content-Type': 'application/json' },
+                                                                    body: JSON.stringify({ id: order.id, status: 'paid' })
+                                                                });
+                                                                if (res.ok) {
+                                                                    showToast("✅ Pago registrado con éxito. Enviado a patio para despacho.");
+                                                                }
+                                                            } catch (e) {
+                                                                alert("Error al registrar pago.");
+                                                            }
+                                                        }}
+                                                        className="flex-[2] py-3 bg-green-600 text-white font-bold rounded-xl hover:bg-green-500 uppercase tracking-widest text-xs shadow-[0_0_15px_rgba(22,163,74,0.4)] flex justify-center items-center gap-2 transition-all"
+                                                    >
+                                                        <CheckCircle2 size={16} /> Confirmar Pago
+                                                    </button>
+                                                </div>
+                                            </>
+                                        )}
                                     </div>
                                 ))
                             )}

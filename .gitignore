@@ -38,3 +38,6 @@ firebase_data/
 
 # Security scanning tool uploads
 Sn1per-master/
+
+# Clean up / deprecated folder
+obsoleto/
