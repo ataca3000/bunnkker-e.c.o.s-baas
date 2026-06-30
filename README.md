@@ -78,7 +78,7 @@ Para garantizar la solidez y orden a nivel de archivos locales en la entrega del
 - **Exportación básica:** Guardado de reportes en Excel/Word.
 - **Canvas Básico:** Editor simplificado de cabecera y catálogo.
 
-### 💎 Versión PRO (Pago Único $1,500 MXN o Suscripción)
+### 💎 Versión PRO (Suscripción Mensual de $500 a $700 MXN / 7 Días de Prueba Gratis)
 - **Validación Cloud (BaaS Centralizado):** Verificación remota de claves seriales vía Google Cloud Functions integradas con tu Firebase, atadas a la huella de hardware física (Machine ID) para evitar copias piratas.
 - **Aislamiento Multi-Tenant:** Aislamiento absoluto de bases de datos por sucursal bajo reglas del servidor.
 - **Firebase Sync Nube:** Monitoreo remoto en tiempo real de múltiples sucursales.
@@ -107,10 +107,16 @@ npm run test:logic
 ## Estado del Proyecto
 El proyecto se libera "tal cual" (as-is). Si te sirve el código, úsalo libremente.
 
-## Apoyo
-Si algún día este código te genera valor y gustas apoyar, cualquier donación es bien recibida:
+## Apoyo y Suscripciones
 
-**Solana Wallet:** `8AXcynfJ1ijr4Y6XcXaSGcqUgUzwsykHwg1vwDQQnoh1`
+Este software se mantiene y mejora de forma constante. Si deseas adquirir soporte técnico, contratar una personalización de marca o contribuir al mantenimiento del proyecto, puedes enviar tu apoyo o suscripción mensual:
+
+* **Paypal de Soporte:** `luishalo69@gmail.com`
+* **Costo de Suscripción:** $500.00 MXN a $700.00 MXN mensuales (desbloqueo completo con soporte extendido).
+
+---
+
+*Desarrollado con orgullo por brecha system mexico — De México para el Mundo.*
 
 ---
 *Documentación oficial generada para la versión de producción v2.0*
