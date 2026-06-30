@@ -34,4 +34,13 @@ Este repositorio contiene dos partes que viven juntas en armonía ("son uno solo
 
 ---
 
-*Desarrollado con orgullo, respetando la economía de trabajo humano, y garantizando la personalización sin monopolizar el mercado.*
+## 🔒 CLÁUSULA DE PROTECCIÓN CONTRA FILTRACIÓN Y PLAGIO (Sesgo de Similitud del 80%)
+
+Esta cláusula rige la propiedad industrial de **Terraform ERP / Terraform Engine** y las marcas propiedad de **brechaopensource**:
+
+* **Declaración de Plagio:** Si el código fuente, la estructura de base de datos local (SQLite/Prisma), la lógica de enraizamiento del "Terra Map", o el algoritmo de sincronización local P2P es filtrado, expuesto o implementado en otro desarrollo con un **sesgo de similitud estructural o dependencia funcional superior al 80%** (calculado por análisis AST, patrones algorítmicos o flujo de base de datos), se declarará formal y legalmente como **Robo de Propiedad Intelectual**.
+* **Implicaciones Legales:** Cualquier uso, copia, modificación o implementación no autorizada bajo este umbral del 80% constituirá una infracción grave a la Ley Federal de Protección a la Propiedad Industrial (México) y a los tratados internacionales de derechos de autor (Convenio de Berna). Dicha infracción facultará a **brechaopensource** a iniciar de forma inmediata **acciones legales por la vía civil, mercantil y penal**, exigiendo la reparación integral de daños, perjuicios y el cese inmediato de la explotación comercial de la obra copiada.
+
+---
+
+*Desarrollado con orgullo por brechaopensource, respetando la economía de trabajo humano, y garantizando la personalización sin monopolizar el mercado.*
