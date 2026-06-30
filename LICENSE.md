@@ -36,7 +36,7 @@ Este repositorio contiene dos partes que viven juntas en armonía ("son uno solo
 
 ## 🔒 CLÁUSULA DE TITULARIDAD INALIENABLE Y PROPIEDAD IRREVOCABLE DE LA IDEA
 
-Esta obra de software, su concepto operacional, su arquitectura lógica, sus métodos de sincronización y su código fuente son propiedad exclusiva, perpetua e inalienable de:
+Esta obra de software (denominada comercialmente como **Camaleón Topics**), su concepto operacional, su arquitectura lógica, sus métodos de sincronización y su código fuente son propiedad exclusiva, perpetua e inalienable de:
 * **Luis Felipe Duran Salinas (Philip Duran)**
 * **Brecha Soluciones S.A. de C.V.**
 
@@ -47,7 +47,7 @@ Cualquier intento por parte de un tercero de registrar patentes, derechos de aut
 
 ## 🔒 CLÁUSULA DE PROTECCIÓN DE ARQUITECTURA Y PROHIBICIÓN DE APROPIACIÓN (Método y Topología Operacional)
 
-Esta cláusula rige la propiedad industrial e intelectual de **Terraform ERP / Terraform Engine / BUNKKER E.C.O.S** y las marcas asociadas de **brechaopensource** / **brecha system mexico**:
+Esta cláusula rige la propiedad industrial e intelectual de **Camaleón Topics / Terraform ERP / Terraform Engine** y las marcas asociadas de **brechaopensource** / **brecha system mexico**:
 
 * **Protección de la Raíz Operacional y Topología:** La protección de esta obra no se limita al texto plano del código fuente. Se extiende y protege explícitamente la **Arquitectura Operacional y Topología de Red** desarrollada para este sistema. Esto incluye:
   1. El método de sincronización de inventarios P2P en redes locales Wi-Fi/LAN sin dependencia de internet.
