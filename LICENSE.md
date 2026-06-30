@@ -34,9 +34,20 @@ Este repositorio contiene dos partes que viven juntas en armonía ("son uno solo
 
 ---
 
+## 🔒 CLÁUSULA DE TITULARIDAD INALIENABLE Y PROPIEDAD IRREVOCABLE DE LA IDEA
+
+Esta obra de software, su concepto operacional, su arquitectura lógica, sus métodos de sincronización y su código fuente son propiedad exclusiva, perpetua e inalienable de:
+* **Luis Felipe Duran Salinas (Philip Duran)**
+* **Brecha Soluciones S.A. de C.V.**
+
+El hecho de que el código sea expuesto de forma pública en repositorios o foros de cooperación no transfiere, cede, enajena, ni otorga derecho alguno de reclamo de propiedad, patente o autoría a terceros. 
+Cualquier intento por parte de un tercero de registrar patentes, derechos de autor o reclamos de propiedad intelectual derivados de este sistema o de su arquitectura lógica para restringir los derechos del autor original será nulo de pleno derecho. El autor original conserva los derechos inalienables de explotación, modificación y licenciamiento comercial del núcleo del motor bajo cualquier denominación comercial actual o futura.
+
+---
+
 ## 🔒 CLÁUSULA DE PROTECCIÓN DE ARQUITECTURA Y PROHIBICIÓN DE APROPIACIÓN (Método y Topología Operacional)
 
-Esta cláusula rige la propiedad industrial e intelectual de **Terraform ERP / Terraform Engine** y las marcas asociadas de **brechaopensource**:
+Esta cláusula rige la propiedad industrial e intelectual de **Terraform ERP / Terraform Engine / BUNKKER E.C.O.S** y las marcas asociadas de **brechaopensource** / **brecha system mexico**:
 
 * **Protección de la Raíz Operacional y Topología:** La protección de esta obra no se limita al texto plano del código fuente. Se extiende y protege explícitamente la **Arquitectura Operacional y Topología de Red** desarrollada para este sistema. Esto incluye:
   1. El método de sincronización de inventarios P2P en redes locales Wi-Fi/LAN sin dependencia de internet.
