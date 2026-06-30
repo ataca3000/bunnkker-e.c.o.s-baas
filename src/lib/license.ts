@@ -47,7 +47,7 @@ export function generatePinForHardware(machineId: string, expDateStr: string): s
 }
 
 // ─── Machine fingerprint ─────────────────────────────────────────────────────
-function getMachineId(): string {
+export function getMachineId(): string {
     if (typeof window === 'undefined') return 'server_id';
     let id = localStorage.getItem(MACHINE_KEY);
     if (!id) {
@@ -231,13 +231,41 @@ export function activateLicenseOffline(pin: string): { success: boolean; message
 
 // ─── Check current license status ─────────────────────────────────────────────
 export function checkLicenseStatus(): LicenseState {
-    // FREE COMMUNITY EDITION BYPASS: Todos los módulos son 100% gratis de por vida
-    return { 
-        status: 'active', 
-        clientName: 'Terraform Community User', 
-        key: 'TERRAFORM-FREE-FOREVER', 
-        expiresAt: null 
-    };
+    const lic = loadLocal() ?? initTrial();
+    const now = Date.now();
+
+    // Anti-Tampering Check: Si la fecha del sistema es menor al último registro guardado
+    if (lic.lastCheckedTime && now < lic.lastCheckedTime) {
+        console.warn("⚠️ Reloj del sistema alterado hacia atrás. Bloqueando acceso por seguridad.");
+        if (lic.status !== 'expired') {
+            saveLocal({ ...lic, status: 'expired' });
+        }
+        return { status: 'expired' };
+    }
+
+    // Actualizar última fecha de revisión para la próxima comprobación
+    const updatedLic = { ...lic, lastCheckedTime: now };
+
+    if (updatedLic.status === 'active') {
+        if (updatedLic.expiresAt && updatedLic.expiresAt < now) {
+            saveLocal({ ...updatedLic, status: 'expired' });
+            return { status: 'expired' };
+        }
+        saveLocal(updatedLic);
+        return { status: 'active', clientName: updatedLic.clientName, key: updatedLic.key, expiresAt: updatedLic.expiresAt };
+    }
+
+    const daysRemaining = getTrialDaysRemaining(updatedLic.trialStart);
+
+    if (daysRemaining <= 0) {
+        if (updatedLic.status !== 'expired') {
+            saveLocal({ ...updatedLic, status: 'expired' });
+        }
+        return { status: 'expired' };
+    }
+
+    saveLocal(updatedLic);
+    return { status: 'trial', daysRemaining };
 }
 
 // ─── Re-validate online (call on app start if connected) ─────────────────────
