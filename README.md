@@ -1,8 +1,12 @@
-# GESTOR DE EMPRESAS LOGÍSTICAS & ERP PREMIUM — ADMIN.COM
+# 🌎 TERRAFORM ERP — Ecosistema Comercial Local-First
 
-**Admin.com** es un ecosistema tecnológico de vanguardia diseñado para la gestión integral de recursos empresariales (ERP) y presencia digital autoadministrable (Marketplace) para comercios físicos y de logística.
+**Terraform ERP** es una plataforma de software de código abierto comercial (Open-Core) diseñada por **brecha system mexico** de México para el mundo. Unifica la administración comercial (ERP/POS), el e-commerce autoadministrable (Marketplace) y la logística local.
 
-Este proyecto combina una operación local ultrarrápida a prueba de fallas de internet (**Local-First**) con sincronización bidireccional en tiempo real hacia la nube (**Firebase BaaS**), empaquetado bajo un único instalable multiplataforma (Electron/Docker).
+Este ecosistema combina una arquitectura local descentralizada a prueba de caídas de internet (**Local-First**) con sincronización bidireccional en tiempo real hacia la nube (**Firebase/Supabase**), empaquetado en un portable multiplataforma único.
+
+* 📖 **Licencia de Arquitectura:** Consulte los términos de propiedad industrial y el umbral de similitud del 80% en [LICENSE.md](file:///c:/Users/codem/Downloads/admin.com/LICENSE.md).
+* 🛡️ **Política de Seguridad:** Lea las directrices contra bots de clonación y raspado automatizado en [.github/SECURITY.md](file:///c:/Users/codem/Downloads/admin.com/.github/SECURITY.md).
+* 👥 **Invitación a Colaborar:** Invitamos a la comunidad global de desarrolladores a cooperar, proponer mejoras y expandir la red de inventarios local-first.
 
 ---
 
@@ -20,10 +24,19 @@ El portal de acceso (`/login`) es estéticamente un simple login para clientes d
 ### 4. Asistente Wizard y Setup de Único Uso
 La primera vez que el software se instala, ejecuta un tour dinámico interactivo de configuración guiada. Exige el registro del único perfil de **Super Administrador** soberano del sistema y, una vez creado, la ruta de setup se desactiva permanentemente para prevenir intrusiones.
 
-### 5. Suite de QA & Pruebas de Robustez
-Garantizamos la integridad financiera del ERP mediante dos herramientas de diagnóstico automático:
+### 5. Blindaje de Seguridad Local y Nube
+* **Permisos del Archivo de Base de Datos:** `dev.db` se configura con permisos restrictivos `0o600` (con control de acceso ACL exclusivo del propietario en Windows) para evitar que procesos externos roben la base de datos local.
+* **Protección contra Fuerza Bruta:** El endpoint `/api/auth/session` incluye un limitador de tasa de solicitudes (Rate Limiting) y bloqueo automático de IP por 15 minutos tras 5 intentos fallidos consecutivos de login.
+* **Firmas Criptográficas de Sesión:** Las cookies de sesión y roles se firman localmente con firmas criptográficas HMAC basadas en un `JWT_SECRET` local para prevenir ataques de elevación de privilegios ("Pass-the-Hash").
+* **Huella Digital del Dispositivo (Fingerprinting):** Cada usuario se asocia a un identificador único de máquina (Browser Fingerprint UUID) en su primer inicio de sesión, bloqueando el acceso al PIN desde cualquier otro dispositivo no autorizado.
+* **Auditoría de Registro de Acceso:** Bitácora inmutable cifrada y protegida localmente que registra intentos fallidos, logouts y redirecciones sospechosas.
+* **Post-Filtro de Categorías Sensibles:** El clasificador de productos local por modelo de tópicos (`src/lib/ai/productClassifier.ts`) limpia el dataset original aplicando filtros restrictivos en caliente para omitir clasificaciones inapropiadas o sensibles del negocio.
+
+### 6. Suite de QA & Pruebas de Robustez
+Garantizamos la integridad del ERP mediante tres herramientas de diagnóstico automático:
 1. **Consola QA en Navegador (`/dashboard/tests`):** Ejecuta en caliente simulaciones de adición de productos, límites de stock, split de comisiones (80/20) y control de accesos.
-2. **Terminal CLI (`scripts/test-logic.js`):** Script de Node.js de alta velocidad (`npm run test:logic`) para integración continua y validación de cambios lógicos rápidos.
+2. **Terminal CLI (`scripts/test-logic.js`):** Script de Node.js de alta velocidad (`npm run test:logic`) para integración continua y validación de flujos de estados (cajero -> almacén -> reparto).
+3. **Tests de Estrés y Carga con k6 (`scripts/rbac_stress_test.js`):** Valida la estabilidad del sistema simulando hasta 1000 usuarios concurrentes con roles mezclados, confirmando que las redirecciones del middleware y el firewall no se rompen bajo carga.
 
 ---
 
@@ -35,14 +48,24 @@ El sistema cuenta con el **98% de sus funciones activas e integradas**. El 2% re
 | :--- | :---: | :--- |
 | **Punto de Venta (POS)** | `100%` | Lector láser de barra (<70ms), carrito, corte ciego de caja y tickets. |
 | **Diseñador Canvas & Marca** | `100%` | Edición en vivo del e-commerce, paleta de colores e Inspector lateral. |
-| **Clasificación por IA (SanJoseAI)** | `100%` | Categorización inteligente de productos local + fallback a API en la nube. |
+| **Clasificación por IA (Local Topics)**| `100%` | Categorización inteligente basada en el modelo de tópicos local (`/unsupervised_topic_modeling-master`) y filtrado sensible. |
 | **Tour Onboarding del Dueño** | `100%` | Widget flotante reactivo a las rutas que acompaña al usuario paso a paso. |
-| **Consola de QA & Testing** | `100%` | Consola visual y terminal para pruebas de robustez matemática. |
-| **Autenticación & RBAC** | `100%` | Restricción estricta por roles y bypass local de rescate offline para Super Admin. |
+| **Consola de QA & Testing** | `100%` | Consola visual, terminal de pipeline logístico y tests de estrés de concurrencia. |
+| **Autenticación & RBAC** | `100%` | Restricción estricta por roles firmados, dispositivo único, y login simplificado de Superadmin mediante PIN **`0000`**. |
 | **Verificador de Precios** | `100%` | Buscador de catálogo y lector por cámara del celular del cliente o lector de piso. |
 | **Licenciamiento y Suscripción** | `100%` | Validación de claves seriales asociadas a la huella digital física del equipo. |
-| **Logística de Repartos** | `95%` | Asignación de rutas y carga/descarga en colas físicas (patio). |
+| **Logística de Repartos** | `95%` | Asignación de rutas y carga/descarga en colas físicas (patio y recogida). |
 | **Facturación y Pagos SAT** | `85%` | Interfaces CFDI preparadas y pasarelas listas. Falta conectar llaves reales. |
+
+---
+
+## 📁 Estructura y Limpieza del Repositorio
+Para garantizar la solidez y orden a nivel de archivos locales en la entrega del proyecto, el workspace fue depurado:
+* **`src/`:** Todo el código fuente de producción (Next.js, Tailwind, hooks, context).
+* **`prisma/`:** Esquema y base de datos local SQLite protegida (`dev.db`).
+* **`scripts/`:** Herramientas de automatización y testing (`test-logic.js`, `rbac_stress_test.js`).
+* **`unsupervised_topic_modeling-master/`:** Modelos de tópicos locales de entrenamiento en español para la categorización por IA offline.
+* **`obsoleto/`:** Carpeta excluida del repositorio (`.gitignore`) que resguarda de forma segura los archivos temporales, scripts de migración antiguos y el monorepo duplicado deprecado (`bunkker-ecos`) para evitar colisiones de importación.
 
 ---
 
