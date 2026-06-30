@@ -29,7 +29,10 @@ export async function POST(req: NextRequest) {
         const idToken = authHeader.split('Bearer ')[1];
         const decodedToken = await auth.verifyIdToken(idToken);
         const userId = decodedToken.uid;
-        const role = decodedToken.role; // Asumiendo custom claims
+        
+        // Obtener el rol desde la base de datos Firestore (colección 'users')
+        const userDoc = await db.collection('users').doc(userId).get();
+        const role = userDoc.exists ? userDoc.data()?.role : undefined;
 
         // Regla: Solo Caja y Patio pueden sincronizar datos locales (Ventas o Entregas)
         if (role !== 'superadmin' && role !== 'sales' && role !== 'patio') {

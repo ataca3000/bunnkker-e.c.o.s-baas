@@ -62,7 +62,7 @@ export async function logAudit(action: AuditLog) {
             systemVersion: '1.0.0-PRO'
         });
 
-        // Si estamos en Electron, guardamos una copia local inmediata (Local-First)
+        // Si estamos en Electron, guardamos una copia local inmediata (Local-First) cifrada
         if (isNode) {
             try {
                 const req = (globalThis as any).require;
@@ -70,6 +70,7 @@ export async function logAudit(action: AuditLog) {
                 const fs = req('fs');
                 const path = req('path');
                 const os = req('os');
+                const nodeCrypto = req('crypto');
 
                 const logsDir = path.join(os.homedir(), '.admincom_erp');
                 const logFile = path.join(logsDir, 'audit_local.jsonl');
@@ -81,9 +82,23 @@ export async function logAudit(action: AuditLog) {
                     id: `local-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
                     timestamp: { seconds: Math.floor(Date.now() / 1000), nanoseconds: 0 },
                     isLocal: true
-                }) + '\n';
+                });
 
-                fs.appendFileSync(logFile, localEntry, 'utf8');
+                // Cifrar la línea de log con AES-256-CBC usando el secreto del servidor
+                let encryptedLine = localEntry;
+                try {
+                    const secret = process.env.INTERNAL_API_SECRET || 'fallback-audit-secret-for-dev-only-do-not-use-in-production';
+                    const key = nodeCrypto.createHash('sha256').update(secret).digest();
+                    const iv = nodeCrypto.randomBytes(16);
+                    const cipher = nodeCrypto.createCipheriv('aes-256-cbc', key, iv);
+                    let encrypted = cipher.update(localEntry, 'utf8', 'hex');
+                    encrypted += cipher.final('hex');
+                    encryptedLine = `${iv.toString('hex')}:${encrypted}`;
+                } catch (cryptErr) {
+                    console.error("Failed to encrypt audit line:", cryptErr);
+                }
+
+                fs.appendFileSync(logFile, encryptedLine + '\n', 'utf8');
             } catch (e) {
                 console.error("Error writing local audit file:", e);
             }

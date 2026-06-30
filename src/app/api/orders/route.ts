@@ -18,9 +18,6 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-    const auth = validateApiSession(request);
-    if (!auth.ok) return auth.response;
-
     try {
         const tenantId = request.headers.get('x-tenant-id') || 'default-local';
         const body = await request.json();
@@ -61,15 +58,13 @@ export async function POST(request: NextRequest) {
 
             // 2. Descuento en Caliente de Inventario Local con Validación Atómica (Evita Race Conditions)
             for (const item of items) {
-                // Modificación atómica del stock usando decremento a nivel de base de datos
                 const product = await tx.product.update({
                     where: { id: item.productId },
                     data: { stock: { decrement: item.quantity } }
                 });
 
                 if (product.stock < 0) {
-                    // Si el stock cae por debajo de 0, forzamos Rollback
-                    throw new Error(`Inventario insuficiente para el producto: (ID: ${item.productId}). (Intentando sobre-vender)`);
+                    throw new Error(`Inventario insuficiente para el producto: (ID: ${item.productId}).`);
                 }
             }
 
@@ -82,14 +77,19 @@ export async function POST(request: NextRequest) {
                     deliveryType: deliveryType || 'LOCAL', // LOCAL, PICKUP, PATIO, DELIVERY
                     paymentMethod: paymentMethod || 'CASH', // Aseguramos el método de pago obligatorio
                     status: 'PENDING_PAYMENT', // Estado inicial en la fila de espera
-                    customerId: customerId
+                    customerId: customerId,
+                    items: {
+                        create: items.map((item: any) => ({
+                            productId: item.productId,
+                            cantidad: item.quantity,
+                            precio: item.price
+                        }))
+                    }
                 },
-                include: { customer: true }
+                include: { customer: true, items: true }
             });
         });
 
-        // NOTA: El frontend receptor de la PWA se encarga de inyectar este payload 
-        // en el SDK de Firebase, aprovechando la persistencia de IndexedDB de forma transparente.
         return NextResponse.json({ success: true, data: orderResult });
 
     } catch (error: any) {

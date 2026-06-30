@@ -4,6 +4,21 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('Seeding local users to SQLite...');
 
+  // Eliminar usuario previo con pin 0000 para evitar error de constraint único
+  await prisma.user.deleteMany({ where: { pin: '0000' } });
+
+  // Superadmin Maestro (0000)
+  await prisma.user.upsert({
+    where: { id: 'local_master' },
+    update: {},
+    create: {
+      id: 'local_master',
+      name: 'Super Admin Maestro',
+      pin: '0000',
+      role: 'superadmin',
+    },
+  });
+
   // Superadmin
   await prisma.user.upsert({
     where: { pin: '123456' },

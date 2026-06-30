@@ -17,7 +17,7 @@ export default function PatioDashboard() {
 
     const pendingLoads = useMemo(() => {
         return orders.filter(o => {
-            const validStatus = o.status === 'READY_TO_SHIP' || o.status === 'PREPARANDO' || o.status === 'NIGHT_QUEUE' || o.status === 'PENDIENTE_LLEGADA';
+            const validStatus = o.status === 'READY_TO_SHIP' || o.status === 'paid' || o.status === 'PREPARANDO' || o.status === 'NIGHT_QUEUE' || o.status === 'PENDIENTE_LLEGADA';
             const notLoaded = !(o as any).isLoaded;
             const custName = o.customer?.name || o.customerName || 'Cliente';
             const matchesSearch = o.id.toLowerCase().includes(searchTerm.toLowerCase()) || 

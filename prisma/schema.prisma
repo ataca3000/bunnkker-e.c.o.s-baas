@@ -60,6 +60,8 @@ model Order {
   date          DateTime @default(now())
   offline       Boolean  @default(true) // True porque nació offline
   synced        Boolean  @default(false) // Si ya subió a Firebase
+  ventanilla    String?  // Asignación de ventanilla física para entrega
+  cajon         String?  // Asignación de cajón de estacionamiento para recolección
   
   customerId    String?
   customer      Customer? @relation(fields: [customerId], references: [id])

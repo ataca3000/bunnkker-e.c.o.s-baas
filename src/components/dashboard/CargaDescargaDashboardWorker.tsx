@@ -1,17 +1,18 @@
-
 "use client";
 import { motion } from 'framer-motion';
 import { useState } from 'react';
-import { Truck, LogOut, CheckCircle, MapPin, Clock, Loader2, Play } from 'lucide-react';
+import { Truck, LogOut, CheckCircle, MapPin, Clock, Loader2, Play, QrCode } from 'lucide-react';
+import BarcodeScanner from '@/components/BarcodeScanner';
 
 /* ─── 3.5. CARGA Y DESCARGA DASHBOARD ────────────────────────────────────── */
-export default function CargaDescargaDashboardWorker({ userName, greeting, orders = [], startLoading, completeLoading, profile, ssignOut, formatCurrency }: any) {
+export default function CargaDescargaDashboardWorker({ userName, greeting, orders = [], startLoading, completeLoading, profile, signOut, formatCurrency }: any) {
     const [searchTerm, setSearchTerm]       = useState('');
     const [processingId, setProcessingId]   = useState<string | null>(null);
+    const [showScanner, setShowScanner]     = useState(false);
 
     const pendingLoads = orders.filter((o: any) => {
         const validStatus  = o.status === 'paid' || o.status === 'PREPARANDO' || o.status === 'NIGHT_QUEUE' || o.status === 'PENDIENTE_LLEGADA';
-        const notLoaded    = !(o as any).isLoaded;
+        const notLoaded    = !(o as any).isLoaded && o.status !== 'DELIVERED';
         const custName     = o.customer?.name || o.customerName || 'Cliente';
         const matchesSearch = o.id.toLowerCase().includes(searchTerm.toLowerCase()) || custName.toLowerCase().includes(searchTerm.toLowerCase());
         return validStatus && notLoaded && matchesSearch;
@@ -57,13 +58,22 @@ export default function CargaDescargaDashboardWorker({ userName, greeting, order
                     </h1>
                     <p className="text-gray-400 font-medium text-base mt-1">{greeting}, <b>{userName}</b>. Estación de patio activa.</p>
                 </div>
-                <motion.button
-                    whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                    onClick={signOut}
-                    className="bg-rose-600 hover:bg-rose-700 text-white px-5 py-2.5 rounded-2xl font-bold uppercase text-xs tracking-wider flex items-center gap-2 transition-all shadow-md"
-                >
-                    <LogOut size={14} /> Cerrar Sesión
-                </motion.button>
+                <div className="flex gap-3">
+                    <motion.button
+                        whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                        onClick={() => setShowScanner(true)}
+                        className="bg-sky-600 hover:bg-sky-700 text-white px-5 py-2.5 rounded-2xl font-bold uppercase text-xs tracking-wider flex items-center gap-2 transition-all shadow-md"
+                    >
+                        <QrCode size={14} /> Escanear QR Ticket
+                    </motion.button>
+                    <motion.button
+                        whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                        onClick={signOut}
+                        className="bg-rose-600 hover:bg-rose-700 text-white px-5 py-2.5 rounded-2xl font-bold uppercase text-xs tracking-wider flex items-center gap-2 transition-all shadow-md"
+                    >
+                        <LogOut size={14} /> Cerrar Sesión
+                    </motion.button>
+                </div>
             </header>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
@@ -181,6 +191,23 @@ export default function CargaDescargaDashboardWorker({ userName, greeting, order
                     )}
                 </div>
             </div>
+            {showScanner && (
+                <BarcodeScanner
+                    isOpen={showScanner}
+                    onClose={() => setShowScanner(false)}
+                    onScanSuccess={async (decodedText: string) => {
+                        const orderId = decodedText.trim();
+                        const matched = pendingLoads.find((o: any) => o.id.toLowerCase() === orderId.toLowerCase());
+                        setShowScanner(false);
+                        if (matched) {
+                            alert(`✅ Ticket de pago válido para folio: ${orderId}. Completando despacho...`);
+                            await handleAction(matched.id, 'complete');
+                        } else {
+                            alert(`❌ Folio "${orderId}" no encontrado en tu cola de entregas de patio.`);
+                        }
+                    }}
+                />
+            )}
         </main>
     );
 };

@@ -96,7 +96,35 @@ export default function RadarAuditPage() {
             if (!fs.existsSync(logFile)) return [];
 
             const content = fs.readFileSync(logFile, 'utf8');
-            let parsed = content.trim().split('\n').map((line: string) => JSON.parse(line));
+            let parsed = content.trim().split('\n').map((line: string) => {
+                try {
+                    if (line.includes(':')) {
+                        const parts = line.split(':');
+                        const ivHex = parts[0];
+                        const encryptedHex = parts[1];
+                        
+                        const secret = process.env.INTERNAL_API_SECRET || 'fallback-audit-secret-for-dev-only-do-not-use-in-production';
+                        const nodeCrypto = req('crypto');
+                        const key = nodeCrypto.createHash('sha256').update(secret).digest();
+                        const iv = Buffer.from(ivHex, 'hex');
+                        const decipher = nodeCrypto.createDecipheriv('aes-256-cbc', key, iv);
+                        let decrypted = decipher.update(encryptedHex, 'hex', 'utf8');
+                        decrypted += decipher.final('utf8');
+                        return JSON.parse(decrypted);
+                    }
+                    return JSON.parse(line);
+                } catch (err) {
+                    console.error("Failed to parse/decrypt audit log line:", err);
+                    return {
+                        type: 'SECURITY_ALERT',
+                        userId: 'system',
+                        userName: 'System',
+                        userRole: 'system',
+                        description: 'Línea de auditoría ilegible o encriptada con otra clave.',
+                        timestamp: { seconds: Math.floor(Date.now() / 1000), nanoseconds: 0 }
+                    };
+                }
+            });
 
             // Aplicar filtros de fecha a los logs locales para consistencia
             if (startDate) {
