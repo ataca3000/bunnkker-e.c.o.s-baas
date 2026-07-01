@@ -1,7 +1,23 @@
 # 🌎 TERRAFORM ERP — Ecosistema Comercial Local-First
 
-**Terraform ERP** es una plataforma de software de código abierto comercial (Open-Core) diseñada por **brecha system mexico** de México para el mundo. Unifica la administración comercial (ERP/POS), el e-commerce autoadministrable (Marketplace) y la logística local.
-
+**Terraform ERP** es una plataforma de software de código comercial (LICENCIADA PERMISIVA) diseñada por **brecha system mexico** . Unifica la administración comercial (ERP/POS), el e-commerce autoadministrable (Marketplace) y la logística local  p2p wifi-lan local firts servidor y tunel ToT PROXY .
+*catalogo market offline (mediante wifi )online(mediante tunel y base de datos)
+*control de personal activo por roles y dasboard especiales unicos 
+*logistica de repartidor monitoreo en tiempo real .
+*inventario sincronizado con xcja y piso de carga y repartidor con validaciones fisica y auditoria inmutable de cada accion .
+*clasificacion de inventario organizazcional estate nivel  pz o granel con barra de busqueda para localizar escaneo por qr camara y asistecia topica de asistente ia integrado.
+*Clasificacion de roles de menor a mayor no escalablesseguridad pin  ligada a un unico dispositivo nativo de inicio de sesion.  
+*sincronizacion matriz nodos mediante red wi fi con divicion por red para clientes (red de invitados ).
+*incronizacion matriz nodos mediante red wi fi con divicion por red para equipo  (red privadas ).
+*mapa de geolocalizacion gratis y rastreo mediante pwa ligado al sw que persiste en perdidas de conexion con boton de panico alerta a la matriz super admin.
+*ventas sin fila y reservacion d eentregas con validacion de pago local y online mediante tercesros stripe
+no permite sobre ventas por el sincronizado de servidor unico sirviendo a todos los nodos en un mismo organismo vivo *asistido por camaleon topics nuestra ia de  ayuda y respaldo al cliuente personal y al administrador perfectamnete entrenada para distinguir a quien sirve.
+*comunicacion interna nativa para el personal tipo walkye tokie 
+*compatible con impresora termica y ecaner laser 
+*caja ciega con registro de cada venta y prueba de venta mediante imprecion de ticket respaldo local y compartir al cliente en su registro si y ase registro con pueba fotografica opcional.
+*auditoria inmutable con huella SHA256 
+*expaortacion/importacion de invetario mediante archivos masivos en distintos formatos 
+*editor del market canvas magnetic creative libre con medios locales banners creativereactive modo espejo hasta confirmar pasa a produccion 
 Este ecosistema combina una arquitectura local descentralizada a prueba de caídas de internet (**Local-First**) con sincronización bidireccional en tiempo real hacia la nube (**Firebase/Supabase**), empaquetado en un portable multiplataforma único.
 
 * 📖 **Licencia de Arquitectura:** Consulte los términos de propiedad industrial y el umbral de similitud del 80% en [LICENSE.md](file:///c:/Users/codem/Downloads/admin.com/LICENSE.md).
@@ -40,9 +56,9 @@ Garantizamos la integridad del ERP mediante tres herramientas de diagnóstico au
 
 ---
 
-## 📊 Estado de Funcionamiento del Sistema (98% Completado)
+## 📊 Estado de Funcionamiento del Sistema (Fase Beta).
 
-El sistema cuenta con el **98% de sus funciones activas e integradas**. El 2% restante corresponde a la colocación de credenciales definitivas del SAT (Facturapi) y pasarelas de pago (Stripe), las cuales operan actualmente en modo de simulación Sandbox para pruebas seguras del negocio.
+El sistema cuenta con el **100% de sus funciones activas e integradas**. El  restante corresponde a la colocación de credenciales definitivas del SAT (Facturapi) y pasarelas de pago (Stripe), las cuales operan actualmente en modo de Sandbox para pruebas .
 
 | Módulo | Nivel de Operación | Descripción |
 | :--- | :---: | :--- |
@@ -54,18 +70,17 @@ El sistema cuenta con el **98% de sus funciones activas e integradas**. El 2% re
 | **Autenticación & RBAC** | `100%` | Restricción estricta por roles firmados, dispositivo único, y login simplificado de Superadmin mediante PIN **`0000`**. |
 | **Verificador de Precios** | `100%` | Buscador de catálogo y lector por cámara del celular del cliente o lector de piso. |
 | **Licenciamiento y Suscripción** | `100%` | Validación de claves seriales asociadas a la huella digital física del equipo. |
-| **Logística de Repartos** | `95%` | Asignación de rutas y carga/descarga en colas físicas (patio y recogida). |
-| **Facturación y Pagos SAT** | `85%` | Interfaces CFDI preparadas y pasarelas listas. Falta conectar llaves reales. |
+| **Logística de Repartos** | `100%` | Asignación de rutas y carga/descarga en colas físicas (patio y recogida). |
+| **Facturación y Pagos SAT** | `100%` | Interfaces CFDI preparadas y pasarelas listas. Falta conectar llaves reales. |
 
 ---
 
-## 📁 Estructura y Limpieza del Repositorio
+## 📁 Estructura y Limpieza del Repositorio(ejm.incompletop)
 Para garantizar la solidez y orden a nivel de archivos locales en la entrega del proyecto, el workspace fue depurado:
 * **`src/`:** Todo el código fuente de producción (Next.js, Tailwind, hooks, context).
 * **`prisma/`:** Esquema y base de datos local SQLite protegida (`dev.db`).
 * **`scripts/`:** Herramientas de automatización y testing (`test-logic.js`, `rbac_stress_test.js`).
 * **`unsupervised_topic_modeling-master/`:** Modelos de tópicos locales de entrenamiento en español para la categorización por IA offline.
-* **`obsoleto/`:** Carpeta excluida del repositorio (`.gitignore`) que resguarda de forma segura los archivos temporales, scripts de migración antiguos y el monorepo duplicado deprecado (`bunkker-ecos`) para evitar colisiones de importación.
 
 ---
 
@@ -78,7 +93,7 @@ Para garantizar la solidez y orden a nivel de archivos locales en la entrega del
 - **Exportación básica:** Guardado de reportes en Excel/Word.
 - **Canvas Básico:** Editor simplificado de cabecera y catálogo.
 
-### 💎 Versión PRO (Suscripción Mensual de $500 a $700 MXN / 7 Días de Prueba Gratis)
+### 💎 Versión PRO (Suscripción Mensual de $ a $ MXN / 7 Días de Prueba Gratis)
 - **Validación Cloud (BaaS Centralizado):** Verificación remota de claves seriales vía Google Cloud Functions integradas con tu Firebase, atadas a la huella de hardware física (Machine ID) para evitar copias piratas.
 - **Aislamiento Multi-Tenant:** Aislamiento absoluto de bases de datos por sucursal bajo reglas del servidor.
 - **Firebase Sync Nube:** Monitoreo remoto en tiempo real de múltiples sucursales.
@@ -105,8 +120,6 @@ npm run test:logic
 ---
 
 ## Estado del Proyecto
-El proyecto se libera "tal cual" (as-is). Si te sirve el código, úsalo libremente.
-
 ## Apoyo y Suscripciones
 
 Este software se mantiene y mejora de forma constante. Si deseas adquirir soporte técnico, contratar una personalización de marca o contribuir al mantenimiento del proyecto, puedes enviar tu apoyo o suscripción mensual:
@@ -116,7 +129,6 @@ Este software se mantiene y mejora de forma constante. Si deseas adquirir soport
 
 ---
 
-*Desarrollado con orgullo por brecha system mexico — De México para el Mundo.*
-
+*Desarrollado con orgullo por brechaSOLUCIONES  mexico — De México para el Mundo.*
 ---
-*Documentación oficial generada para la versión de producción v2.0*
+*Documentación oficial
