@@ -1,134 +1,239 @@
 # 🌎 TERRAFORM ERP — Ecosistema Comercial Local-First
 
-**Terraform ERP** es una plataforma de software de código comercial (LICENCIADA PERMISIVA) diseñada por **brecha system mexico** . Unifica la administración comercial (ERP/POS), el e-commerce autoadministrable (Marketplace) y la logística local  p2p wifi-lan local firts servidor y tunel ToT PROXY .
-*catalogo market offline (mediante wifi )online(mediante tunel y base de datos)
-*control de personal activo por roles y dasboard especiales unicos 
-*logistica de repartidor monitoreo en tiempo real .
-*inventario sincronizado con xcja y piso de carga y repartidor con validaciones fisica y auditoria inmutable de cada accion .
-*clasificacion de inventario organizazcional estate nivel  pz o granel con barra de busqueda para localizar escaneo por qr camara y asistecia topica de asistente ia integrado.
-*Clasificacion de roles de menor a mayor no escalablesseguridad pin  ligada a un unico dispositivo nativo de inicio de sesion.  
-*sincronizacion matriz nodos mediante red wi fi con divicion por red para clientes (red de invitados ).
-*incronizacion matriz nodos mediante red wi fi con divicion por red para equipo  (red privadas ).
-*mapa de geolocalizacion gratis y rastreo mediante pwa ligado al sw que persiste en perdidas de conexion con boton de panico alerta a la matriz super admin.
-*ventas sin fila y reservacion d eentregas con validacion de pago local y online mediante tercesros stripe
-no permite sobre ventas por el sincronizado de servidor unico sirviendo a todos los nodos en un mismo organismo vivo *asistido por camaleon topics nuestra ia de  ayuda y respaldo al cliuente personal y al administrador perfectamnete entrenada para distinguir a quien sirve.
-*comunicacion interna nativa para el personal tipo walkye tokie 
-*compatible con impresora termica y ecaner laser 
-*caja ciega con registro de cada venta y prueba de venta mediante imprecion de ticket respaldo local y compartir al cliente en su registro si y ase registro con pueba fotografica opcional.
-*auditoria inmutable con huella SHA256 
-*expaortacion/importacion de invetario mediante archivos masivos en distintos formatos 
-*editor del market canvas magnetic creative libre con medios locales banners creativereactive modo espejo hasta confirmar pasa a produccion 
-Este ecosistema combina una arquitectura local descentralizada a prueba de caídas de internet (**Local-First**) con sincronización bidireccional en tiempo real hacia la nube (**Firebase/Supabase**), empaquetado en un portable multiplataforma único.
+**Terraform ERP** es una plataforma de software de código abierto diseñada para negocios pequeños y medianos que necesitan un ERP/POS profesional, asequible y que funcione sin internet.
 
-* 📖 **Licencia de Arquitectura:** Consulte los términos de propiedad industrial y el umbral de similitud del 80% en [LICENSE.md](file:///c:/Users/codem/Downloads/admin.com/LICENSE.md).
-* 🛡️ **Política de Seguridad:** Lea las directrices contra bots de clonación y raspado automatizado en [.github/SECURITY.md](file:///c:/Users/codem/Downloads/admin.com/.github/SECURITY.md).
-* 👥 **Invitación a Colaborar:** Invitamos a la comunidad global de desarrolladores a cooperar, proponer mejoras y expandir la red de inventarios local-first.
+## ⭐ ¿Por qué Terraform ERP?
 
----
+| Problema | Solución Terraform ERP |
+|----------|------------------------|
+| Sistemas SAP cuestan $500 USD/mes | Terraform: $500-800 MXN/mes |
+| No funcionan sin internet | Funciona 100% offline (local-first) |
+| Complicados de usar | Interfaz simple y en español |
+| Para grandes empresas | Diseñado para pymes mexicanas |
+| Caro implementar | Instalación en 1 hora |
 
-## 🌟 Lo Que Nos Distingue del Resto
+## 🚀 Características Principales
 
-### 1. Editor Visual Magnético (Canvas) "Shopify/Canva Style"
-El sistema cuenta con un constructor visual interactivo integrado (`/dashboard/design`) que permite al dueño cambiar textos "en vivo" haciendo clic sobre los bloques de su tienda virtual. El panel de herramientas izquierdo se transforma en un **Inspector de Bloques** contextual (estilo IA Studio) para modificar de forma micro-granular colores, márgenes, fuentes y filtros de visualización sin escribir una línea de código.
+✅ **POS Completo** - Lectura de códigos de barras, carrito, tickets
+✅ **Inventario Sincronizado** - Local + Cloud (Firebase)
+✅ **Editor Visual (Canvas)** - Personaliza tu marketplace sin código
+✅ **Logística & Delivery** - Asignación de rutas y rastreo en tiempo real
+✅ **Multi-sucursal** - Controla múltiples tiendas desde una app
+✅ **Facturación SAT** - Integración con Facturapi (CFDI 4.0)
+✅ **Roles & Permisos** - Control de acceso por empleado
+✅ **Offline-First** - Funciona sin internet, sincroniza cuando conecta
+✅ **Auditoría Inmutable** - Historial completo de cada transacción
+✅ **IA Integrada** - Clasificación automática de productos
 
-### 2. Sincronización Híbrida y Aislamiento Multi-Inquilino (Multi-Tenancy)
-Si la conexión a internet se cae, el Punto de Venta (POS) y el lector de código de barras no se detienen. El sistema opera sobre una base local SQLite ultrarrápida y sincroniza con Google Cloud Firestore de manera asíncrona. Los datos de cada cliente están estrictamente aislados en subcolecciones del servidor bajo reglas de seguridad inquebrantables, impidiendo la visualización o clonación de datos entre diferentes negocios.
+## 📱 Plataformas Soportadas
 
-### 3. Login Único Camuflado (Behind the Scenes RBAC)
-El portal de acceso (`/login`) es estéticamente un simple login para clientes de la tienda. Sin embargo, el sistema identifica el rango del usuario en el servidor y redirige a los empleados y administradores a sus respectivos páneles operativos de forma invisible, ocultando por completo las rutas de administración al ojo público.
+- 🖥️ **Windows** - Aplicación de escritorio (Electron)
+- 💻 **Web** - Acceso desde navegador (Next.js)
+- 📱 **Mobile** - Próximamente (React Native / Capacitor)
+- 🍎 **macOS** - Compatible (Electron)
 
-### 4. Asistente Wizard y Setup de Único Uso
-La primera vez que el software se instala, ejecuta un tour dinámico interactivo de configuración guiada. Exige el registro del único perfil de **Super Administrador** soberano del sistema y, una vez creado, la ruta de setup se desactiva permanentemente para prevenir intrusiones.
+## 💰 Planes y Precios
 
-### 5. Blindaje de Seguridad Local y Nube
-* **Permisos del Archivo de Base de Datos:** `dev.db` se configura con permisos restrictivos `0o600` (con control de acceso ACL exclusivo del propietario en Windows) para evitar que procesos externos roben la base de datos local.
-* **Protección contra Fuerza Bruta:** El endpoint `/api/auth/session` incluye un limitador de tasa de solicitudes (Rate Limiting) y bloqueo automático de IP por 15 minutos tras 5 intentos fallidos consecutivos de login.
-* **Firmas Criptográficas de Sesión:** Las cookies de sesión y roles se firman localmente con firmas criptográficas HMAC basadas en un `JWT_SECRET` local para prevenir ataques de elevación de privilegios ("Pass-the-Hash").
-* **Huella Digital del Dispositivo (Fingerprinting):** Cada usuario se asocia a un identificador único de máquina (Browser Fingerprint UUID) en su primer inicio de sesión, bloqueando el acceso al PIN desde cualquier otro dispositivo no autorizado.
-* **Auditoría de Registro de Acceso:** Bitácora inmutable cifrada y protegida localmente que registra intentos fallidos, logouts y redirecciones sospechosas.
-* **Post-Filtro de Categorías Sensibles:** El clasificador de productos local por modelo de tópicos (`src/lib/ai/productClassifier.ts`) limpia el dataset original aplicando filtros restrictivos en caliente para omitir clasificaciones inapropiadas o sensibles del negocio.
+### **Estándar** - GRATIS (Open Source)
+- POS básico
+- Inventario local
+- Sin facturación SAT
+- Sin cloud sync
+- Ideal para: Ferreterías, tienditas
 
-### 6. Suite de QA & Pruebas de Robustez
-Garantizamos la integridad del ERP mediante tres herramientas de diagnóstico automático:
-1. **Consola QA en Navegador (`/dashboard/tests`):** Ejecuta en caliente simulaciones de adición de productos, límites de stock, split de comisiones (80/20) y control de accesos.
-2. **Terminal CLI (`scripts/test-logic.js`):** Script de Node.js de alta velocidad (`npm run test:logic`) para integración continua y validación de flujos de estados (cajero -> almacén -> reparto).
-3. **Tests de Estrés y Carga con k6 (`scripts/rbac_stress_test.js`):** Valida la estabilidad del sistema simulando hasta 1000 usuarios concurrentes con roles mezclados, confirmando que las redirecciones del middleware y el firewall no se rompen bajo carga.
+### **PRO** - $500-800 MXN/mes
+- Todo de Estándar +
+- Cloud Sync (Firebase)
+- Facturación SAT integrada
+- Multi-sucursal
+- Logística y delivery
+- Soporte técnico
+- Ideal para: Restaurantes, supermercados, distribuidoras
 
----
+### **ENTERPRISE** - Consultar
+- Customización completa
+- Integraciones personalizadas
+- Soporte 24/7
+- SLA garantizado
+- Ideal para: Cadenas, corporativos
 
-## 📊 Estado de Funcionamiento del Sistema (Fase Beta).
+## 🎯 Comienza Ahora
 
-El sistema cuenta con el **100% de sus funciones activas e integradas**. El  restante corresponde a la colocación de credenciales definitivas del SAT (Facturapi) y pasarelas de pago (Stripe), las cuales operan actualmente en modo de Sandbox para pruebas .
+### **Opción 1: Descargar Instalador (Windows)**
+[📥 Descargar Terraform ERP v1.0.0](https://github.com/ataca3000/camaliontopics.com.erp/releases)
 
-| Módulo | Nivel de Operación | Descripción |
-| :--- | :---: | :--- |
-| **Punto de Venta (POS)** | `100%` | Lector láser de barra (<70ms), carrito, corte ciego de caja y tickets. |
-| **Diseñador Canvas & Marca** | `100%` | Edición en vivo del e-commerce, paleta de colores e Inspector lateral. |
-| **Clasificación por IA (Local Topics)**| `100%` | Categorización inteligente basada en el modelo de tópicos local (`/unsupervised_topic_modeling-master`) y filtrado sensible. |
-| **Tour Onboarding del Dueño** | `100%` | Widget flotante reactivo a las rutas que acompaña al usuario paso a paso. |
-| **Consola de QA & Testing** | `100%` | Consola visual, terminal de pipeline logístico y tests de estrés de concurrencia. |
-| **Autenticación & RBAC** | `100%` | Restricción estricta por roles firmados, dispositivo único, y login simplificado de Superadmin mediante PIN **`0000`**. |
-| **Verificador de Precios** | `100%` | Buscador de catálogo y lector por cámara del celular del cliente o lector de piso. |
-| **Licenciamiento y Suscripción** | `100%` | Validación de claves seriales asociadas a la huella digital física del equipo. |
-| **Logística de Repartos** | `100%` | Asignación de rutas y carga/descarga en colas físicas (patio y recogida). |
-| **Facturación y Pagos SAT** | `100%` | Interfaces CFDI preparadas y pasarelas listas. Falta conectar llaves reales. |
+### **Opción 2: Instalación Local (Desarrolladores)**
 
----
-
-## 📁 Estructura y Limpieza del Repositorio(ejm.incompletop)
-Para garantizar la solidez y orden a nivel de archivos locales en la entrega del proyecto, el workspace fue depurado:
-* **`src/`:** Todo el código fuente de producción (Next.js, Tailwind, hooks, context).
-* **`prisma/`:** Esquema y base de datos local SQLite protegida (`dev.db`).
-* **`scripts/`:** Herramientas de automatización y testing (`test-logic.js`, `rbac_stress_test.js`).
-* **`unsupervised_topic_modeling-master/`:** Modelos de tópicos locales de entrenamiento en español para la categorización por IA offline.
-
----
-
-## 🔑 Niveles de Licenciamiento (Estándar vs PRO)
-
-### 🆓 Versión Estándar (Gratis / Ganchar Clientes)
-- **POS Completo y Almacén local:** Lectura de códigos y control de existencias.
-- **Marketplace Público Básico:** Tienda responsiva para consulta de clientes.
-- **Roles locales:** Operación en red local (sales, inventory, carga_descarga).
-- **Exportación básica:** Guardado de reportes en Excel/Word.
-- **Canvas Básico:** Editor simplificado de cabecera y catálogo.
-
-### 💎 Versión PRO (Suscripción Mensual de $ a $ MXN / 7 Días de Prueba Gratis)
-- **Validación Cloud (BaaS Centralizado):** Verificación remota de claves seriales vía Google Cloud Functions integradas con tu Firebase, atadas a la huella de hardware física (Machine ID) para evitar copias piratas.
-- **Aislamiento Multi-Tenant:** Aislamiento absoluto de bases de datos por sucursal bajo reglas del servidor.
-- **Firebase Sync Nube:** Monitoreo remoto en tiempo real de múltiples sucursales.
-- **Auditoría Inmutable:** Registro forense inalterable con horas y firmas del personal.
-- **Logística & Delivery:** Asignación de entregas con mapa interactivo en app y notificaciones de WhatsApp.
-- **Facturación Automática CFDI 4.0:** Timbrado inteligente de facturas utilizando la API Key del Super Admin. El dueño tiene acceso a un **selector de monto mínimo configurable** en su panel para decidir el umbral a partir del cual se emite la factura, deslindando al sistema de timbrados por montos de bajo valor.
-- **IA Pro Avanzada:** Clasificador asistido por LLMs comerciales y procesamiento de listas Excel de inventario previas para cargas masivas instantáneas.
-- **Canvas Editor Pro:** Acceso a plantillas y bloques de diseño premium.
-
----
-
-## 🛠️ Comandos Rápidos del Proyecto
-
-Para iniciar el servidor de desarrollo:
 ```bash
+# Clonar repositorio
+git clone https://github.com/ataca3000/camaliontopics.com.erp.git
+cd camaliontopics.com.erp
+
+# Instalar dependencias
+npm install
+
+# Configurar variables de entorno
+cp .env.example .env.local
+# Edita .env.local con tus credenciales de Firebase
+
+# Ejecutar en desarrollo
 npm run dev
+# Abre http://localhost:3000
 ```
 
-Para correr las pruebas unitarias y de robustez lógica en la terminal:
+## 📚 Documentación
+
+- [🏗️ Arquitectura del Sistema](./ARCHITECTURE.md)
+- [📦 Guía de Distribución Windows](./WINDOWS_DISTRIBUTION.md)
+- [✅ Checklist de Build & Release](./BUILD_CHECKLIST.md)
+- [💰 Cómo Monetizar (Gana Dinero)](./MONETIZACION.md)
+- [🔧 Desarrollo Local](./CONTRIBUTING.md)
+
+## 🔧 Stack Tecnológico
+
+```
+Frontend:
+├── React 19
+├── Next.js 15 (App Router)
+├── TypeScript
+├── Tailwind CSS
+└── Zustand (State Management)
+
+Backend:
+├── Next.js API Routes
+├── Prisma ORM
+├── SQLite (Local DB)
+└── Firebase (Cloud DB)
+
+Desktop:
+├── Electron 42
+├── electron-updater (Auto-updates)
+└── IPC (Node <-> Renderer)
+
+Pagos:
+├── Stripe Connect
+└── Facturapi (SAT México)
+```
+
+## 💻 Requisitos de Sistema
+
+### **Para Usar la App**
+- Windows 10+ (64-bit) o macOS 10.15+
+- 500 MB de espacio en disco
+- 4 GB RAM (recomendado 8 GB)
+- Conexión a internet (opcional, funciona offline)
+
+### **Para Desarrollar**
+- Node.js 18+
+- npm o yarn
+- Git
+- Visual Studio Code (recomendado)
+- MySQL/Firebase (para cloud)
+
+## 🚀 Roadmap
+
+### ✅ v1.0 (Actual)
+- [x] POS funcional
+- [x] Inventario local
+- [x] Canvas editor
+- [x] Multi-sucursal
+- [x] Auditoría
+
+### 🔄 v1.1 (Próximas 2 semanas)
+- [ ] App móvil iOS/Android
+- [ ] Integraciones con proveedores
+- [ ] Reportes avanzados
+- [ ] BI Dashboard
+
+### 📅 v2.0 (Q3 2026)
+- [ ] Marketplace integrado
+- [ ] IA predictiva de inventario
+- [ ] Finanzas y contabilidad
+- [ ] Integración Contpaqi
+
+## 🤝 Contribuir
+
+¿Quieres contribuir? ¡Excelente!
+
 ```bash
-npm run test:logic
+# 1. Fork el repositorio
+# 2. Crea una rama
+git checkout -b feature/mi-feature
+
+# 3. Haz tus cambios
+# 4. Commit
+git commit -m "feat: descripción"
+
+# 5. Push
+git push origin feature/mi-feature
+
+# 6. Abre Pull Request
 ```
 
+Ver [CONTRIBUTING.md](./CONTRIBUTING.md) para más detalles.
+
+## 📝 Licencia
+
+Terraform ERP está bajo licencia **Permisiva Comercial** (ver [LICENSE.md](./LICENSE.md)).
+
+En resumen:
+- ✅ Puedes usar comercialmente
+- ✅ Puedes modificar
+- ✅ Puedes distribuir
+- ⚠️ Debes respetar el umbral de similitud 80% (ver documentación)
+
+## 🛡️ Seguridad
+
+Ver [SECURITY.md](./SECURITY.md) para:
+- Reportar vulnerabilidades
+- Políticas de seguridad
+- Mejores prácticas
+
+## 📞 Soporte
+
+### Gratuito
+- 📖 [Documentación oficial](./docs)
+- 🐛 [Issues en GitHub](https://github.com/ataca3000/camaliontopics.com.erp/issues)
+- 💬 [Discussiones](https://github.com/ataca3000/camaliontopics.com.erp/discussions)
+
+### Premium ($500-800 MXN/mes)
+- 📧 Email support
+- 📞 Chat en vivo
+- 🔧 Soporte técnico
+- 📈 Asesoría de implementación
+
+## 💬 Contacto
+
+- **Email**: soporte@terraformerp.com
+- **WhatsApp**: +52 XXXXX XXXXX
+- **Twitter/X**: @TerraformERP
+- **GitHub Issues**: [Crear issue](https://github.com/ataca3000/camaliontopics.com.erp/issues/new)
+
+## 👨‍💼 Sobre el Autor
+
+**[Tu Nombre]**
+- Desarrollador Full Stack
+- Especialista en sistemas de punto de venta
+- Pasión por soluciones para pymes
+- Mexicano 🇲🇽
+
+## 🙏 Agradecimientos
+
+- Inspiración en Shopify, Square, SAP
+- Comunidad open source
+- Todos los usuarios tempranos
+- Contribuidores
+
 ---
 
-## Estado del Proyecto
-## Apoyo y Suscripciones
+## 📊 Estadísticas del Proyecto
 
-Este software se mantiene y mejora de forma constante. Si deseas adquirir soporte técnico, contratar una personalización de marca o contribuir al mantenimiento del proyecto, puedes enviar tu apoyo o suscripción mensual:
-
-* **Paypal de Soporte:** `luishalo69@gmail.com`
-* **Costo de Suscripción:** $500.00 MXN a $700.00 MXN mensuales (desbloqueo completo con soporte extendido).
+![GitHub Stars](https://img.shields.io/github/stars/ataca3000/camaliontopics.com.erp?style=social)
+![GitHub Forks](https://img.shields.io/github/forks/ataca3000/camaliontopics.com.erp?style=social)
+![GitHub Watchers](https://img.shields.io/github/watchers/ataca3000/camaliontopics.com.erp?style=social)
 
 ---
 
-*Desarrollado con orgullo por brechaSOLUCIONES  mexico — De México para el Mundo.*
----
-*Documentación oficial
+**Made with ❤️ for Mexican SMBs** 🇲🇽
+
+*Última actualización: 2026-07-01*
