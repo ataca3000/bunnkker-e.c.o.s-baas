@@ -4,12 +4,18 @@ dist/
 build/
 dist-final/
 dist_electron/
+*.exe
+*.msi
+*.zip
+*.dmg
+*.app
 
 # Dependencies
 node_modules/
 
 # Logs
 *.log
+filtered-file-list.txt
 
 # Environment — NUNCA commitar .env.local con secrets reales
 .env.local

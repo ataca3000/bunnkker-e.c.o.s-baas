@@ -34,9 +34,19 @@ const MACHINE_KEY = '_admincom_v1_mid';
 const TRIAL_DAYS  = 7;
 
 // Deterministic positive 6-digit hash helper for offline PINs
+// El salt se lee desde la variable de entorno LICENSE_PIN_SALT (NUNCA hardcodeado en código fuente).
 export function generatePinForHardware(machineId: string, expDateStr: string): string {
-    const salt = "terraform-secret-salt-2026";
-    const input = `${machineId}-${expDateStr}-${salt}`;
+    const salt = process.env.LICENSE_PIN_SALT;
+    if (!salt || salt.trim() === '') {
+        // En producción, un salt ausente es un error de despliegue crítico.
+        if (typeof window === 'undefined' && process.env.NODE_ENV === 'production') {
+            throw new Error('[LICENSE] LICENSE_PIN_SALT no configurado en producción. Configura esta variable de entorno.');
+        }
+        // En desarrollo, alertamos claramente en consola.
+        console.warn('[LICENSE] ⚠️ LICENSE_PIN_SALT no configurado. Usa el valor de .env.local.');
+    }
+    const effectiveSalt = salt || 'dev-only-pin-salt-not-for-production';
+    const input = `${machineId}-${expDateStr}-${effectiveSalt}`;
     let hash = 0;
     for (let i = 0; i < input.length; i++) {
         const char = input.charCodeAt(i);
@@ -47,12 +57,29 @@ export function generatePinForHardware(machineId: string, expDateStr: string): s
 }
 
 // ─── Machine fingerprint ─────────────────────────────────────────────────────
+// En Electron (Node): usa node-machine-id para un ID atado al hardware físico.
+// En browser (Web): genera un UUID estable almacenado en localStorage.
 export function getMachineId(): string {
+    // Intento 1: Electron — leer desde hardware via node-machine-id
+    if (typeof window !== 'undefined' && (window as any).electronAPI?.getMachineId) {
+        try {
+            const hwid = (window as any).electronAPI.getMachineId();
+            if (hwid && hwid.length > 8) return hwid;
+        } catch { /* fallback */ }
+    }
+
+    // Intento 2: Env var MACHINE_HWID (útil para Electron preload o CI)
+    if (typeof process !== 'undefined' && process.env?.MACHINE_HWID) {
+        return process.env.MACHINE_HWID;
+    }
+
+    // Fallback Web: UUID persistente en localStorage (no es hardware, pero es estable por sesión)
     if (typeof window === 'undefined') return 'server_id';
     let id = localStorage.getItem(MACHINE_KEY);
     if (!id) {
-        const raw = `${navigator.userAgent || 'unknown'}|${window.screen?.width || 0}x${window.screen?.height || 0}|${navigator.language || 'en'}`;
-        id = btoa(raw).replace(/[^a-zA-Z0-9]/g, '').slice(0, 32);
+        // Usar crypto.randomUUID si está disponible, sino generamos uno
+        const uuid = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        id = uuid.replace(/-/g, '').slice(0, 32);
         localStorage.setItem(MACHINE_KEY, id);
     }
     return id;

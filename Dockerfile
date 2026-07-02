@@ -1,25 +1,26 @@
 FROM node:20-alpine AS base
-
-# Dependencias para SQLite y Prisma
 RUN apk add --no-cache libc6-compat openssl
-
 WORKDIR /app
 
-# Set production environment
+FROM base AS runner
+WORKDIR /app
+
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-# Crear usuario no root por seguridad
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copiar archivos generados por Next.js standalone
+# Copiar archivos compilados en modo standalone
 COPY --chown=nextjs:nodejs .next/standalone ./
 COPY --chown=nextjs:nodejs .next/static ./.next/static
 COPY --chown=nextjs:nodejs public ./public
 
-# Directorio de bases de datos locales
+# Restaurar node_modules si fue renombrado por el script de Electron
+RUN if [ -d "node_modules_backup" ]; then mv node_modules_backup node_modules; fi
+
+# Asegurar directorios de base de datos local
 RUN mkdir -p /app/prisma && chown -R nextjs:nodejs /app/prisma
 COPY --chown=nextjs:nodejs prisma ./prisma
 
