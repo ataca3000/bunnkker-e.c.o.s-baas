@@ -170,21 +170,34 @@ function flushOfflineQueue() {
     try {
         const queueStr = localStorage.getItem('evo_offline_queue');
         if (!queueStr) return;
-        
-        const queue: any[] = JSON.parse(queueStr);
+
+        let queue: any[] = JSON.parse(queueStr);
         if (queue.length === 0) return;
 
         console.log(`[P2P/WAL] Sincronizando cola offline... (${queue.length} transacciones pendientes)`);
-        
-        // En un caso real ISO, enviaríamos todo como un lote atómico.
-        // Aquí lo enviamos uno por uno para retrocompatibilidad "Caballo de Troya".
-        for (const payload of queue) {
-            localSocket.send(JSON.stringify(payload));
-            console.log(`[P2P/WAL] Reintentado: ${payload.type} (${payload.txId})`);
+
+        // Procesamos transacción por transacción.
+        // Cada una se elimina de localStorage ANTES de enviar la siguiente,
+        // así si el socket cierra a mitad no hay duplicados cuando se reintente.
+        while (queue.length > 0 && localSocket && localSocket.readyState === WebSocket.OPEN) {
+            const payload = queue[0];
+            try {
+                localSocket.send(JSON.stringify(payload));
+                console.log(`[P2P/WAL] Reintentado y confirmado: ${payload.type} (${payload.txId})`);
+            } catch (sendErr) {
+                // Si falla este envío, detenemos el flush — reintentará en el siguiente ciclo de 3s
+                console.error(`[P2P/WAL] Error al enviar ${payload.txId}. Deteniendo flush.`, sendErr);
+                localStorage.setItem('evo_offline_queue', JSON.stringify(queue));
+                return;
+            }
+            // Éxito: eliminar de la cola y persistir el estado actualizado de inmediato
+            queue.shift();
+            localStorage.setItem('evo_offline_queue', JSON.stringify(queue));
         }
-        
-        // Vaciamos la cola tras enviar
-        localStorage.removeItem('evo_offline_queue');
+
+        if (queue.length === 0) {
+            localStorage.removeItem('evo_offline_queue');
+        }
     } catch (e) {
         console.error("Error al vaciar la cola offline:", e);
     }

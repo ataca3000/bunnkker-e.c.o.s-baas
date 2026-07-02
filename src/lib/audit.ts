@@ -87,8 +87,16 @@ export async function logAudit(action: AuditLog) {
                 // Cifrar la línea de log con AES-256-CBC usando el secreto del servidor
                 let encryptedLine = localEntry;
                 try {
-                    const secret = process.env.INTERNAL_API_SECRET || 'fallback-audit-secret-for-dev-only-do-not-use-in-production';
-                    const key = nodeCrypto.createHash('sha256').update(secret).digest();
+                    const secret = process.env.INTERNAL_API_SECRET;
+                    if (!secret || secret.trim() === '') {
+                        if (process.env.NODE_ENV === 'production') {
+                            // En producción, NO ciframos con un secreto conocido — fallamos explícitamente
+                            throw new Error('[AUDIT/SECURITY] INTERNAL_API_SECRET no configurado en producción. El log de auditoría no puede escribirse de forma segura.');
+                        }
+                        console.warn('[AUDIT] ⚠️ INTERNAL_API_SECRET no configurado. El log de auditoría local usa secreto de desarrollo.');
+                    }
+                    const effectiveSecret = secret || 'dev-only-audit-secret-not-for-production';
+                    const key = nodeCrypto.createHash('sha256').update(effectiveSecret).digest();
                     const iv = nodeCrypto.randomBytes(16);
                     const cipher = nodeCrypto.createCipheriv('aes-256-cbc', key, iv);
                     let encrypted = cipher.update(localEntry, 'utf8', 'hex');

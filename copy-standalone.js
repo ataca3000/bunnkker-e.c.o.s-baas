@@ -18,6 +18,15 @@ if (fs.existsSync(prismaSrc)) {
     console.log("✅ Prisma (SQLite) copiado al standalone.");
 }
 
+// Copiar motor de consulta de Linux para Prisma Standalone
+const linuxEngineSrc = path.join(__dirname, 'node_modules', '.prisma', 'client', 'libquery_engine-linux-musl-openssl-3.0.x.so.node');
+const linuxEngineDest = path.join(standaloneDir, 'node_modules', '.prisma', 'client', 'libquery_engine-linux-musl-openssl-3.0.x.so.node');
+if (fs.existsSync(linuxEngineSrc)) {
+    fs.mkdirSync(path.dirname(linuxEngineDest), { recursive: true });
+    fs.copyFileSync(linuxEngineSrc, linuxEngineDest);
+    console.log("✅ Motor de Prisma para Linux copiado al standalone.");
+}
+
 // Copiar .env.local
 const envSrc = path.join(__dirname, '.env.local');
 const envDest = path.join(standaloneDir, '.env.local');

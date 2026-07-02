@@ -2,68 +2,92 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('Seeding local users to SQLite...');
+  console.log('🧹 Limpiando base de datos de clientes y órdenes...');
+  
+  // Limpieza total de clientes y transacciones para empezar en limpio
+  await prisma.orderItem.deleteMany({});
+  await prisma.order.deleteMany({});
+  await prisma.customer.deleteMany({});
+  await prisma.cashRegisterLog.deleteMany({});
+  await prisma.syncQueue.deleteMany({});
+  await prisma.auditLog.deleteMany({});
+  await prisma.supportTicket.deleteMany({});
+  
+  console.log('👥 Seeding local users to SQLite...');
 
-  // Eliminar usuario previo con pin 0000 para evitar error de constraint único
-  await prisma.user.deleteMany({ where: { pin: '0000' } });
+  // Eliminar usuarios previos para evitar conflictos de restricciones
+  await prisma.user.deleteMany({});
 
-  // Superadmin Maestro (0000)
-  await prisma.user.upsert({
-    where: { id: 'local_master' },
-    update: {},
-    create: {
+  // 1. Superadmin (Dueño/Master) -> PIN 0000
+  await prisma.user.create({
+    data: {
       id: 'local_master',
-      name: 'Super Admin Maestro',
+      name: 'Dueño (Superadmin)',
       pin: '0000',
       role: 'superadmin',
+      active: true,
     },
   });
 
-  // Superadmin
-  await prisma.user.upsert({
-    where: { pin: '123456' },
-    update: {},
-    create: {
-      name: 'Dueño (Superadmin)',
-      pin: '123456',
-      role: 'superadmin',
-    },
-  });
-
-  // Admin Sucursal
-  await prisma.user.upsert({
-    where: { pin: '1111' },
-    update: {},
-    create: {
-      name: 'Gerente Sucursal',
+  // 2. Admin (Gerente) -> PIN 1111
+  await prisma.user.create({
+    data: {
+      name: 'Gerente (Admin)',
       pin: '1111',
       role: 'admin',
+      active: true,
     },
   });
 
-  // Cajero / Ventas
-  await prisma.user.upsert({
-    where: { pin: '2222' },
-    update: {},
-    create: {
+  // 3. Sales (Cajero/Ventas) -> PIN 2222
+  await prisma.user.create({
+    data: {
       name: 'Cajero / Ventas',
       pin: '2222',
       role: 'sales',
+      active: true,
     },
   });
 
-  // Almacen
-  await prisma.user.upsert({
-    where: { pin: '3333' },
-    update: {},
-    create: {
+  // 4. Inventory (Bodeguero) -> PIN 3333
+  await prisma.user.create({
+    data: {
       name: 'Bodeguero / Inventario',
       pin: '3333',
       role: 'inventory',
+      active: true,
     },
   });
 
-  console.log('Seed completed successfully. Users created: 123456 (Dueño), 1111 (Gerente), 2222 (Cajero), 3333 (Bodeguero)');
+  // 5. Marketing -> PIN 4444
+  await prisma.user.create({
+    data: {
+      name: 'Diseñador / Marketing',
+      pin: '4444',
+      role: 'marketing',
+      active: true,
+    },
+  });
+
+  // 6. Driver (Chofer/Reparto) -> PIN 5555
+  await prisma.user.create({
+    data: {
+      name: 'Chofer / Repartidor',
+      pin: '5555',
+      role: 'driver',
+      active: true,
+    },
+  });
+
+  console.log('🎉 Seed de usuarios completado exitosamente.');
+  console.log('📌 PINs asignados:');
+  console.log('   - 0000: Superadmin');
+  console.log('   - 1111: Admin');
+  console.log('   - 2222: Sales');
+  console.log('   - 3333: Inventory');
+  console.log('   - 4444: Marketing');
+  console.log('   - 5555: Driver');
+  console.log('📌 Clientes y ventas vaciados al 100% (Base de datos en limpio).');
 }
 
 main()
@@ -74,3 +98,4 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
+
