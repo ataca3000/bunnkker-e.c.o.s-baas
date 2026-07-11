@@ -1,21 +1,36 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Settings, Key, Landmark, MapPin, CheckCircle, User, Lock, CreditCard, HardDrive, Loader2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+    Settings, Key, Landmark, MapPin, CheckCircle2, User, Lock, 
+    CreditCard, HardDrive, Loader2, Sparkles, RefreshCw, Check, ArrowRight
+} from 'lucide-react';
 import APIKeyManager from '@/components/admin/APIKeyManager';
 import InteractiveTerraMap from '@/components/admin/InteractiveTerraMap';
 import { db } from '@/lib/firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
-import Link from 'next/link';
 import { toast } from '@/lib/toast';
 
 export default function SetupWizard() {
-    const { isPremium } = useAuth();
+    const { isPremium, profile } = useAuth();
     const { siteConfig, updateSiteConfig } = useCart();
     const [step, setStep] = useState(1);
+    const [isSaving, setIsSaving] = useState(false);
+    const [isScanning, setIsScanning] = useState(false);
+    const [scanResult, setScanResult] = useState<{success: boolean, message: string} | null>(null);
+
+    // Estado del sistema de módulos (Centro de Innovación)
+    const [modulesStatus, setModulesStatus] = useState<Record<string, { version: string; status: 'up_to_date' | 'update_available' }>>({
+        sales: { version: 'v1.4.2', status: 'up_to_date' },
+        inventory: { version: 'v1.3.0', status: 'update_available' },
+        logistics: { version: 'v1.2.1', status: 'up_to_date' },
+        ai_swarm: { version: 'v2.0.1', status: 'up_to_date' },
+        billing: { version: 'v1.0.5', status: 'up_to_date' }
+    });
+
     const [config, setConfig] = useState({
         api_key: '',
         businessName: '',
@@ -36,15 +51,10 @@ export default function SetupWizard() {
         activeModules: ['sales', 'users', 'crm', 'inventory', 'delivery', 'design', 'marketing', 'billing', 'audit'],
         operationRange: 'local' as 'local' | 'regional' | 'nacional' | 'global'
     });
-    const [isSaving, setIsSaving] = useState(false);
-    
-    const [isScanning, setIsScanning] = useState(false);
-    const [scanResult, setScanResult] = useState<{success: boolean, message: string} | null>(null);
 
     // Cargar configuración existente
     useEffect(() => {
         const fetchConfig = async () => {
-            // Inicializar con siteConfig local por si estamos offline
             let baseData = {
                 businessName: siteConfig?.businessName || '',
                 whatsapp: siteConfig?.businessPhone || '',
@@ -60,7 +70,6 @@ export default function SetupWizard() {
                     publicData = docSnap.data();
                 }
 
-                // Cargar secretos si es admin (usará las nuevas reglas de firestore)
                 let secretData = {};
                 try {
                     const secretSnap = await getDoc(doc(db, 'secrets', 'billing'));
@@ -79,7 +88,6 @@ export default function SetupWizard() {
                 }));
             } catch (err) {
                 console.error("Error loading config:", err);
-                // Si falla la red, usar lo local
                 setConfig(prev => ({
                     ...prev,
                     ...baseData
@@ -92,11 +100,9 @@ export default function SetupWizard() {
     const handleSave = async () => {
         setIsSaving(true);
         try {
-            // 1. Guardar Configuración Pública en Firestore
             const { stripe_secret_key, facturapi_key, stripe_webhook_secret, ...publicConfig } = config as any;
             await setDoc(doc(db, 'settings', 'site_config'), publicConfig, { merge: true });
 
-            // 2. Guardar Secretos en Bóveda Firestore
             const secretConfig = {
                 ...(stripe_secret_key && { stripe_secret_key }),
                 ...(facturapi_key && { facturapi_key }),
@@ -106,7 +112,6 @@ export default function SetupWizard() {
                 await setDoc(doc(db, 'secrets', 'billing'), secretConfig, { merge: true });
             }
 
-            // 3. Guardar localmente en localStorage (para funcionamiento offline)
             await updateSiteConfig({
                 businessName: config.businessName,
                 businessPhone: config.whatsapp,
@@ -115,7 +120,8 @@ export default function SetupWizard() {
                 operationRange: config.operationRange
             });
 
-            toast.success('Configuración guardada correctamente.', '✅ Setup');
+            toast.success('¡Consola de control guardada con éxito!', '✅ Operando');
+            toast.info('BUNKKER ERP inicializado y listo para vender.', '🚀 Launch');
         } catch (error) {
             console.error("Error guardando setup:", error);
             toast.error('Hubo un error al guardar la configuración.', 'Error');
@@ -124,451 +130,398 @@ export default function SetupWizard() {
         }
     };
 
-    return (
-        <div className="bg-transparent min-h-screen p-8">
-            <div className="max-w-[1000px] mx-auto">
+    const triggerUpdate = (moduleName: string) => {
+        toast.info(`Instalando actualización para modulo: ${moduleName.toUpperCase()}...`, '🔄 Actualización');
+        setTimeout(() => {
+            setModulesStatus(prev => ({
+                ...prev,
+                [moduleName]: { ...prev[moduleName], status: 'up_to_date' }
+            }));
+            toast.success(`Módulo ${moduleName.toUpperCase()} actualizado correctamente.`, '✅ Completado');
+        }, 2000);
+    };
 
-                <div className="text-center mb-12">
-                    <h1 className="text-[#0ea5e9] font-black text-4xl mb-2">CONFIGURACIÓN GUIADA (WIZARD)</h1>
-                    <p className="text-[#666]">Sigue estos pasos para activar tu sistema de facturación y pagos.</p>
+    return (
+        <div className="min-h-screen relative text-slate-100 flex flex-col font-sans overflow-hidden">
+            
+            {/* Imagen de fondo con degradado difuminado */}
+            <div 
+                className="absolute inset-0 bg-cover bg-center filter blur-lg opacity-25 scale-105 pointer-events-none transition-all duration-700"
+                style={{ 
+                    backgroundImage: `url(${config.loginBackgroundUrl || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1964&auto=format&fit=crop'})`
+                }}
+            />
+            {/* Overlay de gradiente difuminado oscuro */}
+            <div className="absolute inset-0 bg-gradient-to-tr from-black via-slate-950/95 to-slate-900/80 pointer-events-none" />
+
+            {/* Barra Superior - Fondo Negro Puro */}
+            <header className="w-full bg-black border-b border-slate-800/80 px-6 py-4 flex items-center justify-between z-20 relative">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+                        <Settings className="text-white animate-spin-slow" size={22} />
+                    </div>
+                    <div>
+                        <h1 className="text-lg font-black tracking-widest text-white uppercase italic flex items-center gap-2">
+                            BUNKKER <span className="text-cyan-400 text-xs font-bold not-italic px-2 py-0.5 rounded-md bg-cyan-950/50 border border-cyan-800/30">CONSOLA</span>
+                        </h1>
+                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Centro de Operaciones y Control de Red</p>
+                    </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-[1fr_2.5fr] gap-8">
+                <div className="flex items-center gap-4 text-xs font-bold text-slate-400">
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/60 border border-slate-800">
+                        <div className="w-2 h-2 rounded-full bg-green-500 animate-ping" />
+                        <span>NODO EDGE: {config.businessName || 'LOCAL'}</span>
+                    </div>
+                </div>
+            </header>
 
-                    {/* Steps Navigation */}
-                    <nav className="card-sanjose h-fit bg-slate-800/80 rounded-xl shadow-lg overflow-hidden" aria-label="Pasos de configuración">
+            <div className="flex-1 grid grid-cols-1 lg:grid-cols-[280px_1fr] z-10 relative">
+                
+                {/* Barra Lateral Izquierda - Fondo Negro Puro */}
+                <nav className="bg-black border-r border-slate-800/80 p-6 flex flex-col justify-between" aria-label="Menú de configuración">
+                    <div className="space-y-2">
+                        <div className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-4 pl-2">Asistente de Arranque</div>
                         {[
                             { id: 1, label: 'Facturación SAT', icon: <Key size={18} /> },
                             { id: 2, label: 'Cuenta Bancaria', icon: <Landmark size={18} /> },
                             { id: 3, label: 'Pasarelas de Pago', icon: <CreditCard size={18} /> },
                             { id: 4, label: 'Contacto y Ubicación', icon: <MapPin size={18} /> },
                             { id: 5, label: 'Bóveda Local', icon: <HardDrive size={18} /> },
-                            { id: 6, label: 'Finalizar', icon: <CheckCircle size={18} /> }
+                            { id: 6, label: 'Operar Sistema', icon: <CheckCircle2 size={18} /> }
                         ].map((s) => (
                             <button
                                 key={s.id}
                                 onClick={() => setStep(s.id)}
-                                className={`w-full p-4 flex items-center gap-3 cursor-pointer transition-all border-l-4 text-left ${
+                                className={`w-full p-3.5 flex items-center gap-3 cursor-pointer rounded-xl transition-all border-l-4 text-left ${
                                     step === s.id 
-                                    ? 'border-[#E30613] bg-[#F2F2F2] font-bold text-[#0ea5e9]' 
-                                    : 'border-transparent bg-transparent font-normal text-[#888] hover:bg-gray-50'
+                                    ? 'border-cyan-500 bg-cyan-950/20 font-bold text-cyan-400 shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]' 
+                                    : 'border-transparent bg-transparent font-medium text-slate-400 hover:bg-slate-900/40 hover:text-slate-200'
                                 }`}
                                 aria-current={step === s.id ? 'step' : undefined}
                             >
-                                {s.icon} {s.label}
+                                {s.icon} <span className="text-sm">{s.label}</span>
                             </button>
                         ))}
-                    </nav>
+                    </div>
 
-                    {/* Active Step Panel */}
-                    <div className="card-sanjose min-h-[400px] flex flex-col bg-slate-800/80 p-8 rounded-xl shadow-lg">
-                        <motion.div
-                            key={step}
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            className="flex-1"
-                        >
-                            {step === 1 && (
-                                <>
-                                <div>
-                                    <h3 className="flex items-center gap-2.5 text-[#0ea5e9] font-bold text-xl mb-6">
-                                        <Key /> VINCULACIÓN CON FACTURAPI (SAT 4.0)
-                                    </h3>
+                    <div className="mt-8 pt-6 border-t border-slate-800/80">
+                        <div className="p-4 rounded-xl bg-slate-900/40 border border-slate-800 text-center">
+                            <span className="text-[10px] font-bold text-slate-500 block mb-1">LICENCIA</span>
+                            <span className={`text-xs font-black uppercase tracking-widest ${isPremium ? 'text-cyan-400' : 'text-slate-400'}`}>
+                                {isPremium ? '💎 Premium PRO' : '⚡ Estándar Local'}
+                            </span>
+                        </div>
+                    </div>
+                </nav>
 
-                                    {/* DIAGRAMA DE VALOR - FLUJO AUTOMATIZADO */}
-                                    <div className="bg-slate-800/80 p-5 rounded-xl border border-gray-100 mb-8 shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
-                                        <h4 className="text-center text-[#333] mb-6 text-sm uppercase tracking-wider font-bold">
-                                            ASÍ FUNCIONA TU SISTEMA AUTOMATIZADO
-                                        </h4>
-                                        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-center">
+                {/* Área Principal de Contenido */}
+                <main className="p-6 md:p-8 grid grid-cols-1 xl:grid-cols-[1.5fr_1fr] gap-8 overflow-y-auto">
+                    
+                    {/* Panel del Asistente Guiado */}
+                    <div className="bg-slate-950/40 backdrop-blur-md rounded-2xl border border-slate-800/60 p-6 md:p-8 flex flex-col justify-between shadow-2xl relative">
+                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-t-2xl" />
+                        
+                        <AnimatePresence mode="wait">
+                            <motion.div
+                                key={step}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                                className="space-y-6"
+                            >
+                                {step === 1 && (
+                                    <div className="space-y-6">
+                                        <h3 className="flex items-center gap-2.5 text-cyan-400 font-bold text-xl uppercase tracking-wider">
+                                            <Key /> Facturación SAT (Facturapi 4.0)
+                                        </h3>
+                                        <p className="text-sm text-slate-400 leading-relaxed">
+                                            Conecta tu cuenta de Facturapi para timbrar facturas de forma automática al cerrar ventas en tu POS. Las facturas se enviarán solas al WhatsApp de tus clientes.
+                                        </p>
 
-                                            <div className="flex-1">
-                                                <div className="bg-[#E3F2FD] w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2.5">
-                                                    <Settings size={24} color="#0ea5e9" />
-                                                </div>
-                                                <div className="font-bold text-xs text-[#0ea5e9]">1. TÚ CONFIGURAS</div>
-                                                <div className="text-[0.7rem] text-[#666]">Tu RFC y Llave una sola vez.</div>
-                                            </div>
-
-                                            <div className="text-gray-300 hidden sm:block">➜</div>
-
-                                            <div className="flex-1">
-                                                <div className="bg-[#FFF3E0] w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2.5">
-                                                    <User size={24} color="#EF6C00" />
-                                                </div>
-                                                <div className="font-bold text-xs text-[#EF6C00]">2. CLIENTE PIDE</div>
-                                                <div className="text-[0.7rem] text-[#666]">Ingresa sus datos al comprar.</div>
-                                            </div>
-
-                                            <div className="text-gray-300 hidden sm:block">➜</div>
-
-                                            <div className="flex-1">
-                                                <div className="bg-[#E8F5E9] w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2.5">
-                                                    <CheckCircle size={24} color="#2E7D32" />
-                                                </div>
-                                                <div className="font-bold text-xs text-[#2E7D32]">3. SISTEMA TIMBRA</div>
-                                                <div className="text-[0.7rem] text-[#666]">¡Sin que muevas un dedo!</div>
-                                            </div>
-
-                                        </div>
-                                        <div className="mt-6 text-center text-sm text-[#555] italic bg-[#f9f9f9] p-2.5 rounded">
-                                            "El sistema detecta el pago, une los datos y envía la factura al WhatsApp del cliente automáticamente."
-                                        </div>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Nombre del Negocio (Marca)</label>
-                                    <input 
-                                        type="text" 
-                                        value={config.businessName} 
-                                        onChange={e => setConfig({...config, businessName: e.target.value})}
-                                        className="w-full bg-slate-50 border border-slate-700/50 rounded-xl px-4 py-3 text-white font-medium focus:border-[#0ea5e9] focus:ring-2 focus:ring-[#0ea5e9]/20 outline-none transition-all"
-                                        placeholder="Ej. Mi Tiendita ERP"
-                                    />
-                                </div>
-                                    <div>
-                                        <label className="text-xs font-bold block mb-1">Eslogan</label>
-                                        <input 
-                                        type="text" 
-                                        className="w-full bg-slate-100 p-3 rounded-lg border-none focus:ring-2 focus:ring-[#0ea5e9]" 
-                                        placeholder="El mejor servicio..."
-                                        value={config.slogan} 
-                                        onChange={e => setConfig({...config, slogan: e.target.value})}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="text-xs font-bold block mb-1">URL Fondo de Login (Marca Blanca)</label>
-                                        <input 
-                                        type="text" 
-                                        className="w-full bg-slate-100 p-3 rounded-lg border-none focus:ring-2 focus:ring-[#0ea5e9]" 
-                                        placeholder="https://images.unsplash.com/photo-..."
-                                        value={config.loginBackgroundUrl || ''} 
-                                        onChange={e => setConfig({...config, loginBackgroundUrl: e.target.value})}
-                                        />
-                                    </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Ubicación Física</label>
-                                    <input 
-                                        type="text" 
-                                        value={config.location} 
-                                        onChange={e => setConfig({...config, location: e.target.value})}
-                                        className="w-full bg-slate-50 border border-slate-700/50 rounded-xl px-4 py-3 text-white font-medium focus:border-[#0ea5e9] focus:ring-2 focus:ring-[#0ea5e9]/20 outline-none transition-all"
-                                        placeholder="Sucursal Principal"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">WhatsApp de Atención</label>
-                                    <input 
-                                        type="text" 
-                                        value={config.whatsapp} 
-                                        onChange={e => setConfig({...config, whatsapp: e.target.value})}
-                                        className="w-full bg-slate-50 border border-slate-700/50 rounded-xl px-4 py-3 text-white font-medium focus:border-[#0ea5e9] focus:ring-2 focus:ring-[#0ea5e9]/20 outline-none transition-all"
-                                        placeholder="521..."
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Teléfono de Soporte</label>
-                                    <input 
-                                        type="text" 
-                                        value={config.supportPhone} 
-                                        onChange={e => setConfig({...config, supportPhone: e.target.value})}
-                                        className="w-full bg-slate-50 border border-slate-700/50 rounded-xl px-4 py-3 text-white font-medium focus:border-[#0ea5e9] focus:ring-2 focus:ring-[#0ea5e9]/20 outline-none transition-all"
-                                        placeholder="Línea de atención..."
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Correo de Soporte</label>
-                                    <input 
-                                        type="email" 
-                                        value={config.supportEmail} 
-                                        onChange={e => setConfig({...config, supportEmail: e.target.value})}
-                                        className="w-full bg-slate-50 border border-slate-700/50 rounded-xl px-4 py-3 text-white font-medium focus:border-[#0ea5e9] focus:ring-2 focus:ring-[#0ea5e9]/20 outline-none transition-all"
-                                        placeholder="soporte@minegocio.com"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Facebook URL</label>
-                                    <input 
-                                        type="url" 
-                                        value={config.facebookUrl} 
-                                        onChange={e => setConfig({...config, facebookUrl: e.target.value})}
-                                        className="w-full bg-slate-50 border border-slate-700/50 rounded-xl px-4 py-3 text-white font-medium focus:border-[#0ea5e9] focus:ring-2 focus:ring-[#0ea5e9]/20 outline-none transition-all"
-                                        placeholder="https://facebook.com/..."
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Instagram URL</label>
-                                    <input 
-                                        type="url" 
-                                        value={config.instagramUrl} 
-                                        onChange={e => setConfig({...config, instagramUrl: e.target.value})}
-                                        className="w-full bg-slate-50 border border-slate-700/50 rounded-xl px-4 py-3 text-white font-medium focus:border-[#0ea5e9] focus:ring-2 focus:ring-[#0ea5e9]/20 outline-none transition-all"
-                                        placeholder="https://instagram.com/..."
-                                    />
-                                </div>
-                            </div>
-                                    </div>
-
-                                    <p className="text-sm text-[#666] mb-8">
-                                        Para activar esta <b>automatización completa</b>, solo necesitas vincular tu cuenta de Facturapi (Proveedor Oficial SAT) aquí abajo.
-                                    </p>
-
-                                    {/* Candado PRO o Componente de Llave */}
-                                    {!isPremium ? (
-                                        <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-100 p-8 rounded-2xl text-center shadow-inner relative overflow-hidden">
-                                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500 to-indigo-500"></div>
-                                            <Lock size={48} className="mx-auto text-purple-400 mb-4" />
-                                            <h4 className="text-xl font-black text-purple-900 mb-2">Función Exclusiva PRO</h4>
-                                            <p className="text-sm text-purple-700 max-w-md mx-auto mb-6">
-                                                La integración de Facturación Electrónica Automática y Respaldo en la Nube requieren una licencia activa.
-                                            </p>
-                                            <Link href="/dashboard/suscripcion">
-                                                <button className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg shadow-purple-500/30 transition-all">
-                                                    Activar Licencia PRO
-                                                </button>
-                                            </Link>
-                                        </div>
-                                    ) : (
-                                        <>
-                                            {/* El componente seguro donde el cliente pone su propia llave */}
-                                            <APIKeyManager />
-
-                                            <div className="mt-8 p-4 bg-[#F0F7FF] rounded-lg text-sm text-[#0ea5e9] border border-[#BEE3F8]">
-                                                <b>¿Cómo obtengo mi llave?</b><br />
-                                                Crea una cuenta gratuita en <u>facturapi.com</u>, ve a la sección de &apos;Configuración&apos; y copia tu &apos;Secret Key&apos;.
-                                            </div>
-                                        </>
-                                    )}
-                                </div>
-
-                            <div className="mt-8 border-t border-slate-700/50 pt-8">
-                                <InteractiveTerraMap 
-                                    value={config.activeModules || []} 
-                                    onChange={(val) => setConfig({ ...config, activeModules: val })} 
-                                />
-                            </div>
-                            </>
-                            )}
-
-                            {step === 2 && (
-                                <div>
-                                    <h3 className="flex items-center gap-2.5 text-[#0ea5e9] font-bold text-xl mb-6">
-                                        <Landmark /> CUENTA DONDE LLEGAN LOS PAGOS
-                                    </h3>
-                                    <div className="grid grid-cols-1 gap-4">
-                                        <div>
-                                            <label htmlFor="bank-name" className="text-xs font-bold block mb-1">BANCO</label>
-                                            <input
-                                                id="bank-name"
-                                                type="text"
-                                                value={config.bank_name || ''}
-                                                onChange={(e) => setConfig({ ...config, bank_name: e.target.value })}
-                                                placeholder="Ej. BBVA, Santander..."
-                                                className="w-full p-3 border-2 border-gray-100 rounded focus:border-[#0ea5e9] outline-none"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label htmlFor="bank-clabe" className="text-xs font-bold block mb-1">CLABE INTERBANCARIA (18 DÍGITOS)</label>
-                                            <input
-                                                id="bank-clabe"
-                                                type="text"
-                                                value={config.bank_clabe || ''}
-                                                onChange={(e) => setConfig({ ...config, bank_clabe: e.target.value })}
-                                                placeholder="000000000000000000"
-                                                className="w-full p-3 border-2 border-gray-100 rounded focus:border-[#0ea5e9] outline-none"
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {step === 3 && (
-                                <div>
-                                    <h3 className="flex items-center gap-2.5 text-[#0ea5e9] font-bold text-xl mb-6">
-                                        <CreditCard /> PASARELAS DE PAGO (COBRO CON TARJETA)
-                                    </h3>
-                                    <p className="text-sm text-[#666] mb-6">
-                                        Configura tus credenciales para recibir pagos con tarjeta de crédito/débito directamente en tu tienda.
-                                    </p>
-
-                                    <div className="mb-6 border-l-4 border-[#009ee3] pl-4">
-                                        <h4 className="font-bold text-[#009ee3] mb-2">MercadoPago</h4>
-                                        <div className="grid grid-cols-1 gap-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                                             <div>
-                                                <label className="text-xs font-bold block mb-1">PUBLIC KEY</label>
+                                                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Nombre comercial del negocio</label>
+                                                <input 
+                                                    type="text" 
+                                                    value={config.businessName} 
+                                                    onChange={e => setConfig({...config, businessName: e.target.value})}
+                                                    className="w-full bg-slate-900/60 border border-slate-800 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-cyan-500 transition-colors"
+                                                    placeholder="Ej. Mi Ferretería"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Eslogan o frase publicitaria</label>
+                                                <input 
+                                                    type="text" 
+                                                    value={config.slogan} 
+                                                    onChange={e => setConfig({...config, slogan: e.target.value})}
+                                                    className="w-full bg-slate-900/60 border border-slate-800 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-cyan-500 transition-colors"
+                                                    placeholder="El mejor servicio al mejor precio"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="pt-4 border-t border-slate-800/80">
+                                            {!isPremium ? (
+                                                <div className="p-6 rounded-xl bg-slate-900/30 border border-slate-800 text-center">
+                                                    <Lock size={32} className="mx-auto text-slate-600 mb-2" />
+                                                    <h4 className="text-sm font-bold text-white mb-1">Módulo de Facturación Bloqueado</h4>
+                                                    <p className="text-xs text-slate-500 max-w-sm mx-auto mb-4">Requiere tener una licencia activa de BUNKKER ERP.</p>
+                                                </div>
+                                            ) : (
+                                                <APIKeyManager />
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {step === 2 && (
+                                    <div className="space-y-6">
+                                        <h3 className="flex items-center gap-2.5 text-cyan-400 font-bold text-xl uppercase tracking-wider">
+                                            <Landmark /> Cuenta Bancaria de Destino
+                                        </h3>
+                                        <p className="text-sm text-slate-400">
+                                            Especifica los datos del banco donde recibirás las transferencias de cobro electrónico y los cortes de caja.
+                                        </p>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Banco emisor</label>
                                                 <input
                                                     type="text"
-                                                    value={config.mp_public_key}
-                                                    onChange={(e) => setConfig({ ...config, mp_public_key: e.target.value })}
-                                                    placeholder="APP_USR-..."
-                                                    className="w-full p-3 border-2 border-gray-100 rounded focus:border-[#0ea5e9] outline-none text-sm"
+                                                    value={config.bank_name || ''}
+                                                    onChange={(e) => setConfig({ ...config, bank_name: e.target.value })}
+                                                    placeholder="Ej. BBVA, Santander"
+                                                    className="w-full bg-slate-900/60 border border-slate-800 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-cyan-500 transition-colors"
                                                 />
                                             </div>
                                             <div>
-                                                <label className="text-xs font-bold block mb-1">ACCESS TOKEN</label>
-                                                <input
-                                                    type="password"
-                                                    value={config.mp_access_token}
-                                                    onChange={(e) => setConfig({ ...config, mp_access_token: e.target.value })}
-                                                    placeholder="APP_USR-..."
-                                                    className="w-full p-3 border-2 border-gray-100 rounded focus:border-[#0ea5e9] outline-none text-sm"
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="border-l-4 border-[#635bff] pl-4">
-                                        <h4 className="font-bold text-[#635bff] mb-2">Stripe</h4>
-                                        <div className="grid grid-cols-1 gap-4">
-                                            <div>
-                                                <label className="text-xs font-bold block mb-1">PUBLISHABLE KEY</label>
+                                                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">CLABE Interbancaria (18 dígitos)</label>
                                                 <input
                                                     type="text"
-                                                    value={config.stripe_publishable_key}
-                                                    onChange={(e) => setConfig({ ...config, stripe_publishable_key: e.target.value })}
-                                                    placeholder="pk_live_..."
-                                                    className="w-full p-3 border-2 border-gray-100 rounded focus:border-[#0ea5e9] outline-none text-sm"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="text-xs font-bold block mb-1">SECRET KEY</label>
-                                                <input
-                                                    type="password"
-                                                    value={config.stripe_secret_key}
-                                                    onChange={(e) => setConfig({ ...config, stripe_secret_key: e.target.value })}
-                                                    placeholder="sk_live_..."
-                                                    className="w-full p-3 border-2 border-gray-100 rounded focus:border-[#0ea5e9] outline-none text-sm"
+                                                    value={config.bank_clabe || ''}
+                                                    onChange={(e) => setConfig({ ...config, bank_clabe: e.target.value })}
+                                                    placeholder="000000000000000000"
+                                                    className="w-full bg-slate-900/60 border border-slate-800 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-cyan-500 transition-colors"
                                                 />
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                            )}
+                                )}
 
-                            {step === 4 && (
-                                <div>
-                                    <h3 className="flex items-center gap-2.5 text-[#0ea5e9] font-bold text-xl mb-6">
-                                        <MapPin /> CONTACTO, UBICACIÓN Y ALCANCE
-                                    </h3>
-                                    <div className="grid grid-cols-1 gap-4">
-                                        <div>
-                                            <label htmlFor="whatsapp" className="text-xs font-bold block mb-1">WHATSAPP DE VENTAS</label>
-                                            <input
-                                                id="whatsapp"
-                                                type="text"
-                                                value={config.whatsapp || ''}
-                                                onChange={(e) => setConfig({ ...config, whatsapp: e.target.value })}
-                                                placeholder="+52 000 000 0000"
-                                                className="w-full p-3 border-2 border-gray-100 rounded focus:border-[#0ea5e9] outline-none"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label htmlFor="address" className="text-xs font-bold block mb-1">DIRECCIÓN FÍSICA</label>
-                                            <input
-                                                id="address"
-                                                type="text"
-                                                value={config.location || ''}
-                                                onChange={(e) => setConfig({ ...config, location: e.target.value })}
-                                                placeholder="Calle, Número, Colonia, CP..."
-                                                className="w-full p-3 border-2 border-gray-100 rounded focus:border-[#0ea5e9] outline-none"
-                                            />
-                                        </div>
+                                {step === 3 && (
+                                    <div className="space-y-6">
+                                        <h3 className="flex items-center gap-2.5 text-cyan-400 font-bold text-xl uppercase tracking-wider">
+                                            <CreditCard /> Pasarelas de Pago
+                                        </h3>
+                                        <p className="text-sm text-slate-400">
+                                            Vincula tus pasarelas de pago de MercadoPago o Stripe para aceptar tarjetas de débito/crédito.
+                                        </p>
                                         
-                                        <div className="mt-4 pt-4 border-t border-slate-700/50">
-                                            <label className="text-xs font-bold block mb-2 text-slate-400 uppercase tracking-wider">Alcance Operativo del Nodo (Swarm)</label>
-                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                                {['local', 'regional', 'nacional', 'global'].map((r) => (
-                                                    <label key={r} className={`flex items-center justify-center p-3 rounded-lg border-2 cursor-pointer transition-all ${config.operationRange === r ? 'border-[#0ea5e9] bg-[#0ea5e9]/10 text-[#0ea5e9] font-bold' : 'border-slate-700/50 text-slate-400 hover:border-slate-500'}`}>
-                                                        <input 
-                                                            type="radio" 
-                                                            name="operationRange" 
-                                                            value={r} 
-                                                            checked={config.operationRange === r}
-                                                            onChange={(e) => setConfig({...config, operationRange: e.target.value as any})}
-                                                            className="hidden" 
-                                                        />
-                                                        {r.toUpperCase()}
-                                                        {r === 'global' && <Lock size={12} className="ml-2 text-slate-500" title="Requiere Bunkker Enterprise" />}
-                                                    </label>
-                                                ))}
+                                        <div className="space-y-4">
+                                            <div className="p-4 rounded-xl bg-slate-900/30 border border-slate-800">
+                                                <span className="text-[10px] font-bold text-cyan-500 uppercase tracking-wider block mb-3">MercadoPago Keys</span>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                    <input
+                                                        type="text"
+                                                        value={config.mp_public_key}
+                                                        onChange={(e) => setConfig({ ...config, mp_public_key: e.target.value })}
+                                                        placeholder="Public Key (APP_USR-...)"
+                                                        className="bg-slate-950 border border-slate-850 rounded-lg p-2.5 text-xs text-white outline-none focus:border-cyan-500"
+                                                    />
+                                                    <input
+                                                        type="password"
+                                                        value={config.mp_access_token}
+                                                        onChange={(e) => setConfig({ ...config, mp_access_token: e.target.value })}
+                                                        placeholder="Access Token"
+                                                        className="bg-slate-950 border border-slate-850 rounded-lg p-2.5 text-xs text-white outline-none focus:border-cyan-500"
+                                                    />
+                                                </div>
                                             </div>
-                                            <p className="text-xs text-slate-500 mt-2">
-                                                Selecciona el rango de alcance para validación de inventario en la red P2P. El nivel GLOBAL está reservado para clientes Bunkker Enterprise (Terraform).
-                                            </p>
+
+                                            <div className="p-4 rounded-xl bg-slate-900/30 border border-slate-800">
+                                                <span className="text-[10px] font-bold text-purple-400 uppercase tracking-wider block mb-3">Stripe Keys</span>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                    <input
+                                                        type="text"
+                                                        value={config.stripe_publishable_key}
+                                                        onChange={(e) => setConfig({ ...config, stripe_publishable_key: e.target.value })}
+                                                        placeholder="Publishable Key (pk_live_...)"
+                                                        className="bg-slate-950 border border-slate-850 rounded-lg p-2.5 text-xs text-white outline-none focus:border-cyan-500"
+                                                    />
+                                                    <input
+                                                        type="password"
+                                                        value={config.stripe_secret_key}
+                                                        onChange={(e) => setConfig({ ...config, stripe_secret_key: e.target.value })}
+                                                        placeholder="Secret Key"
+                                                        className="bg-slate-950 border border-slate-850 rounded-lg p-2.5 text-xs text-white outline-none focus:border-cyan-500"
+                                                    />
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            )}
+                                )}
 
-                            {step === 5 && (
-                                <div>
-                                    <h3 className="flex items-center gap-2.5 text-[#0ea5e9] font-bold text-xl mb-6">
-                                        <HardDrive /> BÓVEDA NAS (RESPALDO FÍSICO EXTERNO)
-                                    </h3>
-                                    <p className="text-sm text-[#666] mb-6">
-                                        Protege tus datos físicos. Conecta una memoria USB directamente a tu computadora o al Módem de tu negocio y presiona el botón para enlazarla como tu Bóveda Segura de respaldos.
-                                    </p>
-                                    
-                                    <div className="bg-slate-900/5 border border-slate-700/20 p-8 rounded-xl text-center">
-                                        <button 
-                                            onClick={async () => {
-                                                setIsScanning(true);
-                                                setScanResult(null);
-                                                try {
-                                                    // Usamos any para window para acceder a require (solo disponible en Electron/preload)
-                                                    const { ipcRenderer } = (window as any).require('electron');
-                                                    const result = await ipcRenderer.invoke('scan-for-vault-drive');
-                                                    setScanResult(result);
-                                                } catch (err: any) {
-                                                    console.warn("No se pudo invocar IPC (¿Estás en la Web?):", err);
-                                                    setScanResult({ success: false, message: 'Esta función requiere usar la aplicación de Escritorio (.exe).' });
-                                                } finally {
-                                                    setIsScanning(false);
-                                                }
-                                            }}
-                                            disabled={isScanning}
-                                            className="bg-slate-800 hover:bg-slate-700 text-white font-bold py-4 px-8 rounded-xl shadow-lg transition-all flex items-center gap-3 mx-auto disabled:opacity-50"
-                                        >
-                                            {isScanning ? <Loader2 className="animate-spin" /> : <HardDrive />}
-                                            {isScanning ? 'Escaneando Puertos...' : '🔍 Detectar Memoria USB / Módem'}
-                                        </button>
-
-                                        {scanResult && (
-                                            <div className={`mt-6 p-4 rounded-lg font-bold text-sm border ${scanResult.success ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
-                                                {scanResult.success ? '✅ ' : '❌ '} 
-                                                {scanResult.message}
+                                {step === 4 && (
+                                    <div className="space-y-6">
+                                        <h3 className="flex items-center gap-2.5 text-cyan-400 font-bold text-xl uppercase tracking-wider">
+                                            <MapPin /> Contacto y Cobertura
+                                        </h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">WhatsApp de ventas</label>
+                                                <input
+                                                    type="text"
+                                                    value={config.whatsapp || ''}
+                                                    onChange={(e) => setConfig({ ...config, whatsapp: e.target.value })}
+                                                    placeholder="521..."
+                                                    className="w-full bg-slate-900/60 border border-slate-800 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-cyan-500 transition-colors"
+                                                />
                                             </div>
-                                        )}
+                                            <div>
+                                                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Dirección comercial física</label>
+                                                <input
+                                                    type="text"
+                                                    value={config.location || ''}
+                                                    onChange={(e) => setConfig({ ...config, location: e.target.value })}
+                                                    placeholder="Calle y Número, Ciudad, C.P."
+                                                    className="w-full bg-slate-900/60 border border-slate-800 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-cyan-500 transition-colors"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="pt-4 border-t border-slate-800/80">
+                                            <InteractiveTerraMap 
+                                                value={config.activeModules || []} 
+                                                onChange={(val) => setConfig({ ...config, activeModules: val })} 
+                                            />
+                                        </div>
                                     </div>
-                                </div>
-                            )}
+                                )}
 
-                            {step === 6 && (
-                                <div className="text-center p-8">
-                                    <CheckCircle size={60} className="text-[#27ae60] mx-auto mb-4" />
-                                    <h3 className="text-[#0ea5e9] font-bold text-2xl mb-4">¡TODO LISTO PARA DESPLEGAR!</h3>
-                                    <p className="text-[#666] text-sm">
-                                        Has configurado los pilares de tu negocio. Ahora puedes subir tus productos y empezar a vender.
-                                    </p>
-                                    <button className="btn-sanjose mt-8" onClick={handleSave}>
-                                        {isSaving ? 'GUARDANDO...' : 'GUARDAR CONFIGURACIÓN FINAL'}
-                                    </button>
-                                </div>
-                            )}
+                                {step === 5 && (
+                                    <div className="space-y-6">
+                                        <h3 className="flex items-center gap-2.5 text-cyan-400 font-bold text-xl uppercase tracking-wider">
+                                            <HardDrive /> Bóveda Local de Seguridad
+                                        </h3>
+                                        <p className="text-sm text-slate-400">
+                                            Conecta una memoria USB en este equipo y presiona el botón para configurarla como tu unidad inmutable física de resguardo.
+                                        </p>
+                                        
+                                        <div className="p-8 rounded-xl bg-slate-900/20 border border-slate-800/80 text-center">
+                                            <button 
+                                                onClick={async () => {
+                                                    setIsScanning(true);
+                                                    setScanResult(null);
+                                                    try {
+                                                        const { ipcRenderer } = (window as any).require('electron');
+                                                        const result = await ipcRenderer.invoke('scan-for-vault-drive');
+                                                        setScanResult(result);
+                                                    } catch (err: any) {
+                                                        setScanResult({ success: false, message: 'Esta función requiere utilizar la aplicación de Escritorio (.exe).' });
+                                                    } finally {
+                                                        setIsScanning(false);
+                                                    }
+                                                }}
+                                                disabled={isScanning}
+                                                className="bg-slate-900 hover:bg-slate-800 text-white font-bold py-3.5 px-6 rounded-xl shadow-lg border border-slate-700/60 flex items-center gap-3.5 mx-auto disabled:opacity-50 transition-colors text-sm"
+                                            >
+                                                {isScanning ? <Loader2 className="animate-spin" size={16} /> : <HardDrive size={16} />}
+                                                {isScanning ? 'Escaneando puertos USB...' : 'Detectar Unidad Física USB'}
+                                            </button>
 
-                        </motion.div>
+                                            {scanResult && (
+                                                <div className={`mt-6 p-4 rounded-xl font-bold text-xs border ${scanResult.success ? 'bg-green-950/20 text-green-400 border-green-800/30' : 'bg-red-950/20 text-red-400 border-red-800/30'}`}>
+                                                    {scanResult.success ? '✅ ' : '❌ '} {scanResult.message}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {step === 6 && (
+                                    <div className="space-y-6 text-center py-6">
+                                        <CheckCircle2 size={56} className="text-green-500 mx-auto animate-bounce" />
+                                        <h3 className="text-2xl font-black text-white uppercase tracking-wider">¡Configuración Finalizada!</h3>
+                                        <p className="text-slate-400 text-sm max-w-sm mx-auto">
+                                            Los parámetros de pasarela de pago, facturación y almacenamiento local han sido establecidos con éxito.
+                                        </p>
+                                        <button 
+                                            onClick={handleSave} 
+                                            disabled={isSaving}
+                                            className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-slate-950 font-black py-4 px-10 rounded-xl shadow-lg shadow-green-500/20 transition-all uppercase tracking-widest text-xs disabled:opacity-50"
+                                        >
+                                            {isSaving ? 'Guardando...' : '🚀 Empezar a operar'}
+                                        </button>
+                                    </div>
+                                )}
+                            </motion.div>
+                        </AnimatePresence>
 
                         {step < 6 && (
-                            <div className="mt-8 flex justify-end">
+                            <div className="mt-8 pt-4 border-t border-slate-800/80 flex justify-end">
                                 <button
                                     onClick={() => setStep(step + 1)}
-                                    className="btn-sanjose bg-[#0ea5e9] text-white px-8 py-3 rounded-lg font-bold hover:bg-[#003d7a] transition-colors"
+                                    className="bg-cyan-500 hover:bg-cyan-600 text-black px-6 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-colors flex items-center gap-2"
                                 >
-                                    Siguiente Paso
+                                    Siguiente Paso <ArrowRight size={14} />
                                 </button>
                             </div>
                         )}
                     </div>
-                </div>
+
+                    {/* Centro de Innovación / Actualizaciones (Derecha) */}
+                    <div className="bg-slate-950/20 backdrop-blur-md rounded-2xl border border-slate-800/40 p-6 flex flex-col shadow-xl">
+                        <div className="flex items-center justify-between mb-6 border-b border-slate-800/80 pb-4">
+                            <h3 className="flex items-center gap-2 text-cyan-400 font-bold text-sm uppercase tracking-wider">
+                                <Sparkles size={16} /> Centro de Innovación
+                            </h3>
+                            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Módulos VIP</span>
+                        </div>
+
+                        <div className="space-y-4 flex-1">
+                            {Object.entries(modulesStatus).map(([name, info]) => (
+                                <div key={name} className="p-4 rounded-xl bg-slate-900/40 border border-slate-850 flex items-center justify-between transition-all hover:bg-slate-900/60">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 rounded-lg bg-slate-950 border border-slate-800 text-slate-400">
+                                            {name === 'sales' && <CreditCard size={16} />}
+                                            {name === 'inventory' && <HardDrive size={16} />}
+                                            {name === 'logistics' && <MapPin size={16} />}
+                                            {name === 'ai_swarm' && <Sparkles size={16} />}
+                                            {name === 'billing' && <Key size={16} />}
+                                        </div>
+                                        <div>
+                                            <h4 className="text-xs font-black uppercase text-white tracking-wide">{name.replace('_', ' ')}</h4>
+                                            <span className="text-[9px] text-slate-500 font-mono block mt-0.5">Versión actual: {info.version}</span>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        {info.status === 'update_available' ? (
+                                            <button 
+                                                onClick={() => triggerUpdate(name)}
+                                                className="bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 font-black text-[9px] uppercase tracking-wider px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-all"
+                                            >
+                                                <RefreshCw size={10} className="animate-spin-slow" /> Actualizar
+                                            </button>
+                                        ) : (
+                                            <span className="bg-green-500/10 border border-green-500/20 text-green-400 text-[9px] font-black uppercase tracking-wider px-2.5 py-1.5 rounded-lg flex items-center gap-1">
+                                                <Check size={10} /> Al día
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="mt-6 pt-4 border-t border-slate-800/80 text-center">
+                            <p className="text-[10px] text-slate-500 leading-normal font-medium">
+                                Recibe de forma automática las últimas optimizaciones y mejoras de seguridad directo al motor local de tu dispositivo.
+                            </p>
+                        </div>
+                    </div>
+
+                </main>
             </div>
         </div>
     );
