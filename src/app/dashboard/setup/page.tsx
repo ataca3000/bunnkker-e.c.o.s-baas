@@ -435,9 +435,25 @@ export default function SetupWizard() {
                                                     {scanResult.success ? '✅ ' : '❌ '} {scanResult.message}
                                                 </div>
                                             )}
+
+                                            {/* Sección de descarga del .exe personalizado */}
+                                            <div className="mt-8 pt-6 border-t border-slate-800/60 text-left">
+                                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Acceso de Escritorio</span>
+                                                <p className="text-xs text-slate-400 mb-4 leading-normal">
+                                                    Para operar en modo local-first con tu base de datos SQLite física inmutable y conectar impresoras térmicas de tickets, descarga el instalador de Windows.
+                                                </p>
+                                                <a 
+                                                    href="/programas/Bunkker_Setup.exe" 
+                                                    download 
+                                                    className="w-full py-3.5 rounded-xl font-black text-xs uppercase tracking-widest bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/10 transition-all text-center"
+                                                >
+                                                    📥 Descargar App para Windows (.exe)
+                                                </a>
+                                            </div>
                                         </div>
                                     </div>
                                 )}
+
 
                                 {step === 6 && (
                                     <div className="space-y-6 text-center py-6">
