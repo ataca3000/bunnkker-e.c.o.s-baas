@@ -1,0 +1,205 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["windows", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+// Catálogo Local (copia del Cloud o maestro local)
+model Customer {
+  id           String   @id @default(uuid())
+  tenantId     String   @default("default") // Aislamiento multi-tenant
+  name         String
+  phone        String   @unique // Clave de búsqueda rápida en el mostrador
+  email        String?
+  address      String?  // Dirección completa para el chofer
+  references   String?  // Ejemplo: "Portón azul, junto a la tienda"
+  gpsCoords    String?  // Latitud y longitud capturadas por la PWA
+  
+  // Login para Catálogo
+  pin          String?  // PIN de 4 dígitos para acceso rápido
+
+  // Datos de Facturación (Opcionales)
+  rfc          String?
+  razonSocial  String?
+  regimenFiscal String?
+  usoCFDI      String?
+  codigoPostal String?
+
+  createdAt    DateTime @default(now())
+  
+  orders       Order[]  // Relación directa para armar su historial
+}
+
+model Product {
+  id          String   @id // Coincide con ID de Firebase o generado
+  tenantId    String   @default("default") // Aislamiento multi-tenant
+  name        String
+  price       Float
+  stock       Int      @default(0)
+  reservedStock Int    @default(0) // Stock apartado temporalmente por otra tienda del Enjambre
+  category    String?
+  image       String?
+  rating      Float?
+  reviewCount Int?
+  barcode     String?
+  description String?
+  estante     String?
+  fila        String?
+  orderIndex  Int      @default(0) // Orden visual en la estantería (drag & drop)
+
+  orderItems  OrderItem[]
+}
+
+// Historial Local de Ventas
+model Order {
+  id            String   @id @default(uuid())
+  tenantId      String   @default("default")
+  total         Float
+  paymentMethod String
+  status        String   @default("paid") // PENDING_PAYMENT, READY_TO_SHIP, OUT_FOR_DELIVERY, DELIVERED
+  deliveryType  String   @default("LOCAL") // PICKUP, PATIO, DELIVERY
+  date          DateTime @default(now())
+  offline       Boolean  @default(true) // True porque nació offline
+  synced        Boolean  @default(false) // Si ya subió a Firebase
+  ventanilla    String?  // Asignación de ventanilla física para entrega
+  cajon         String?  // Asignación de cajón de estacionamiento para recolección
+  vendedorId    String?
+  vendedorName  String?
+  confirmedAt   DateTime?
+  
+  customerId    String?
+  customer      Customer? @relation(fields: [customerId], references: [id])
+  
+  items         OrderItem[]
+}
+
+// Detalle de la Venta Local
+model OrderItem {
+  id        String  @id @default(uuid())
+  orderId   String
+  productId String
+  cantidad  Int
+  precio    Float
+
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id])
+}
+
+// Cola de Sincronización (Worker Sync)
+model SyncQueue {
+  id         String   @id @default(uuid())
+  collection String   // "orders", "audit_logs", etc.
+  documentId String?  // ID de firebase
+  action     String   // "CREATE", "UPDATE", "DELETE"
+  payload    String   // JSON con los datos a mandar
+  createdAt  DateTime @default(now())
+  status     String   @default("PENDING") // PENDING, PROCESSING, FAILED
+  errorMsg   String?
+}
+
+// Registro de Auditoría Local
+model AuditLog {
+  id        String   @id @default(uuid())
+  action    String
+  details   String?
+  userId    String
+  timestamp DateTime @default(now())
+  synced    Boolean  @default(false)
+}
+
+// Tickets de Soporte / Quejas IA
+model SupportTicket {
+  id            String   @id @default(uuid())
+  folio         String   @unique
+  customerEmail String
+  customerName  String
+  message       String
+  status        String   @default("Pendiente")
+  createdAt     DateTime @default(now())
+  synced        Boolean  @default(false)
+}
+
+// Compras (Proveedores)
+model Purchase {
+  id        String   @id @default(uuid())
+  supplier  String
+  concept   String
+  amount    Float
+  status    String   @default("Pendiente")
+  createdAt DateTime @default(now())
+  synced    Boolean  @default(false)
+}
+
+// Corte de Caja Ciego Inmutable
+model CashRegisterLog {
+  id              String   @id @default(uuid())
+  tenantId        String
+  cashierId       String
+  cashierName     String
+  declaredAmount  Float    // Lo que el cajero contó físicamente
+  expectedAmount  Float    // Lo que Prisma sumó de las ventas
+  discrepancy     Float    // Diferencia (Negativo = Falta dinero)
+  createdAt       DateTime @default(now())
+  synced          Boolean  @default(false)
+}
+
+// Empleados y Usuarios del Sistema (Local)
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String?  @unique
+
+  // SEGURIDAD: PIN hasheado con bcrypt (cost factor 10)
+  // El campo 'pin' legacy se mantiene durante la migración pero se deprecará.
+  // Usar pinHash para autenticación. Migrar con: node scripts/migrate-pins.js
+  pin       String   @unique          // @deprecated — usar pinHash
+  pinHash   String?
+  deviceId  String?                   // Browser Fingerprint UUID                   // bcrypt hash del PIN
+
+  role      String   @default("sales") // superadmin, admin, sales, inventory, marketing, driver
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  synced    Boolean  @default(false)
+}
+
+// Mermas y Faltantes (Inventario)
+model ShrinkageLog {
+  id              String   @id @default(uuid())
+  productId       String
+  productName     String
+  productCategory String
+  discrepancyType String   // 'missing' or 'surplus'
+  qty             Int
+  estimatedLoss   Float
+  notes           String
+  reportedBy      String
+  createdAt       DateTime @default(now())
+}
+
+// Configuración Global y Licencia (El Cerebro Local)
+model AppConfig {
+  id          String   @id @default("global") // Solo debe existir un registro global
+  licenseType String   @default("TRIAL") // TRIAL, BASE, PRO
+  tenantId    String?  // El ID en la nube (ej. "ferreteria-martinez")
+  cloudToken  String?  // Token de seguridad para hablar con Firebase
+  pairedAt    DateTime?
+  updatedAt   DateTime @updatedAt
+}
+
+// Transacciones del Enjambre P2P (Reserva y Comisión)
+model SwarmTransaction {
+  id              String   @id @default(uuid())
+  requestingNode  String   // El ID o URL del nodo (tienda) que pidió el producto
+  providingNode   String   // Mi ID (la tienda que provee)
+  productId       String
+  qty             Int
+  reservedAt      DateTime @default(now())
+  expiresAt       DateTime // Fecha límite de la reserva (ej. +15 mins)
+  status          String   @default("RESERVED") // RESERVED, COMPLETED, EXPIRED, CANCELLED
+  commissionEarned Float   @default(0) // Ganancia del 1% por ser nodo puente
+}
+

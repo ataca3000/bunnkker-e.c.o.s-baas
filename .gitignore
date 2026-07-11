@@ -1,0 +1,60 @@
+# Build outputs
+.next/
+dist/
+build/
+dist-final/
+dist_electron/
+*.exe
+*.msi
+*.zip
+*.dmg
+*.app
+
+# Dependencies
+node_modules/
+
+# Logs
+*.log
+filtered-file-list.txt
+
+# Environment — NUNCA commitar .env.local con secrets reales
+.env.local
+.env.*.local
+
+# SQLite — La base de datos local contiene PINs y datos de clientes
+# Cada instalación genera su propia DB via: npx prisma migrate dev
+prisma/dev.db
+prisma/dev.db-shm
+prisma/dev.db-wal
+prisma/*.db
+prisma/*.db-shm
+prisma/*.db-wal
+
+# Electron outputs
+dist_electron/
+
+# Mobile Apps
+mobile-app/android/
+mobile-app/ios/
+mobile-app/node_modules/
+mobile-app/dist/
+
+# Firebase local emulator data
+firebase_data/
+
+# Security scanning tool uploads
+Sn1per-master/
+
+# Clean up / deprecated folder
+obsoleto/
+
+# Exclude compiled Electron apps and installers
+dist-build-win/
+build-resources/
+clon/
+check-stock.js
+fetch-products.js
+
+# Testing artifacts
+test-results/
+playwright-report/

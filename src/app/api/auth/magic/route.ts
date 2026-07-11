@@ -1,0 +1,68 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { signRole, decryptToken } from '@/lib/apiAuth';
+import { prisma } from '@/lib/prisma';
+
+const COOKIE_OPTS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production' && !process.env.MACHINE_HWID,
+  sameSite: 'lax' as const,
+  path: '/',
+  maxAge: 60 * 60 * 24 * 365, // Permanente (1 año) según requerimiento
+};
+
+export async function GET(request: NextRequest) {
+  try {
+    const searchParams = request.nextUrl.searchParams;
+    const token = searchParams.get('token');
+
+    if (!token) {
+      return NextResponse.redirect(new URL('/login?error=invalid_magic_link', request.url));
+    }
+
+    // El token está cifrado con AES-256-CBC
+    const payload = decryptToken(token);
+    if (!payload) {
+      return NextResponse.redirect(new URL('/login?error=invalid_magic_link', request.url));
+    }
+
+    const { uid, pin, expiresAt } = payload;
+
+    if (!uid || !pin) {
+      return NextResponse.redirect(new URL('/login?error=invalid_magic_link', request.url));
+    }
+
+    // Validar expiración del Magic Link (15 minutos)
+    if (expiresAt && Date.now() > expiresAt) {
+      return NextResponse.redirect(new URL('/login?error=expired_magic_link', request.url));
+    }
+
+    // Buscamos al usuario
+    const user = await prisma.user.findFirst({
+      where: { id: uid, pin: pin }
+    });
+
+    if (!user) {
+      return NextResponse.redirect(new URL('/login?error=user_not_found', request.url));
+    }
+
+    if (!user.active) {
+      return NextResponse.redirect(new URL('/login?error=user_inactive', request.url));
+    }
+
+    // Firmar y crear sesión
+    const sig = signRole(user.role, user.id);
+    
+    // Redirigir al dashboard
+    const response = NextResponse.redirect(new URL('/dashboard', request.url));
+    
+    response.cookies.set('msj-session', user.id, COOKIE_OPTS);
+    response.cookies.set('msj-role', user.role, COOKIE_OPTS);
+    response.cookies.set('msj-role-sig', sig, COOKIE_OPTS);
+
+    return response;
+
+  } catch (error) {
+    console.error("Error en magic link:", error);
+    return NextResponse.redirect(new URL('/login?error=invalid_magic_link', request.url));
+  }
+}
