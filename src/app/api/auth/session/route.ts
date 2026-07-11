@@ -142,6 +142,15 @@ export async function POST(request: NextRequest) {
       const pinSha = hashPinSha256(pin);
 
       // Búsqueda del usuario por PIN hasheado (o fallback legacy)
+      const userCount = await prisma.user.count();
+      if (userCount === 0) {
+        // BUG-SETUP: Si no hay usuarios creados, retornar flag para configurar PIN inicial
+        return NextResponse.json(
+          { success: false, setupRequired: true, error: 'Primer inicio detectado. Configure su PIN inicial.' },
+          { status: 200 }
+        );
+      }
+
       const user = await prisma.user.findFirst({ 
         where: { 
           pin: { in: [pinSha, pin] },
