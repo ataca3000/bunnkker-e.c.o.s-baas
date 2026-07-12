@@ -46,9 +46,10 @@ jobs:
 
       # ── 5. Ejecutar tests antes de desplegar ───────────────────────────────
       - name: 🧪 Tests
-        run: npm test
+        run: npm test -- --run
         env:
           NODE_ENV: test
+          DATABASE_URL: file:/tmp/bunkker-build.db
 
       # ── 6. Build Next.js para web (modo NO standalone) ─────────────────────
       - name: 🔨 Build Next.js (modo web)
