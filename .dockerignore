@@ -1,0 +1,56 @@
+# Include any files or directories that you don't want to be copied to your
+# container here (e.g., local build artifacts, temporary files, etc.).
+#
+# For more help, visit the .dockerignore file reference guide at
+# https://docs.docker.com/go/build-context-dockerignore/
+
+**/.DS_Store
+**/__pycache__
+**/.venv
+**/.classpath
+**/.dockerignore
+**/.env
+**/.git
+**/.gitignore
+**/.project
+**/.settings
+**/.toolstarget
+**/.vs
+**/.vscode
+**/*.*proj.user
+**/*.dbmdl
+**/*.jfm
+**/bin
+**/charts
+**/docker-compose*
+**/compose.y*ml
+**/Dockerfile*
+/node_modules
+**/npm-debug.log
+**/obj
+**/secrets.dev.yaml
+**/values.dev.yaml
+LICENSE
+README.md
+
+# Ecosistema Terraform ERP exclusions
+obsoleto/
+.env.local
+.env.*.local
+.next/standalone/.env.local
+.next/standalone/prisma/*.db
+.next/standalone/prisma/*.db-wal
+.next/standalone/prisma/*.db-shm
+prisma/*.db
+prisma/*.db-wal
+prisma/*.db-shm
+dist/
+dist_electron/
+build/
+mobile-app/
+scripts/
+unsupervised_topic_modeling-master/
+*.log
+tsconfig.tsbuildinfo
+seed-users.js
+repo-clean-preview/

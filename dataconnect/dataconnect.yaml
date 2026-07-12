@@ -1,0 +1,13 @@
+specVersion: "v1"
+serviceId: "admin-erp-pro-1-service"
+location: "us-east4"
+schemas:
+  - source: "./schema"
+    datasource:
+      postgresql:
+        database: "admin-erp-pro-1-database"
+        cloudSql:
+          instanceId: "admin-erp-pro-1-instance"
+          # schemaValidation: "STRICT"     # STRICT mode makes Postgres schema match Data Connect exactly.
+          # schemaValidation: "COMPATIBLE" # COMPATIBLE mode makes Postgres schema compatible with Data Connect.
+connectorDirs: ["./example"]

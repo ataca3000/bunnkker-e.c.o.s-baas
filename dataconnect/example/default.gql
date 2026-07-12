@@ -1,0 +1,29 @@
+mutation CreateUser($email: String!, $fullName: String!) @auth(level: PUBLIC) {
+  user_insert(data: {email: $email, fullName: $fullName})
+}
+
+query GetMyCart @auth(level: USER) {
+  carts(where: {user: {id: {eq_expr: "auth.uid"}}}) {
+    id
+    cartItems_on_cart {
+      product {
+        name
+        price
+      }
+      quantity
+    }
+  }
+}
+
+mutation AddToCart($cartId: UUID!, $productId: UUID!, $quantity: Int!) @auth(level: USER) {
+  cartItem_insert(data: {cartId: $cartId, productId: $productId, quantity: $quantity})
+}
+
+query ListAvailableProducts @auth(level: USER) {
+  products(where: {stockQuantity: {gt: 0}}) {
+    name
+    price
+    description
+    imageUrl
+  }
+}

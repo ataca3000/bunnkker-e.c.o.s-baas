@@ -1,0 +1,8 @@
+node_modules
+.next
+dist
+out
+
+# Ignorar el archivo específico que causa problemas en el build
+
+src/app/dashboard/inventory/## GitHub Copilot Chat.md
