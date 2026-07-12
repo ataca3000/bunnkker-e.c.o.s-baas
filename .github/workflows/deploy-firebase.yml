@@ -17,16 +17,15 @@ jobs:
       - name: 📥 Checkout
         uses: actions/checkout@v4
 
-      # ── 2. Setup Node.js con caché de npm ──────────────────────────────────
-      - name: 🟢 Setup Node.js 20
+      # ── 2. Setup Node.js ───────────────────────────────────────────────────
+      - name: 🟢 Setup Node.js 22
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: '22'
 
-      # ── 3. Instalar dependencias (con caché) ───────────────────────────────
+      # ── 3. Instalar dependencias ───────────────────────────────────────────
       - name: 📦 Instalar dependencias
-        run: npm ci --prefer-offline
+        run: npm install --prefer-offline --no-audit --no-fund
 
       # ── 4. Crear .env.local con los secrets de GitHub ──────────────────────
       - name: 🔐 Crear .env.local desde GitHub Secrets
