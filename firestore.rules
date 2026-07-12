@@ -1,0 +1,50 @@
+rules_version = '2';
+
+// ─── BUNKKER E.C.O.S ERP — Firestore Security Rules ────────────────────────
+// MODO ESPEJO: Firebase es el repositorio de respaldo. La fuente de verdad
+// es SQLite local. El Firebase Admin SDK (servidor) omite estas reglas por
+// diseño de Google — tienen acceso total. Estas reglas protegen el acceso
+// DIRECTO desde el cliente (SDK de navegador/Electron renderer).
+//
+// Regla general: denegar todo excepto lo explícitamente permitido.
+// ────────────────────────────────────────────────────────────────────────────
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Licencias: solo el servidor (Admin SDK) puede gestionar ──────────────
+    // El cliente NUNCA debe poder leer ni escribir licencias directamente.
+    // La validación pasa por /api/license/* en el servidor Next.js.
+    match /licenses/{licenseId} {
+      allow read, write: if false;
+    }
+
+    // ── Audit logs: append-only, nunca editar ni borrar ──────────────────────
+    // Un usuario autenticado puede agregar logs, pero nadie puede
+    // modificarlos ni borrarlos (garantía de inmutabilidad).
+    match /audit_logs/{logId} {
+      allow create: if request.auth != null;
+      allow read:   if request.auth != null;
+      allow update, delete: if false;
+    }
+
+    // ── Datos de sincronización (inventario, ventas, pedidos) ────────────────
+    // Solo usuarios autenticados via Firebase Auth pueden leer/escribir.
+    // El servidor valida el rol antes de propagar cambios al espejo.
+    match /sync/{tenantId}/{collection}/{docId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // ── Tenants (configuración de sucursales) ─────────────────────────────────
+    match /tenants/{tenantId} {
+      allow read:  if request.auth != null;
+      allow write: if false; // Solo el servidor puede crear/modificar tenants
+    }
+
+    // ── Denegación por defecto para todo lo demás ─────────────────────────────
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+
