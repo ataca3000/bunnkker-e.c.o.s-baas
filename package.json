@@ -1,5 +1,7 @@
  
-  "name": "bunkker-e.c.o.s-erp",
+  {
+    
+  "name" : "bunkker-e.c.o.s-erp",
   "version": "1.0.0",
   "description": "bunkker ERP — Ecosistema Comercial de Operaciones Simplificadas",
   "author": "brechasolucionesds",
