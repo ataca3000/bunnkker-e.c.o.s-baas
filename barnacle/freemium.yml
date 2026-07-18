@@ -1,0 +1,69 @@
+# Configuración Barnacle - Monetización para Docker
+
+barnacle:
+  enabled: true
+  
+  # Información del desarrollador
+  developer:
+    name: "Tu Nombre"
+    email: "tu@email.com"
+    stripe_account: "acct_XXXXX"
+
+  # Modelo de precios
+  pricing:
+    type: "freemium"  # freemium | tiered | one-time
+    
+    # Plan gratuito
+    free:
+      enabled: true
+      trial_days: 14
+      features:
+        - "basic_access"
+        - "community_support"
+      max_instances: 1
+    
+    # Plan Pro
+    pro:
+      price: 9.99
+      currency: "USD"
+      billing_period: "monthly"  # monthly | yearly
+      features:
+        - "unlimited_access"
+        - "priority_support"
+        - "api_access"
+      max_instances: 5
+      stripe_product_id: "prod_XXXXX"
+    
+    # Plan Enterprise
+    enterprise:
+      price: 49.99
+      currency: "USD"
+      billing_period: "monthly"
+      features:
+        - "white_label"
+        - "dedicated_support"
+        - "sso"
+      max_instances: "unlimited"
+      stripe_product_id: "prod_XXXXX"
+
+  # Backend Barnacle
+  backend:
+    url: "https://barnacle.docker.io"  # O tu servidor
+    timeout: 5000
+
+  # Webhooks
+  webhooks:
+    stripe: "https://tu-dominio.com/api/webhooks/stripe"
+    license: "https://tu-dominio.com/api/webhooks/license"
+
+  # Monetización
+  commission:
+    docker: 0.30  # Docker toma 30%
+    developer: 0.70  # Tú recibes 70%
+
+  # Comportamiento
+  behavior:
+    offline_grace_period: 24  # horas sin conexión permitidas
+    max_offline_usage: 10  # intentos sin validar
+    show_trial_countdown: true
+    popup_frequency: "daily"  # cuando mostrar recordatorio

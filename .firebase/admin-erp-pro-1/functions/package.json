@@ -69,6 +69,8 @@
     }
   },
   "dependencies": {
+    "@dataconnect/admin-generated": "file:dataconnect-admin-generated-0.0.1.tgz",
+    "@dataconnect/generated": "file:dataconnect-generated-1.0.0.tgz",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",

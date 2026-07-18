@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 import withPWAInit from "@ducanh2912/next-pwa";
 import path from "path";
 
-const isDesktop = process.env.BUILD_TARGET === 'desktop';
+const isDesktop = process.env.BUILD_TARGET === 'desktop' || process.env.BUILD_TARGET === 'docker';
 
 const withPWA = withPWAInit({
   dest: "public",
@@ -12,7 +12,7 @@ const withPWA = withPWAInit({
 });
 
 const nextConfig: NextConfig = {
-  output: isDesktop ? 'standalone' : undefined, // Standalone requerido solo para empaquetado Electron
+  output: 'standalone', // Standalone para Electron + Docker
   outputFileTracingRoot: path.join(__dirname, './'),
   // @ts-ignore
   turbopack: {},

@@ -35,7 +35,7 @@ function generatePinForHardware(mid, dateStr) {
 const pin = generatePinForHardware(machineId, expDateStr);
 
 console.log('\x1b[36m%s\x1b[0m', '==================================================');
-console.log('\x1b[36m%s\x1b[0m', '   TERRAFORM ERP - GENERACIÓN DE PIN OFFLINE      ');
+console.log('\x1b[36m%s\x1b[0m', '   BUNKKER ERP - GENERACIÓN DE PIN OFFLINE      ');
 console.log('\x1b[36m%s\x1b[0m', '==================================================');
 console.log(`🤖 ID de Máquina:    \x1b[33m${machineId}\x1b[0m`);
 console.log(`📅 Expira el:        \x1b[33m${expDateStr}\x1b[0m`);

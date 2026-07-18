@@ -1,4 +1,4 @@
-# 📚 COMPENDIO DE CÓDIGO FUENTE — EVOSTORE ERP
+# 📚 COMPENDIO DE CÓDIGO FUENTE — BUNKKER E.C.O.S. ERP
 ## 📄 ARCHIVO: `src/middleware.ts`
 ## 📄 ARCHIVO: `src/app/globals.css`
 #00f2ff,
