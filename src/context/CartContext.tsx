@@ -184,7 +184,18 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         if (typeof window !== 'undefined') {
             const { io } = require("socket.io-client");
-            const newSocket = io("http://" + window.location.hostname + ":3001", {
+
+            // Detectar si el cliente llegó por HTTPS (celular via proxy seguro)
+            // Si es HTTPS, conectar al mismo host/puerto pero con ruta /radio-socket.io/ del proxy
+            // Si es HTTP, conectar directo al puerto 3001 (localhost o PC principal)
+            const isSecure = window.location.protocol === 'https:';
+            const host = window.location.hostname;
+            const socketUrl = isSecure
+                ? `https://${host}:${window.location.port || 8443}` // via proxy HTTPS unificado
+                : `http://${host}:3001`;                             // directo (localhost / PC principal)
+
+            const newSocket = io(socketUrl, {
+                path: isSecure ? '/radio-socket.io/' : '/socket.io/',
                 reconnection: true,
                 reconnectionAttempts: Infinity,
                 reconnectionDelay: 1000,

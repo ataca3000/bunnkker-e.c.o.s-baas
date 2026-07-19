@@ -24,9 +24,20 @@ export default function LocalRadio() {
     useEffect(() => {
         if (!isStaff || typeof window === 'undefined') return;
 
-        // Conectar al servidor de radio local (puerto 3001) usando la IP actual
+        // Detectar si el usuario llegó por HTTPS (celular via proxy seguro en puerto 8443)
+        // o por HTTP normal (localhost/PC principal en puerto 3001)
+        // Esto es crítico: si el browser está en https, no puede abrir sockets ws:// (contenido mixto bloqueado)
+        const isSecure = window.location.protocol === 'https:';
         const host = window.location.hostname;
-        const newSocket = io(`http://${host}:3001`, {
+
+        // En modo seguro (HTTPS) el proxy ya enruta /socket.io/ al radio-server
+        // En modo normal (HTTP) conectamos directo al puerto 3001
+        const socketUrl = isSecure
+            ? `https://${host}:${window.location.port || 8443}`   // via proxy HTTPS unificado
+            : `http://${host}:3001`;                               // directo (localhost / PC principal)
+
+        const newSocket = io(socketUrl, {
+            path: isSecure ? '/radio-socket.io/' : '/socket.io/', // ruta diferenciada para el proxy
             reconnection: true,
             reconnectionAttempts: Infinity,
             reconnectionDelay: 1000,

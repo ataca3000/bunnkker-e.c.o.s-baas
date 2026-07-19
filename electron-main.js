@@ -4,12 +4,16 @@ const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const { fork } = require('child_process');
 const fs = require('fs');
+const https = require('https');
+const http = require('http');
+const crypto = require('crypto');
 const { machineIdSync } = require('node-machine-id');
 
 const isDev = !app.isPackaged;
 
 let mainWindow;
 let serverProcess;
+let httpsProxyServer = null;
 
 // ─── Auto-updater config ────────────────────────────────────────────────────
 autoUpdater.autoDownload = true;
@@ -56,6 +60,160 @@ function setupAutoUpdater() {
         setInterval(() => autoUpdater.checkForUpdates(), 30 * 60 * 1000);
     }
 }
+
+// ─── HTTPS Proxy Local (Puerto 8443) ───────────────────────────────────────
+// Levanta un servidor HTTPS con certificados auto-firmados para que los celulares
+// puedan acceder al radio sin que el navegador bloquee el micrófono (Mixed Content).
+// El proxy enruta:
+//   /radio-socket.io/  → radio-server en puerto 3001
+//   todo lo demás     → Next.js en puerto 3000
+const startHttpsProxy = () => {
+    return new Promise((resolve) => {
+        // ── Generar certificado auto-firmado con crypto nativo ──
+        // Usamos node:crypto para generar un par de llaves RSA + certificado X.509
+        // El certificado se regenera en cada inicio (no hace falta guardarlo)
+        let certPem, keyPem;
+        try {
+            const { privateKey, publicKey } = crypto.generateKeyPairSync('rsa', { modulusLength: 2048 });
+            keyPem = privateKey.export({ type: 'pkcs8', format: 'pem' });
+
+            // Construir un certificado X.509 auto-firmado simple
+            // Node 15+ tiene X509Certificate pero para generación necesitamos forge o selfsigned
+            // Usamos el paquete 'selfsigned' si está disponible, si no, intentamos con openssl
+            try {
+                const selfsigned = require('selfsigned');
+                const attrs = [{ name: 'commonName', value: 'localhost' }];
+                const pems = selfsigned.generate(attrs, {
+                    keySize: 2048,
+                    days: 365,
+                    algorithm: 'sha256',
+                    extensions: [
+                        { name: 'subjectAltName', altNames: [{ type: 2, value: 'localhost' }, { type: 7, ip: '0.0.0.0' }] }
+                    ]
+                });
+                certPem = pems.cert;
+                keyPem  = pems.private;
+                console.log('[HTTPS Proxy] Certificado auto-firmado generado con selfsigned.');
+            } catch (e) {
+                // selfsigned no disponible — usamos el certificado hardcoded de fallback (pre-generado)
+                console.warn('[HTTPS Proxy] selfsigned no disponible. Usando certificado de fallback.');
+                // Intentar leer cert guardado en userData
+                const certPath = path.join(app.getPath('userData'), 'local_proxy.crt');
+                const keyPath  = path.join(app.getPath('userData'), 'local_proxy.key');
+                if (fs.existsSync(certPath) && fs.existsSync(keyPath)) {
+                    certPem = fs.readFileSync(certPath, 'utf8');
+                    keyPem  = fs.readFileSync(keyPath, 'utf8');
+                    console.log('[HTTPS Proxy] Usando certificado guardado en userData.');
+                } else {
+                    console.error('[HTTPS Proxy] No hay certificado disponible. El proxy HTTPS no arrancará.');
+                    return resolve();
+                }
+            }
+        } catch (err) {
+            console.error('[HTTPS Proxy] Error generando certificado:', err);
+            return resolve();
+        }
+
+        // ── Crear el servidor HTTPS ──
+        const NEXT_PORT  = 3000;
+        const RADIO_PORT = 3001;
+        const PROXY_PORT = 8443;
+
+        // Función helper para hacer proxy HTTP inverso manual (sin dependencia externa)
+        const proxyRequest = (req, res, targetPort) => {
+            const options = {
+                hostname: '127.0.0.1',
+                port: targetPort,
+                path: req.url,
+                method: req.method,
+                headers: {
+                    ...req.headers,
+                    host: `127.0.0.1:${targetPort}`,
+                },
+            };
+            const proxyReq = http.request(options, (proxyRes) => {
+                res.writeHead(proxyRes.statusCode, proxyRes.headers);
+                proxyRes.pipe(res, { end: true });
+            });
+            proxyReq.on('error', (err) => {
+                console.error('[HTTPS Proxy] Error proxying request:', err.message);
+                if (!res.headersSent) res.writeHead(502).end('Bad Gateway');
+            });
+            req.pipe(proxyReq, { end: true });
+        };
+
+        httpsProxyServer = https.createServer({ key: keyPem, cert: certPem }, (req, res) => {
+            // Enrutar según la ruta de la petición
+            if (req.url && req.url.startsWith('/radio-socket.io/')) {
+                // Peticiones HTTP de socket.io al radio-server
+                const radioReq = http.request({
+                    hostname: '127.0.0.1',
+                    port: RADIO_PORT,
+                    path: req.url.replace('/radio-socket.io/', '/socket.io/'),
+                    method: req.method,
+                    headers: { ...req.headers, host: `127.0.0.1:${RADIO_PORT}` },
+                }, (radioRes) => {
+                    res.writeHead(radioRes.statusCode, radioRes.headers);
+                    radioRes.pipe(res, { end: true });
+                });
+                radioReq.on('error', (err) => {
+                    if (!res.headersSent) res.writeHead(502).end('Radio unavailable');
+                });
+                req.pipe(radioReq, { end: true });
+            } else {
+                // Todo lo demás va a Next.js
+                proxyRequest(req, res, NEXT_PORT);
+            }
+        });
+
+        // ── Manejar WebSocket upgrades (el núcleo del radio) ──
+        httpsProxyServer.on('upgrade', (req, socket, head) => {
+            const isRadio = req.url && req.url.startsWith('/radio-socket.io/');
+            const targetPort = isRadio ? RADIO_PORT : NEXT_PORT;
+            const targetPath = isRadio
+                ? req.url.replace('/radio-socket.io/', '/socket.io/')
+                : req.url;
+
+            const proxySocket = require('net').connect(targetPort, '127.0.0.1', () => {
+                // Reescribir el path del upgrade request al destino real
+                const upgradeReq = [
+                    `GET ${targetPath} HTTP/1.1`,
+                    `Host: 127.0.0.1:${targetPort}`,
+                    `Upgrade: websocket`,
+                    `Connection: Upgrade`,
+                    `Sec-WebSocket-Key: ${req.headers['sec-websocket-key']}`,
+                    `Sec-WebSocket-Version: ${req.headers['sec-websocket-version']}`,
+                    ...(req.headers['sec-websocket-protocol'] ? [`Sec-WebSocket-Protocol: ${req.headers['sec-websocket-protocol']}`] : []),
+                    '',
+                    ''
+                ].join('\r\n');
+                proxySocket.write(upgradeReq);
+                if (head && head.length) proxySocket.write(head);
+            });
+
+            proxySocket.on('data', (data) => socket.write(data));
+            proxySocket.on('end', () => socket.end());
+            proxySocket.on('error', (err) => {
+                console.error('[HTTPS Proxy] WebSocket proxy error:', err.message);
+                socket.end();
+            });
+            socket.on('data', (data) => proxySocket.write(data));
+            socket.on('end', () => proxySocket.end());
+            socket.on('error', () => proxySocket.end());
+        });
+
+        httpsProxyServer.listen(PROXY_PORT, '0.0.0.0', () => {
+            console.log(`[HTTPS Proxy] ✅ Proxy HTTPS seguro activo en puerto ${PROXY_PORT}`);
+            console.log(`[HTTPS Proxy] 📱 Los empleados pueden acceder desde su celular a https://<IP-del-servidor>:${PROXY_PORT}`);
+            resolve();
+        });
+
+        httpsProxyServer.on('error', (err) => {
+            console.error('[HTTPS Proxy] Error al iniciar:', err.message);
+            resolve(); // No es fatal — el sistema sigue funcionando por HTTP
+        });
+    });
+};
 
 // ─── Next.js standalone server ──────────────────────────────────────────────
 const createServer = () => {
@@ -421,6 +579,11 @@ app.whenReady().then(async () => {
         createWindow(urlHost);
         setupAutoUpdater();
 
+        // Iniciar proxy HTTPS para desbloquear el micrófono en celulares de la red
+        startHttpsProxy().catch(err => {
+            console.error('[HTTPS Proxy] No se pudo iniciar el proxy HTTPS:', err);
+        });
+
         // ─── LocalTunnel / Cloudflared RNI (Red de Nodos Independientes) ───
         const startTunnel = async () => {
             try {
@@ -603,4 +766,5 @@ app.on('window-all-closed', () => {
 
 app.on('quit', () => {
     if (serverProcess) serverProcess.kill();
+    if (httpsProxyServer) httpsProxyServer.close();
 });
