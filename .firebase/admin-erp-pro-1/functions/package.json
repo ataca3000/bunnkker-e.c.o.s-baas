@@ -1,14 +1,14 @@
 {
-  "name": "camalion-topics-erp",
+  "name": "bunkker-e.c.o.s-erp",
   "version": "1.0.0",
-  "description": "Camalion Topics ERP — Ecosistema Comercial de Operaciones Simplificadas",
-  "author": "brechaopensource",
+  "description": "bunkker ERP — Ecosistema Comercial de Operaciones Simplificadas",
+  "author": "brechasolucionesds",
   "private": true,
   "main": "server.js",
   "build": {
-    "appId": "com.camaliontopics.erp",
+    "appId": "com.bunkkererp.erp",
     "productName": "Camalion Topics ERP",
-    "copyright": "Copyright © 2026 Camalion Topics S.A. de C.V.",
+    "copyright": "Copyright © 2026 brecha soluciones ds bunkker e.c.o.s",
     "directories": {
       "output": "dist-build-win",
       "buildResources": "build-resources"
@@ -59,7 +59,7 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Camalion Topics ERP"
+      "shortcutName": "bunkker ERP"
     },
     "publish": {
       "provider": "github",

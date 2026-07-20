@@ -35,7 +35,7 @@ __export(next_config_exports, {
 module.exports = __toCommonJS(next_config_exports);
 var import_next_pwa = __toESM(require("@ducanh2912/next-pwa"));
 var import_path = __toESM(require("path"));
-var isDesktop = process.env.BUILD_TARGET === "desktop";
+var isDesktop = process.env.BUILD_TARGET === "desktop" || process.env.BUILD_TARGET === "docker";
 var withPWA = (0, import_next_pwa.default)({
   dest: "public",
   disable: true,
@@ -44,8 +44,8 @@ var withPWA = (0, import_next_pwa.default)({
   skipWaiting: true
 });
 var nextConfig = {
-  output: isDesktop ? "standalone" : void 0,
-  // Standalone requerido solo para empaquetado Electron
+  output: "standalone",
+  // Standalone para Electron + Docker
   outputFileTracingRoot: import_path.default.join(__dirname, "./"),
   // @ts-ignore
   turbopack: {},

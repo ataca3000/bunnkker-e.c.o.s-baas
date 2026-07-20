@@ -50,7 +50,13 @@ export async function POST(request: NextRequest) {
             throw new Error('Archivo de respaldo inválido o incompatible.');
         }
 
-        const { products, orders, customers, users, shrinkage } = body.data;
+        const { 
+            products = [], 
+            orders = [], 
+            customers = [], 
+            users = [], 
+            shrinkage = [] 
+        } = body.data || {};
 
         // Perform restore inside a massive transaction
         await prisma.$transaction(async (tx) => {

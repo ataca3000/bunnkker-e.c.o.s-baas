@@ -18,8 +18,8 @@ export default function LocalRadio() {
     const audioContext = useRef<AudioContext | null>(null);
     const isSpaceDown = useRef(false);
 
-    // Solo habilitar para staff
-    const isStaff = profile?.role && profile.role !== 'cliente';
+    // Solo habilitar para staff (evitar mostrarlo a 'client' o usuarios sin rol)
+    const isStaff = profile?.role && profile.role !== 'client';
 
     useEffect(() => {
         if (!isStaff || typeof window === 'undefined') return;

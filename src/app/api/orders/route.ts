@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma';
 
 import { validateApiSession } from '@/lib/apiAuth';
 
+export const dynamic = 'force-dynamic';
+
 
 export async function GET() {
     try {

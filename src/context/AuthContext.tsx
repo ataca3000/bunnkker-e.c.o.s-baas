@@ -55,8 +55,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
         }
 
-        const loadUser = async () => {
+        const loadUser = async (silent = false) => {
             try {
+                if (!silent) setLoading(true);
                 const res = await fetch('/api/users/me');
                 if (res.ok) {
                     const data = await res.json();
@@ -85,11 +86,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 setProfile(null);
                 setIsReadOnly(true);
             } finally {
-                setLoading(false);
+                if (!silent) setLoading(false);
             }
         };
 
         loadUser();
+
+        // Polling para sincronización de sesión en tiempo real (cada 5 segundos)
+        const interval = setInterval(() => {
+            loadUser(true);
+        }, 5000);
+
+        return () => clearInterval(interval);
 
     }, [networkMode.isMaster]);
 

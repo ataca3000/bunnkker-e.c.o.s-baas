@@ -312,52 +312,15 @@ export default function SetupWizard() {
                                 {step === 3 && (
                                     <div className="space-y-6">
                                         <h3 className="flex items-center gap-2.5 text-cyan-400 font-bold text-xl uppercase tracking-wider">
-                                            <CreditCard /> Pasarelas de Pago
+                                            <CreditCard /> Reservas y Operación Local
                                         </h3>
                                         <p className="text-sm text-slate-400">
-                                            Vincula tus pasarelas de pago de MercadoPago o Stripe para aceptar tarjetas de débito/crédito.
+                                            El sistema está configurado para operar 100% de manera local. Las pasarelas de pago online externas han sido desactivadas para evitar vulnerabilidades y dependencia de internet.
                                         </p>
                                         
-                                        <div className="space-y-4">
-                                            <div className="p-4 rounded-xl bg-slate-900/30 border border-slate-800">
-                                                <span className="text-[10px] font-bold text-cyan-500 uppercase tracking-wider block mb-3">MercadoPago Keys</span>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                                    <input
-                                                        type="text"
-                                                        value={config.mp_public_key}
-                                                        onChange={(e) => setConfig({ ...config, mp_public_key: e.target.value })}
-                                                        placeholder="Public Key (APP_USR-...)"
-                                                        className="bg-slate-950 border border-slate-850 rounded-lg p-2.5 text-xs text-white outline-none focus:border-cyan-500"
-                                                    />
-                                                    <input
-                                                        type="password"
-                                                        value={config.mp_access_token}
-                                                        onChange={(e) => setConfig({ ...config, mp_access_token: e.target.value })}
-                                                        placeholder="Access Token"
-                                                        className="bg-slate-950 border border-slate-850 rounded-lg p-2.5 text-xs text-white outline-none focus:border-cyan-500"
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            <div className="p-4 rounded-xl bg-slate-900/30 border border-slate-800">
-                                                <span className="text-[10px] font-bold text-purple-400 uppercase tracking-wider block mb-3">Stripe Keys</span>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                                    <input
-                                                        type="text"
-                                                        value={config.stripe_publishable_key}
-                                                        onChange={(e) => setConfig({ ...config, stripe_publishable_key: e.target.value })}
-                                                        placeholder="Publishable Key (pk_live_...)"
-                                                        className="bg-slate-950 border border-slate-850 rounded-lg p-2.5 text-xs text-white outline-none focus:border-cyan-500"
-                                                    />
-                                                    <input
-                                                        type="password"
-                                                        value={config.stripe_secret_key}
-                                                        onChange={(e) => setConfig({ ...config, stripe_secret_key: e.target.value })}
-                                                        placeholder="Secret Key"
-                                                        className="bg-slate-950 border border-slate-850 rounded-lg p-2.5 text-xs text-white outline-none focus:border-cyan-500"
-                                                    />
-                                                </div>
-                                            </div>
+                                        <div className="p-5 rounded-2xl bg-cyan-950/20 border border-cyan-500/30 text-cyan-400 text-sm">
+                                            <span className="font-bold block mb-1">🛒 Flujo de Reservas WiFi LAN:</span>
+                                            Todos los pedidos a través del catálogo virtual entran en cola local como pedidos pendientes. Los clientes solo reservan desde sus teléfonos conectados al WiFi local y realizan el pago de manera física (Efectivo/Transferencia/Tarjeta en terminal física) directamente en la caja ("Cero Filas").
                                         </div>
                                     </div>
                                 )}

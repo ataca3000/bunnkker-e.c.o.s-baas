@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Truck, MapPin, CheckCircle2, ShieldCheck, Loader2, RefreshCw } from 'lucide-react';
+import AdvancedMap from '@/components/AdvancedMap';
 import Link from 'next/link';
 
 import { useCart } from '@/context/CartContext';
@@ -29,7 +30,7 @@ export default function CheckoutPage() {
     
     // Live Order Tracking States
     const [confirmedOrderId, setConfirmedOrderId] = useState<string | null>(null);
-    const [orderStatus, setOrderStatus] = useState<string>('PENDING_PAYMENT');
+    const [orderStatus, setOrderStatus] = useState<string>('pending_payment');
     const [assignedVentanilla, setAssignedVentanilla] = useState<string | null>(null);
     const [assignedCajon, setAssignedCajon] = useState<string | null>(null);
     const [lastPollTime, setLastPollTime] = useState<string>('');
@@ -151,7 +152,7 @@ export default function CheckoutPage() {
                 }
                 
                 setConfirmedOrderId(res.orderId);
-                setOrderStatus('PENDING_PAYMENT');
+                setOrderStatus('pending_payment');
                 setIsPaid(true);
             }
         } catch (error: any) {
@@ -192,18 +193,18 @@ export default function CheckoutPage() {
                                 padding: '0.25rem 0.75rem', 
                                 borderRadius: '9999px',
                                 fontSize: '0.8rem',
-                                color: orderStatus === 'PENDING_PAYMENT' ? '#d97706' : 
+                                color: orderStatus === 'pending_payment' ? '#d97706' : 
                                        orderStatus === 'READY_TO_SHIP' ? '#2563eb' : 
                                        orderStatus === 'paid' ? '#16a34a' : '#475569',
-                                backgroundColor: orderStatus === 'PENDING_PAYMENT' ? '#fef3c7' : 
+                                backgroundColor: orderStatus === 'pending_payment' ? '#fef3c7' : 
                                                  orderStatus === 'READY_TO_SHIP' ? '#dbeafe' : 
                                                  orderStatus === 'paid' ? '#dcfce7' : '#f1f5f9'
                             }}>
-                                {orderStatus === 'PENDING_PAYMENT' && '⏳ PREPARANDO PEDIDO EN PATIO'}
+                                {orderStatus === 'pending_payment' && '⏳ PREPARANDO PEDIDO EN PATIO'}
                                 {orderStatus === 'READY_TO_SHIP' && '📦 LISTO - PENDIENTE DE PAGO'}
                                 {orderStatus === 'paid' && '💵 PAGADO - RECOGE CON TU QR'}
                                 {orderStatus === 'DELIVERED' && '✅ ENTREGADO CON ÉXITO'}
-                                {orderStatus !== 'PENDING_PAYMENT' && orderStatus !== 'READY_TO_SHIP' && orderStatus !== 'paid' && orderStatus !== 'DELIVERED' && orderStatus.toUpperCase()}
+                                {orderStatus !== 'pending_payment' && orderStatus !== 'READY_TO_SHIP' && orderStatus !== 'paid' && orderStatus !== 'DELIVERED' && orderStatus.toUpperCase()}
                             </span>
                         </div>
 
@@ -250,7 +251,7 @@ export default function CheckoutPage() {
                     <div style={{ backgroundColor: '#F8FAFC', padding: '1.25rem', borderRadius: '8px', marginBottom: '2.5rem', textAlign: 'left', border: '1px solid #e2e8f0' }}>
                         <h4 style={{ fontWeight: 'bold', fontSize: '0.85rem', color: '#334155', marginBottom: '6px' }}>PASO A SEGUIR:</h4>
                         <p style={{ fontSize: '0.8rem', color: '#475569', lineHeight: '1.4' }}>
-                            {orderStatus === 'PENDING_PAYMENT' && 'Espera a que el personal de almacén aliste tus materiales. Te indicaremos la ventanilla/cajón aquí.'}
+                            {orderStatus === 'pending_payment' && 'Espera a que el personal de almacén aliste tus materiales. Te indicaremos la ventanilla/cajón aquí.'}
                             {orderStatus === 'READY_TO_SHIP' && `Acude a la ${assignedVentanilla ? 'Ventanilla' : 'Cajón'} asignada, paga $${total.toLocaleString()} MXN en caja y solicita tu QR.`}
                             {orderStatus === 'paid' && 'Dirígete con el cargador en el patio de entregas. Él escaneará este código QR para validar y cargar tu mercancía.'}
                             {orderStatus === 'DELIVERED' && 'Venta completada. ¡Gracias por tu preferencia!'}
@@ -296,7 +297,7 @@ export default function CheckoutPage() {
                                 >
                                     <div style={{ fontWeight: 'bold' }}>A DOMICILIO / OBRA</div>
                                     <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                                        {hasBulkItems ? 'Anticipo del 50% requerido.' : 'Disponible para entrega directa a domicilio u obra.'}
+                                        {hasBulkItems ? 'Pago contra entrega (en efectivo o transferencia).' : 'Disponible para entrega directa a domicilio u obra.'}
                                     </div>
                                 </div>
                                 <div
@@ -356,35 +357,46 @@ export default function CheckoutPage() {
                                     style={{ padding: '12px', border: '1px solid #ddd', borderRadius: '4px' }} 
                                 />
                                 {method === 'delivery' && (
-                                    <div style={{ gridColumn: 'span 2', display: 'flex', gap: '10px' }}>
-                                        <input 
-                                            type="text" 
-                                            placeholder="Dirección de Obra *" 
-                                            value={clientAddress} 
-                                            onChange={(e) => setClientAddress(e.target.value)} 
-                                            style={{ flex: 1, padding: '12px', border: '1px solid #ddd', borderRadius: '4px' }} 
-                                            required 
-                                        />
-                                        <button 
-                                            type="button" 
-                                            onClick={handleGetLocation}
-                                            style={{ 
-                                                padding: '0 1rem', 
-                                                backgroundColor: clientGps ? '#10b981' : '#0ea5e9', 
-                                                color: 'white', 
-                                                borderRadius: '4px', 
-                                                border: 'none', 
-                                                cursor: 'pointer',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '8px',
-                                                fontWeight: 'bold',
-                                                whiteSpace: 'nowrap'
-                                            }}
-                                        >
-                                            {gpsLoading ? <Loader2 size={20} className="animate-spin" /> : <MapPin size={20} />}
-                                            {clientGps ? 'GPS Capturado' : 'Fijar mi GPS'}
-                                        </button>
+                                    <div style={{ gridColumn: 'span 2', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                        <div style={{ display: 'flex', gap: '10px' }}>
+                                            <input 
+                                                type="text" 
+                                                placeholder="Dirección de Obra *" 
+                                                value={clientAddress} 
+                                                onChange={(e) => setClientAddress(e.target.value)} 
+                                                style={{ flex: 1, padding: '12px', border: '1px solid #ddd', borderRadius: '4px' }} 
+                                                required 
+                                            />
+                                            <button 
+                                                type="button" 
+                                                onClick={handleGetLocation}
+                                                style={{ 
+                                                    padding: '0 1rem', 
+                                                    backgroundColor: clientGps ? '#10b981' : '#0ea5e9', 
+                                                    color: 'white', 
+                                                    borderRadius: '4px', 
+                                                    border: 'none', 
+                                                    cursor: 'pointer',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '8px',
+                                                    fontWeight: 'bold',
+                                                    whiteSpace: 'nowrap'
+                                                }}
+                                            >
+                                                {gpsLoading ? <Loader2 size={20} className="animate-spin" /> : <MapPin size={20} />}
+                                                {clientGps ? 'GPS Capturado' : 'Fijar mi GPS'}
+                                            </button>
+                                        </div>
+                                        <div style={{ height: '250px', width: '100%', borderRadius: '8px', overflow: 'hidden', border: '2px solid #e2e8f0', marginTop: '10px' }}>
+                                            <AdvancedMap 
+                                                mode="picker" 
+                                                onLocationSelect={(lat, lng) => {
+                                                    setClientGps(`${lat},${lng}`);
+                                                }}
+                                                initialPickerPosition={clientGps ? [parseFloat(clientGps.split(',')[0]), parseFloat(clientGps.split(',')[1])] : [19.4326, -99.1332]}
+                                            />
+                                        </div>
                                     </div>
                                 )}
                             </div>
@@ -413,7 +425,7 @@ export default function CheckoutPage() {
                             {method === 'delivery' ? (
                                 <div style={{ marginBottom: '2rem' }}>
                                     <div style={{ backgroundColor: '#0ea5e9', padding: '1rem', borderRadius: '4px', color: 'white' }}>
-                                        <div style={{ fontSize: '0.75rem', fontWeight: 'bold' }}>PAGO CONTRA ENTREGA (EN EFECTIVO)</div>
+                                        <div style={{ fontSize: '0.75rem', fontWeight: 'bold' }}>PAGO CONTRA ENTREGA (EN EFECTIVO O TRANSFERENCIA)</div>
                                         <div style={{ fontSize: '1.8rem', fontWeight: '900', color: '#FFCB05' }}>${total.toLocaleString()} MXN</div>
                                     </div>
                                     <p style={{ fontSize: '0.7rem', color: '#666', marginTop: '8px' }}>* El pago total de ${total.toLocaleString()} se liquidará al recibir tus materiales.</p>

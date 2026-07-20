@@ -3,34 +3,10 @@ import type { DeliveryOrder } from './types';
 import { Map, Zap, ChevronRight, User, MapPin, Navigation, CloudOff } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { isNube } from '@/lib/envConfig';
-import dynamic from 'next/dynamic';
+import AdvancedMap from '@/components/AdvancedMap';
+import { optimizeRoute } from '@/lib/tspRouter';
 
-// Lazy loading the Google Maps iframe container to avoid bloating the main thread
-const LazyGoogleMap = dynamic(() => Promise.resolve(({ address }: { address: string }) => (
-  <iframe 
-    width="100%" 
-    height="100%" 
-    frameBorder="0" 
-    scrolling="no" 
-    marginHeight={0} 
-    marginWidth={0} 
-    src={`https://maps.google.com/maps?width=100%25&height=600&hl=en&q=${encodeURIComponent(address)}&t=&z=14&ie=UTF8&iwloc=B&output=embed`}
-    className="absolute inset-0 z-0 w-full h-full border-0"
-    title="Map"
-  />
-)), { ssr: false });
-
-// Formula Haversine para distancia simple
-function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371; 
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-            Math.sin(dLon/2) * Math.sin(dLon/2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  return R * c;
-}
+// Formula Haversine se movió a tspRouter.ts
 
 export default function MyRoute({ 
   orders, 
@@ -71,24 +47,15 @@ export default function MyRoute({
         const otherOrders = prev.filter(o => !orders.some(ro => ro.id === o.id));
         
         let currentLocation = { lat, lng };
-        let unvisited = [...routeOrders];
-        const sorted = [];
-
-        while (unvisited.length > 0) {
-          unvisited.sort((a, b) => {
-            const distA = calculateDistance(currentLocation.lat, currentLocation.lng, a.lat || lat, a.lng || lng);
-            const distB = calculateDistance(currentLocation.lat, currentLocation.lng, b.lat || lat, b.lng || lng);
-            return distA - distB;
-          });
-          const nearest = unvisited.shift()!;
-          sorted.push(nearest);
-          currentLocation = { lat: nearest.lat || lat, lng: nearest.lng || lng };
-        }
-
+        const points = routeOrders.map(o => ({ id: o.id, lat: o.lat || lat, lng: o.lng || lng }));
+        const optimizedIndices = optimizeRoute({ lat, lng }, points);
+        
+        const sorted = optimizedIndices.map(idx => points[idx]).map(p => routeOrders.find(o => o.id === p.id)!);
+        
         return [...otherOrders, ...sorted];
       });
       setIsOptimizing(false);
-    }, 800);
+    }, 400);
   }
 
   if (orders.length === 0) {
@@ -112,18 +79,12 @@ export default function MyRoute({
       {/* Route Preview Map */}
       <div className="bg-slate-900/40 backdrop-blur-lg rounded-2xl shadow-[0_4px_30px_rgba(0,0,0,0.1)] border border-white/10 overflow-hidden relative mb-2">
         <div className="h-64 w-full bg-slate-800 relative z-0 flex items-center justify-center">
-          {isNube() ? (
-             <LazyGoogleMap address={orders[0].address} />
-          ) : (
-            <div className="text-center p-6 bg-slate-900/80 w-full h-full flex flex-col items-center justify-center border-b border-slate-700">
-              <CloudOff size={48} className="text-slate-500 mb-2 opacity-50" />
-              <p className="text-slate-400 font-bold uppercase tracking-widest text-sm">Mapas Desactivados</p>
-              <p className="text-slate-500 text-xs mt-1 max-w-[250px]">
-                API de Google Maps requiere la Versión NUBE (PRO).
-              </p>
-            </div>
-          )}
-           <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-slate-950 via-transparent to-transparent z-10" />
+          <AdvancedMap 
+            mode="route" 
+            markers={localOrders.map(o => ({ id: o.id, lat: o.lat || 19.4326, lng: o.lng || -99.1332, title: o.customerName, description: o.address }))}
+            routeIndices={localOrders.map((_, i) => i)}
+            useOfflineTiles={true}
+          />
         </div>
         <div className="p-4 relative z-20 -mt-10">
             <div className="bg-slate-900/80 backdrop-blur-md border border-white/10 rounded-xl p-4 shadow-xl flex items-center justify-between">

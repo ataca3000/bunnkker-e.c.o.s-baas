@@ -12,10 +12,18 @@ export async function POST() {
       return NextResponse.json({ success: false, error: 'Base de datos no encontrada.' }, { status: 404 });
     }
 
-    // 2. Carpeta de destino (Documentos del usuario)
-    const backupDir = path.join(os.homedir(), 'Documents', 'Backups_ERP');
-    if (!fs.existsSync(backupDir)) {
-      fs.mkdirSync(backupDir, { recursive: true });
+    // 2. Carpeta de destino (Documentos del usuario con fallback a local)
+    let backupDir = path.join(os.homedir(), 'Documents', 'Backups_ERP');
+    try {
+      if (!fs.existsSync(backupDir)) {
+        fs.mkdirSync(backupDir, { recursive: true });
+      }
+    } catch (e) {
+      // Fallback a carpeta dentro del proyecto si Documents falla por permisos o OneDrive
+      backupDir = path.join(process.cwd(), 'backups');
+      if (!fs.existsSync(backupDir)) {
+        fs.mkdirSync(backupDir, { recursive: true });
+      }
     }
 
     // 3. Generar nombre de archivo con fecha

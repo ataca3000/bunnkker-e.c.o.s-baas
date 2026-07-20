@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireRole, WRITE_ROLES } from '@/lib/apiAuth';
 
+export const dynamic = 'force-dynamic';
+
 
 export async function GET() {
     try {

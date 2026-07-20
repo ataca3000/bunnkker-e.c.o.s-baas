@@ -5,6 +5,7 @@ import SignatureCanvas from 'react-signature-canvas';
 import Webcam from 'react-webcam';
 import { motion } from 'framer-motion';
 import { toast } from '@/lib/toast';
+import AdvancedMap from '@/components/AdvancedMap';
 
 // Acoustic feedback
 const playBeep = () => {
@@ -52,6 +53,7 @@ export default function DeliveryView({
   const [pinError, setPinError] = useState<string>('');
   const [isVerifyingGPS, setIsVerifyingGPS] = useState(false);
   const webcamRef = useRef<Webcam>(null);
+  const signatureRef = useRef<SignatureCanvas>(null);
 
   const openGoogleMaps = () => {
     const url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(order.address)}`;
@@ -87,9 +89,15 @@ export default function DeliveryView({
     }
 
     playBeep();
+    
+    // Extraer firma si existe
+    const sigData = signatureRef.current && !signatureRef.current.isEmpty() 
+      ? signatureRef.current.toDataURL('image/png') 
+      : null;
+
     onUpdate({ 
       status: 'completed', 
-      signatureData: null, // Ya no se usa firma
+      signatureData: sigData,
       photoData,
       completedAt: new Date().toISOString() 
     });
@@ -213,6 +221,25 @@ export default function DeliveryView({
            {pinError && <p className="text-red-400 text-xs text-center mt-2 font-bold">{pinError}</p>}
         </div>
 
+        {/* Signature Canvas */}
+        <div className="bg-slate-900/60 backdrop-blur-lg p-4 rounded-2xl shadow-[0_4px_30px_rgba(0,0,0,0.1)] border border-white/10">
+           <h3 className="font-bold text-sm text-sky-400 uppercase tracking-wider mb-2">Firma del Cliente</h3>
+           <div className="bg-white rounded-xl overflow-hidden border-2 border-white/20 touch-none">
+             <SignatureCanvas 
+               ref={signatureRef}
+               penColor="black"
+               canvasProps={{ className: 'w-full h-40 bg-white cursor-crosshair touch-none' }}
+               clearOnResize={false}
+             />
+           </div>
+           <button 
+             onClick={() => signatureRef.current?.clear()}
+             className="text-slate-400 text-xs font-bold uppercase mt-2 w-full text-right hover:text-white transition-colors"
+           >
+             Borrar Firma
+           </button>
+        </div>
+
         <button 
             onClick={handleComplete}
             disabled={isVerifyingGPS || (order.deliveryPin ? pinInput.length !== 4 : false)}
@@ -229,17 +256,13 @@ export default function DeliveryView({
     <div className="relative w-full h-full flex flex-col md:flex-row overflow-hidden">
       {/* Map Embed Dashboard - Full Background */}
       <div className="absolute inset-0 z-0 bg-slate-900 pointer-events-auto">
-          <iframe 
-            width="100%" 
-            height="100%" 
-            frameBorder="0" 
-            scrolling="no" 
-            marginHeight={0} 
-            marginWidth={0} 
-            src={`https://maps.google.com/maps?width=100%25&height=600&hl=en&q=${encodeURIComponent(order.address)}&t=&z=15&ie=UTF8&iwloc=B&output=embed`}
-            className="absolute inset-0 z-0 w-full h-full border-0"
-            title="Map"
-          ></iframe>
+          <AdvancedMap 
+            mode="route"
+            markers={[{ id: order.id, lat: order.lat || 19.4326, lng: order.lng || -99.1332, title: order.customerName, description: order.address }]}
+            routeIndices={[0]}
+            warehouseLocation={[order.lat || 19.4326, order.lng || -99.1332]} // Center on order for individual view
+            useOfflineTiles={true}
+          />
           <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-slate-950 via-transparent to-slate-900/50 z-10" />
       </div>
 
