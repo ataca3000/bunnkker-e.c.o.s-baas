@@ -1,46 +1,101 @@
 {
-"name": "Admin.com ERP Industrial",
-"short_name": "Admin.com",
-"start_url": "/",
-"display": "standalone",
-"description": "Sistema de gestión ERP con arquitectura Local-First e IA integrada.",
-"lang": "es-MX",
-"dir": "auto",
-"theme_color": "#004A99",
-"background_color": "#f8f9fa",
-"orientation": "any",
-"icons": [
+  "name": "Bunkker",
+  "version": "3.0.0",
+  "description": "ERP multi-agente con catálogo cero filas y modo colmena B2B mediante túnel LAN/WiFi.",
+  "server": {
+    "url": "http://192.168.1.100:8080",
+    "protocol": "http"
+  },
+  "tools": [
     {
-        "src": "/favicon.ico",
-        "sizes": "512x512",
-        "type": "image/x-icon"
+      "name": "getInventory",
+      "description": "Consulta inventario disponible (catálogo público)",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "categoria": { "type": "string" }
+        }
+      },
+      "output_schema": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "sku": { "type": "string" },
+            "nombre": { "type": "string" },
+            "stock": { "type": "number" }
+          }
+        }
+      }
     },
     {
-        "src": "/logo.png",
-        "sizes": "192x192",
-        "type": "image/png"
-    }
-],
-"screenshots": [
+      "name": "createOrder",
+      "description": "Crear orden de venta (rol cliente)",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "clienteId": { "type": "string" },
+          "productos": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "sku": { "type": "string" },
+                "cantidad": { "type": "number" }
+              }
+            }
+          }
+        },
+        "required": ["clienteId", "productos"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "orderId": { "type": "string" },
+          "status": { "type": "string" }
+        }
+      }
+    },
     {
-        "src": "/logo.png",
-        "sizes": "2880x1800",
-        "type": "image/png",
-        "description": "A screenshot of the home page"
-    }
-],
-"related_applications": [
+      "name": "createInvoice",
+      "description": "Generar factura (rol administrador)",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "orderId": { "type": "string" },
+          "clienteId": { "type": "string" }
+        },
+        "required": ["orderId", "clienteId"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "invoiceId": { "type": "string" },
+          "total": { "type": "number" }
+        }
+      }
+    },
     {
-        "platform":"windows",
-        "url": " The URL to your app in that app store"
+      "name": "colmenaProxy",
+      "description": "Exponer catálogo público a otros negocios vía túnel B2B",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "tenantId": { "type": "string" }
+        },
+        "required": ["tenantId"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "catalogUrl": { "type": "string" },
+          "status": { "type": "string" }
+        }
+      }
     }
-],
-"prefer_related_applications": false,
-"shortcuts": [
-    {
-        "name":"The name you would like to be displayed for your shortcut",
-        "url":"The url you would like to open when the user chooses this shortcut. This must be a URL local to your PWA. For example: If my start_url is /, this URL must be something like /shortcut",
-        "description":"A description of the functionality of this shortcut"
-    }
-]
+  ],
+  "auth": {
+    "type": "api_key",
+    "documentation": "La API key se envía en el header Authorization: Bearer <token>"
+  }
 }
