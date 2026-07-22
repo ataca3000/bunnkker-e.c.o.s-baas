@@ -75,12 +75,12 @@ export default function Navbar() {
     };
 
     const logoLetters = [
-        { char: 'A', color: '#FFFFFF', shadow: true },
-        { char: 'd', color: '#FFFFFF', shadow: false },
-        { char: 'm', color: '#FFFFFF', shadow: false },
-        { char: 'i', color: '#FFFFFF', shadow: false },
-        { char: 'n', color: '#FFFFFF', shadow: false },
-        { char: '.com', color: '#A78BFA', shadow: false, isSuffix: true } // Purple accent for the suffix
+        { char: 'B', color: '#084cb1', shadow: true },
+        { char: 'U', color: '#0d74af', shadow: false },
+        { char: 'N', color: '#FFFFFF', shadow: false },
+        { char: 'KK', color: '#07d3f7', shadow: false },
+        { char: 'E', color: '#0ac6ff', shadow: false },
+        { char: '.E.C.O.S', color: '#070986', shadow: false, isSuffix: true } // Purple accent for the suffix
     ];
 
     const isActive = (path: string) => {
@@ -120,7 +120,7 @@ export default function Navbar() {
                                 ))}
                             </motion.div>
                             <span style={{ fontSize: '0.65rem', fontWeight: '900', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px', marginTop: '4px' }}>
-                                {siteConfig.businessName || "ERP UNIVERSAL"}
+                                {siteConfig.businessName || "ECOSISTEMA COMERCIAL OFFLINE SINCRONIZADO"}
                             </span>
                         </div>
                     </Link>
@@ -130,7 +130,7 @@ export default function Navbar() {
                         <div className={styles.searchContainer}>
                             <input
                                 type="text"
-                                placeholder="Buscar productos o escanear código..."
+                                placeholder="Buscar producto"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 className={styles.searchInputUnified}
@@ -139,7 +139,7 @@ export default function Navbar() {
                                 type="button" 
                                 onClick={() => setIsScannerOpen(true)}
                                 className={styles.scanButtonInside}
-                                title="Escanear Código de Barras / Cámara"
+                                title="QR ScanCámara"
                             >
                                 <Camera size={20} color="#0ea5e9" />
                             </button>
@@ -184,7 +184,7 @@ export default function Navbar() {
                         <div className={styles.searchContainer}>
                             <input
                                 type="text"
-                                placeholder="Buscar o escanear código..."
+                                placeholder="consultar producto"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 className={styles.searchInputUnified}

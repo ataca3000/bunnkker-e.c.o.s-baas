@@ -15,33 +15,23 @@ export default function DeviceLockScreen({ children }: { children: React.ReactNo
     const [error, setError] = useState(false);
     const [daysRemaining, setDaysRemaining] = useState<number | null>(null);
 
-    // Evitar render en servidor
+    // Evitar render en servidor y verificar conexión
     const [mounted, setMounted] = useState(false);
-    useEffect(() => setMounted(true), []);
+    const [isOnline, setIsOnline] = useState(true);
 
     useEffect(() => {
-        if (!mounted) return;
-
+        // --- 1. Lógica de Verificación de Suscripción ---
         const checkSubscription = async () => {
             try {
-                // 1. Revisar online si hay red
-                if (navigator.onLine) {
+                if (window.navigator.onLine) { // Sincronizar si hay conexión
                     const confSnap = await getDoc(doc(db, 'settings', 'site_config'));
-                    if (confSnap.exists()) {
-                        const data = confSnap.data();
-                        if (data.subscriptionExpiresAt) {
-                            const expiresAt = data.subscriptionExpiresAt.toMillis ? data.subscriptionExpiresAt.toMillis() : data.subscriptionExpiresAt;
-                            localStorage.setItem('admin_sub_expires', expiresAt.toString());
-                        } else {
-                            // Por defecto, damos 30 días si no hay config
-                            const defaultExpires = Date.now() + (30 * 24 * 60 * 60 * 1000);
-                            localStorage.setItem('admin_sub_expires', defaultExpires.toString());
-                        }
-                    }
+                    const subData = confSnap.data();
+                    const expiresAt = subData?.subscriptionExpiresAt?.toMillis?.() || (Date.now() + 30 * 24 * 60 * 60 * 1000);
+                    localStorage.setItem('admin_sub_expires', expiresAt.toString());
                 }
 
                 // 2. Verificar localmente
-                const expiresStr = localStorage.getItem('admin_sub_expires');
+                const expiresStr = localStorage.getItem('admin_sub_expires'); // Leer siempre de localStorage
                 if (expiresStr) {
                     const expiresAt = parseInt(expiresStr, 10);
                     const now = Date.now();
@@ -65,12 +55,34 @@ export default function DeviceLockScreen({ children }: { children: React.ReactNo
             }
         };
 
-        checkSubscription();
+        // --- 2. Configuración de Efectos y Listeners ---
+        // Se establece a true para indicar que el componente ya se montó en el cliente.
+        // Esto evita errores de renderizado en servidor (SSR) donde `window` y `localStorage` no existen.
+        // Ver la guarda `if (!mounted) return null;` más abajo.
+        setMounted(true); 
+
+        // Función para actualizar el estado de la conexión y volver a verificar la suscripción
+        const updateOnlineStatus = () => {
+            setIsOnline(window.navigator.onLine);
+            checkSubscription(); // Vuelve a verificar la suscripción al cambiar el estado de la red
+        };
+
+        window.addEventListener('online', updateOnlineStatus);
+        window.addEventListener('offline', updateOnlineStatus);
+        updateOnlineStatus(); // Establecer estado inicial al montar
+
+        checkSubscription(); // Ejecutar la verificación al montar
         
-        // Revisar cada hora
+        // Revisar periódicamente (cada hora)
         const interval = setInterval(checkSubscription, 3600000);
-        return () => clearInterval(interval);
-    }, [mounted, navigator.onLine]);
+
+        // --- 3. Función de Limpieza ---
+        return () => {
+            clearInterval(interval);
+            window.removeEventListener('online', updateOnlineStatus);
+            window.removeEventListener('offline', updateOnlineStatus);
+        };
+    }, []); // El array de dependencias debe estar vacío para que se ejecute solo una vez al montar.
 
     const handleManualUnlock = () => {
         setLoading(true);
@@ -112,7 +124,7 @@ export default function DeviceLockScreen({ children }: { children: React.ReactNo
                             El periodo de licencia para este dispositivo ha concluido. Conéctate a internet para sincronizar tu pago automáticamente o ingresa un código de renovación.
                         </p>
 
-                        {!navigator.onLine && (
+                        {!isOnline && (
                             <div className="w-full bg-orange-500/10 border border-orange-500/20 text-orange-400 p-4 rounded-2xl mb-8 flex items-center gap-3 text-left">
                                 <WifiOff size={24} className="shrink-0" />
                                 <div>

@@ -13,7 +13,18 @@ async function optimizeSQLite() {
     await prisma.$executeRawUnsafe(`PRAGMA busy_timeout = 5000;`);
     
     console.log("¡SQLite optimizado a velocidad Edge!");
-    process.exit(0);
 }
 
-optimizeSQLite().catch(console.error);
+// Envolvemos la ejecución en una función autoejecutable para usar async/await de forma más limpia
+(async () => {
+    try {
+        await optimizeSQLite();
+        console.log("Optimización completada exitosamente.");
+        process.exit(0);
+    } catch (e) {
+        console.error("Error al optimizar SQLite:", e);
+        process.exit(1);
+    } finally {
+        await prisma.$disconnect();
+    }
+})();

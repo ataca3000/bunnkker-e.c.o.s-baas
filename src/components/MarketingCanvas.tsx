@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useCart } from '@/context/CartContext';
 import { Sparkles, Palette, MousePointer2, CheckCircle2, Smartphone, Monitor, Layout, Brush } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from "framer-motion";
 import { QRCodeSVG } from 'qrcode.react';
 
 type Theme = 'industrial' | 'modern' | 'classic';

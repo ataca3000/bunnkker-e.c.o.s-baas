@@ -1,10 +1,12 @@
 {
-  "projectId": "gen-lang-client-0008108084",
-  "appId": "1:1047828381504:web:b888d1efdf7bf1f5bcc4a5",
-  "apiKey": "AIzaSyAoam6Ddd5SfB-dXEIS7Vbd4d2SZaglzRg",
-  "authDomain": "gen-lang-client-0008108084.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-2eb7fc48-06ae-48b2-8927-cf319360900c",
-  "storageBucket": "gen-lang-client-0008108084.firebasestorage.app",
-  "messagingSenderId": "1047828381504",
-  "measurementId": ""
+  "projectId": "admin-erp-pro-1",
+  
+  "apiKey": "AIzaSyBJ1opv0NzTWl3XILcno6Q7Eldj-2-0Sv8",
+  "authDomain": "admin-erp-pro-1.firebaseapp.com",
+  "firestoreDatabaseId": "",
+  "storageBucket": "admin-erp-pro-1.firebaseapp.com",
+  "messagingSenderId": "848317819375",
+  "appId": "1:848317819375:web:29580474544fc9794e2e1a",
+  "measurementId": "G-3EJQLYCP17"
+  
 }
