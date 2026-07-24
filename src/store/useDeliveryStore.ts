@@ -25,7 +25,7 @@ interface DeliveryState {
   routeIndices: number[];
   
   // Actions
-  startRoute: (orders: LocalDeliveryOrder[], indices: number[]) => void;
+  startRoute: (order: LocalDeliveryOrder[], indices: number[]) => void;
   endRoute: () => void;
   completeDelivery: (orderId: string, signatureData?: string | null, photoData?: string | null) => void;
   rejectDelivery: (orderId: string, reason: string) => void;
@@ -40,9 +40,9 @@ export const useDeliveryStore = create<DeliveryState>()(
       activeOrders: [],
       routeIndices: [],
 
-      startRoute: (orders, indices) => set({
+      startRoute: (order, indices) => set({
         isRouteActive: true,
-        activeOrders: orders,
+        activeOrders: order,
         routeIndices: indices
       }),
 

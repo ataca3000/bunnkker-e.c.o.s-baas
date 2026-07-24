@@ -1,7 +1,7 @@
 const { app, BrowserWindow, screen, ipcMain, dialog, nativeTheme } = require('electron');
 nativeTheme.themeSource = 'dark';
 const { autoUpdater } = require('electron-updater');
-const path = require('path');
+const path = require('node:path');
 const { fork } = require('child_process');
 const fs = require('fs');
 const { machineIdSync } = require('node-machine-id');
@@ -85,7 +85,6 @@ const createServer = () => {
         console.log('[Server] Iniciando desde:', serverPath);
         const serverDir = path.dirname(serverPath);
 
-        const fs = require('fs');
         const logPath = path.join(app.getPath('userData'), 'server.log');
         fs.appendFileSync(logPath, '\n\n=== NUEVO INICIO DE SERVIDOR ===\n');
         
