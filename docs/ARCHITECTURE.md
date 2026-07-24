@@ -1,85 +1,65 @@
-# ADMIN.COM — Manual de Arquitectura Técnica (Desarrolladores)
+# Arquitectura del Sistema BUNKKER E.C.O.S ERP
 
-Este documento detalla la ingeniería del sistema, el flujo de datos, los protocolos de seguridad y la infraestructura de red local del ERP.
+## 1. Visión General
 
----
+BUNKKER E.C.O.S (Ecosistema Comercial de Operaciones Simplificadas) es una plataforma integral de gestión de recursos empresariales (ERP) y Punto de Venta (POS) con diseño **Local-First**, soporte de red local P2P y sincronización automática en la nube (BaaS) mediante Firebase. El sistema está diseñado para funcionar en condiciones de conectividad inestable o nula, garantizando la continuidad operativa de los negocios.
 
-## 1. Topología del Sistema (Local-First Híbrido)
+## 2. Stack Tecnológico
 
-El ERP opera bajo un modelo **Maestro-Esclavo** distribuido en red local con replicación asíncrona hacia la nube (**Google Cloud Firestore**).
+### Frontend & Runtimes
 
+* **Framework:** [Next.js 15](https://nextjs.org/) (App Router)
+* **React:** React 19 (Tipado estático estricto y renderizado optimizado)
+* **Entorno de Escritorio:** Electron (Distribución nativa para PC de mostrador)
+* **Estado Global:** Zustand (`useERPStore` para datos unificados) con adaptadores `CartContext` y `AuthContext` para retrocompatibilidad de UI.
+* **Sistema de Notificaciones:** Despachador de eventos `CustomEvent` global y contenedor `Framer Motion` (sin uso de `alert()` bloqueantes).
+
+### Backend & Almacenamiento Local-First
+
+* **Base de Datos Local:** SQLite (Prisma ORM) con cola de transacciones Write-Ahead Logging (WAL) offline.
+* **Base de Datos Cloud:** Google Cloud Firestore (NoSQL, sincronización en tiempo real).
+* **Autenticación:** Firebase Admin Auth y endpoints locales protegidos mediante firmas criptográficas.
+
+## 3. Estructura del Código Fuente
+
+```bash
+src/
+├── app/                  # Rutas y Vistas (Next.js App Router)
+│   ├── dashboard/        # Panel administrativo protegido (RBAC)
+│   ├── login/            # Autenticación unificada
+│   └── api/              # Endpoints API (Verificación, Facturación, Reportes)
+├── components/           # Componentes UI Reutilizables
+│   ├── admin/            # KPICard, TrendBadge, ModuleSection y tablas admin
+│   └── AdminAsistente.tsx # Módulo de Asistencia Técnica (Chatbot con IA)
+├── context/              # Gestión de Estado (Patrones Provider de compatibilidad)
+├── store/                # Zustand Stores (Estado unificado y reactivo principal)
+├── lib/                  # Lógica de Negocio y Utilidades
+│   ├── apiAuth.ts        # Validador de sesión firmada con HMAC
+│   ├── license.ts        # Sistema de Licencias y Fingerprint físico (node-machine-id)
+│   ├── localSync.ts      # Sincronización P2P por mDNS + WebSockets
+│   └── audit.ts          # Sistema de Logs de Auditoría Inmutables
 ```
-[ Nube: Google Cloud Firestore ] (BaaS Sync en tiempo real)
-             ▲
-             │ (Canal HTTPS Seguro / WebSockets)
-             ▼
-[ Nodo Maestro (Servidor Principal en Sucursal) ] <--- Levanta Puerto Aleatorio (3000-3020)
-             ▲
-             ├─────── LAN (HTTP / WebSocket local) ────────┐
-             ▼                                             ▼
-[ Nodo Esclavo 1 (POS Caja 2) ]              [ Nodo Esclavo 2 (Inventario Móvil) ]
-```
 
-### A. Buscador y Aleatorizador de Puertos (Local Networking)
-Para prevenir conflictos de puertos si múltiples procesos se inician en el servidor local:
-- El software principal (**Nodo Maestro**) busca de forma dinámica un puerto disponible entre el `3000` y `3020`.
-- Al encontrarlo, inicia el servidor de Next.js y escribe el IP/Puerto actual en un archivo de red local compartido o en el almacén de red.
-- Los **Nodos Esclavos** (tablets de ventas, laptops del patio de carga) escanean la subred local al arrancar y localizan de manera automática la dirección activa del Maestro.
+## 4. Patrones de Diseño Implementados
 
----
+### A. Local-First con Write-Ahead Logging (WAL)
 
-## 2. Gestión de Estados Globales y Flujo de Datos
+El sistema opera de forma autónoma sin conexión a internet. Las operaciones se guardan localmente en SQLite. Las transacciones pendientes de sincronización se encolan en una cola de Write-Ahead Logging (WAL) en `localStorage` (limitada a 500 registros para evitar quota overflow) y se reintentan de forma cíclica al recuperar la conexión.
 
-El motor lógico central reside en la combinación de **Zustand** (estados de persistencia inmediata) y **React Context** (estados de sesión y facturación).
+### B. Seguridad de Cookies con Firmas Criptográficas (HMAC SHA-256)
 
-### A. El Motor del Canvas Magnético (`useERPStore.ts`)
-- Guarda el layout completo en un único JSON que representa la estructura, colores, textos y categorías activas del Marketplace público.
-- **Optimistic Updates:** Las modificaciones de diseño o marcas en `/dashboard/design` impactan la vista de manera instantánea, actualizando la memoria local y empujando asíncronamente el cambio hacia Firestore.
+Para prevenir la manipulación de roles (vulnerabilidad de bypass en cliente), el sistema firma la cookie de rol (`msj-role`) mediante un HMAC SHA-256 (`msj-role-sig`) utilizando la variable `INTERNAL_API_SECRET`. El middleware de Next.js y los helpers de la API verifican la firma de manera sincrónica en cada petición.
 
-### B. Ciclo del Tour Onboarding del Dueño (`GuidedTourWidget.tsx`)
-- Suscrito dinámicamente al hook `usePathname` de Next.js.
-- Cuando el usuario navega a las rutas predefinidas, el Tour detecta el cambio de URL y avanza de forma automatizada los pasos (ej: `/dashboard` [Paso 1] $\rightarrow$ `/dashboard/design` [Paso 2] $\rightarrow$ `/dashboard/simulator` [Paso 4] $\rightarrow$ `/dashboard/audit` [Paso 6]).
-- Permite simular interacciones reales para validar que el sistema responde correctamente.
+### C. Descubrimiento y Sincronización P2P en Red Local
+
+Usando `multicast-dns` (mDNS) y WebSockets, el **Nodo Maestro** (servidor local de la tienda) anuncia su presencia y los **Nodos Esclavos** se conectan automáticamente en la red local Wi-Fi/LAN, permitiendo actualización de inventarios en tiempo real sin salir a internet.
+
+### D. Estrategia de Seguridad (Defense in Depth)
+
+1. **Nivel Aplicación (Cliente):** `LicenseGuard.tsx` (Validación de licencia vinculada al HWID real de la máquina vía IPC).
+2. **Nivel Datos:** Validación de tipos en TypeScript, tipado estructurado de auditoría forense y control de transacciones ACID en Prisma.
+3. **Nivel Acceso:** Middleware de Next.js con validación RBAC (roles `superadmin`, `admin`, `sales`, `delivery`, `carga_descarga`, etc.) verificado contra firmas HMAC de servidor.
 
 ---
 
-## 3. Seguridad de Acceso y Redirección Camuflada
-
-### A. Login Detrás del Telón
-El portal `/login` unifica todas las entradas del sistema para mantener un perfil bajo.
-- Si un cliente inicia sesión, es retenido en el e-commerce público (`/catalogo`) o su panel de compras (`/cuenta`).
-- Si un empleado o el Super Admin inician sesión, el middleware intercepta la sesión y redirige inmediatamente a la consola administrativa `/dashboard/*`.
-- En caso de olvido de contraseña, se dispara un correo o un código SMS al celular para recuperar el control.
-
-### B. Perro Guardián de Super Admin y Wizard Efímero
-- El sistema cuenta con un control estricto que impide registrar más de un Super Administrador por licencia activa.
-- La primera vez que corre el ERP, la pantalla de setup guía al usuario en la toma de control. Una vez que se registra el perfil de Super Admin en local o Firestore, la ruta `/dashboard/setup` queda desactivada de manera incondicional.
-
-### C. Bypass de Rescate Offline (Modo Soberano)
-Si la conexión a la nube o el internet fallan, el Super Admin puede ingresar con sus credenciales de bypass local. El sistema inyecta cookies encriptadas de sesión maestro (`local_owner`) y asume el control del negocio guardando las transacciones de forma temporal en SQLite local.
-
----
-
-## 4. Licenciamiento Estándar vs PRO (Machine ID & Cloud Functions)
-
-La seguridad y activación de licencias se controlan en `src/lib/license.ts` mediante:
-1. **Huella de Máquina (Machine ID):** Generada mediante datos físicos únicos del equipo de instalación. La licencia se asocia a esta huella.
-2. **Reinstalación Resiliente:** Si el sistema es desinstalado, los datos persistentes locales reconocen el hardware al reinstalar en el mismo equipo, permitiendo levantar la licencia sin re-activaciones.
-3. **Validación por Cloud Functions:** Las llaves seriales de los clientes se validan a nivel de servidor remoto a través de una **Google Cloud Function** conectada a Firestore, sirviendo como pasarela de validación segura.
-4. **Selector de Umbral SAT Facturapi (PRO):** El timbrado de facturas SAT se ejecuta exclusivamente si la licencia es PRO. En la consola del dueño se expone un **selector dinámico de monto mínimo** (por ejemplo, timbrar sólo compras mayores a $50 o $100 MXN) para evitar el timbrado automático de pequeñas compras irrelevantes y prevenir quejas o reclamos. El cliente final sólo ingresa su RFC y nombre, y la API Key de Facturapi queda resguardada en el backend.
-5. **Aislamiento Multi-Tenant (Seguridad de Servidor):** La base de datos Firebase restringe los accesos de los clientes mediante reglas de seguridad estructuradas por el `tenantId` de la licencia activa, previniendo visualizaciones de bases de datos ajenas o duplicidades.
-
----
-
-## 5. Medidas Avanzadas de Integridad y Ofuscación
-
-### A. Auditoría Inmutable (Commits Forenses)
-- Cada acción ejecutada genera un "commit" (`audit.ts`) inalterable guardado en texto plano.
-- Contiene: Marca de tiempo, ID del usuario, rol, acción detallada y estado de conexión.
-- El panel `/dashboard/audit` los renderiza de forma virtualizada para evitar caídas de rendimiento en el navegador. Se pueden exportar a PDF y Word, pero no editar.
-
-### B. Re-ofuscación Cíclica
-- Para evitar ingeniería inversa por descompiladores de JavaScript o inspección de memoria en el navegador, el núcleo del cliente ejecuta un ciclo en segundo plano cada 5 segundos que regenera y re-ofusca los tokens de seguridad y referencias activas en memoria virtual.
-
-### C. Importador de Inventarios con IA
-- Habilita la lectura de archivos de inventario anteriores en Excel/CSV, interpretando campos desestructurados mediante lenguaje natural para poblar el catálogo local en un solo paso.
+*Documentación de Arquitectura de BUNKKER E.C.O.S ERP v1.0-PRO*

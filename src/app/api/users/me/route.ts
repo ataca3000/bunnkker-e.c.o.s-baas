@@ -27,15 +27,15 @@ export async function GET(req: NextRequest) {
         }
 
         // omit pin
-        const { pin, ...safeUser } = user;
+        const { pin:safeUser } = user;
         
         return NextResponse.json({ 
             success: true, 
             user: {
-                ...safeUser,
-                uid: safeUser.id,
-                displayName: safeUser.name
-            }
+                safeUser,
+                uid: safeUser,
+                displayName: safeUser
+                }
         });
     } catch (error: any) {
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });

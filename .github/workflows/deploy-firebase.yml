@@ -2,7 +2,7 @@ name: 🚀 BUNKKER — Deploy a Firebase Hosting
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
   workflow_dispatch: # Permite ejecutar manualmente desde GitHub UI
 
 jobs:
@@ -35,25 +35,8 @@ jobs:
             ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-
 
       # ── 3. Instalar dependencias ───────────────────────────────────────────
-      - name: 📦 Instalar dependencias
+      - name: Instalar dependencias
         run: npm install --prefer-offline --no-audit --no-fund
-
-      # ── 4. Crear .env.local con los secrets de GitHub ──────────────────────
-      - name: 🔐 Crear .env.local desde GitHub Secrets
-        run: |
-          cat > .env.local << 'EOF'
-          NEXT_PUBLIC_FIREBASE_API_KEY=${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
-          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
-          NEXT_PUBLIC_FIREBASE_PROJECT_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
-          NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=${{ secrets.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}
-          NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
-          NEXT_PUBLIC_FIREBASE_APP_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
-          NEXT_PUBLIC_APP_URL=https://admin-erp-pro-1.web.app
-          INTERNAL_API_SECRET=${{ secrets.INTERNAL_API_SECRET }}
-          DEV_SECRET=${{ secrets.DEV_SECRET }}
-          LICENSE_PIN_SALT=${{ secrets.LICENSE_PIN_SALT }}
-          DATABASE_URL=file:/tmp/bunkker-build.db
-          EOF
 
       # ── 5. Ejecutar tests antes de desplegar ───────────────────────────────
       - name: 🧪 Tests
@@ -67,12 +50,21 @@ jobs:
       # ── 6. Build Next.js para web (modo NO standalone) ─────────────────────
       - name: 🔨 Build Next.js (modo web)
         run: npm run build:web
+        # Inyectamos los secretos como variables de entorno directamente en el proceso de build.
+        # Esto evita escribirlos en un archivo .env.local, que es un riesgo de seguridad.
         env:
           NODE_OPTIONS: "--max-old-space-size=6144"
           BUILD_TARGET: web
           NEXT_PUBLIC_APP_ENV: nube
           DATABASE_URL: file:/tmp/bunkker-build.db
           NEXT_TELEMETRY_DISABLED: 1
+          NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
+          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
+          NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ secrets.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}
+          NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
+          NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
+          NEXT_PUBLIC_APP_URL: https://admin-erp-pro-1.web.app
 
       # ── 7. Deploy a Firebase Hosting ───────────────────────────────────────
       - name: 🔥 Deploy a Firebase Hosting
