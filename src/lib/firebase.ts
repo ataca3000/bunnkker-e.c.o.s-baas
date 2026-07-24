@@ -1,38 +1,58 @@
-import { initializeApp, getApps, getApp } from "firebase/app";
-import { initializeFirestore, CACHE_SIZE_UNLIMITED, enableMultiTabIndexedDbPersistence } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
-import { getStorage } from "firebase/storage";
+// Firebase Mock Capsule (Colmena B2B Local-First)
+// Este archivo simula la API de Firebase para engañar al frontend
+// y redirigir todo el tráfico a la lógica local (Tópicos / Excel / SQLite)
 
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "placeholder",
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "placeholder",
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "placeholder",
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "placeholder",
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "placeholder",
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "placeholder",
-  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || "placeholder"
+console.warn("🐝 [COLMENA B2B] Cápsula Firebase Activada. Modo Local-First estricto.");
+
+// Mock de Auth (Acepta cualquier login)
+const mockAuth = {
+  currentUser: { uid: 'local-admin-uid', email: 'admin@bunkker.local' },
+  signInWithEmailAndPassword: async (email, password) => {
+    console.log(`[Mock Auth] Login simulado para ${email}`);
+    return { user: { uid: 'local-admin-uid', email } };
+  },
+  signOut: async () => console.log('[Mock Auth] SignOut simulado'),
+  onAuthStateChanged: (cb) => { cb({ uid: 'local-admin-uid' }); return () => {}; }
 };
 
-const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-// Configuración de cache ilimitada para funcionamiento offline de larga duración
-const db = initializeFirestore(app, {
-  cacheSizeBytes: CACHE_SIZE_UNLIMITED
+// Mock de Firestore (Usa localStorage o en memoria temporalmente para no romper UI)
+const createMockDocRef = (path) => ({
+  id: path.split('/').pop(),
+  path,
+  withConverter: () => createMockDocRef(path)
 });
 
-const auth    = getAuth(app);
-const storage = getStorage(app);
+const createMockQuery = () => ({
+  where: () => createMockQuery(),
+  orderBy: () => createMockQuery(),
+  limit: () => createMockQuery()
+});
 
+const mockDb = {
+  // Simulador de Proxy para capturar cualquier llamada a db.collection, db.doc, etc.
+};
 
-// ── Offline persistence (works in browser & Electron) ──────────────────────
-if (typeof window !== 'undefined') {
-  // Habilitado para la PWA del Chofer y la terminal POS offline
-  enableMultiTabIndexedDbPersistence(db).catch((err: Error & { code?: string }) => {
-    if (err.code === 'failed-precondition') {
-      console.warn('[Firebase] Offline persistence unavailable: multiple tabs open.');
-    } else if (err.code === 'unimplemented') {
-      console.warn('[Firebase] Offline persistence not supported in this browser.');
-    }
-  });
-}
+// Implementaremos las funciones exportables que usa el SDK v9 de Firebase
+export const initializeApp = () => ({ name: '[MockApp]' });
+export const getApps = () => [];
+export const getApp = () => ({ name: '[MockApp]' });
+export const initializeFirestore = () => mockDb;
+export const getAuth = () => mockAuth;
+export const getStorage = () => ({});
+export const enableMultiTabIndexedDbPersistence = async () => {};
+export const CACHE_SIZE_UNLIMITED = -1;
 
-export { app, db, auth, storage };
+export const collection = (db, path) => createMockQuery();
+export const doc = (db, path, ...segments) => createMockDocRef(path + (segments.length ? '/' + segments.join('/') : ''));
+export const getDoc = async (docRef) => ({ exists: () => false, data: () => ({}) });
+export const getDocs = async (query) => ({ empty: true, docs: [], forEach: () => {} });
+export const setDoc = async (docRef, data, options) => { console.log('[Mock DB] setDoc', docRef.path, data); };
+export const addDoc = async (colRef, data) => { console.log('[Mock DB] addDoc', data); return { id: 'mock-id' }; };
+export const updateDoc = async (docRef, data) => { console.log('[Mock DB] updateDoc', docRef.path, data); };
+export const deleteDoc = async (docRef) => { console.log('[Mock DB] deleteDoc', docRef.path); };
+export const onSnapshot = (ref, cb) => { cb({ docs: [], data: () => ({}), exists: () => true }); return () => {}; };
+
+export const app = initializeApp();
+export const db = mockDb;
+export const auth = mockAuth;
+export const storage = getStorage();

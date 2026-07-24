@@ -38,8 +38,7 @@ var import_path = __toESM(require("path"));
 var isDesktop = process.env.BUILD_TARGET === "desktop" || process.env.BUILD_TARGET === "docker";
 var withPWA = (0, import_next_pwa.default)({
   dest: "public",
-  disable: true,
-  // Temporalmente apagado para evitar el OOM de 16GB en la nube
+  disable: process.env.NODE_ENV === "development",
   register: true,
   skipWaiting: true
 });

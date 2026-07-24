@@ -58,3 +58,7 @@ fetch-products.js
 # Testing artifacts
 test-results/
 playwright-report/
+
+# B2B Colmena & Optimizations
+unsupervised_topic_modeling-master/
+lfeds/
