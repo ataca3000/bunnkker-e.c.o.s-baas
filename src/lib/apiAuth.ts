@@ -26,7 +26,7 @@ const COOKIE_SECRET = (() => {
         'Define esta variable de entorno antes de iniciar el servidor en producción.'
       );
     }
-    return 'dev-only-secret-never-use-in-production-development';
+    return crypto.randomBytes(32).toString('hex');
   }
   return secret;
 })();
