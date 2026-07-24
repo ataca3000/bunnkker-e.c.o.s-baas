@@ -12,6 +12,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { signRole, hashPinSha256 } from '@/lib/apiAuth';
+import { redis } from '@/lib/redis';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import fs from 'fs';
@@ -36,28 +37,24 @@ const LOCKOUT_DURATION_MS  = 5 * 60 * 1000; // 5 minutos
 let activeDelays = 0;
 const MAX_CONCURRENT_DELAYS = 100;
 
-// Maps en memoria para rate limiting e intentos fallidos
-const failedAttempts = new Map<string, { count: number; blockedUntil: number }>();
-const requestRateLimiter = new Map<string, { count: number; windowStart: number }>();
-
-const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minuto
-const MAX_REQUESTS_PER_WINDOW = 30; // ERP local: máximo 30 peticiones por minuto
-
 // Registra auditoría local de seguridad (segura contra entornos de producción sin base de datos)
 function logAuthEvent(event: {
   type: 'LOGIN_SUCCESS' | 'LOGIN_FAILED' | 'IP_LOCKED_OUT' | 'RATE_LIMIT_EXCEEDED';
-  ip: string;
-  details: string;
+  ip?: string;
+  details: Record<string, any>;
 }) {
   try {
+    const logEntry = {
+      timestamp: new Date().toISOString(),
+      level: 'INFO',
+      ...event,
+    };
     const logsDir = path.join(process.cwd(), 'logs');
     if (!fs.existsSync(logsDir)) {
       fs.mkdirSync(logsDir, { recursive: true });
     }
     const logPath = path.join(logsDir, 'security_audit.log');
-    const logLine = `[${new Date().toISOString()}] [${event.type}] IP: ${event.ip} | Details: ${event.details}\n`;
-    fs.appendFileSync(logPath, logLine, 'utf8');
-    console.log(`[SECURITY AUDIT] ${logLine.trim()}`);
+    fs.appendFileSync(logPath, JSON.stringify(logEntry) + '\n', 'utf8');
   } catch (e: any) {
     console.error('[SECURITY AUDIT ERROR] Failed to write log:', e.message);
   }
@@ -71,6 +68,37 @@ async function throttleDelay() {
   } finally {
     activeDelays--;
   }
+}
+
+/**
+ * Refactorización: Maneja un intento de login fallido.
+ * Incrementa el contador en Redis, bloquea la IP si es necesario y retorna la respuesta de error.
+ */
+async function handleFailedAttempt(ip: string, details: Record<string, any>): Promise<NextResponse> {
+  const key = `failed_attempts:${ip}`;
+  const newCount = await redis.incr(key);
+
+  if (newCount === 1) {
+    // Al primer fallo, se setea la expiración para que no se acumulen indefinidamente
+    await redis.expire(key, LOCKOUT_DURATION_MS / 1000);
+  }
+
+  const isBlocked = newCount >= MAX_FAILED_ATTEMPTS;
+
+  if (isBlocked) {
+    await redis.expire(key, LOCKOUT_DURATION_MS / 1000); // Refresca el bloqueo por 5 minutos
+  }
+
+  logAuthEvent({
+    type: isBlocked ? 'IP_LOCKED_OUT' : 'LOGIN_FAILED',
+    ip,
+    details: { ...details, attempt: newCount, maxAttempts: MAX_FAILED_ATTEMPTS },
+  });
+
+  await throttleDelay();
+  const attemptsLeft = Math.max(0, MAX_FAILED_ATTEMPTS - newCount);
+  const errorMsg = isBlocked ? `Demasiados intentos fallidos. Acceso bloqueado por ${LOCKOUT_DURATION_MS / 60000} minutos.` : `PIN incorrecto. Intentos restantes: ${attemptsLeft}`;
+  return NextResponse.json({ success: false, error: errorMsg }, { status: 401 });
 }
 
 export async function POST(request: NextRequest) {
@@ -88,44 +116,38 @@ export async function POST(request: NextRequest) {
 
     // Obtener la IP del cliente para mitigar ataques de brute-force
     const clientIp = request.headers.get('x-forwarded-for') || '127.0.0.1';
-    const now = Date.now();
 
     // ── 1. RATE LIMITING GENERAL DE LA IP (Evita inundación) ─────────────────
-    const rateRecord = requestRateLimiter.get(clientIp) || { count: 0, windowStart: now };
-    if (now - rateRecord.windowStart > RATE_LIMIT_WINDOW) {
-      rateRecord.count = 1;
-      rateRecord.windowStart = now;
-      requestRateLimiter.set(clientIp, rateRecord);
-    } else {
-      rateRecord.count++;
-      requestRateLimiter.set(clientIp, rateRecord);
-      if (rateRecord.count > MAX_REQUESTS_PER_WINDOW) {
-        logAuthEvent({
-          type: 'RATE_LIMIT_EXCEEDED',
-          ip: clientIp,
-          details: `Peticiones: ${rateRecord.count} en ventana de 1 minuto. Límite: ${MAX_REQUESTS_PER_WINDOW}`
-        });
-        return NextResponse.json(
-          { success: false, error: 'Demasiadas solicitudes. Por favor intente más tarde.' },
-          { status: 429 }
-        );
-      }
+    const rateLimitKey = `rate_limit:${clientIp}`;
+    const currentRequests = await redis.incr(rateLimitKey);
+
+    if (currentRequests === 1) {
+      // Al ser la primera petición en la ventana, se setea la expiración a 1 minuto
+      await redis.expire(rateLimitKey, 60);
+    }
+
+    if (currentRequests > 30) { // MAX_REQUESTS_PER_WINDOW
+      logAuthEvent({
+        type: 'RATE_LIMIT_EXCEEDED',
+        ip: clientIp,
+        details: { message: `Peticiones: ${currentRequests} en ventana de 1 minuto. Límite: 30` }
+      });
+      return NextResponse.json({ success: false, error: 'Demasiadas solicitudes. Por favor intente más tarde.' }, { status: 429 });
     }
 
     // ── 2. VALIDAR BLOQUEO POR REPETIDOS INTENTOS FALLIDOS (LOCKOUT) ────────
-    // ERP corporativo estricto: 5 intentos antes de bloquear, 5 minutos de bloqueo
-    const record = failedAttempts.get(clientIp);
-    if (record && record.count >= 5 && now < record.blockedUntil) {
-      const minutesLeft = Math.ceil((record.blockedUntil - now) / (60 * 1000));
+    const failedAttemptsKey = `failed_attempts:${clientIp}`;
+    const failedCount = parseInt((await redis.get(failedAttemptsKey)) || '0');
+
+    if (failedCount >= MAX_FAILED_ATTEMPTS) {
+      const ttl = await redis.ttl(failedAttemptsKey);
+      const minutesLeft = Math.ceil(ttl / 60);
       logAuthEvent({
         type: 'IP_LOCKED_OUT',
         ip: clientIp,
-        details: `Intento de acceso rechazado por bloqueo activo. Restan ${minutesLeft} minutos.`
+        details: { message: `Intento de acceso rechazado por bloqueo activo. Restan ${minutesLeft} minutos.` }
       });
-      return NextResponse.json(
-        { success: false, error: `Demasiados intentos fallidos. Intente de nuevo en ${minutesLeft} minuto(s).` },
-        { status: 429 }
-      );
+      return NextResponse.json({ success: false, error: `Demasiados intentos fallidos. Intente de nuevo en ${minutesLeft} minuto(s).` }, { status: 429 });
     }
 
     // ── 3. VALIDACIÓN DE CREDENCIALES (PIN / ID_TOKEN) ──────────────────────
@@ -159,65 +181,28 @@ export async function POST(request: NextRequest) {
       });
 
       if (!user) {
-        // Incrementar contador de intentos fallidos
-        const currentRecord = failedAttempts.get(clientIp) || { count: 0, blockedUntil: 0 };
-        const newCount = currentRecord.count + 1;
-        const blockedUntil = newCount >= MAX_FAILED_ATTEMPTS ? Date.now() + LOCKOUT_DURATION_MS : 0;
-        failedAttempts.set(clientIp, { count: newCount, blockedUntil });
-
-        logAuthEvent({
-          type: newCount >= MAX_FAILED_ATTEMPTS ? 'IP_LOCKED_OUT' : 'LOGIN_FAILED',
-          ip: clientIp,
-          details: `Intento fallido ${newCount}/${MAX_FAILED_ATTEMPTS}. PIN incorrecto o usuario inexistente.`
-        });
-
-        await throttleDelay();
-        const attemptsLeft = Math.max(0, MAX_FAILED_ATTEMPTS - newCount);
-        const errorMsg = newCount >= MAX_FAILED_ATTEMPTS
-          ? `Demasiados intentos fallidos. Acceso bloqueado por ${LOCKOUT_DURATION_MS / 60000} minutos.`
-          : `PIN incorrecto. Intentos restantes: ${attemptsLeft}`;
-
-        return NextResponse.json(
-          { success: false, error: errorMsg },
-          { status: 401 }
-        );
+        return handleFailedAttempt(clientIp, { reason: "Usuario no encontrado o PIN incorrecto" });
       }
 
       if (user.pinHash) {
         // Verificación de seguridad con bcrypt
         const match = await bcrypt.compare(pin, user.pinHash);
         if (!match) {
-          const currentRecord = failedAttempts.get(clientIp) || { count: 0, blockedUntil: 0 };
-          const newCount = currentRecord.count + 1;
-          const blockedUntil = newCount >= MAX_FAILED_ATTEMPTS ? Date.now() + LOCKOUT_DURATION_MS : 0;
-          failedAttempts.set(clientIp, { count: newCount, blockedUntil });
-
-          logAuthEvent({
-            type: newCount >= MAX_FAILED_ATTEMPTS ? 'IP_LOCKED_OUT' : 'LOGIN_FAILED',
-            ip: clientIp,
-            details: `Intento fallido ${newCount}/${MAX_FAILED_ATTEMPTS} (Falló bcrypt). Usuario ID: ${user.id}`
-          });
-
-          await throttleDelay();
-          const attemptsLeft = Math.max(0, MAX_FAILED_ATTEMPTS - newCount);
-          const errorMsg = newCount >= MAX_FAILED_ATTEMPTS
-            ? `Demasiados intentos fallidos. Acceso bloqueado por ${LOCKOUT_DURATION_MS / 60000} minutos.`
-            : `PIN incorrecto. Intentos restantes: ${attemptsLeft}`;
-
-          return NextResponse.json(
-            { success: false, error: errorMsg },
-            { status: 401 }
-          );
+          return handleFailedAttempt(clientIp, { reason: "Fallo de comparacion con bcrypt", userId: user.id });
         }
       }
 
       // Limpiar intentos fallidos de esta IP al iniciar sesión correctamente
-      failedAttempts.delete(clientIp);
+      await redis.del(failedAttemptsKey);
 
       logAuthEvent({
         type: 'LOGIN_SUCCESS',
         ip: clientIp,
-        details: `Inicio de sesión exitoso. Usuario ID: ${user.id} | Rol: ${user.role}`
+        details: {
+          message: `Inicio de sesión exitoso.`,
+          userId: user.id,
+          role: user.role
+        }
       });
 
       // Migrar el campo legacy 'pin' a SHA-256 e inyectar 'pinHash' si no existe

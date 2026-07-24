@@ -20,10 +20,11 @@ export default function DeviceLockScreen({ children }: { children: React.ReactNo
     const [isOnline, setIsOnline] = useState(true);
 
     useEffect(() => {
-        // --- 1. Lógica de Verificación de Suscripción ---
+
+        // Lógica de Verificación de Suscripción
         const checkSubscription = async () => {
             try {
-                if (window.navigator.onLine) { // Sincronizar si hay conexión
+                if (isOnline) { // Sincronizar si hay conexión
                     const confSnap = await getDoc(doc(db, 'settings', 'site_config'));
                     const subData = confSnap.data();
                     const expiresAt = subData?.subscriptionExpiresAt?.toMillis?.() || (Date.now() + 30 * 24 * 60 * 60 * 1000);
@@ -55,34 +56,35 @@ export default function DeviceLockScreen({ children }: { children: React.ReactNo
             }
         };
 
-        // --- 2. Configuración de Efectos y Listeners ---
-        // Se establece a true para indicar que el componente ya se montó en el cliente.
-        // Esto evita errores de renderizado en servidor (SSR) donde `window` y `localStorage` no existen.
-        // Ver la guarda `if (!mounted) return null;` más abajo.
-        setMounted(true); 
+        checkSubscription();
+    }, [isOnline]); // Se ejecuta cuando cambia el estado de conexión
 
+    useEffect(() => {
+        // --- Configuración de Efectos y Listeners ---
+        setMounted(true);
+        
         // Función para actualizar el estado de la conexión y volver a verificar la suscripción
         const updateOnlineStatus = () => {
             setIsOnline(window.navigator.onLine);
-            checkSubscription(); // Vuelve a verificar la suscripción al cambiar el estado de la red
         };
 
         window.addEventListener('online', updateOnlineStatus);
         window.addEventListener('offline', updateOnlineStatus);
         updateOnlineStatus(); // Establecer estado inicial al montar
 
-        checkSubscription(); // Ejecutar la verificación al montar
-        
         // Revisar periódicamente (cada hora)
-        const interval = setInterval(checkSubscription, 3600000);
+        const interval = setInterval(() => {
+            // Forzamos la re-verificación incluso si el estado online no ha cambiado
+            setIsOnline(window.navigator.onLine);
+        }, 3600000);
 
-        // --- 3. Función de Limpieza ---
+        // --- Función de Limpieza ---
         return () => {
             clearInterval(interval);
             window.removeEventListener('online', updateOnlineStatus);
             window.removeEventListener('offline', updateOnlineStatus);
         };
-    }, []); // El array de dependencias debe estar vacío para que se ejecute solo una vez al montar.
+    }, []); // Este efecto solo se ejecuta una vez para configurar los listeners.
 
     const handleManualUnlock = () => {
         setLoading(true);
