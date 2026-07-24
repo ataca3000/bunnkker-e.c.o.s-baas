@@ -1,9 +1,0 @@
-# Bunkker ECOS ERP
-
-This is the official documentation for the Bunkker ECOS ERP system.
-This site provides commercial and technical information about our ERP modules, services, and company.
-
-## Links
-- [Main Website](https://admin-com-erp.vercel.app/)
-- [Contact Us](https://admin-com-erp.vercel.app/contacto)
-- [About Us](https://admin-com-erp.vercel.app/nosotros)

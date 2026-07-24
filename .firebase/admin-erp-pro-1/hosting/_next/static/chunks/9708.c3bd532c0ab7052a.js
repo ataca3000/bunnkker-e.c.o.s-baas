@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunk_N_E=self.webpackChunk_N_E||[]).push([[9708],{19708:(e,k,s)=>{s.d(k,{deleteDoc:()=>c.kd});var c=s(35959)}}]);
