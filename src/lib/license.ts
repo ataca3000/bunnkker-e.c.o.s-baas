@@ -112,8 +112,10 @@ export function getMachineId(): string {
             localStorage.removeItem(LEGACY_MACHINE_KEY);
             return legacyMid;
         }
-        // Generar nuevo UUID para navegador
-        const uuid = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        // Generar nuevo UUID seguro para navegador
+        const uuid = (typeof crypto !== 'undefined' && crypto.randomUUID) 
+          ? crypto.randomUUID() 
+          : `${Date.now()}-${Array.from(typeof crypto !== 'undefined' && crypto.getRandomValues ? crypto.getRandomValues(new Uint8Array(8)) : [1,2,3,4,5,6,7,8], b => b.toString(16).padStart(2, '0')).join('')}`;
         id = uuid.replace(/-/g, '').slice(0, 32);
         localStorage.setItem(MACHINE_KEY, id);
     }

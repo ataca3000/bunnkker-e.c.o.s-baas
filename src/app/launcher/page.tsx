@@ -182,7 +182,7 @@ export default function AdminDeployLauncher() {
                         {deployLogs.map((log, i) => (
                             <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}>
                                 <span className="text-slate-500 mr-2">&gt;</span>
-                                <span dangerouslySetInnerHTML={{__html: log}}></span>
+                                <span>{log}</span>
                             </motion.div>
                         ))}
                     </div>

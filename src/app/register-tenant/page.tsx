@@ -47,7 +47,9 @@ export default function RegisterTenantPage() {
     }
 
     const tenantId = subdomain.toLowerCase();
-    const newSessionId = Math.random().toString(36).substring(2);
+    const newSessionId = typeof crypto !== 'undefined' && crypto.randomUUID 
+      ? crypto.randomUUID().replace(/-/g, '') 
+      : Array.from(typeof crypto !== 'undefined' && crypto.getRandomValues ? crypto.getRandomValues(new Uint8Array(16)) : [1,2,3,4,5,6,7,8], b => b.toString(16).padStart(2, '0')).join('');
 
     // 1. Register Tenant globally
     await setDoc(doc(db, 'tenants_registry', tenantId), {

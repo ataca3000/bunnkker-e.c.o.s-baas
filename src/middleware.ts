@@ -38,7 +38,7 @@ export default async function middleware(request: NextRequest) {
 
   // --- 1. MULTI-TENANT (extracción de subdominio) ---
   let tenantId = 'default';
-  if (hostname.includes('.admin.com') && !PUBLIC_DOMAINS.includes(hostname)) {
+  if (hostname.endsWith('.admin.com') && !PUBLIC_DOMAINS.includes(hostname)) {
     tenantId = hostname.split('.')[0];
   } else if (searchParams.has('tenant')) {
     tenantId = searchParams.get('tenant')!;

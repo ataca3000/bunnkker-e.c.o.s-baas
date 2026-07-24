@@ -90,7 +90,10 @@ export async function registrarAuditoria(evento: { tipo: string; referencia: str
 export async function generarCFDI(venta: any): Promise<{ uuid: string }> {
     return new Promise((resolve) => {
         setTimeout(() => {
-            const simulatedUUID = "CFDI-" + Math.random().toString(36).substring(2, 15).toUpperCase();
+            const randomHex = typeof crypto !== 'undefined' && crypto.randomUUID 
+              ? crypto.randomUUID().replace(/-/g, '').substring(0, 12).toUpperCase()
+              : Array.from(typeof crypto !== 'undefined' && crypto.getRandomValues ? crypto.getRandomValues(new Uint8Array(6)) : [1,2,3,4,5,6], b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+            const simulatedUUID = "CFDI-" + randomHex;
             resolve({ uuid: simulatedUUID });
         }, 500);
     });

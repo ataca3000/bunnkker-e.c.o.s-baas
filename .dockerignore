@@ -1,8 +1,5 @@
 # Include any files or directories that you don't want to be copied to your
 # container here (e.g., local build artifacts, temporary files, etc.).
-#
-# For more help, visit the .dockerignore file reference guide at
-# https://docs.docker.com/go/build-context-dockerignore/
 
 **/.DS_Store
 **/__pycache__
@@ -32,8 +29,9 @@
 **/values.dev.yaml
 LICENSE
 README.md
+.npmrc
 
-# Ecosistema Terraform ERP exclusions
+# Project exclusions
 obsoleto/
 .env.local
 .env.*.local
@@ -47,10 +45,47 @@ prisma/*.db-shm
 dist/
 dist_electron/
 build/
+build-resources/
 mobile-app/
 scripts/
 unsupervised_topic_modeling-master/
+.agents/
+.github/
+docs/
+tests/
 *.log
 tsconfig.tsbuildinfo
 seed-users.js
 repo-clean-preview/
+.firebaserc
+firebase.json
+firestore.indexes.json
+firestore.rules
+firebase-blueprint.json
+firebase-applet-config.json
+playwright.config.ts
+vitest.config.ts
+eslint.config.mjs
+start-server.bat
+backup-data.bat
+deploy-all.bat
+check-db.js
+check-user.js
+radio-server.js
+copy-standalone.js
+gcp_startup.sh
+configurar-red.bat
+Instalar_Bunkker_1.0.bat
+push-to-docker-hub.ps1
+pwabuilder-adv-sw.js
+optimize-sqlite.ts
+seed-ferreteria.ts
+seed-sqlite.ts
+test_edge_server.py
+electron-main.js
+electron-builder.js
+preload.js
+manifest.json
+metadata.json
+next-env.d.ts
+globals.d.ts

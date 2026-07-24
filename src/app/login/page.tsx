@@ -114,7 +114,9 @@ export default function LoginPage() {
             const data = await res.json();
 
             if (res.ok && data.success) {
-                const newSessionId = Math.random().toString(36).substring(2);
+                const newSessionId = typeof crypto !== 'undefined' && crypto.randomUUID 
+                  ? crypto.randomUUID().replace(/-/g, '') 
+                  : Array.from(typeof crypto !== 'undefined' && crypto.getRandomValues ? crypto.getRandomValues(new Uint8Array(16)) : [1,2,3,4,5,6,7,8], b => b.toString(16).padStart(2, '0')).join('');
                 localStorage.setItem('msj-session-id', newSessionId);
 
                 if (data.requirePinChange) {
