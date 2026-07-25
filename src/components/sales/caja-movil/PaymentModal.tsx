@@ -36,8 +36,10 @@ export function PaymentModal({ isOpen, onClose, total, orderType, onConfirm, isP
   ].filter((v, i, a) => a.indexOf(v) === i && v >= total);
 
   const handleConfirm = () => {
-    if (!isValid || isProcessing) return;
-    onConfirm(receivedAmount, change, evidencePhoto);
+    if (isProcessing) return;
+    const finalReceived = receivedAmount > 0 ? receivedAmount : total;
+    const finalChange = Math.max(0, finalReceived - total);
+    onConfirm(finalReceived, finalChange, evidencePhoto);
   };
 
   return (
@@ -149,22 +151,18 @@ export function PaymentModal({ isOpen, onClose, total, orderType, onConfirm, isP
 
           <button
             onClick={handleConfirm}
-            disabled={!isValid || isProcessing}
-            className={`w-full py-4 rounded-xl flex items-center justify-center text-lg font-bold transition-all relative overflow-hidden ${
-              !isValid 
-                ? 'bg-white/5 text-zinc-600 border border-white/5 cursor-not-allowed'
-                : 'bg-green-600 text-white hover:bg-green-500 shadow-[0_0_20px_rgba(34,197,94,0.4)] border border-green-500/50'
-            }`}
+            disabled={isProcessing}
+            className="w-full py-4 rounded-xl flex items-center justify-center text-lg font-bold transition-all relative overflow-hidden bg-green-600 text-white hover:bg-green-500 shadow-[0_0_20px_rgba(34,197,94,0.4)] border border-green-500/50"
           >
             {isProcessing ? (
               <span className="flex items-center gap-2">
                 <span className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin"></span>
-                Procesando e imprimiendo...
+                Registrando Pago...
               </span>
             ) : (
               <span className="flex items-center gap-2">
                 <CheckCircle2 className="h-5 w-5" />
-                Registrar e Imprimir Ticket
+                💵 COBRADO / GENERAR TICKET
               </span>
             )}
           </button>
