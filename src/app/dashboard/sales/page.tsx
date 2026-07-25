@@ -17,7 +17,6 @@ import { logAudit } from '@/lib/audit';
 import { toast } from '@/lib/toast';
 import { useERPStore } from '@/store/useERPStore';
 import { broadcastSync } from '@/lib/syncNotifier';
-import { saveDigitalTicket, getDigitalTickets } from '@/lib/digitalTicket';
 
 // Nuevos Componentes de Caja Móvil
 import { Catalog } from '@/components/sales/caja-movil/Catalog';
@@ -244,10 +243,6 @@ export default function SalesDashboard() {
                 description: `[POS] Venta directa ${orderId} — $${posTotal.toFixed(2)}`,
                 metadata: { orderId, total: posTotal, items: posCart.length },
             }).catch(() => {});
-
-            // Generar y guardar ticket digital en la bitácora independiente de esta caja
-            const cajaId = profile?.uid || 'caja_1';
-            const ticket = saveDigitalTicket(cajaId, profile?.displayName || 'Cajero', orderId, posCart, posTotal, 'EFECTIVO');
 
             // Print native ticket
             try {
