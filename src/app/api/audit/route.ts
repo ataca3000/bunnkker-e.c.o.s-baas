@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
             data: {
                 action,
                 details: details || '',
-                userId: userId || auth.uid || 'unknown',
+                userId: userId || (auth.ok ? auth.uid : 'unknown'),
             }
         });
 

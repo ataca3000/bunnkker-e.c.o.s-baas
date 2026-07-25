@@ -234,14 +234,14 @@ export function CheckoutForm({ formData, onChange, userRole, onClose, isLoggedIn
                             type="text"
                             placeholder="RFC (con Homoclave)"
                             value={formData.rfc}
-                            onChange={e => set({ rfc: e.target.value.toUpperCase() })}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => set({ rfc: e.target.value.toUpperCase() })}
                             className={styles.fiscalInput}
                         />
                         <motion.select
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             value={formData.regimenFiscal}
-                            onChange={e => set({ regimenFiscal: e.target.value })}
+                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => set({ regimenFiscal: e.target.value })}
                             className={styles.fiscalSelect}
                         >
                             <option value="">Selecciona Régimen Fiscal</option>
@@ -253,7 +253,7 @@ export function CheckoutForm({ formData, onChange, userRole, onClose, isLoggedIn
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             value={formData.usoCFDI}
-                            onChange={e => set({ usoCFDI: e.target.value })}
+                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => set({ usoCFDI: e.target.value })}
                             className={styles.fiscalSelect}
                         >
                             <option value="">Uso de CFDI</option>
