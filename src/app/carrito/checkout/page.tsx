@@ -8,6 +8,7 @@ import Link from 'next/link';
 
 import { useCart } from '@/context/CartContext';
 import { toast } from '@/lib/toast';
+import { broadcastSync } from '@/lib/syncNotifier';
 
 export default function CheckoutPage() {
     const { cart, siteConfig, createOrder, products } = useCart();
@@ -154,6 +155,7 @@ export default function CheckoutPage() {
                 setConfirmedOrderId(res.orderId);
                 setOrderStatus('pending_payment');
                 setIsPaid(true);
+                broadcastSync();
             }
         } catch (error: any) {
             console.error("Failed to place order:", error);
