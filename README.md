@@ -177,11 +177,7 @@ Ver [CONTRIBUTING.md](./CONTRIBUTING.md) para más detalles.
 Terraform ERP está bajo licencia **Permisiva Comercial** (ver [LICENSE.md](./LICENSE.md)).
 
 En resumen:
-- ✅ Puedes usar comercialmente
-- ✅ Puedes modificar
-- ✅ Puedes distribuir
-- ⚠️ Debes respetar el umbral de similitud 80% (ver documentación)
-
+no se permite el uso sin permiso 
 ## 🛡️ Seguridad
 
 Ver [SECURITY.md](./SECURITY.md) para:
