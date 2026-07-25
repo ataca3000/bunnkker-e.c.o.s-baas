@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { db } from '@/lib/firebase';
 import { collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp } from 'firebase/firestore';
-import { Radio, Send, Volume2, VolumeX, X, ChevronUp, ChevronDown } from 'lucide-react';
+import { Radio, Send, Volume2, VolumeX, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function WalkieTalkieRadio() {
@@ -15,7 +15,6 @@ export default function WalkieTalkieRadio() {
     const [isMuted, setIsMuted] = useState(false);
     const [status, setStatus] = useState<'standby' | 'transmitting' | 'receiving'>('standby');
     const [unread, setUnread] = useState(0);
-    const mountTime = useRef(Date.now());
     const processedMsgIds = useRef<Set<string>>(new Set());
     const lastMsgCount = useRef(0);
 
@@ -33,7 +32,6 @@ export default function WalkieTalkieRadio() {
             const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
             const data = buffer.getChannelData(0);
             
-            // Generar ruido blanco
             for (let i = 0; i < bufferSize; i++) {
                 data[i] = Math.random() * 2 - 1;
             }
@@ -41,15 +39,13 @@ export default function WalkieTalkieRadio() {
             const noiseNode = audioCtx.createBufferSource();
             noiseNode.buffer = buffer;
             
-            // Filtro pasa-banda para simular el sonido metálico de walkie-talkie
             const filterNode = audioCtx.createBiquadFilter();
             filterNode.type = 'bandpass';
             filterNode.frequency.value = frequency;
             filterNode.Q.value = q;
             
-            // Control de volumen / Ganancia
             const gainNode = audioCtx.createGain();
-            gainNode.gain.value = 0.15; // Suave para no molestar
+            gainNode.gain.value = 0.15;
             
             noiseNode.connect(filterNode);
             filterNode.connect(gainNode);
@@ -61,28 +57,23 @@ export default function WalkieTalkieRadio() {
         }
     };
 
-    // Text to Speech: Pronunciar el mensaje recibido
     const speakMessage = (sender: string, text: string) => {
         if (typeof window === 'undefined' || isMuted) return;
         const synth = window.speechSynthesis;
         if (!synth) return;
 
-        // Limpiar cualquier pronunciación en cola
         synth.cancel();
-
-        // CHHHK de entrada
         playRadioStatic(0.4, 900, 2.0);
 
         setTimeout(() => {
             const utterance = new SpeechSynthesisUtterance(`${sender} dice: ${text}, cambio.`);
             utterance.lang = 'es-MX';
-            utterance.rate = 1.05; // Ligeramente rápido para simular radio
-            utterance.pitch = 0.95; // Un poco grueso/de radio
+            utterance.rate = 1.05;
+            utterance.pitch = 0.95;
 
             utterance.onstart = () => setStatus('receiving');
             utterance.onend = () => {
                 setStatus('standby');
-                // CHHHK de salida
                 playRadioStatic(0.3, 1100, 1.2);
             };
             utterance.onerror = () => setStatus('standby');
@@ -91,7 +82,6 @@ export default function WalkieTalkieRadio() {
         }, 300);
     };
 
-    // Firebase Listener
     useEffect(() => {
         const qRadio = query(
             collection(db, 'radio_channel'),
@@ -105,23 +95,19 @@ export default function WalkieTalkieRadio() {
                 list.push({ id: doc.id, ...doc.data() });
             });
             
-            // Invertir para orden cronológico ascendente
             const cronoList = list.reverse();
             setMessages(cronoList);
 
-            // Evitar procesar mensajes viejos al cargar por primera vez
             if (lastMsgCount.current === 0) {
                 cronoList.forEach(m => processedMsgIds.current.add(m.id));
                 lastMsgCount.current = cronoList.length;
                 return;
             }
 
-            // Detectar nuevos mensajes para reproducción de voz
             const latest = cronoList[cronoList.length - 1];
             if (latest && !processedMsgIds.current.has(latest.id)) {
                 processedMsgIds.current.add(latest.id);
                 
-                // Solo pronunciar si el mensaje es de otro usuario y se envió hace poco
                 const isForeign = latest.senderUid !== profile?.uid;
                 const msgTime = latest.timestamp?.seconds ? latest.timestamp.seconds * 1000 : Date.now();
                 const isRecent = Date.now() - msgTime < 15000;
@@ -139,7 +125,6 @@ export default function WalkieTalkieRadio() {
         return () => unsubscribe();
     }, [db, profile, isMuted, isOpen]);
 
-    // Enviar transmisión
     const handleTransmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!inputText.trim()) return;
@@ -148,7 +133,6 @@ export default function WalkieTalkieRadio() {
         setInputText('');
         setStatus('transmitting');
 
-        // CHHHK al iniciar transmisión propia
         playRadioStatic(0.3, 1200, 1.0);
 
         try {
@@ -160,7 +144,6 @@ export default function WalkieTalkieRadio() {
                 timestamp: serverTimestamp()
             });
 
-            // CHHHK al terminar transmisión propia
             setTimeout(() => {
                 playRadioStatic(0.25, 1000, 1.5);
                 setStatus('standby');
@@ -176,14 +159,12 @@ export default function WalkieTalkieRadio() {
         if (!isOpen) setUnread(0);
     };
 
-    // Si no está autenticado o no es staff, no se muestra el walkie-talkie
     if (!isStaff) return null;
 
     return (
         <div className="fixed bottom-6 left-6 z-[2500] font-sans">
             <AnimatePresence>
                 {isOpen ? (
-                    /* Walkie Talkie Expandido */
                     <motion.div 
                         initial={{ opacity: 0, y: 100, scale: 0.9 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -191,14 +172,11 @@ export default function WalkieTalkieRadio() {
                         className="bg-[#1e1e1e] border-[12px] border-[#0a0a0a] rounded-[40px] w-[320px] shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative p-5 flex flex-col items-center"
                         style={{ backgroundImage: 'radial-gradient(circle at top, #2a2a2a 0%, #111 100%)' }}
                     >
-                        {/* Antena del Walkie-Talkie */}
                         <div className="absolute -top-12 left-10 w-4 h-12 bg-slate-900 rounded-t-lg flex items-center justify-center">
                             <div className="w-1.5 h-10 bg-slate-700 rounded-t"></div>
                         </div>
-                        {/* Dial de Volumen */}
                         <div className="absolute -top-4 right-12 w-6 h-4 bg-slate-950 rounded-t border-b border-slate-800"></div>
 
-                        {/* Cabecera / Controles */}
                         <div className="w-full flex justify-between items-center mb-4">
                             <span className="text-[10px] font-black text-rose-500 uppercase tracking-widest flex items-center gap-1">
                                 <span className={`w-2.5 h-2.5 rounded-full ${status === 'transmitting' ? 'bg-red-600 animate-ping' : status === 'receiving' ? 'bg-orange-500 animate-pulse' : 'bg-emerald-500'} border border-slate-900`}></span>
@@ -222,7 +200,6 @@ export default function WalkieTalkieRadio() {
                             </div>
                         </div>
 
-                        {/* Pantalla LCD del Walkie Talkie */}
                         <div className="w-full bg-[#9ccc65] border-2 border-slate-950 rounded-xl p-3 text-slate-900 font-mono text-center shadow-inner mb-4 relative overflow-hidden select-none">
                             <div className="absolute inset-0 bg-gradient-to-b from-black/10 to-transparent pointer-events-none"></div>
                             <div className="text-[10px] font-black uppercase opacity-60 flex justify-between">
@@ -233,11 +210,10 @@ export default function WalkieTalkieRadio() {
                                 {status === 'transmitting' ? 'TRANSMITIENDO...' : status === 'receiving' ? 'RX: ENTRANTE' : 'RADIO GRUPAL'}
                             </div>
                             <div className="text-[9px] opacity-75 truncate">
-                                {profile.displayName || 'Operativo'} · {profile.role}
+                                {profile?.displayName || 'Operativo'} · {profile?.role}
                             </div>
                         </div>
 
-                        {/* Rejilla de la Bocina (Estilo Walkie-Talkie Físico) */}
                         <div className="w-full h-12 bg-slate-900/40 rounded-2xl p-2.5 flex flex-col gap-1 mb-4 border border-slate-700/30 overflow-hidden">
                             {[1, 2, 3].map(row => (
                                 <div key={row} className="flex justify-between opacity-30 gap-1.5">
@@ -248,7 +224,6 @@ export default function WalkieTalkieRadio() {
                             ))}
                         </div>
 
-                        {/* Chat / Historial de Transmisiones */}
                         <div className="w-full flex-1 bg-slate-950 rounded-2xl p-3 h-[180px] overflow-y-auto mb-4 scrollbar-thin border border-slate-700/50 flex flex-col gap-2">
                             {messages.map((msg) => (
                                 <div key={msg.id} className="text-[10px] text-slate-300 border-b border-slate-900/50 pb-1.5 last:border-0 leading-tight">
@@ -263,7 +238,6 @@ export default function WalkieTalkieRadio() {
                             )}
                         </div>
 
-                        {/* Formulario de Transmisión */}
                         <form onSubmit={handleTransmit} className="w-full flex flex-col gap-3 mt-2">
                             <input 
                                 type="text"
@@ -282,7 +256,6 @@ export default function WalkieTalkieRadio() {
                             </button>
                         </form>
 
-                        {/* Tip de Infraestructura */}
                         <div className="mt-6 w-full p-3 bg-black/40 border border-slate-700/30 rounded-xl flex items-start gap-2">
                             <span className="text-[14px]">📡</span>
                             <p className="text-[9px] text-slate-400 leading-tight">
@@ -291,7 +264,6 @@ export default function WalkieTalkieRadio() {
                         </div>
                     </motion.div>
                 ) : (
-                    /* Walkie Talkie Colapsado / Botón Flotante */
                     <motion.button
                         layoutId="walkie-radio"
                         onClick={handleToggleOpen}
@@ -307,7 +279,6 @@ export default function WalkieTalkieRadio() {
                             </span>
                         )}
                         
-                        {/* LED de Estado Colapsado */}
                         <span className="absolute bottom-1 right-1 w-2.5 h-2.5 rounded-full bg-emerald-500 border border-slate-800"></span>
                     </motion.button>
                 )}

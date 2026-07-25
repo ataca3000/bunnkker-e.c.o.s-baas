@@ -43,17 +43,25 @@ export default function UserProfile() {
         }
 
         try {
-            if (profile?.uid) {
-                const userRef = doc(db, 'users', profile.uid);
-                await updateDoc(userRef, {
-                    recoveryPhone: userData.phone,
-                    photoURL: userData.photo,
-                    pin: userData.pin
-                }).catch((err: any) => {
-                    console.warn("Ignorando error de Firebase (Modo Local):", err);
+            // Actualizar PIN localmente via /api/users/me
+            if (userData.pin && userData.pin.length >= 4 && userData.pin.length <= 6) {
+                const res = await fetch('/api/users/me', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'CHANGE_PIN',
+                        newPin: userData.pin
+                    })
                 });
-                toast.success('Perfil actualizado correctamente.', '✅ Perfil');
+
+                const data = await res.json();
+                if (!res.ok || !data.success) {
+                    toast.error(data.error || 'Error al actualizar el PIN en el perfil.');
+                    return;
+                }
             }
+
+            toast.success('Perfil y PIN actualizados correctamente en SQLite.', '✅ Perfil');
         } catch (err: unknown) {
             console.error("Error saving profile:", err);
             toast.error('Error interno al actualizar el perfil.');

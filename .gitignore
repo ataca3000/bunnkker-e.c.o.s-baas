@@ -19,8 +19,11 @@ node_modules/
 filtered-file-list.txt
 
 # Environment — NUNCA commitar .env.local con secrets reales
+.env
 .env.local
 .env.*.local
+task.md
+prisma/prisma/
 
 # SQLite — La base de datos local contiene PINs y datos de clientes
 # Cada instalación genera su propia DB via: npx prisma migrate dev

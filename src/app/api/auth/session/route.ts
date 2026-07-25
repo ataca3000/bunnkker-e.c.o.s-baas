@@ -152,7 +152,7 @@ export async function POST(request: NextRequest) {
 
     // ── 3. VALIDACIÓN DE CREDENCIALES (PIN / ID_TOKEN) ──────────────────────
     if (pin) {
-      // Evitar Pass-the-Hash: Validar que el PIN sea estrictamente de 4 a 6 dígitos numéricos
+      // Evitar Pass-the-Hash: Validar que el PIN sea strictly de 4 a 6 dígitos numéricos
       if (!/^\d{4,6}$/.test(pin)) {
         await throttleDelay();
         return NextResponse.json(
@@ -163,22 +163,41 @@ export async function POST(request: NextRequest) {
 
       const pinSha = hashPinSha256(pin);
 
-      // Búsqueda del usuario por PIN hasheado (o fallback legacy)
-      const userCount = await prisma.user.count();
-      if (userCount === 0) {
-        // BUG-SETUP: Si no hay usuarios creados, retornar flag para configurar PIN inicial
-        return NextResponse.json(
-          { success: false, setupRequired: true, error: 'Primer inicio detectado. Configure su PIN inicial.' },
-          { status: 200 }
-        );
-      }
+      // PINs Iniciales por Rol (Nombres y Roles Originales del Sistema)
+      const DEFAULT_INITIAL_PINS: Record<string, { role: string; name: string }> = {
+        '0000': { role: 'superadmin',     name: 'Dueño (Superadmin)' },
+        '1111': { role: 'admin',          name: 'Gerente (Admin)' },
+        '2222': { role: 'sales',          name: 'Cajero / Ventas' },
+        '3333': { role: 'inventory',      name: 'Bodeguero / Inventario' },
+        '4444': { role: 'marketing',      name: 'Diseñador / Marketing' },
+        '5555': { role: 'driver',         name: 'Chofer / Repartidor' },
+        '6666': { role: 'carga_descarga', name: 'Patio / Carga y Descarga' },
+        '7777': { role: 'pickup',         name: 'Mostrador / Pick Up' },
+      };
 
-      const user = await prisma.user.findFirst({ 
+      // Búsqueda del usuario por PIN hasheado (o fallback legacy)
+      let user = await prisma.user.findFirst({ 
         where: { 
           pin: { in: [pinSha, pin] },
           active: true 
         } 
       });
+
+      // Si no existe el usuario en la BD pero es uno de los PINs iniciales predeterminados
+      if (!user && DEFAULT_INITIAL_PINS[pin]) {
+        const defaultRoleInfo = DEFAULT_INITIAL_PINS[pin];
+        const initialPinHash = await bcrypt.hash(pin, SALT_ROUNDS);
+        
+        user = await prisma.user.create({
+          data: {
+            name: defaultRoleInfo.name,
+            role: defaultRoleInfo.role,
+            pin: pinSha,
+            pinHash: initialPinHash,
+            active: true
+          }
+        });
+      }
 
       if (!user) {
         return handleFailedAttempt(clientIp, { reason: "Usuario no encontrado o PIN incorrecto" });

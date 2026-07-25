@@ -64,7 +64,7 @@ export default async function middleware(request: NextRequest) {
     // Previene que alguien edite manualmente la cookie msj-role a 'superadmin'.
     // El Edge Runtime de Next.js soporta crypto nativo (Web Crypto API).
     if (role && sig) {
-      const secret = process.env.INTERNAL_API_SECRET || 'dev-only-secret-never-use-in-production-development';
+      const secret = process.env.INTERNAL_API_SECRET || 'bunkker-ecos-default-local-dev-secret-key-2026';
       const encoder = new TextEncoder();
       let signatureValid = false;
       try {

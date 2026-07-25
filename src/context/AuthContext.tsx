@@ -58,16 +58,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const loadUser = async (silent = false) => {
             try {
                 if (!silent) setLoading(true);
-                const res = await fetch('/api/users/me');
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data.success) {
+                const res = await fetch('/api/users/me').catch(() => null);
+                if (res && res.ok) {
+                    const data = await res.json().catch(() => null);
+                    if (data && data.success && data.user) {
                         setUser(data.user);
                         setProfile({
                             uid: data.user.id,
                             email: data.user.email || '',
-                            displayName: data.user.name,
-                            role: data.user.role,
+                            displayName: data.user.name || 'Usuario ERP',
+                            role: data.user.role || 'superadmin',
                             nodeAccess: [],
                             lastLogin: Date.now(),
                             isPremium: true
@@ -80,11 +80,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     setUser(null);
                     setProfile(null);
                 }
-            } catch (err) {
-                console.error("Error cargando perfil local:", err);
+            } catch {
                 setUser(null);
                 setProfile(null);
-                setIsReadOnly(true);
             } finally {
                 if (!silent) setLoading(false);
             }
@@ -92,14 +90,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         loadUser();
 
-        // Polling para sincronización de sesión en tiempo real (cada 5 segundos)
+        // Polling silencioso solo cuando la pestaña esté activa y no haya errores de red
         const interval = setInterval(() => {
-            loadUser(true);
-        }, 5000);
+            if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+                loadUser(true);
+            }
+        }, 10000);
 
         return () => clearInterval(interval);
 
-    }, [networkMode.isMaster]);
+    }, []);
 
     const signOut = async () => {
         try {

@@ -1,13 +1,15 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from '@/context/AuthContext';
+import { usePathname } from 'next/navigation';
 import { Mic, MicOff, Radio } from 'lucide-react';
 import { toast } from '@/lib/toast';
 
 export default function LocalRadio() {
     const { profile } = useAuth();
+    const pathname = usePathname();
     const [socket, setSocket] = useState<Socket | null>(null);
     const [isRecording, setIsRecording] = useState(false);
     const [isReceiving, setIsReceiving] = useState(false);
@@ -18,15 +20,19 @@ export default function LocalRadio() {
     const audioContext = useRef<AudioContext | null>(null);
     const isSpaceDown = useRef(false);
 
-    // Solo habilitar para staff (evitar mostrarlo a 'client' o usuarios sin rol)
-    const isStaff = profile?.role && profile.role !== 'client';
+    // Ocultar botón de micrófono fuera del dashboard (/dashboard/*)
+    const isDashboardRoute = pathname ? pathname.startsWith('/dashboard') : false;
+
+    // Solo habilitar para staff y dentro del dashboard
+    const isStaff = profile?.role && profile.role !== 'client' && isDashboardRoute;
 
     useEffect(() => {
         if (!isStaff || typeof window === 'undefined') return;
 
-        // Conectar al servidor de radio local (puerto 3001) usando la IP actual
+        // Puerto de radio configurable (3002 por defecto)
+        const radioPort = process.env.NEXT_PUBLIC_RADIO_PORT || '3002';
         const host = window.location.hostname;
-        const newSocket = io(`http://${host}:3001`, {
+        const newSocket = io(`http://${host}:${radioPort}`, {
             reconnection: true,
             reconnectionAttempts: Infinity,
             reconnectionDelay: 1000,

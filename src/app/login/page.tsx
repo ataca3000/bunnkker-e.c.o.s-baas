@@ -23,11 +23,11 @@ export default function LoginPage() {
         if (typeof window !== 'undefined') {
             const host = window.location.hostname;
             setHostname(host.includes('localhost') ? 'Mi Empresa Local' : host);
+            // Limpiar cookies viejas o desalineadas de arranques anteriores
+            fetch('/api/auth/session', { method: 'DELETE' }).catch(() => {});
         }
 
         const initApp = async () => {
-            // Ya no buscamos configuración en Firebase para el login
-            // Todo corre de manera local (BUNKKER E.C.O.S)
             setCheckingSetup(false);
         };
         initApp();
@@ -280,11 +280,11 @@ export default function LoginPage() {
                         {mode === 'pin' ? (
                             <motion.form key="pin" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onSubmit={handlePinSubmit} className="space-y-6">
                                 <div className="space-y-2">
-                                    <label className="text-[0.7rem] font-black text-slate-400 uppercase ml-2 tracking-wider">PIN de Seguridad (6 dígitos)</label>
+                                    <label className="text-[0.7rem] font-black text-slate-400 uppercase ml-2 tracking-wider">PIN de Seguridad (4 a 6 dígitos)</label>
                                     <div className="relative">
                                         <Lock className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
                                         <input 
-                                            type="password" placeholder="••••••" required minLength={4} maxLength={8}
+                                            type="password" placeholder="••••" required minLength={4} maxLength={6}
                                             value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
                                             className="w-full py-5 pl-[68px] pr-6 bg-slate-800/80 border border-slate-700/50 rounded-2xl focus:border-amber-500 focus:bg-slate-800 focus:ring-1 focus:ring-amber-500 outline-none transition-all font-mono text-2xl text-center tracking-[1em] text-white placeholder-slate-600" 
                                         />

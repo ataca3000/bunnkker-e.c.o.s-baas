@@ -26,16 +26,17 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ success: false, error: 'User not found or inactive' }, { status: 401 });
         }
 
-        // omit pin
-        const { pin:safeUser } = user;
+        // Omitir campos sensibles de claves
+        const { pin: _pin, pinHash: _pinHash, ...safeUser } = user;
         
         return NextResponse.json({ 
             success: true, 
             user: {
-                safeUser,
-                uid: safeUser,
-                displayName: safeUser
-                }
+                ...safeUser,
+                id: user.id,
+                name: user.name,
+                role: user.role
+            }
         });
     } catch (error: any) {
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });

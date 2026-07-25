@@ -231,8 +231,36 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             // Make socket available globally for checkout reservation
             (window as any).__inventorySocket = newSocket;
 
+            // BroadcastChannel for 0ms Multi-Tab synchronization in the same browser
+            let tabChannel: BroadcastChannel | null = null;
+            if (typeof BroadcastChannel !== 'undefined') {
+                tabChannel = new BroadcastChannel('bunkker_tab_sync');
+                tabChannel.onmessage = (event) => {
+                    if (event.data?.type === 'SYNC_REFETCH') {
+                        // Refetch products and orders immediately across tabs
+                        const state = useERPStore.getState();
+                        Promise.all([fetch('/api/products'), fetch('/api/orders')]).then(async ([resP, resO]) => {
+                            if (resP.ok) {
+                                const dataP = await resP.json();
+                                if (state.setProducts) {
+                                    state.setProducts((dataP.data || []).map((p: any) => ({
+                                        ...p,
+                                        location: { estante: p.estante || '', fila: p.fila || '' }
+                                    })));
+                                }
+                            }
+                            if (resO.ok) {
+                                const dataO = await resO.json();
+                                if (state.setOrders) state.setOrders(dataO.data || []);
+                            }
+                        }).catch(() => {});
+                    }
+                };
+            }
+
             return () => {
                 newSocket.disconnect();
+                if (tabChannel) tabChannel.close();
             };
         }
     }, []);

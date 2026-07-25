@@ -43,17 +43,14 @@ export default function ClickSoundProvider() {
         };
 
         const handleClick = (e: MouseEvent) => {
-            // Check if clicked element or parent is a button or anchor
             const target = e.target as HTMLElement;
-            const isClickable = target.closest('button') || target.closest('a') || target.closest('.clickable');
-            
-            if (isClickable) {
-                playClickSound();
+            if (target && (target.closest('button') || target.closest('a') || target.closest('.clickable'))) {
+                requestAnimationFrame(() => playClickSound());
             }
         };
 
-        document.addEventListener('click', handleClick, true); // Use capture phase to catch before stopPropagation
-        return () => document.removeEventListener('click', handleClick, true);
+        document.addEventListener('click', handleClick, { capture: true, passive: true });
+        return () => document.removeEventListener('click', handleClick, { capture: true });
     }, []);
 
     return null;
