@@ -12,8 +12,9 @@ import {
     Barcode, ArrowRight, ArrowLeft, Save, Loader2, X,
     Folder, FolderOpen, ChevronDown, ChevronUp, Shield, QrCode,
     Download, Upload, AlertTriangle, TrendingDown, History, Sparkles, Database, FileText,
-    Mic, Printer, Trash2
+    Mic, Printer, Trash2, FileSpreadsheet
 } from 'lucide-react';
+import { exportToExcel } from '@/lib/excelExport';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DndContext, DragOverlay, closestCorners, PointerSensor, useSensor, useSensors, KeyboardSensor } from '@dnd-kit/core';
 import type { DragStartEvent, DragEndEvent } from '@dnd-kit/core';
@@ -779,6 +780,25 @@ export default function InventoryDashboard() {
                     </div>
                     
                     <div className="flex gap-3 w-full md:w-auto">
+                        <button 
+                            onClick={() => {
+                                const rows = localProducts.map(p => ({
+                                    'ID': p.id,
+                                    'Nombre': p.name,
+                                    'Categoría': p.category || 'General',
+                                    'Precio ($)': p.price,
+                                    'Stock Disponible': p.stock,
+                                    'Código de Barras': p.barcode || 'N/A',
+                                    'Estante': p.location?.estante || p.estante || 'Sin Asignar',
+                                    'Fila / Nivel': p.location?.fila || p.fila || 'N/A'
+                                }));
+                                exportToExcel('Inventario_Almacen', rows);
+                            }}
+                            className="bg-emerald-600/20 text-emerald-400 px-5 py-3 rounded-sm font-bold uppercase text-xs tracking-widest flex items-center gap-2 hover:bg-emerald-600/30 transition-all shadow-[0_0_15px_rgba(16,185,129,0.2)] border border-emerald-500/50 active:scale-95 flex-1 md:flex-none justify-center"
+                        >
+                            <FileSpreadsheet size={16} /> Exportar Excel
+                        </button>
+                        
                         <button 
                             onClick={() => setIsScannerOpen(true)}
                             className="bg-cyan-600/20 text-cyan-400 px-5 py-3 rounded-sm font-bold uppercase text-xs tracking-widest flex items-center gap-2 hover:bg-cyan-600/30 transition-all shadow-[0_0_15px_rgba(0,242,255,0.2)] border border-cyan-500/50 active:scale-95 flex-1 md:flex-none justify-center"

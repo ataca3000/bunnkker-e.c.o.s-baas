@@ -408,15 +408,15 @@ export default function CheckoutPage() {
                         <div className="card-sanjose" style={{ position: 'sticky', top: '20px' }}>
                             <h3 style={{ marginBottom: '1.5rem', fontWeight: '900' }}>RESUMEN DE COTIZACIÓN</h3>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', borderBottom: '1px solid #eee', paddingBottom: '1.5rem', marginBottom: '1.5rem' }}>
-                                <div style={{ display: 'flex', justifycontent: 'space-between', fontSize: '0.9rem' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
                                     <span>Subtotal:</span>
                                     <span style={{ marginLeft: 'auto' }}>${(total / 1.16).toFixed(2)}</span>
                                 </div>
-                                <div style={{ display: 'flex', justifycontent: 'space-between', fontSize: '0.9rem' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
                                     <span>IVA (16%):</span>
                                     <span style={{ marginLeft: 'auto' }}>${(total - (total / 1.16)).toFixed(2)}</span>
                                 </div>
-                                <div style={{ display: 'flex', justifycontent: 'space-between', fontWeight: '900', fontSize: '1.4rem', color: '#0ea5e9', marginTop: '10px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: '900', fontSize: '1.4rem', color: '#0ea5e9', marginTop: '10px' }}>
                                     <span>TOTAL:</span>
                                     <span style={{ marginLeft: 'auto' }}>${total.toLocaleString()} MXN</span>
                                 </div>
@@ -453,7 +453,7 @@ export default function CheckoutPage() {
                                 ) : 'CONFIRMAR Y LEVANTAR PEDIDO'}
                             </button>
 
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '1.5rem', color: '#27ae60', fontSize: '0.75rem', justifycontent: 'center' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '1.5rem', color: '#27ae60', fontSize: '0.75rem', justifyContent: 'center' }}>
                                 <ShieldCheck size={16} /> Transacción Protegida Localmente por {siteConfig.businessName || 'ERP Local-First'}
                             </div>
                         </div>

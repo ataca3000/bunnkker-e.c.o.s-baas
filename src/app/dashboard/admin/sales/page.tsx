@@ -4,8 +4,9 @@ export const dynamic = 'force-dynamic';
 
 import { useCart } from "@/context/CartContext";
 import { useState } from "react";
-import { DollarSign, Package, AlertTriangle, CheckCircle, XCircle, Search, FileText } from "lucide-react";
+import { DollarSign, Package, AlertTriangle, CheckCircle, XCircle, Search, FileText, FileSpreadsheet } from "lucide-react";
 import { toast } from '@/lib/toast';
+import { exportToExcel } from '@/lib/excelExport';
 
 export default function SalesAdmin() {
     const { orders, cancelOrder } = useCart();
@@ -48,15 +49,39 @@ export default function SalesAdmin() {
             <div className="card-sanjose" style={{ padding: 0 }}>
                 <div style={{ padding: '1.2rem', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between' }}>
                     <h3 style={{ fontSize: '1.1rem', fontWeight: '900', color: '#0ea5e9' }}>HISTORIAL DE ÓRDENES</h3>
-                    <div style={{ position: 'relative' }}>
-                        <Search size={16} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#888' }} />
-                        <input
-                            type="text"
-                            placeholder="Buscar orden o cliente..."
-                            value={searchTerm}
-                            onChange={e => setSearchTerm(e.target.value)}
-                            style={{ padding: '8px 10px 8px 35px', borderRadius: '4px', border: '1px solid #ddd', fontSize: '0.8rem', width: '250px' }}
-                        />
+                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                        <button
+                            onClick={() => {
+                                const rows = filteredOrders.map(o => ({
+                                    'ID Orden': o.id,
+                                    'Cliente': o.customer?.name || 'Cliente Mostrador',
+                                    'Teléfono': o.customer?.phone || 'N/A',
+                                    'Fecha': o.date || 'N/A',
+                                    'Total ($)': o.total,
+                                    'Estado': o.status,
+                                    'Método Pago': o.paymentMethod || 'CASH'
+                                }));
+                                exportToExcel('Reporte_Ventas', rows);
+                            }}
+                            style={{
+                                display: 'flex', alignItems: 'center', gap: '6px',
+                                background: '#10b981', color: 'white', border: 'none',
+                                padding: '8px 14px', borderRadius: '4px', cursor: 'pointer',
+                                fontSize: '0.8rem', fontWeight: 'bold'
+                            }}
+                        >
+                            <FileSpreadsheet size={16} /> Exportar Excel
+                        </button>
+                        <div style={{ position: 'relative' }}>
+                            <Search size={16} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#888' }} />
+                            <input
+                                type="text"
+                                placeholder="Buscar orden o cliente..."
+                                value={searchTerm}
+                                onChange={e => setSearchTerm(e.target.value)}
+                                style={{ padding: '8px 10px 8px 35px', borderRadius: '4px', border: '1px solid #ddd', fontSize: '0.8rem', width: '250px' }}
+                            />
+                        </div>
                     </div>
                 </div>
 
