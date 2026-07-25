@@ -1,4 +1,4 @@
-import { StateCreator } from 'zustand';
+import type { StateCreator } from 'zustand';
 import type { ERPState, UISlice } from './types';
 
 export const createUISlice: StateCreator<ERPState, [['zustand/immer', never]], [], UISlice> = (set) => ({

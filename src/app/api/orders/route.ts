@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
     try {
         const orders = await prisma.order.findMany({
-            include: { items: true },
+            include: { items: true, customer: true },
             orderBy: { date: 'desc' }
         });
         return NextResponse.json({ success: true, data: orders });

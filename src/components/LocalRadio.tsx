@@ -42,7 +42,7 @@ export default function LocalRadio() {
         
         newSocket.on('connect', () => {
             console.log('📻 Radio Conectado');
-            newSocket.emit('join_radio', { role: profile?.role, name: profile?.displayName || profile?.name });
+            newSocket.emit('join_radio', { role: profile?.role, name: profile?.displayName || (profile as any)?.name });
         });
 
         newSocket.on('radio_rx', async (data: { senderId: string, senderName: string, audio: ArrayBuffer }) => {
@@ -151,7 +151,7 @@ export default function LocalRadio() {
                 const arrayBuffer = await audioBlob.arrayBuffer();
                 
                 socket.emit('radio_tx', { 
-                    name: profile?.displayName || profile?.name, 
+                    name: profile?.displayName || (profile as any)?.name, 
                     audio: arrayBuffer 
                 });
 
@@ -167,7 +167,7 @@ export default function LocalRadio() {
         } catch (err: any) {
             console.error("No se pudo acceder al micrófono:", err);
             if (err.name === 'NotAllowedError' || err.message?.includes('Permission')) {
-                toast.error('Haz clic en el candado 🔒 en la barra de direcciones, dale "Permitir" al Micrófono y vuelve a intentarlo.', '🎤 Permiso Denegado', { duration: 8000 });
+                toast.error('Haz clic en el candado 🔒 en la barra de direcciones, dale "Permitir" al Micrófono y vuelve a intentarlo.', '🎤 Permiso Denegado');
             } else if (err.name === 'NotFoundError') {
                 toast.error('No se detectó ningún micrófono conectado.', '🔌 Sin Equipo');
             } else {

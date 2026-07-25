@@ -1,4 +1,4 @@
-import { StateCreator } from 'zustand';
+import type { StateCreator } from 'zustand';
 import type { ERPState, ProductsSlice, OrdersSlice, ConfigSlice, FinanceSlice } from './types';
 import { fallbackProducts, defaultSiteConfig } from '../fallbackData';
 

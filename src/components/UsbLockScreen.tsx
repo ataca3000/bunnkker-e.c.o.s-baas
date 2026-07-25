@@ -9,8 +9,8 @@ export default function UsbLockScreen() {
 
     useEffect(() => {
         // Solo aplica en Electron
-        if (typeof window !== 'undefined' && window.electronAPI && window.electronAPI.onUsbStatus) {
-            window.electronAPI.onUsbStatus((hasKey: boolean) => {
+        if (typeof window !== 'undefined' && (window as any).electronAPI && (window as any).electronAPI.onUsbStatus) {
+            (window as any).electronAPI.onUsbStatus((hasKey: boolean) => {
                 setLocked(!hasKey);
             });
         }

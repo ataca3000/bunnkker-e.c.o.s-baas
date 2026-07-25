@@ -15,6 +15,8 @@ export interface Product {
     reviewCount?: number;
     description?: string;
     location?: { estante: string; fila: string };
+    estante?: string;
+    fila?: string;
     orderIndex?: number;
     warranty?: string;
     sku?: string;
@@ -36,6 +38,9 @@ export interface UserProfile {
     uid: string;
     email: string;
     displayName: string;
+    name?: string;
+    phone?: string;
+    address?: string;
     role: 'superadmin' | 'admin' | 'inventory' | 'billing' | 'marketing' | 'sales' | 'node' | 'carga_descarga' | 'driver' | 'client';
     nodeAccess: string[]; 
     lastLogin: number;
@@ -78,6 +83,12 @@ export interface Order {
     ownerAutomationFee?: number;
     vendedorId?: string;
     vendedorName?: string;
+    driverId?: string;
+    deliveryPin?: string;
+    ventanilla?: string;
+    cajon?: string;
+    notes?: string;
+    rating?: number;
     discount?: number;
     discountReason?: string;
     userId?: string;

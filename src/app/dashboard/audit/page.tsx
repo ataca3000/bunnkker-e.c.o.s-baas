@@ -48,7 +48,7 @@ const Row = memo(({ index, style, data }: ListChildComponentProps<AuditRowData>)
 Row.displayName = "AuditLogRow";
 
 export default function RadarAuditPage() {
-    const { signOut } = useAuth();
+    const { profile, signOut } = useAuth();
     const [logs, setLogs] = useState<AuditLog[]>([]);
     const [loading, setLoading] = useState(false);
     const [hasMore, setHasMore] = useState(true);

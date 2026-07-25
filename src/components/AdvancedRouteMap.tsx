@@ -1,6 +1,7 @@
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { useEffect, useState } from 'react';
+import 'leaflet/dist/leaflet.css';
 
 // Fix para iconos en Next.js
 const iconRetinaUrl = 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png';

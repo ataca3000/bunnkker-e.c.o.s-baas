@@ -16,6 +16,7 @@ import { doc, writeBatch, increment, serverTimestamp } from 'firebase/firestore'
 import { logAudit } from '@/lib/audit';
 import { toast } from '@/lib/toast';
 import { useERPStore } from '@/store/useERPStore';
+import { broadcastSync } from '@/lib/syncNotifier';
 
 // Nuevos Componentes de Caja Móvil
 import { Catalog } from '@/components/sales/caja-movil/Catalog';
@@ -35,7 +36,7 @@ export default function SalesDashboard() {
     const [showCorteCaja, setShowCorteCaja] = useState(false);
     const [showCameraScanner, setShowCameraScanner] = useState(false);
     const [currentTime, setCurrentTime] = useState('');
-    const [toast, setToast] = useState<string | null>(null);
+    const [bannerMessage, setBannerMessage] = useState<string | null>(null);
     const [corteResult, setCorteResult] = useState<{ type: 'success' | 'mismatch', data: any } | null>(null);
 
     // POS State
@@ -121,8 +122,8 @@ export default function SalesDashboard() {
     });
 
     const showToast = (msg: string) => {
-        setToast(msg);
-        setTimeout(() => setToast(null), 3000);
+        setBannerMessage(msg);
+        setTimeout(() => setBannerMessage(null), 3000);
     };
 
     const handleAddProduct = (product: Product) => {
@@ -530,6 +531,7 @@ export default function SalesDashboard() {
                                                                 });
                                                                 if (res.ok) {
                                                                     showToast("✅ Pago registrado con éxito. Enviado a patio para despacho.");
+                                                                    broadcastSync();
                                                                 }
                                                             } catch (e) {
                                                                 toast.error("Error al registrar el pago.");
@@ -694,7 +696,7 @@ export default function SalesDashboard() {
 
             {/* Toast Notification */}
             <AnimatePresence>
-                {toast && (
+                {bannerMessage && (
                     <motion.div 
                         initial={{ opacity: 0, y: 50 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -702,12 +704,12 @@ export default function SalesDashboard() {
                         className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[200] flex items-center justify-center"
                     >
                         <div className="bg-zinc-800/95 backdrop-blur-xl border border-white/10 text-white px-6 py-3 rounded-full shadow-[0_0_30px_rgba(0,0,0,0.5)] font-medium text-sm flex items-center gap-2">
-                            {toast.includes('⚠️') || toast.includes('❌') ? (
+                            {bannerMessage.includes('⚠️') || bannerMessage.includes('❌') ? (
                                 <AlertCircle className="w-4 h-4 text-orange-400" />
                             ) : (
                                 <span className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.8)]"></span>
                             )}
-                            {toast}
+                            {bannerMessage}
                         </div>
                     </motion.div>
                 )}

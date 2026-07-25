@@ -67,7 +67,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                             uid: data.user.id,
                             email: data.user.email || '',
                             displayName: data.user.name || 'Usuario ERP',
-                            role: data.user.role || 'superadmin',
+                            role: data.user.role || 'sales',
                             nodeAccess: [],
                             lastLogin: Date.now(),
                             isPremium: true

@@ -46,6 +46,8 @@ import { toast } from '@/lib/toast';
 
 
 const rolePaths: Record<string, string[]> = {
+    superadmin: ['/dashboard', '/dashboard/admin/sales', '/dashboard/admin/users', '/dashboard/admin/customers', '/dashboard/inventory', '/dashboard/delivery', '/dashboard/pickup', '/dashboard/design', '/dashboard/marketing', '/dashboard/billing', '/dashboard/audit', '/dashboard/suscripcion', '/dashboard/qr', '/dashboard/demo', '/dashboard/tests'],
+    admin: ['/dashboard', '/dashboard/admin/sales', '/dashboard/admin/customers', '/dashboard/inventory', '/dashboard/delivery', '/dashboard/pickup', '/dashboard/billing', '/dashboard/audit', '/dashboard/suscripcion'],
     sales: ['/dashboard', '/dashboard/admin/sales', '/dashboard/admin/customers'],
     inventory: ['/dashboard', '/dashboard/inventory'],
     carga_descarga: ['/dashboard', '/dashboard/pickup'],
@@ -516,12 +518,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     {/* Nav groups */}
                     <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1, overflowY: 'auto', paddingRight: '4px' }}>
                         {menuGroups.map((group, groupIdx) => {
+                            const userRole = profile?.role || 'sales';
+                            const allowedRoutes = rolePaths[userRole] || rolePaths['sales'];
                             const visibleItems = group.items.filter(item => 
-                                item.id === 'dashboard' || 
-                                item.id === 'subscription' || 
-                                item.id === 'tests' || 
-                                profile?.role === 'superadmin' ||
-                                (activeModules ? activeModules.includes(item.id) : true)
+                                userRole === 'superadmin' || allowedRoutes.includes(item.href)
                             );
 
                             if (visibleItems.length === 0) return null;

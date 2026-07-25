@@ -107,7 +107,7 @@ export default function SalesAdmin() {
                                             <button 
                                                 title="Ver Detalles" 
                                                 aria-label="Ver Detalles" 
-                                                onClick={() => toast.info(`Cliente: ${order.customer?.name || 'N/A'}\nTeléfono: ${order.customer?.phone || 'N/A'}\n\nPRODUCTOS:\n${order.items?.map((i: any) => `- ${i.quantity}x ${i.name}`).join('\n')}\n\nTOTAL: $${order.total}`, `Detalles ORDEN ${orderId}`, 15000)}
+                                                onClick={() => toast.info(`Cliente: ${order.customer?.name || 'N/A'}\nTeléfono: ${order.customer?.phone || 'N/A'}\n\nTOTAL: $${order.total}`, `Detalles ORDEN ${order.id}`)}
                                                 style={{ background: 'none', border: 'none', color: '#0ea5e9', cursor: 'pointer' }}
                                             >
                                                 <FileText size={18} />
