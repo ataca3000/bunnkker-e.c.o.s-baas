@@ -82,7 +82,6 @@ import { CartProvider } from "@/context/CartContext";
 import { AuthProvider } from "@/context/AuthContext";
 import DevCodeMinimap from "@/components/DevCodeMinimap";
 import ClickSoundProvider from "@/components/ClickSoundProvider";
-import LicenseGuard from "@/components/LicenseGuard";
 import AntiDevTools from "@/components/AntiDevTools";
 import DeviceLockScreen from "@/components/DeviceLockScreen";
 import ParticlesBackground from "@/components/ParticlesBackground";
@@ -108,11 +107,9 @@ export default async function RootLayout({
               <CartProvider>
                 <ConnectionStatus />
                 <Navbar />
-                <LicenseGuard>
-                  <AdminLayout>
-                    {children}
-                  </AdminLayout>
-                </LicenseGuard>
+                <AdminLayout>
+                  {children}
+                </AdminLayout>
                 <AdminAsistente />
                 <DevCodeMinimap />
                 <ClickSoundProvider />
