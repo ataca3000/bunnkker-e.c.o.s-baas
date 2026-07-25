@@ -1,6 +1,6 @@
-# 🔒 BUNKKER E.C.O.S (Camaleón Topics ERP) — Ecosistema Comercial Local-First
+# 📖 BUNKKER E.C.O.S (Camaleón Topics ERP) — Ecosistema Comercial Local-First
 
-**BUNKKER E.C.O.S ERP** es una plataforma de software comercial privada y propietaria desarrollada por **Brecha Soluciones DS / Luis Felipe Durán Salinas**. Diseñada para empresas, comercios y negocios que requieren un ERP/POS profesional de alto rendimiento que funcione 100% sin internet en redes locales Wi-Fi/LAN.
+**BUNKKER E.C.O.S ERP** es una plataforma de software de **Código Visible (Source-Available)** desarrollada por **Brecha Soluciones DS / Luis Felipe Durán Salinas**. Diseñada para empresas, comercios y negocios que requieren un ERP/POS profesional de alto rendimiento que funcione 100% sin internet en redes locales Wi-Fi/LAN.
 
 ---
 
@@ -18,24 +18,16 @@
 
 ---
 
-## 📱 Plataformas Soportadas
+## 💳 Licenciamiento: Código Visible — Uso Comercial Sujeto a Suscripción
 
-- 🖥️ **Windows** - Aplicación de escritorio (Electron)
-- 💻 **Web Local / LAN** - Acceso desde cualquier navegador en red local (Next.js)
-- 🍎 **macOS / Linux** - Compatible (Electron / Node)
+Este repositorio es de **Código Visible (Source-Available)** para inspección y desarrollo local, pero **su uso en producción o comercialización requiere obligatoriamente una Suscripción Comercial Activa** (ver [LICENSE.md](./LICENSE.md)).
 
----
-
-## 💳 Licenciamiento y Suscripción Comercial
-
-Este software está sujeto a una **Licencia Comercial Propietaria Restringida** (ver [LICENSE.md](./LICENSE.md)). **NO es de código abierto ni de uso gratuito.**
-
-### **Planes de Licencia:**
+### **Planes de Suscripción Comercial:**
 
 - **Plan Independiente / Pyme:** $500 MXN / mes por máquina/instalación.
 - **Plan Empresarial / Multi-Sucursal:** $1,000 MXN / mes por máquina/instalación.
 
-Para activación de licencias, llaves `ADMIN-XXXX-XXXX-XXXX` o PINs offline de 6 dígitos:
+Para activación de suscripciones comerciales, llaves `ADMIN-XXXX-XXXX-XXXX` o PINs offline de 6 dígitos:
 - **Contacto Soporte & Ventas:** `luishalo69@gmail.com`
 - **Titular de Propiedad:** Luis Felipe Durán Salinas / Brecha Soluciones DS
 
@@ -64,6 +56,6 @@ Desktop Executable:
 
 ## 📝 Derechos Reservados y Propiedad Intelectual
 
-Queda estrictamente prohibida la clonación, descompilación, redistribución o comercialización no autorizada del motor central, topología de red P2P o interfaz de este sistema sin contar con una licencia comercial activa otorgada por **Brecha Soluciones DS**.
+Queda estrictamente prohibida la reventa, descompilación o comercialización no autorizada del motor central, topología de red P2P o interfaz de este sistema sin contar con una suscripción comercial activa otorgada por **Brecha Soluciones DS**.
 
 *Derechos Reservados © 2026 Brecha Soluciones DS / Luis Felipe Durán Salinas. Todos los derechos reservados.*
