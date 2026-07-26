@@ -59,6 +59,7 @@ jobs:
         # Esto evita escribirlos en un archivo .env.local, que es un riesgo de seguridad.
         env:
           NODE_OPTIONS: "--max-old-space-size=6144"
+          DISABLE_PWA: "true"
           BUILD_TARGET: web
           NEXT_PUBLIC_APP_ENV: nube
           DATABASE_URL: file:/tmp/bunkker-build.db
