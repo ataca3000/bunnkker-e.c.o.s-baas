@@ -1,0 +1,11 @@
+declare module 'framer-motion';
+declare module 'firebase/app';
+declare module 'firebase/firestore';
+declare module 'firebase/auth';
+declare module 'firebase/storage';
+declare module 'lucide-react';
+declare module 'html5-qrcode';
+declare module 'qrcode.react';
+declare module 'react-qr-code';
+declare module 'nodemailer';
+declare module 'facturapi';

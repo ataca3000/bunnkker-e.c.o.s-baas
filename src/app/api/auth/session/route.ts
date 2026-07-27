@@ -281,11 +281,12 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  cookies().delete('msj-session');
-  cookies().delete('msj-role');
-  cookies().delete('msj-role-sig');
-  cookies().delete('msj-worker-vip');
-  cookies().delete('msj-worker-vip-sig');
+  const cookieStore = await cookies();
+  cookieStore.delete('msj-session');
+  cookieStore.delete('msj-role');
+  cookieStore.delete('msj-role-sig');
+  cookieStore.delete('msj-worker-vip');
+  cookieStore.delete('msj-worker-vip-sig');
   
   return NextResponse.json({ success: true });
 }

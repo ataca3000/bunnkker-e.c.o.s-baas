@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { validateApiSession } from '@/lib/apiAuth';
 import Facturapi from 'facturapi';
 import { db, auth } from '@/lib/firebase-admin';
+import { prisma } from '@/lib/prisma';
 
 // VULNERABILITY B FIXED: Secure Key Retrieval
 // The API key is ONLY retrieved from secure environment variables.
@@ -50,6 +51,7 @@ export async function POST(req: NextRequest) {
 
         const facturapi = new Facturapi(apiKey);
         const body = await req.json();
+        const tenantId = req.headers.get('x-tenant-id') || 'default';
         
         // VULNERABILITY A FIXED: Server-Side Input Validation & Price Verification
         // We only trust the 'productIds' sent by the client. We do NOT trust the prices.

@@ -92,6 +92,7 @@ export interface SiteConfig {
     heroMediaType?: 'image' | 'video';
     sections: MarketSection[];
     widgets?: PromoWidget[];
+    activeModules?: string[];
     businessHours?: {
         open: string;
         close: string;

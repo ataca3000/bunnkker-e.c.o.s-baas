@@ -22,6 +22,7 @@
     
       
   "build": "next build",
+  "guard:build": "node scripts/build-guard.js",
     
       
   "start": "concurrently \"node scripts/restore-node-modules.js && node .next/standalone/server.js\" \"node radio-server.js\"",
