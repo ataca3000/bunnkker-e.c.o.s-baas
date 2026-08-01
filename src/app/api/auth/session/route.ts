@@ -11,7 +11,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { signRole, hashPinSha256 } from '@/lib/apiAuth';
+import { generateSecureRandomInt, signRole, hashPinSha256 } from '@/lib/apiAuth';
 import { redis } from '@/lib/redis';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
@@ -263,8 +263,8 @@ export async function POST(request: NextRequest) {
 
     // Generar una IP privada virtual aleatoria para trabajadores para el bypass de firewall en túnel
     if (finalRole !== 'client') {
-      const x = Math.floor(Math.random() * 254) + 1;
-      const y = Math.floor(Math.random() * 254) + 1;
+      const x = generateSecureRandomInt(1, 254);
+      const y = generateSecureRandomInt(1, 254);
       const virtualIp = `10.240.${x}.${y}`;
       const vipSig = signRole('worker-vip', virtualIp);
       

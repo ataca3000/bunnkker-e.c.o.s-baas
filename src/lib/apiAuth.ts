@@ -12,10 +12,26 @@ export type ApiAuthResult =
 const WRITE_ROLES = ['superadmin', 'admin', 'inventory', 'sales', 'billing'];
 const DELIVERY_ROLES = ['superadmin', 'admin', 'delivery', 'driver', 'carga_descarga'];
 
-// ── Cookie Secret — NUNCA tiene fallback inseguro ─────────────────────────────
-// Si INTERNAL_API_SECRET no está configurado en producción, el servidor falla
-// explícitamente en lugar de usar un secreto conocido públicamente.
-const COOKIE_SECRET = process.env.INTERNAL_API_SECRET || 'bunkker-ecos-default-local-dev-secret-key-2026';
+// ── Cookie Secret — nunca usa un valor hardcodeado en producción ───────────
+// Si INTERNAL_API_SECRET no está configurado, se genera un secreto efímero por proceso.
+// Esto evita un fallback inseguro y permite que el build y el arranque funcionen en CI.
+const COOKIE_SECRET = process.env.INTERNAL_API_SECRET || (() => {
+  const generated = crypto.randomBytes(32).toString('hex');
+  if (process.env.NODE_ENV === 'production') {
+    console.warn('INTERNAL_API_SECRET is not set; using an ephemeral secret for this process.');
+  }
+  return generated;
+})();
+
+/**
+ * Genera un entero aleatorio seguro dentro de un rango.
+ */
+export function generateSecureRandomInt(min: number, max: number): number {
+  if (!Number.isInteger(min) || !Number.isInteger(max) || min > max) {
+    throw new Error('Invalid random range');
+  }
+  return crypto.randomInt(min, max + 1);
+}
 
 /**
  * Genera una firma HMAC segura para un rol y UID dados.
