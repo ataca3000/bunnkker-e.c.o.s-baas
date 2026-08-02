@@ -133,7 +133,7 @@ export default function AdminAsistente() {
             }
 
             // Build Context
-            let contextData: any = { businessName: siteConfig?.businessName || 'TERRAFORM ERP' };
+            let contextData: any = { businessName: siteConfig?.businessName || 'BUNKKER E.C.O.S.' };
             if (aiRole === 'superadmin') {
                 contextData.products = products?.map((p:any) => ({name: p.name, stock: p.stock, price: p.price}));
                 contextData.ordersCount = orders?.length;

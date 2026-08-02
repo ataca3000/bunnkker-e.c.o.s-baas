@@ -15,6 +15,30 @@ export default function ProSyncPage() {
   const [isLoadingConfig, setIsLoadingConfig] = useState(true);
   const [isDownloading, setIsDownloading] = useState(false);
 
+  const [backupStatus, setBackupStatus] = useState<any>(null);
+  const [verifying, setVerifying] = useState(false);
+  const [verifyResult, setVerifyResult] = useState<any>(null);
+
+  const fetchBackupStatus = async () => {
+    try {
+      const res = await fetch('/api/backup/status');
+      if (res.ok) {
+        const data = await res.json();
+        setBackupStatus(data);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  useEffect(() => {
+    if (isPro) {
+      fetchBackupStatus();
+      const interval = setInterval(fetchBackupStatus, 60000);
+      return () => clearInterval(interval);
+    }
+  }, [isPro]);
+
   useEffect(() => {
     fetch('/api/pairing/status')
       .then(res => res.json())
@@ -55,6 +79,25 @@ export default function ProSyncPage() {
       console.error(err);
       setErrorMsg(err.message);
       setStatus('error');
+    }
+  };
+
+  const handleVerifyIntegrity = async () => {
+    setVerifying(true);
+    setVerifyResult(null);
+    try {
+      const res = await fetch('/api/backup/verify', { method: 'POST' });
+      const data = await res.json();
+      setVerifyResult(data);
+      if (data.match) {
+        toast.success(data.message, 'Integridad Verificada');
+      } else {
+        toast.error(data.message, 'Problema de Integridad');
+      }
+    } catch (e: any) {
+      toast.error(e.message, 'Error de Verificación');
+    } finally {
+      setVerifying(false);
     }
   };
 
@@ -144,9 +187,7 @@ export default function ProSyncPage() {
               <div className="mt-8 pt-6 border-t border-slate-800">
                 <p className="text-slate-400 text-sm mb-4">¿Aún no tienes tu suscripción?</p>
                 <a 
-                  href="#" // Link a Stripe
-                  target="_blank" 
-                  rel="noreferrer"
+                  href="/dashboard/suscripcion"
                   className="w-full flex items-center justify-center gap-2 bg-white hover:bg-slate-200 text-slate-900 font-black uppercase tracking-widest py-4 rounded-xl transition-all"
                 >
                   Comprar Suscripción VIP
@@ -208,18 +249,60 @@ export default function ProSyncPage() {
               </p>
 
               <div className="relative z-10 p-6 bg-slate-950 border border-sky-900/50 rounded-xl mb-6">
-                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Clonar / Recuperar Equipo</h3>
-                <p className="text-xs text-slate-500 mb-4">
-                  Descarga el último snapshot de Firebase Storage y reconstruye toda tu base de datos SQLite y sistema de archivos.
-                </p>
+                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Estado del Respaldo</h3>
+                
+                {backupStatus && (
+                  <div className="mb-6 space-y-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-slate-300">Estado</span>
+                      <span className={`px-2 py-1 text-xs font-bold rounded ${backupStatus.status === 'ok' ? 'bg-green-500/20 text-green-400' : backupStatus.status === 'stale' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'}`}>
+                        {backupStatus.status === 'ok' ? 'ACTUALIZADO' : backupStatus.status === 'stale' ? 'ATRASADO' : 'NUNCA'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-slate-400">Último Respaldo:</span>
+                      <span className="text-white">{backupStatus.lastBackupAt ? new Date(backupStatus.lastBackupAt).toLocaleString() : 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-slate-400">Tamaño:</span>
+                      <span className="text-white">{backupStatus.lastBackupSize ? `${(backupStatus.lastBackupSize / 1024).toFixed(2)} KB` : 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-slate-400">Próximo en:</span>
+                      <span className="text-white">{backupStatus.nextBackupIn} min</span>
+                    </div>
+                  </div>
+                )}
+
                 <button
-                  onClick={handleDownloadBackup}
-                  disabled={isDownloading}
-                  className="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 font-bold uppercase tracking-widest py-3 rounded-lg transition-all"
+                  onClick={handleVerifyIntegrity}
+                  disabled={verifying}
+                  className="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 font-bold uppercase tracking-widest py-3 rounded-lg transition-all mb-4"
                 >
-                  {isDownloading ? <Loader2 className="w-5 h-5 animate-spin" /> : <CloudDownload className="w-5 h-5" />}
-                  {isDownloading ? 'Descargando Snapshot...' : 'Restaurar Nube Edge'}
+                  {verifying ? <Loader2 className="w-5 h-5 animate-spin" /> : <ShieldCheck className="w-5 h-5" />}
+                  Verificar Integridad
                 </button>
+
+                {verifyResult && (
+                  <div className={`p-3 rounded text-sm mb-4 text-center font-medium ${verifyResult.match ? 'bg-green-500/10 text-green-400 border border-green-500/30' : 'bg-red-500/10 text-red-400 border border-red-500/30'}`}>
+                    {verifyResult.message}
+                  </div>
+                )}
+
+                <div className="border-t border-slate-800 pt-4 mt-4">
+                  <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Clonar / Recuperar Equipo</h3>
+                  <p className="text-xs text-slate-500 mb-4">
+                    Descarga el último snapshot de Firebase Storage y reconstruye toda tu base de datos SQLite y sistema de archivos.
+                  </p>
+                  <button
+                    onClick={handleDownloadBackup}
+                    disabled={isDownloading}
+                    className="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 font-bold uppercase tracking-widest py-3 rounded-lg transition-all"
+                  >
+                    {isDownloading ? <Loader2 className="w-5 h-5 animate-spin" /> : <CloudDownload className="w-5 h-5" />}
+                    {isDownloading ? 'Descargando Snapshot...' : 'Restaurar Nube Edge'}
+                  </button>
+                </div>
               </div>
             </div>
           )}

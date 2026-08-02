@@ -8,7 +8,7 @@ import { db } from '@/lib/firebase-admin';
 async function getFacturapiKey() {
     const secretSnap = await db.collection('secrets').doc('billing').get();
     if (secretSnap.exists) {
-        return secretSnap.data()?.facturapi_key;
+        return (secretSnap.data() as any)?.facturapi_key;
     }
     return null;
 }

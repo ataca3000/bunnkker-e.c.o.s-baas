@@ -1,6 +1,16 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
+// Comparación segura en tiempo constante compatible con Edge Runtime (sin import 'crypto')
+function timingSafeEqualHex(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return result === 0;
+}
+
 // ─── Permisos por rol y ruta ───────────────────────────────────────────────────
 const ROLE_PERMISSIONS: Record<string, string[]> = {
   '/dashboard/inventory':       ['superadmin', 'admin', 'inventory', 'almacen'],
@@ -15,6 +25,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
   '/dashboard/pickup':          ['superadmin', 'admin', 'carga_descarga', 'driver', 'delivery', 'inventory', 'almacen'],
   '/dashboard/delivery':        ['superadmin', 'admin', 'driver', 'delivery', 'carga_descarga', 'repartidor'],
   '/dashboard/marketing':       ['superadmin', 'admin', 'marketing'],
+  '/dashboard/omnipulse':       ['superadmin', 'admin', 'marketing'],
   '/dashboard/design':          ['superadmin', 'admin', 'marketing'],
   '/dashboard/reports':         ['superadmin', 'admin'],
   '/dashboard/qr':              ['superadmin', 'admin', 'marketing', 'sales', 'caja'],
@@ -62,7 +73,6 @@ export default async function middleware(request: NextRequest) {
 
     // ── Verificación HMAC de firma de rol (aplica a TODOS los roles, incluyendo superadmin) ──
     // Previene que alguien edite manualmente la cookie msj-role a 'superadmin'.
-    // El Edge Runtime de Next.js soporta crypto nativo (Web Crypto API).
     if (role && sig) {
       const secret = process.env.INTERNAL_API_SECRET || 'bunkker-ecos-default-local-dev-secret-key-2026';
       const encoder = new TextEncoder();
@@ -73,9 +83,7 @@ export default async function middleware(request: NextRequest) {
         );
         const expectedBuffer = await crypto.subtle.sign('HMAC', key, encoder.encode(`${role}:${session}`));
         const expectedHex = Array.from(new Uint8Array(expectedBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
-        // Comparación de longitud constante para prevenir timing attacks
-        signatureValid = expectedHex.length === sig.length &&
-          expectedHex.split('').every((c, i) => c === sig[i]);
+        signatureValid = timingSafeEqualHex(expectedHex, sig);
       } catch {
         signatureValid = false;
       }
@@ -126,7 +134,7 @@ export default async function middleware(request: NextRequest) {
   // --- 3. API Protection ---
   if (pathname.startsWith('/api')) {
     // Rutas públicas que no requieren sesión de empleado
-    const publicApiRoutes = ['/api/auth', '/api/customer', '/api/public'];
+    const publicApiRoutes = ['/api/auth', '/api/customer', '/api/public', '/api/omnipulse'];
     const isPublicApi = publicApiRoutes.some(r => pathname.startsWith(r));
 
     if (!isPublicApi) {

@@ -86,6 +86,199 @@ Esta estrategia garantiza que un dispositivo pueda permanecer offline durante d�
 
 ---
 
+#### **2.7. Motor de Publicación Masiva Multi-Red — OMNIPULSE**
+
+Para complementar las capacidades de alcance comercial del ecosistema, BUNKKER E.C.O.S. incorpora el módulo **OMNIPULSE**, un motor de publicación orgánica masiva multi-canal que permite al titular de una licencia operar publicaciones simultáneas en hasta quince (15) plataformas de redes sociales desde una interfaz unificada, preservando la autoría e identidad de cada cuenta conectada.
+
+##### **2.7.1. Definición Funcional**
+OMNIPULSE opera bajo la premisa de que cada publicación es generada una única vez por el operador humano o por el orquestador de IA interno del sistema, y distribuida de forma secuencial y autónoma a la totalidad de canales configurados. A diferencia de herramientas de automatización convencionales, el módulo integra una capa de **variación estructural de contenido (Spintax Engine)**, que genera permutaciones sintácticamente distintas del mismo mensaje antes de cada publicación, reduciendo la huella de contenido duplicado y minimizando la activación de filtros anti-spam de las plataformas receptoras.
+
+##### **2.7.2. Catálogo de Redes Sociales Soportadas**
+El sistema clasifica los canales de distribución en tres grupos operativos según su protocolo de autenticación:
+
+*   **Grupo A — Protocolo OAuth 2.0 (Meta / LinkedIn / Google):**
+    Facebook Pages, Instagram Business, Threads, LinkedIn Personal, LinkedIn Empresa, YouTube Community Posts, Pinterest.
+
+*   **Grupo B — Token Directo y Webhooks:**
+    Telegram (Bot API), Discord (Webhook URL), WhatsApp Business Cloud API.
+
+*   **Grupo C — Protocolos Abiertos Federados:**
+    X / Twitter (API v2), TikTok Content Posting API, Bluesky (AT Protocol), Mastodon (ActivityPub REST), Reddit (API v1), Tumblr (API v2).
+
+##### **2.7.3. Arquitectura de Capas del Módulo**
+El diseño interno del módulo sigue el patrón de **Adaptador Desacoplado (Decoupled Adapter Pattern)**, en el cual cada red social está representada por un módulo adaptador independiente que implementa la misma interfaz común:
+
+```typescript
+// src/lib/omnipulse/adapters/NetworkAdapter.ts
+// Interfaz de contrato común para todos los adaptadores de red
+interface NetworkAdapter {
+    /**
+     * Publica el contenido en la red social correspondiente.
+     * @param post  El objeto de publicación con texto, medios y metadatos.
+     * @param account  La cuenta del tenant con el token de acceso encriptado.
+     * @returns Resultado de la operación con el ID externo de la publicación si es exitosa.
+     */
+    publish(post: OmniPost, account: OmniAccount): Promise<{
+        success: boolean;
+        externalId?: string;
+        error?: string;
+    }>;
+
+    /**
+     * Valida que el token de acceso de la cuenta siga siendo vigente.
+     */
+    validateToken(account: OmniAccount): Promise<boolean>;
+
+    /**
+     * Renueva el token de acceso utilizando el refreshToken almacenado.
+     * Sólo aplicable en redes que implementan flujo OAuth 2.0.
+     */
+    refreshToken?(account: OmniAccount): Promise<OmniAccount>;
+}
+```
+
+##### **2.7.4. Motor de Despacho Secuencial con Jitter de Humanización**
+El componente central del módulo es el **Dispatcher**, un orquestador que recibe una publicación y una lista de cuentas destino, y las procesa de forma secuencial aplicando un intervalo de tiempo aleatorio entre cada publicación. Este intervalo —denominado técnicamente **Jitter de Humanización**— simula el comportamiento orgánico de un operador humano, con el propósito de evitar la detección de automatización masiva por los sistemas de moderación de las plataformas:
+
+```typescript
+// src/lib/omnipulse/dispatcher.ts
+// Orquestador de publicación secuencial con Jitter de Humanización
+import { getAdapter } from './adapters';
+import { prisma } from '@/lib/prisma';
+
+const JITTER_MIN_MS = 5_000;  // 5 segundos mínimo entre publicaciones
+const JITTER_MAX_MS = 15_000; // 15 segundos máximo entre publicaciones
+
+/**
+ * Calcula un intervalo de espera aleatorio dentro de los límites definidos.
+ * Simula latencia de operación humana para evadir detección automatizada.
+ */
+function humanJitter(): number {
+    return Math.floor(Math.random() * (JITTER_MAX_MS - JITTER_MIN_MS + 1)) + JITTER_MIN_MS;
+}
+
+/**
+ * Despacha una publicación a todas las cuentas seleccionadas de forma secuencial.
+ * Actualiza el estado de cada OmniDispatch en tiempo real en la base de datos local.
+ * @param postId  Identificador de la publicación a distribuir.
+ * @param accountIds  Lista de IDs de cuentas destino del tenant.
+ */
+export async function dispatchPost(postId: string, accountIds: string[]): Promise<void> {
+    const post = await prisma.omniPost.findUniqueOrThrow({ where: { id: postId } });
+
+    for (const accountId of accountIds) {
+        const account = await prisma.omniAccount.findUniqueOrThrow({ where: { id: accountId } });
+        const adapter = getAdapter(account.network);
+
+        // Marcar como 'en progreso' antes del intento
+        await prisma.omniDispatch.updateMany({
+            where: { postId, accountId },
+            data: { status: 'publishing' }
+        });
+
+        try {
+            const result = await adapter.publish(post, account);
+
+            await prisma.omniDispatch.updateMany({
+                where: { postId, accountId },
+                data: {
+                    status: result.success ? 'success' : 'failed',
+                    externalId: result.externalId ?? null,
+                    errorMsg:   result.error   ?? null,
+                    publishedAt: result.success ? new Date() : null,
+                }
+            });
+
+            // Registrar en el log de auditoría del tenant
+            await prisma.omniLog.create({
+                data: {
+                    tenantId: post.tenantId,
+                    postId,
+                    network: account.network,
+                    event: result.success ? 'success' : 'error',
+                    detail: result.error ?? `Publicado con ID externo: ${result.externalId}`
+                }
+            });
+        } catch (err: any) {
+            await prisma.omniDispatch.updateMany({
+                where: { postId, accountId },
+                data: { status: 'failed', errorMsg: err.message }
+            });
+        }
+
+        // Aplicar Jitter de Humanización antes de la siguiente publicación
+        if (accountIds.indexOf(accountId) < accountIds.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, humanJitter()));
+        }
+    }
+}
+```
+
+##### **2.7.5. Motor de Variación de Contenido (Spintax Engine)**
+Para garantizar que el contenido publicado en cada red social no sea una réplica textual exacta —lo cual puede desencadenar penalizaciones algorítmicas por contenido duplicado—, el módulo incorpora un motor de resolución de plantillas **Spintax**. Este motor sustituye cada bloque de variantes `{opción_A|opción_B|opción_C}` por una opción seleccionada de forma pseudoaleatoria, y además inyecta variables dinámicas del perfil del tenant como `{{nombre_negocio}}` o `{{telefono}}`:
+
+```typescript
+// src/lib/omnipulse/spintax.ts
+// Motor de resolución de plantillas Spintax para variación de contenido
+/**
+ * Resuelve una plantilla Spintax generando una variación única del mensaje.
+ * Patrón de variantes: {opcion1|opcion2|opcion3}
+ * Variables dinámicas: {{nombre_variable}}
+ *
+ * @param template  Plantilla de mensaje con bloques Spintax y variables dinámicas.
+ * @param vars      Diccionario de variables a inyectar en la plantilla.
+ * @returns         Mensaje resuelto con una variación única.
+ *
+ * @example
+ * Input:  "{Hola|Buen día|Qué tal} {{nombre}}, {conoce|descubre|visita} nuestro catálogo."
+ * Output: "Buen día Ferretería Norte, visita nuestro catálogo."
+ */
+export function resolveSpintax(template: string, vars: Record<string, string> = {}): string {
+    // Fase 1: Resolver bloques de variantes {opcion1|opcion2}
+    let resolved = template.replace(/\{([^}]+)\}/g, (_, block: string) => {
+        const options = block.split('|');
+        return options[Math.floor(Math.random() * options.length)];
+    });
+
+    // Fase 2: Inyectar variables dinámicas del tenant {{variable}}
+    resolved = resolved.replace(/\{\{(\w+)\}\}/g, (_, key: string) => {
+        return vars[key] ?? `{{${key}}}`;
+    });
+
+    return resolved;
+}
+```
+
+##### **2.7.6. Modelo de Datos — Persistencia Local (Prisma / SQLite)**
+El módulo OMNIPULSE extiende el esquema de base de datos embebido con cuatro (4) modelos adicionales que persisten de forma local y aislada por `tenantId`:
+
+*   **`OmniAccount`:** Registro de cada cuenta de red social conectada por el tenant. Almacena el token de acceso en reposo mediante cifrado simétrico AES-256.
+*   **`OmniPost`:** Representa una publicación en su estado de borrador o publicado, incluyendo el texto, URLs de medios adjuntos y hashtags.
+*   **`OmniDispatch`:** Registro individual de cada intento de publicación por cuenta, con su estado (`pending`, `publishing`, `success`, `failed`) y el identificador externo devuelto por la plataforma.
+*   **`OmniLog`:** Bitácora de auditoría cronológica de todos los eventos del módulo, para trazabilidad ante INDAUTOR y para soporte técnico del tenant.
+
+##### **2.7.7. Rutas de API del Módulo**
+El módulo expone los siguientes endpoints dentro del servidor Next.js embebido en Electron:
+
+| Ruta | Método | Función |
+|------|--------|---------|
+| `/api/omnipulse/accounts/connect` | `POST` | Inicia el flujo OAuth 2.0 para una red seleccionada |
+| `/api/omnipulse/accounts/list` | `GET` | Lista las cuentas conectadas del tenant (sin exponer tokens) |
+| `/api/omnipulse/publish/create` | `POST` | Crea un `OmniPost` con texto, medios y cuentas destino |
+| `/api/omnipulse/publish/dispatch` | `POST` | Ejecuta el Dispatcher sobre las cuentas seleccionadas |
+| `/api/omnipulse/publish/status/[postId]` | `GET` (SSE) | Stream en tiempo real del estado de publicación por red |
+| `/api/omnipulse/webhook/callback` | `GET` | Receptor de callbacks OAuth 2.0 de plataformas externas |
+
+##### **2.7.8. Integración con el Dashboard de Marketing**
+El módulo OMNIPULSE se integra visualmente en la ruta `/dashboard/omnipulse` del ecosistema BUNKKER, accesible bajo los roles `superadmin`, `admin` y `marketing` según el esquema RBAC del `middleware.ts`. La interfaz expone cuatro (4) paneles funcionales:
+
+1.  **Panel de Cuentas:** Cuadrícula de conexión para las 15 redes soportadas, con indicadores de estado de token en tiempo real.
+2.  **Compositor de Publicaciones:** Editor de contenido enriquecido con previsualización adaptada por red y soporte para plantillas Spintax.
+3.  **Monitor de Publicación en Vivo:** Visualización del progreso de despacho mediante Server-Sent Events (SSE), mostrando el estado de cada red en tiempo real.
+4.  **Calendario de Publicaciones:** Vista mensual de publicaciones programadas con capacidad de reprogramación por arrastre.
+
+---
+
 ### **3. Modelo de Negocio y Viabilidad de Mercado**
 
 #### **3.1. Segmentación de Mercado (LATAM)**

@@ -23,6 +23,7 @@ import BarcodeScanner from '@/components/BarcodeScanner';
 import Link from 'next/link';
 import ShelfColumn from './components/ShelfColumn';
 import ProductCard from './components/ProductCard';
+import ImportCSVButton from './ImportCSVButton';
 import { arrayMove } from '@dnd-kit/sortable';
 import { toast } from '@/lib/toast';
 
@@ -558,7 +559,7 @@ export default function InventoryDashboard() {
         setEditingProductId(p.id);
         setFormData({
             name: p.name,
-            category: p.category,
+            category: p.category || '',
             description: p.description || '',
             barcode: p.barcode || '',
             image: p.image || '',
@@ -737,7 +738,7 @@ export default function InventoryDashboard() {
     // Filtrar y agrupar productos por Estante (Folder)
     const filteredProducts = localProducts.filter(p => 
         p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        p.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (p.category || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         p.barcode?.includes(searchTerm)
     );
 
@@ -799,6 +800,11 @@ export default function InventoryDashboard() {
                             <FileSpreadsheet size={16} /> Exportar Excel
                         </button>
                         
+                        <ImportCSVButton onSuccess={() => {
+                            // The products will be re-fetched or we can just reload the page since Next.js router.refresh doesn't exist here directly.
+                            // Actually, I can use window.location.reload() to easily refresh client-side products, or I can trigger a fetch.
+                            window.location.reload();
+                        }} />
                         <button 
                             onClick={() => setIsScannerOpen(true)}
                             className="bg-cyan-600/20 text-cyan-400 px-5 py-3 rounded-sm font-bold uppercase text-xs tracking-widest flex items-center gap-2 hover:bg-cyan-600/30 transition-all shadow-[0_0_15px_rgba(0,242,255,0.2)] border border-cyan-500/50 active:scale-95 flex-1 md:flex-none justify-center"

@@ -3,15 +3,19 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    container_name: bunkker-erp
     ports:
       - "3000:3000"
     env_file:
       - .env.local
     environment:
-      - NODE_ENV=production
-      - NEXT_PUBLIC_APP_ENV=nube
+      NODE_ENV: production
+      NEXT_PUBLIC_APP_ENV: nube
+      PORT: "3000"
+      HOSTNAME: "0.0.0.0"
     volumes:
-      - ./prisma:/app/prisma
+      # Persistent SQLite database storage
+      - prisma_data:/app/prisma
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000', (res) => process.exit(res.statusCode === 200 ? 0 : 1))"]
@@ -19,3 +23,22 @@ services:
       timeout: 10s
       retries: 3
       start_period: 5s
+    networks:
+      - bunkker-network
+    # Optional: Set resource limits for production
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: '2'
+    #       memory: 2G
+    #     reservations:
+    #       cpus: '1'
+    #       memory: 1G
+
+networks:
+  bunkker-network:
+    driver: bridge
+
+volumes:
+  prisma_data:
+    driver: local

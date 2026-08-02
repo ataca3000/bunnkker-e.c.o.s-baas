@@ -135,7 +135,7 @@ export default function CRMPage() {
     const [loading, setLoading] = useState(true);
     const [isOffline, setIsOffline] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
-    const [filterType, setFilterType] = useState<CustomerType | 'Todos'>('Todos');
+    const [filterType, setFilterType] = useState<CustomerType | 'ALL'>('ALL');
     const [showModal, setShowModal] = useState(false);
     const [saving, setSaving] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
@@ -203,7 +203,7 @@ export default function CRMPage() {
             c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             c.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
             c.phone.includes(searchTerm);
-        const matchesType = filterType === 'Todos' || c.type === filterType;
+        const matchesType = filterType === 'ALL' || c.type === filterType;
         return matchesSearch && matchesType;
     });
 
@@ -412,7 +412,7 @@ export default function CRMPage() {
                     />
                     <select
                         value={filterType}
-                        onChange={e => setFilterType(e.target.value as CustomerType | 'Todos')}
+                        onChange={e => setFilterType(e.target.value as CustomerType | 'ALL')}
                         style={{
                             padding: '14px',
                             backgroundColor: 'rgba(15, 23, 42, 0.5)',
@@ -421,7 +421,7 @@ export default function CRMPage() {
                             color: '#f8fafc'
                         }}
                     >
-                        <option value="Todos">Todos</option>
+                        <option value="ALL">Todos</option>
                         <option value="Nuevo">Nuevo</option>
                         <option value="Frecuente">Frecuente</option>
                         <option value="VIP">VIP</option>

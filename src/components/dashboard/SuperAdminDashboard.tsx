@@ -293,9 +293,9 @@ export default function SuperAdminDashboard({
                         </p>
                     </div>
                     <a 
-                        href="#" // TODO: Poner el link real a Github Releases, Drive, etc.
+                        href="#download"
                         className="relative z-10 bg-white hover:bg-sky-50 text-sky-900 font-black uppercase tracking-widest py-4 px-8 rounded-xl shadow-lg transition-transform hover:scale-105 active:scale-95 whitespace-nowrap flex items-center gap-2"
-                        onClick={() => alert('¡Listo para compilar! Ejecuta npm run dist:win y sube el .exe a tu nube preferida para pegar el enlace aquí.')}
+                        onClick={(e) => { e.preventDefault(); alert('¡Listo para compilar! Ejecuta npm run dist:win y sube el .exe a tu nube preferida para pegar el enlace aquí.'); }}
                     >
                         <Terminal size={20} />
                         Descargar .exe Gratis

@@ -15,7 +15,7 @@
   "scripts": {
     
       
-  "dev": "concurrently \"next dev -p 3000\" \"node radio-server.js\"",
+  "dev": "npx concurrently \"next dev --webpack -p 3000\" \"node radio-server.js\"",
     
       
   "dev:https": "next dev --experimental-https -p 3000",
@@ -80,7 +80,7 @@
   "appId": "com.bunkkererp.erp",
     
       
-  "productName": "Camalion Topics ERP",
+  "productName": "BUNKKER E.C.O.S.",
     
       
   "copyright": "Copyright © 2026 brecha soluciones ds bunkker e.c.o.s",
@@ -572,9 +572,9 @@
     "axios": "^1.7.9",
     "fast-xml-parser": "^5.10.1",
     "shell-quote": "^1.9.0",
+      
     "next": "^15.5.19",
     "vitest": "^4.1.9",
-    "brace-expansion": "^2.0.1",
     "sharp": "^0.33.5",
     "uuid": "^10.0.0",
     "protobufjs": "^7.4.0",

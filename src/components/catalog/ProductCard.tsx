@@ -166,9 +166,9 @@ export function ProductDetailDrawer({ product, onClose, onFacturar }: ProductDet
             where('productId', '==', product.id),
             orderBy('date', 'desc')
         );
-        const unsub = onSnapshot(q, snap => {
-            setRealReviews(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-        }, err => console.error("Error loading reviews:", err));
+        const unsub = onSnapshot(q, (snap: any) => {
+            setRealReviews(snap.docs.map((d: any) => ({ id: d.id, ...d.data() })));
+        }, (err: any) => console.error("Error loading reviews:", err));
         return unsub;
     }, [product]);
 
@@ -185,7 +185,7 @@ export function ProductDetailDrawer({ product, onClose, onFacturar }: ProductDet
                             animate={{ x: 0 }}
                             exit={{ x: '100%' }}
                             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                            onClick={e => e.stopPropagation()}
+                            onClick={(e: React.MouseEvent) => e.stopPropagation()}
                             className="bg-white w-full max-w-full sm:max-w-[520px] h-full overflow-y-auto p-6 sm:p-10 relative shadow-2xl"
                         >
                             <button

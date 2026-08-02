@@ -31,6 +31,17 @@ LICENSE
 README.md
 .npmrc
 
+# Build output / caches (large, regenerated on build)
+.next/
+dist/
+dist-build-win/
+dist_electron/
+build/
+.firebase/
+playwright-report/
+test-results/
+lfeds/
+
 # Project exclusions
 obsoleto/
 .env.local
@@ -42,13 +53,11 @@ obsoleto/
 prisma/*.db
 prisma/*.db-wal
 prisma/*.db-shm
-dist/
-dist_electron/
-build/
 build-resources/
 mobile-app/
 scripts/
 unsupervised_topic_modeling-master/
+functions/
 .agents/
 .github/
 docs/

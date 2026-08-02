@@ -20,15 +20,33 @@ function OnboardingContent() {
     // Determine the base URL for the tenant showcase
     setUrlPrefix(`${window.location.protocol}//${window.location.host}/t/`);
     
-    // In a real implementation, we would call an API here like `/api/saas/verify-session?session_id=${sessionId}`
-    // which would securely return the 6-digit pairing code that the webhook just generated.
-    // For this MVP simulation, if there's a session ID, we mock the retrieval.
     if (sessionId) {
-      setTimeout(() => {
-        // Mocking the webhook's generated data retrieval
-        setSerialCode(Math.floor(100000 + Math.random() * 900000).toString());
-        setLoading(false);
-      }, 1500);
+      const verifySession = async (retries = 5) => {
+        try {
+          const res = await fetch(`/api/saas/verify-session?session_id=${sessionId}`);
+          if (res.status === 202) {
+            if (retries > 0) {
+              setTimeout(() => verifySession(retries - 1), 3000);
+            } else {
+              setLoading(false);
+            }
+            return;
+          }
+          
+          if (res.ok) {
+            const data = await res.json();
+            if (data.success) {
+              setSerialCode(data.code);
+            }
+          }
+          setLoading(false);
+        } catch (error) {
+          console.error("Error verifying session", error);
+          setLoading(false);
+        }
+      };
+
+      verifySession();
     } else {
       // If no session_id, maybe they came here directly by mistake
       setLoading(false);
@@ -53,7 +71,7 @@ function OnboardingContent() {
       <div className="min-h-screen bg-slate-950 flex items-center justify-center">
         <div className="text-white text-xl animate-pulse flex items-center gap-4">
           <div className="w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full animate-spin" />
-          Validando tu pago y provisionando tu servidor en la nube...
+          Confirmando pago con Stripe...
         </div>
       </div>
     );

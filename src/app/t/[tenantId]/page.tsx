@@ -1,8 +1,8 @@
 import React from 'react';
 import { Store, ShoppingCart } from 'lucide-react';
 
-export default function TenantStorefront({ params }: { params: { tenantId: string } }) {
-  const { tenantId } = params;
+export default async function TenantStorefront({ params }: { params: Promise<{ tenantId: string }> }) {
+  const { tenantId } = await params;
 
   return (
     <div className="min-h-screen bg-slate-50">

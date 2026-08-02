@@ -1,43 +1,148 @@
-name: CI/CD - Build & Push
+name: Pipeline CI/CD
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main, develop ]
   pull_request:
-    branches:
-      - main
+    branches: [ main, develop ]
 
 env:
-  REGISTRY: docker.io
-  IMAGE_NAME: terraform98/bunkker-erp
+  NODE_VERSION: '20'
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
+  # Validar código
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Instalar dependencias
+        run: npm ci
+      
+      - name: Ejecutar ESLint
+        run: npm run lint
+      
+      - name: Verificar TypeScript
+        run: npx tsc --noEmit
+
+  # Ejecutar pruebas
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Instalar dependencias
+        run: npm ci
+      
+      - name: Ejecutar pruebas
+        run: npm test
+
+  # Construir e impulsar imagen Docker
   build:
     runs-on: ubuntu-latest
-
+    needs: [lint, test]
+    permissions:
+      contents: read
+      packages: write
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4.1.7
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3.6.1
-
-      - name: Login to Docker Hub
-        if: ${{ secrets.GITHUB_PASSWORD != '' && github.event_name == 'push' }}
-        uses: docker/login-action@v3.2.0
-        continue-on-error: true
+      - uses: actions/checkout@v4
+      
+      - name: Configurar Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Iniciar sesión en Container Registry
+        if: github.event_name == 'push'
+        uses: docker/login-action@v3
         with:
-          username: terraform98
-          password: ${{ secrets.GITHUB_PASSWORD }}
-
-      - name: Build and push
-        uses: docker/build-push-action@v5.4.0
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Extraer metadatos
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix={{branch}}-
+      
+      - name: Construir e impulsar imagen Docker
+        uses: docker/build-push-action@v5
         with:
           context: .
-          push: ${{ github.event_name == 'push' }}
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  # Probar imagen Docker construida
+  docker-test:
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Configurar Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Construir imagen Docker
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          load: true
+          tags: bunkker-erp:test
+      
+      - name: Probar imagen Docker
+        run: |
+          docker run --rm -d \
+            --name test-container \
+            -p 3000:3000 \
+            -e NODE_ENV=production \
+            bunkker-erp:test
+          
+          # Esperar a que el contenedor esté saludable
+          sleep 10
+          
+          # Probar que el contenedor responde
+          docker exec test-container curl -f http://localhost:3000 || exit 1
+          
+          # Limpiar
+          docker stop test-container
+
+  # Escaneo de seguridad (opcional pero recomendado)
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Instalar dependencias
+        run: npm ci
+      
+      - name: Ejecutar npm audit
+        run: npm audit --audit-level=moderate || true

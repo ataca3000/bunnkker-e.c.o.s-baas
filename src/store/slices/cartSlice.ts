@@ -12,7 +12,7 @@ export const createCartSlice: StateCreator<
 
     addToCart: (product, quantity = 1) =>
         set((state) => {
-            const existing = state.cart.find((i) => i.id === product.id);
+            const existing = state.cart.find((i: any) => i.id === product.id);
             if (existing) {
                 if (existing.quantity + quantity > product.stock) return;
                 existing.quantity += quantity;
@@ -24,7 +24,7 @@ export const createCartSlice: StateCreator<
 
     removeFromCart: (productId) =>
         set((state) => {
-            state.cart = state.cart.filter((i) => i.id !== productId);
+            state.cart = state.cart.filter((i: any) => i.id !== productId);
         }),
 
     clearCart: () =>

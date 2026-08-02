@@ -44,7 +44,7 @@ export async function POST(req: Request) {
                 return NextResponse.json({ error: `El producto ${item.id} no existe` }, { status: 404 });
             }
 
-            const productData = productSnap.data();
+            const productData = productSnap.data() as any;
             
             // Seguridad Multi-Tenant
             if (productData?.tenantId !== tenantId) {
@@ -93,8 +93,8 @@ export async function POST(req: Request) {
         batch.set(orderRef, {
             id: orderId,
             tenantId,
-            customer: customerData || { name: decodedToken.name || 'Cliente Online', phone: '' },
-            customerEmail: decodedToken.email || '',
+            customer: customerData || { name: (decodedToken as any).name || 'Cliente Online', phone: '' },
+            customerEmail: (decodedToken as any).email || '',
             items: verifiedItems,
             total: orderTotal,
             developerFee,
@@ -114,7 +114,7 @@ export async function POST(req: Request) {
         batch.set(auditRef, {
             type: 'ORDER_CREATE_ONLINE',
             userId: userId,
-            userName: decodedToken.email || 'Cliente Online',
+            userName: (decodedToken as any).email || 'Cliente Online',
             userRole: 'client',
             description: `Pedido Seguro Online: ${orderId} por $${orderTotal}`,
             metadata: { orderId, total: orderTotal, stockDeducted: true },
