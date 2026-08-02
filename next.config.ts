@@ -1,21 +1,29 @@
 import type { NextConfig } from "next";
-import withPWAInit from "@ducanh2912/next-pwa";
 import path from "path";
 
-const isPwaDisabled = process.env.DISABLE_PWA === 'true' || process.env.NODE_ENV === 'development';
+let withPWA = (config: NextConfig) => config;
 
-const withPWA = withPWAInit({
-  dest: "public",
-  disable: isPwaDisabled,
-  register: true,
-  skipWaiting: true,
-});
+if (process.env.NODE_ENV === 'production' && process.env.DISABLE_PWA !== 'true') {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const withPWAInit = require("@ducanh2912/next-pwa").default;
+    withPWA = withPWAInit({
+      dest: "public",
+      disable: false,
+      register: true,
+      skipWaiting: true,
+    });
+  } catch (e: any) {
+    console.warn("[PWA] Plugin deshabilitado por falta de dependencias workbox:", e.message);
+  }
+}
 
 const nextConfig: NextConfig = {
+  output: 'standalone',
   reactStrictMode: false,
   outputFileTracingRoot: path.resolve(__dirname),
-  eslint: {
-    ignoreDuringBuilds: true,
+  turbopack: {
+    root: path.resolve(__dirname),
   },
   typescript: {
     ignoreBuildErrors: true,

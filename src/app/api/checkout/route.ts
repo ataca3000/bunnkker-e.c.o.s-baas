@@ -24,7 +24,7 @@ export async function POST(req: Request) {
         // 3. OBTENER DATOS DE LA PETICIÓN
         // Extraemos solo lo necesario. El email real del usuario lo sacamos de su token.
         const { priceId } = await req.json();
-        const email = decodedToken.email;
+        const email = (decodedToken as any).email;
 
         if (!priceId) {
              return NextResponse.json({ error: 'Falta el identificador de precio (priceId)' }, { status: 400 });

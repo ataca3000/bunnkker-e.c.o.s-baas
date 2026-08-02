@@ -125,7 +125,7 @@ export async function logAudit(action: AuditLog) {
 
         // Hacemos que Firebase guarde en segundo plano para que no congele la UI
         // si la conexión a internet está inestable o es lenta.
-        firebasePromise.catch(err => {
+        firebasePromise.catch((err: any) => {
             console.warn("⚠️ [AUDIT] Error o demora guardando auditoría en Firebase:", err);
         });
     } catch (error) {

@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
 
         // 2. Initialize Stripe
         const stripe = new Stripe(secretKey, {
-            apiVersion: '2026-05-27.dahlia', // Updated to match expected version
+            apiVersion: '2026-06-24.dahlia' as any, // Updated to match installed stripe package version
         });
 
         // 3. Create Checkout Session

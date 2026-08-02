@@ -49,32 +49,31 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: false, error: 'API Key de Facturapi no configurada en el servidor' }, { status: 503 });
         }
 
-        const facturapi = new Facturapi(apiKey);
         const body = await req.json();
-        const tenantId = req.headers.get('x-tenant-id') || 'default';
-        
-        // VULNERABILITY A FIXED: Server-Side Input Validation & Price Verification
-        // We only trust the 'productIds' sent by the client. We do NOT trust the prices.
-        const { customer, clientItems, payment_form, use } = body;
+        const { customer, items, payment_form, use, tenantId = 'default' } = body;
 
-        if (!clientItems || !Array.isArray(clientItems) || clientItems.length === 0) {
-            return NextResponse.json({ error: 'Lista de items inválida' }, { status: 400 });
+        if (!customer || !items || !Array.isArray(items) || items.length === 0) {
+            return NextResponse.json({ error: 'Datos de facturación o productos faltantes' }, { status: 400 });
         }
 
-        // Fetch the REAL prices from the database using the IDs provided by the client
+        const facturapiKey = await getFacturapiKey();
+        if (!facturapiKey) {
+            return NextResponse.json({ error: 'Sistema de facturación no configurado' }, { status: 500 });
+        }
+
+        const facturapi = new Facturapi(facturapiKey);
+
         const verifiedItems = [];
-        for (const item of clientItems) {
-            if (!item.id || !item.quantity) continue;
-            
+        for (const item of items) {
             const productDoc = await db.collection('products').doc(item.id).get();
             
             if (productDoc.exists) {
-                const productData = productDoc.data();
+                const productData = productDoc.data() as any;
                 verifiedItems.push({
                     product: {
                         description: productData?.name || 'Producto General',
-                        product_key: productData?.satKey || '01010101', // Clave SAT genérica por defecto
-                        price: productData?.price || 0, // PRECIO REAL DE LA BASE DE DATOS
+                        product_key: productData?.satKey || '01010101',
+                        price: productData?.price || 0,
                     },
                     quantity: item.quantity
                 });
@@ -89,7 +88,7 @@ export async function POST(req: NextRequest) {
         await db.collection('audit_logs').add({
             type: 'INVOICE_GENERATE',
             userId: uid,
-            userName: userData?.displayName || decodedToken.email,
+            userName: userData?.displayName || (decodedToken as any).email,
             userRole: userRole,
             description: `Generación de factura iniciada vía API para ${verifiedItems.length} items`,
             timestamp: new Date(),
@@ -97,13 +96,13 @@ export async function POST(req: NextRequest) {
         });
 
         // 4. GENERAR FACTURA CON DATOS VERIFICADOS
-        let invoice;
+        let invoice: any;
         let isQueued = false;
 
         try {
             invoice = await facturapi.invoices.create({
                 customer,
-                items: verifiedItems, // Array construido y verificado en el servidor
+                items: verifiedItems,
                 payment_form,
                 use,
                 type: 'I',
@@ -122,7 +121,7 @@ export async function POST(req: NextRequest) {
                         use,
                         type: 'I',
                         uid,
-                        userEmail: decodedToken?.email || 'unknown',
+                        userEmail: (decodedToken as any)?.email || 'unknown',
                         tenantId
                     }),
                     status: 'PENDING',
@@ -145,7 +144,7 @@ export async function POST(req: NextRequest) {
             let businessName = 'Nuestro Negocio';
             try {
                 const siteConfigSnap = await db.collection('settings').doc('site_config').get();
-                const siteConfigData = siteConfigSnap.data();
+                const siteConfigData = siteConfigSnap.data() as any;
                 if (siteConfigSnap.exists && siteConfigData?.businessName) {
                     businessName = siteConfigData.businessName;
                 }

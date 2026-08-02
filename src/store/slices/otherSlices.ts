@@ -9,11 +9,11 @@ export const createProductsSlice: StateCreator<ERPState, [['zustand/immer', neve
     setFloatingStock: (data) => set((state) => { state.floatingStock = data; }),
     addProduct: (product) => set((state) => { state.products.push(product as any); }),
     updateProduct: (product) => set((state) => { 
-        const i = state.products.findIndex(p => p.id === product.id);
+        const i = state.products.findIndex((p: any) => p.id === product.id);
         if (i !== -1) state.products[i] = product as any;
     }),
     deleteProduct: (id) => set((state) => { 
-        state.products = state.products.filter(p => p.id !== id);
+        state.products = state.products.filter((p: any) => p.id !== id);
     }),
 });
 

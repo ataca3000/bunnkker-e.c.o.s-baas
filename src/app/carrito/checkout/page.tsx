@@ -134,17 +134,17 @@ export default function CheckoutPage() {
             setProcessStatus('Creando tu pedido...');
 
             // 2. Crear el Pedido (Deduce de DB)
-            const res = await createOrder({
+            const res = await (createOrder as any)({
                 name: clientName,
                 phone: clientPhone,
                 address: method === 'delivery' ? clientAddress : 'Recoge en Tienda',
-                rfc: clientRfc || null,
-                regimenFiscal: clientRazonSocial || null,
+                rfc: clientRfc || undefined,
+                regimenFiscal: clientRazonSocial || undefined,
                 usoCFDI: 'G03',
                 deliveryMethod: method === 'pickup' ? 'pickup' : 'repartidor',
                 paymentMethod: 'pago_caja',
-                gpsCoords: clientGps || null,
-            }, false, false, true); // asRequest = true -> crea PENDING_PAYMENT
+                gpsCoords: clientGps || undefined,
+            }, false, false, true) as any; // asRequest = true -> crea PENDING_PAYMENT
 
             if (res && res.orderId) {
                 // 3. Confirmar la reserva flotante (se borra del socket porque ya está en DB)

@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
         let businessName = 'Nuestro Negocio';
         try {
             const siteConfigSnap = await db.collection('settings').doc('site_config').get();
-            const siteConfigData = siteConfigSnap.data();
+            const siteConfigData = siteConfigSnap.data() as any;
             if (siteConfigSnap.exists && siteConfigData?.businessName) {
                 businessName = siteConfigData.businessName;
             }

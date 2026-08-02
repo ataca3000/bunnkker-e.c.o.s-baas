@@ -26,9 +26,9 @@ export async function generateMetadata(): Promise<Metadata> {
 
   if (tenantId === 'default' || tenantId === 'admin.com') {
     return {
-      title: "TERRAFORM ERP | Sistema Integral",
-      description: "TERRAFORM ERP - Desarrollado por brechaopensource. El mejor sistema de gestión empresarial, punto de venta y logística.",
-      keywords: ["TERRAFORM ERP", "brechaopensource", "ERP", "punto de venta", "gestión empresarial", "facturación"],
+      title: "BUNKKER E.C.O.S. | Sistema ERP",
+      description: "BUNKKER E.C.O.S. — Ecosistema Comercial Offline Sincronizado. El mejor sistema de gestión empresarial, punto de venta y logística para PYMEs.",
+      keywords: ["BUNKKER", "BUNKKER ERP", "ERP", "punto de venta", "gestión empresarial", "facturación", "local-first"],
       manifest: '/manifest.json',
       verification: defaultVerification,
       alternates: {
@@ -39,10 +39,10 @@ export async function generateMetadata(): Promise<Metadata> {
         follow: true,
       },
       openGraph: {
-        title: "TERRAFORM ERP | Sistema Integral",
-        description: "TERRAFORM ERP - Desarrollado por brechaopensource. El mejor sistema de gestión empresarial, punto de venta y logística.",
+        title: "BUNKKER E.C.O.S. | Sistema ERP",
+        description: "BUNKKER E.C.O.S. — Ecosistema Comercial Offline Sincronizado. El mejor sistema de gestión empresarial, punto de venta y logística para PYMEs.",
         url: baseUrl,
-        siteName: "TERRAFORM ERP",
+        siteName: "BUNKKER E.C.O.S.",
         locale: "es_MX",
         type: "website",
       }
@@ -53,7 +53,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const storeName = tenantId.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   return {
     title: `${storeName} | Tienda`,
-    description: `Catálogo oficial de ${storeName}, impulsado de forma segura por TERRAFORM ERP.`,
+    description: `Catálogo oficial de ${storeName}, impulsado de forma segura por BUNKKER E.C.O.S.`,
     manifest: '/manifest.json',
     verification: defaultVerification,
     alternates: {
@@ -65,7 +65,7 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     openGraph: {
       title: `${storeName} | Tienda`,
-      description: `Catálogo oficial de ${storeName}, impulsado de forma segura por TERRAFORM ERP.`,
+      description: `Catálogo oficial de ${storeName}, impulsado de forma segura por BUNKKER E.C.O.S.`,
       url: baseUrl,
       siteName: storeName,
       locale: "es_MX",
@@ -99,7 +99,6 @@ export default async function RootLayout({
     <html lang="es">
       <body className={`${inter.className} bg-slate-900 text-slate-200 antialiased font-sans`}>
         <SchemaMarkup />
-        <ConnectionStatus />
         <UsbLockScreen />
         <div className="flex flex-col min-h-screen">
           <AuthProvider>

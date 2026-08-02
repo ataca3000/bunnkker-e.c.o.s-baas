@@ -423,10 +423,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 setTimeout(() => {
                     toast.info(
                         'Hay actualizaciones críticas disponibles. Contacta a brechaopensource para renovar tu licencia.',
-                        '📡 TERRAFORM ERP Online',
+                        '📡 BUNKKER E.C.O.S. Online',
                         10000
                     );
-                    sessionStorage.setItem('terraform_update_prompt', 'true');
+                    sessionStorage.setItem('bunkker_update_prompt', 'true');
                 }, 5000);
             }
         }

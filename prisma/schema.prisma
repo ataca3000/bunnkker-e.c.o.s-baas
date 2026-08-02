@@ -184,12 +184,15 @@ model ShrinkageLog {
 
 // Configuración Global y Licencia (El Cerebro Local)
 model AppConfig {
-  id          String   @id @default("global") // Solo debe existir un registro global
-  licenseType String   @default("TRIAL") // TRIAL, BASE, PRO
-  tenantId    String?  // El ID en la nube (ej. "ferreteria-martinez")
-  cloudToken  String?  // Token de seguridad para hablar con Firebase
-  pairedAt    DateTime?
-  updatedAt   DateTime @updatedAt
+  id             String    @id @default("global") // Solo debe existir un registro global
+  licenseType    String    @default("TRIAL") // TRIAL, BASE, PRO
+  tenantId       String?   // El ID en la nube (ej. "ferreteria-martinez")
+  cloudToken     String?   // Token de seguridad para hablar con Firebase
+  pairedAt       DateTime?
+  lastBackupAt   DateTime?
+  lastBackupSize Int?
+  lastBackupHash String?
+  updatedAt      DateTime  @updatedAt
 }
 
 // Transacciones del Enjambre P2P (Reserva y Comisión)

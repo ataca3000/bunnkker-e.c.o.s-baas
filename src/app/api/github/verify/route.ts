@@ -23,7 +23,7 @@ export async function GET(req: Request) {
             return NextResponse.json({ error: 'Instalación no encontrada. Verifica en unos segundos.' }, { status: 404 });
         }
 
-        const data = docSnap.data();
+        const data = docSnap.data() as any;
         if (data?.status !== 'active') {
             return NextResponse.json({ error: 'La instalación no está activa' }, { status: 400 });
         }

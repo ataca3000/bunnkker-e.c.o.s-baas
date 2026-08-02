@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
         
         // Obtener el rol desde la base de datos Firestore (colección 'users')
         const userDoc = await db.collection('users').doc(userId).get();
-        const role = userDoc.exists ? userDoc.data()?.role : undefined;
+        const role = userDoc.exists ? (userDoc.data() as any)?.role : undefined;
 
         // Regla: Solo Caja y Patio pueden sincronizar datos locales (Ventas o Entregas)
         if (role !== 'superadmin' && role !== 'sales' && role !== 'patio') {

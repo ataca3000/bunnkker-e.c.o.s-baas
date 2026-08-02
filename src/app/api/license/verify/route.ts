@@ -3,9 +3,9 @@ export const dynamic = 'force-dynamic';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
+import { adminDb } from '@/lib/firebase-admin';
 
 export async function GET() {
-    // Obtenemos el HWID inyectado por Electron al levantar el servidor
     const hwid = process.env.MACHINE_HWID;
     
     if (!hwid) {
@@ -23,45 +23,110 @@ export async function GET() {
             fs.mkdirSync(sysDir, { recursive: true });
         }
         
-        const licenseFile = path.join(sysDir, `license_${hwid}.json`);
-        let trialData;
+        const cacheFile = path.join(sysDir, 'license_cache.json');
+        let localData: any = null;
 
-        if (fs.existsSync(licenseFile)) {
-            trialData = JSON.parse(fs.readFileSync(licenseFile, 'utf8'));
-        } else {
-            trialData = {
-                hwid,
-                installDate: Date.now(),
-                trialDays: 15,
-                status: 'active'
-            };
-            fs.writeFileSync(licenseFile, JSON.stringify(trialData));
+        if (fs.existsSync(cacheFile)) {
+            try {
+                localData = JSON.parse(fs.readFileSync(cacheFile, 'utf8'));
+            } catch (e) {
+                console.error('Error parsing local cache file', e);
+            }
         }
 
-        const daysPassed = (Date.now() - trialData.installDate) / (1000 * 60 * 60 * 24);
-        const remainingDays = Math.max(0, Math.ceil(trialData.trialDays - daysPassed));
-        const isTrialActive = remainingDays > 0;
-        
-        // Simulación: Si hay internet, podríamos ir a adminDb de Firebase a ver si ya la compró.
-        // Si no la ha comprado, usamos el trial local:
+        const licenseKey = localData?.licenseKey;
 
-        if (isTrialActive) {
-            return NextResponse.json({ 
-                isValid: true, 
-                tier: 'pro',
-                hwid: hwid,
-                remainingDays,
-                message: `Licencia TRIAL activa. Quedan ${remainingDays} días.` 
-            });
+        // Intentar validación online
+        try {
+            let licenseDoc = null;
+
+            if (licenseKey) {
+                const docSnap = await adminDb.collection('licenses').doc(licenseKey).get();
+                if (docSnap.exists) {
+                    licenseDoc = docSnap.data();
+                }
+            }
+            
+            if (!licenseDoc) {
+                // Check by hwid in machineIds
+                const snap = await adminDb.collection('licenses').where('machineIds', 'array-contains', hwid).get();
+                if (!snap.empty) {
+                    licenseDoc = snap.docs[0].data();
+                }
+            }
+
+            if (licenseDoc) {
+                // Verify status
+                if (!licenseDoc.isActive) {
+                    // Licencia desactivada → modo freemium, sigue funcionando
+                    return NextResponse.json({ isValid: true, tier: 'standard', hwid, message: 'Licencia suspendida. Operando en modo gratuito.' });
+                }
+                if (licenseDoc.expiresAt && licenseDoc.expiresAt < Date.now()) {
+                    // Suscripción vencida → modo freemium, sigue funcionando
+                    return NextResponse.json({ isValid: true, tier: 'standard', hwid, message: 'Suscripción vencida. Operando en modo gratuito. ¡Renueva para recuperar IA y OMNIPULSE!' });
+                }
+                if (!licenseDoc.machineIds || !licenseDoc.machineIds.includes(hwid)) {
+                    // Máquina diferente: freemium también, no bloqueamos
+                    return NextResponse.json({ isValid: true, tier: 'standard', hwid, message: 'Máquina no registrada en esta licencia. Modo gratuito activo.' });
+                }
+
+                // Update local cache
+                const newCache = {
+                    licenseKey: licenseDoc.key,
+                    machineId: hwid,
+                    tier: 'pro',
+                    lastChecked: Date.now()
+                };
+                fs.writeFileSync(cacheFile, JSON.stringify(newCache));
+
+                return NextResponse.json({ 
+                    isValid: true, 
+                    tier: 'pro', 
+                    hwid, 
+                    message: 'Licencia válida online.' 
+                });
+            } else {
+                // Sin licencia en Firestore → modelo freemium, tier gratuito
+                return NextResponse.json({
+                    isValid: true,
+                    tier: 'standard',
+                    hwid,
+                    message: 'Modo gratuito activo. Actualiza a PRO para desbloquear IA, OMNIPULSE y backup en la nube.'
+                });
+            }
+        } catch (onlineError) {
+            console.error('Online validation failed, trying offline fallback', onlineError);
+            // Fallback to offline verification
+            if (localData && localData.lastChecked && localData.machineId === hwid) {
+                const daysPassed = (Date.now() - localData.lastChecked) / (1000 * 60 * 60 * 24);
+                if (daysPassed <= 7) {
+                    return NextResponse.json({ 
+                        isValid: true, 
+                        tier: 'pro', 
+                        hwid, 
+                        remainingDays: Math.max(0, Math.ceil(7 - daysPassed)),
+                        message: 'Licencia válida offline (período de gracia).' 
+                    });
+                } else {
+                    // Gracia offline expirada → freemium, no bloqueamos
+                    return NextResponse.json({ 
+                        isValid: true, 
+                        tier: 'standard', 
+                        hwid, 
+                        message: 'Modo gratuito activo. Reconecta a internet para verificar tu licencia PRO.' 
+                    });
+                }
+            }
         }
 
+        // Sin cache local ni Firestore → freemium funcional
         return NextResponse.json({ 
             isValid: true, 
-            tier: 'standard',
-            hwid: hwid,
-            remainingDays: 0,
-            message: 'TRIAL expirado. Ejecutando en modo Estándar.' 
+            tier: 'standard', 
+            hwid, 
+            message: 'Modo gratuito activo. Actualiza a PRO para desbloquear todas las funciones.' 
         });
+
     } catch (error) {
         console.error('License API Error:', error);
         return NextResponse.json({ 

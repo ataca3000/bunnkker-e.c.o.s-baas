@@ -13,7 +13,7 @@ export async function POST(req: Request) {
 
         // TODO: (Simbiosis LFEDS) Aquí conectaremos con la lógica de Tópicos/Excel local.
         // Por ahora, devolvemos un mock estructurado para probar el túnel sin fallos.
-        const mockResponse = {
+        const mockResponse: { found: boolean; message: string; data: any } = {
             found: false,
             message: "Módulo de búsqueda local en construcción",
             data: null

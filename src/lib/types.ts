@@ -1,143 +1,148 @@
+// src/lib/types.ts
+
 export interface Product {
-    id: string;
-    name: string;
-    price: number;
-    stock: number;
-    category: string;
-    image?: string;
-    images?: string[];
-    hasPdf?: boolean;
-    hasVideo?: boolean;
-    isBulk?: boolean;
-    unitType?: 'PZA' | 'KG' | 'M' | 'M3' | 'BOLSA' | 'CAJA';
-    barcode?: string;
-    rating?: number;
-    reviewCount?: number;
-    description?: string;
-    location?: { estante: string; fila: string };
+  id: string;
+  name: string;
+  price: number;
+  stock: number;
+  category?: string;
+  image?: string;
+  imageUrl?: string;
+  description?: string;
+  estante?: string;
+  fila?: string;
+  location?: {
     estante?: string;
     fila?: string;
-    orderIndex?: number;
-    warranty?: string;
-    sku?: string;
-    currency?: 'MXN';
-    minStockAlert?: number;
-    pdfUrl?: string;
-    specs?: Record<string, string>;
-    isAvailable?: boolean;
-    deliveryTimeDays?: number;
-    nodeId?: string;
-    aiClassificationId?: string;
+  };
+  barcode?: string;
+  satKey?: string;
+  weightKg?: number;
+  maxStock?: number;
+  minStock?: number;
+  tenantId?: string;
+  rating?: number;
+  reviewsCount?: number;
+  isOffer?: boolean;
+  offerPrice?: number;
+  [key: string]: any;
 }
 
 export interface CartItem extends Product {
-    quantity: number;
-}
-
-export interface UserProfile {
-    uid: string;
-    email: string;
-    displayName: string;
-    name?: string;
-    phone?: string;
-    address?: string;
-    role: 'superadmin' | 'admin' | 'inventory' | 'billing' | 'marketing' | 'sales' | 'node' | 'carga_descarga' | 'driver' | 'client';
-    nodeAccess: string[]; 
-    lastLogin: number;
-    tenantId?: string;
-    recoveryEmail?: string;
-    recoveryPhone?: string;
-    twoFactorConfigured?: boolean;
-    isPremium?: boolean;
-    needsSetup?: boolean;
-}
-
-export interface AppConfig {
-    facturapi_key: string;
-    bank_account: {
-        clabe: string;
-        bank_name: string;
-        beneficiary: string;
-    };
-    store_location: {
-        address: string;
-        maps_link: string;
-    };
-    contact_info: {
-        whatsapp: string;
-        email: string;
-    };
+  quantity: number;
+  productId?: string;
 }
 
 export interface Order {
-    id: string;
-    customer?: { name: string; phone: string; address: string; reference?: string; pickupTime?: string };
-    customerName?: string;
-    items: CartItem[];
-    total: number;
-    date?: string;
-    status: string; // 'paid' | 'cancelled' | 'pending' | 'pending_confirmation' | 'PREPARANDO' | 'NIGHT_QUEUE' | 'PENDIENTE_LLEGADA' | 'shipped' | 'delivered';
-    paymentMethod?: string;
-    invoiceFee?: number;
-    developerFee?: number;
-    ownerAutomationFee?: number;
-    vendedorId?: string;
-    vendedorName?: string;
-    driverId?: string;
-    deliveryPin?: string;
-    ventanilla?: string;
-    cajon?: string;
-    notes?: string;
-    rating?: number;
-    discount?: number;
-    discountReason?: string;
-    userId?: string;
-    subtotal?: number;
-    tax?: number;
-    paymentType?: 'delivery' | 'store_pickup';
-    depositAmount?: number;
-    billingId?: string;
-    createdAt?: number | any;
-    auditTrail?: any[];
-    deliveryType?: string;
-    deliveryMethod?: string;
+  id: string;
+  customer?: any;
+  customerName?: string;
+  customerPhone?: string;
+  customerEmail?: string;
+  items: CartItem[];
+  total: number;
+  date?: string;
+  createdAt?: string;
+  status: 'pending' | 'paid' | 'pending_payment' | 'pending_confirmation' | 'paid_pending_delivery' | 'NIGHT_QUEUE' | 'READY_TO_SHIP' | 'OUT_FOR_DELIVERY' | 'DELIVERED' | 'COMPLETED' | 'cancelled' | string;
+  expiresAt?: string | null;
+  paymentMethod?: string;
+  requiresInvoice?: boolean;
+  deliveryMethod?: string;
+  deliveryType?: string;
+  deliveryPin?: string;
+  vendedorId?: string;
+  vendedorName?: string;
+  confirmedAt?: string;
+  ventanilla?: string;
+  cajon?: string;
+  loadedBy?: string;
+  loadedByUid?: string;
+  loadingStartedAt?: string;
+  loadingFinishedAt?: string;
+  isLoaded?: boolean;
+  cancelledAt?: string;
+  assignedDriverId?: string;
+  [key: string]: any;
 }
 
-export interface DeliveryOrder {
-    id: string;
-    customerName: string;
-    customerPhone?: string;
-    customerRole?: string;
-    address: string;
-    lat?: number;
-    lng?: number;
-    status: 'available' | 'claimed' | 'completed' | 'rejected' | 'no_answer';
-    driverId?: string;
-    signatureData?: string | null;
-    photoData?: string | null;
-    completedAt?: string;
-    notes?: string;
-    total?: number;
-    deliveryPin?: string;
+export interface UserProfile {
+  uid: string;
+  displayName?: string;
+  email?: string;
+  role?: string;
+  isSuperAdmin?: boolean;
+  isAdmin?: boolean;
+  isReadOnly?: boolean;
+  isPremium?: boolean;
+  tenantId?: string;
+  facturapi_key?: string;
+  [key: string]: any;
 }
 
-export type ViewState = 'pool' | 'route' | 'delivery' | 'history';
+export interface UserSession {
+  uid: string;
+  role: string;
+  email?: string;
+  displayName?: string;
+  isPremium?: boolean;
+  facturapi_key?: string;
+  [key: string]: any;
+}
+
+export interface DeliveryOrder extends Order {
+  address?: string;
+  coordinates?: { lat: number; lng: number };
+}
 
 export interface Driver {
-    id: string;
-    name: string;
+  id: string;
+  name: string;
+  status: 'available' | 'busy' | 'offline';
+  activeOrderId?: string;
+  [key: string]: any;
 }
 
-export interface ShrinkageLog {
-    id: string;
-    productId: string;
-    productName: string;
-    productCategory: string;
-    type: 'missing' | 'found';
-    qty: number;
-    lossAmount: number;
-    createdAt: any;
-    createdBy: string;
+export type ViewState = 'pool' | 'map' | 'routes' | 'history' | 'route' | 'delivery';
+
+export interface BillingInfo {
+  name: string;
+  satKey: string;
+  businessName: string;
+  price: number;
+  [key: string]: any;
 }
 
+export interface ProductData {
+  tenantId: string;
+  stock: number;
+  name: string;
+  price: number;
+  image?: string;
+  [key: string]: any;
+}
+
+export interface SiteConfig {
+  businessName?: string;
+  [key: string]: any;
+}
+
+export interface Invoice {
+  id: string;
+  total: number;
+  subscription?: string;
+  [key: string]: any;
+}
+
+export interface GitHubVerifyPayload {
+  status: string;
+  tenantId: string;
+  domain: string;
+  login: string;
+  [key: string]: any;
+}
+
+export interface GitHubWebhookPayload {
+  docs: Array<{ data: () => { tenantId: string } }>;
+  [key: string]: any;
+}
 
