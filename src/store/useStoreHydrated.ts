@@ -9,7 +9,13 @@ export function useStoreHydrated<T, F>(
     const result = store(selector) as F;
     const [data, setData] = useState<F>();
 
-    useEffect(() => { setData(result); }, [result]);
+    useEffect(() => {
+        let isMounted = true;
+        Promise.resolve().then(() => {
+            if (isMounted) setData(result);
+        });
+        return () => { isMounted = false; };
+    }, [result]);
 
     return data;
 }

@@ -40,8 +40,8 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ success: false, error: 'CSV must contain a name column (nombre/name/producto)' }, { status: 400 });
         }
 
-        const productsToCreate = [];
-        const errors = [];
+        const productsToCreate: any[] = [];
+        const errors: any[] = [];
         let imported = 0;
         let skipped = 0;
 
@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
             const batch = productsToCreate.slice(i, i + BATCH_SIZE);
             try {
                 // SQLite in Prisma 5+ supports skipDuplicates
-                await prisma.product.createMany({
+                await (prisma.product as any).createMany({
                     data: batch,
                     skipDuplicates: true
                 });

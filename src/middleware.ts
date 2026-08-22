@@ -83,7 +83,9 @@ export default async function middleware(request: NextRequest) {
         );
         const expectedBuffer = await crypto.subtle.sign('HMAC', key, encoder.encode(`${role}:${session}`));
         const expectedHex = Array.from(new Uint8Array(expectedBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
-        signatureValid = timingSafeEqualHex(expectedHex, sig);
+        if (timingSafeEqualHex(expectedHex, sig)) {
+          signatureValid = true;
+        }
       } catch {
         signatureValid = false;
       }

@@ -32,7 +32,9 @@ README.md
 .npmrc
 
 # Build output / caches (large, regenerated on build)
-.next/
+.next/*
+!.next/standalone
+!.next/static
 dist/
 dist-build-win/
 dist_electron/

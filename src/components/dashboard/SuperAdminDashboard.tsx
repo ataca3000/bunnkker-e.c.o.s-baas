@@ -8,6 +8,7 @@ import { Users, FileText, ShieldCheck, CheckCircle, Maximize2, Share2, Map, Tren
 import Link from 'next/link';
 import StaffRankingWidget from '@/components/admin/StaffRankingWidget';
 import RestockAlertWidget from '@/components/admin/RestockAlertWidget';
+import { BalanceEffectWidget } from '@/components/BalanceEffectWidget';
 import ModuleSection from '@/components/admin/ModuleSection';
 import KPICard from '@/components/admin/KPICard';
 import { Palette, Globe } from 'lucide-react';
@@ -279,6 +280,9 @@ export default function SuperAdminDashboard({
                     </div>
                 </div>
             </header>
+
+            {/* ⚖️ Algoritmo Efecto Balanza: Rotación vs. Margen Puro (IA SuperAdmin) */}
+            <BalanceEffectWidget />
 
             {/* ── Banner de Descarga (Demo a Local) ──────────────────── */}
             {isDemo() && (

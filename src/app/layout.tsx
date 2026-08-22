@@ -80,7 +80,6 @@ export const viewport: Viewport = {
 
 import { CartProvider } from "@/context/CartContext";
 import { AuthProvider } from "@/context/AuthContext";
-import DevCodeMinimap from "@/components/DevCodeMinimap";
 import ClickSoundProvider from "@/components/ClickSoundProvider";
 import AntiDevTools from "@/components/AntiDevTools";
 import DeviceLockScreen from "@/components/DeviceLockScreen";
@@ -110,7 +109,6 @@ export default async function RootLayout({
                   {children}
                 </AdminLayout>
                 <AdminAsistente />
-                <DevCodeMinimap />
                 <ClickSoundProvider />
                 <UpdateNotification />
                 <Footer />

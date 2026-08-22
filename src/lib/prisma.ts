@@ -28,6 +28,7 @@ if (!globalForPrisma.prisma) {
   prisma.$connect().then(async () => {
     try {
       await prisma.$queryRawUnsafe(`PRAGMA journal_mode = WAL;`);
+      await prisma.$queryRawUnsafe(`PRAGMA busy_timeout = 10000;`);
       await prisma.$executeRawUnsafe(`PRAGMA synchronous = NORMAL;`);
       await prisma.$executeRawUnsafe(`PRAGMA temp_store = MEMORY;`);
       await prisma.$executeRawUnsafe(`PRAGMA cache_size = -20000;`); // 20MB cache RAM

@@ -152,27 +152,37 @@ export async function POST(request: NextRequest) {
 
     // ── 3. VALIDACIÓN DE CREDENCIALES (PIN / ID_TOKEN) ──────────────────────
     if (pin) {
-      // Evitar Pass-the-Hash: Validar que el PIN sea strictly de 4 a 6 dígitos numéricos
-      if (!/^\d{4,6}$/.test(pin)) {
+      // Validar que el PIN/Código sea de 4 a 6 caracteres alfanuméricos
+      const cleanPin = pin.trim();
+      if (!/^[A-Za-z0-9]{4,6}$/.test(cleanPin)) {
         await throttleDelay();
         return NextResponse.json(
-          { success: false, error: 'Formato de PIN inválido. Debe ser de 4 a 6 dígitos.' },
+          { success: false, error: 'Formato de PIN/Código inválido. Debe contener entre 4 y 6 caracteres.' },
           { status: 400 }
         );
       }
 
       const pinSha = hashPinSha256(pin);
 
-      // PINs Iniciales por Rol (Nombres y Roles Originales del Sistema)
+      // PINs Iniciales por Rol (Prefijo A + 4 números: A0000, A1111, A2222, etc.)
       const DEFAULT_INITIAL_PINS: Record<string, { role: string; name: string }> = {
-        '0000': { role: 'superadmin',     name: 'Dueño (Superadmin)' },
-        '1111': { role: 'admin',          name: 'Gerente (Admin)' },
-        '2222': { role: 'sales',          name: 'Cajero / Ventas' },
-        '3333': { role: 'inventory',      name: 'Bodeguero / Inventario' },
-        '4444': { role: 'marketing',      name: 'Diseñador / Marketing' },
-        '5555': { role: 'driver',         name: 'Chofer / Repartidor' },
-        '6666': { role: 'carga_descarga', name: 'Patio / Carga y Descarga' },
-        '7777': { role: 'pickup',         name: 'Mostrador / Pick Up' },
+        'A0000': { role: 'superadmin',     name: 'Dueño (Superadmin)' },
+        'A1111': { role: 'admin',          name: 'Gerente (Admin)' },
+        'A2222': { role: 'sales',          name: 'Cajero / Ventas' },
+        'A3333': { role: 'inventory',      name: 'Bodeguero / Inventario' },
+        'A4444': { role: 'marketing',      name: 'Diseñador / Marketing' },
+        'A5555': { role: 'driver',         name: 'Chofer / Repartidor' },
+        'A6666': { role: 'carga_descarga', name: 'Patio / Carga y Descarga' },
+        'A7777': { role: 'pickup',         name: 'Mostrador / Pick Up' },
+        // Fallback de compatibilidad legacy
+        '0000':  { role: 'superadmin',     name: 'Dueño (Superadmin)' },
+        '1111':  { role: 'admin',          name: 'Gerente (Admin)' },
+        '2222':  { role: 'sales',          name: 'Cajero / Ventas' },
+        '3333':  { role: 'inventory',      name: 'Bodeguero / Inventario' },
+        '4444':  { role: 'marketing',      name: 'Diseñador / Marketing' },
+        '5555':  { role: 'driver',         name: 'Chofer / Repartidor' },
+        '6666':  { role: 'carga_descarga', name: 'Patio / Carga y Descarga' },
+        '7777':  { role: 'pickup',         name: 'Mostrador / Pick Up' },
       };
 
       // Búsqueda del usuario por PIN hasheado (o fallback legacy)
@@ -255,8 +265,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Firma y cookies
+    const INITIAL_PINS = ['A0000', 'A1111', 'A2222', 'A3333', 'A4444', 'A5555', 'A6666', 'A7777', '0000', '1111', '2222', '3333', '4444', '5555', '6666', '7777'];
+    const isInitialPin = Boolean(pin && INITIAL_PINS.includes(pin));
     const sig = signRole(finalRole, finalUid);
-    const response = NextResponse.json({ success: true, role: finalRole, uid: finalUid });
+    const response = NextResponse.json({ success: true, role: finalRole, uid: finalUid, requirePinChange: isInitialPin });
     response.cookies.set('msj-session', finalUid, COOKIE_OPTS);
     response.cookies.set('msj-role', finalRole, COOKIE_OPTS);
     response.cookies.set('msj-role-sig', sig, COOKIE_OPTS);

@@ -9,10 +9,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import type { NetworkId, OmniAccountSummary } from '@/lib/omnipulse/types';
-
-// --- ALMACÉN EN MEMORIA (reemplazar por Prisma en producción) ---
-// Simula la base de datos de cuentas por tenant
-const accountStore: Map<string, OmniAccountSummary[]> = new Map();
+import { accountStore } from '@/lib/omnipulse/store';
 
 export async function GET(request: NextRequest) {
     const tenantId = request.headers.get('x-tenant-id') ?? 'default';

@@ -35,7 +35,8 @@ export default function DeliveryDashboard() {
             status: o.status === 'delivered' ? 'completed' : ((o.driverId || o.vendedorId) ? 'claimed' : 'available'),
             driverId: o.driverId || o.vendedorId || undefined,
             total: o.total,
-            deliveryPin: o.deliveryPin
+            deliveryPin: o.deliveryPin,
+            items: o.items || []
         } as DeliveryOrder));
 
     const [currentView, setCurrentView] = useState<ViewState>('pool');
