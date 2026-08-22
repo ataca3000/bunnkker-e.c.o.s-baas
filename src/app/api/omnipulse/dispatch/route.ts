@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { resolveSpintax } from '@/lib/omnipulse/spintax';
 import type { NetworkId, DispatchResult, DispatchStatus } from '@/lib/omnipulse/types';
+import { dispatchResults, postStore } from '@/lib/omnipulse/store';
 
 const JITTER_MIN_MS = 4_000;
 const JITTER_MAX_MS = 12_000;
@@ -16,11 +17,6 @@ const JITTER_MAX_MS = 12_000;
 function humanJitter(): number {
     return Math.floor(Math.random() * (JITTER_MAX_MS - JITTER_MIN_MS + 1)) + JITTER_MIN_MS;
 }
-
-// --- ALMACÉN DE RESULTADOS EN MEMORIA ---
-// En prod: Prisma OmniDispatch + OmniLog
-export const dispatchResults: Map<string, DispatchResult[]> = new Map();
-export const postStore: Map<string, { body: string; hashtags: string; mediaUrls: string[]; useSpintax: boolean }> = new Map();
 
 /**
  * Llama al adaptador correcto según la red social.

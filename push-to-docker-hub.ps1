@@ -2,7 +2,7 @@
 # Uso: .\push-to-docker-hub.ps1
 
 param(
-    [string]$ImageName = "camalion-topics-erp",
+    [string]$ImageName = "camalion-erp",
     [string]$Version = "latest",
     [string]$DockerHubUser = "terraform98"
 )

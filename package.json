@@ -15,7 +15,7 @@
   "scripts": {
     
       
-  "dev": "npx concurrently \"next dev --webpack -p 3000\" \"node radio-server.js\"",
+  "dev": "node node_modules/concurrently/dist/bin/index.js \"next dev -p 3000\" \"node radio-server.js\"",
     
       
   "dev:https": "next dev --experimental-https -p 3000",

@@ -81,7 +81,7 @@ export default function MyRoute({
         <div className="h-64 w-full bg-slate-800 relative z-0 flex items-center justify-center">
           <AdvancedMap 
             mode="route" 
-            markers={localOrders.map(o => ({ id: o.id, lat: o.lat || 19.4326, lng: o.lng || -99.1332, title: o.customerName, description: o.address }))}
+            markers={localOrders.map(o => ({ id: o.id, lat: o.lat || 19.4326, lng: o.lng || -99.1332, title: o.customerName || 'Cliente', description: o.address || '' }))}
             routeIndices={localOrders.map((_, i) => i)}
             useOfflineTiles={true}
           />
@@ -90,12 +90,12 @@ export default function MyRoute({
             <div className="bg-slate-900/80 backdrop-blur-md border border-white/10 rounded-xl p-4 shadow-xl flex items-center justify-between">
                <div>
                  <span className="text-emerald-400 text-xs font-bold uppercase tracking-wider flex items-center gap-1 mb-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Siguiente Parada</span>
-                 <h2 className="text-md font-bold text-white line-clamp-1">{orders[0].address}</h2>
+                 <h2 className="text-md font-bold text-white line-clamp-1">{orders[0].address || 'Dirección no disponible'}</h2>
                </div>
                <button 
                   onClick={() => {
-                    const waypoints = orders.slice(1).map(o => encodeURIComponent(o.address)).join('|');
-                    const dest = encodeURIComponent(orders[0].address);
+                    const waypoints = orders.slice(1).map(o => encodeURIComponent(o.address || '')).join('|');
+                    const dest = encodeURIComponent(orders[0].address || '');
                     const url = `https://www.google.com/maps/dir/?api=1&destination=${dest}${waypoints ? `&waypoints=${waypoints}` : ''}`;
                     window.open(url, '_blank');
                   }}

@@ -1,356 +1,370 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
-import { ShieldCheck, Lock, Loader2, QrCode, KeyRound, ArrowRight } from 'lucide-react';
+import { 
+  ShieldCheck, Lock, Loader2, UserPlus, LogIn, KeyRound, 
+  ArrowRight, Sparkles, MapPin, Receipt, CheckCircle2, Store, X
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import Link from 'next/link';
-import { Html5QrcodeScanner } from 'html5-qrcode';
 
 export default function LoginPage() {
-    const { networkMode, user, profile } = useAuth();
-    const [loading, setLoading] = useState(false);
-    const [mode, setMode] = useState<'pin' | 'qr'>('pin');
-    const [pin, setPin] = useState('');
-    const [error, setError] = useState('');
-    const [hostname, setHostname] = useState('Mi Empresa');
-    const [checkingSetup, setCheckingSetup] = useState(true);
-    const [bgImage, setBgImage] = useState('/bg-default.jpg');
-    const router = useRouter();
+  const { user, profile } = useAuth();
+  const router = useRouter();
 
-    useEffect(() => {
-        if (typeof window !== 'undefined') {
-            const host = window.location.hostname;
-            setHostname(host.includes('localhost') ? 'Mi Empresa Local' : host);
-            // Limpiar cookies viejas o desalineadas de arranques anteriores
-            fetch('/api/auth/session', { method: 'DELETE' }).catch(() => {});
+  // Estados del Formulario de Cliente Final
+  const [isRegisterMode, setIsRegisterMode] = useState(false);
+  const [clientForm, setClientForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    password: '',
+    address: '',
+    rfc: ''
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
+
+  // Estados para Acceso Discreto por Candado (Trabajadores / Admin)
+  const [showStaffModal, setShowStaffModal] = useState(false);
+  const [staffPin, setStaffPin] = useState('');
+
+  // Auto-ruteo si ya hay sesión activa
+  useEffect(() => {
+    if (user && profile) {
+      switch (profile.role) {
+        case 'superadmin': router.push('/dashboard'); break;
+        case 'admin': router.push('/dashboard/inventory'); break;
+        case 'sales': router.push('/dashboard/sales'); break;
+        case 'inventory': router.push('/dashboard'); break;
+        case 'driver': router.push('/dashboard/delivery'); break;
+        case 'carga_descarga': router.push('/dashboard'); break;
+        case 'marketing': router.push('/dashboard'); break;
+        default: router.push('/cuenta');
+      }
+    }
+  }, [user, profile, router]);
+
+  // Login de Cliente Final (Email/Password)
+  const handleClientSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    setSuccessMsg('');
+
+    try {
+      if (isRegisterMode) {
+        // Registro de Cliente
+        if (!clientForm.name || !clientForm.email || !clientForm.password) {
+          setError('Por favor completa los campos obligatorios (Nombre, Email y Contraseña).');
+          setLoading(false);
+          return;
         }
 
-        const initApp = async () => {
-            setCheckingSetup(false);
-        };
-        initApp();
-    }, []);
+        const res = await fetch('/api/auth/register-client', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(clientForm)
+        });
 
-    // Ruteo Automático por Rol
-    useEffect(() => {
-        if (user && profile) {
-            switch (profile.role) {
-                case 'superadmin': router.push('/dashboard'); break;
-                case 'admin': router.push('/dashboard/inventory'); break;
-                case 'sales': router.push('/dashboard/sales'); break;
-                case 'inventory': router.push('/dashboard'); break;
-                case 'carga_descarga': router.push('/dashboard'); break;
-                case 'marketing': router.push('/dashboard'); break;
-                case 'driver': router.push('/dashboard/delivery'); break;
-                case 'node': router.push('/scan'); break;
-                case 'client': router.push('/cuenta'); break;
-                default: router.push('/catalogo');
-            }
+        const data = await res.json();
+        if (res.ok && data.success) {
+          setSuccessMsg('¡Cuenta creada con éxito! Redirigiendo...');
+          setTimeout(() => {
+            window.location.href = '/cuenta';
+          }, 1200);
+        } else {
+          setError(data.error || 'No se pudo crear la cuenta de cliente.');
         }
-    }, [user, profile, router]);
-
-    // Lógica del Scanner QR
-    useEffect(() => {
-        if (mode === 'qr') {
-            const scanner = new Html5QrcodeScanner(
-                "reader",
-                { fps: 10, qrbox: { width: 250, height: 250 } },
-                false
-            );
-            scanner.render(
-                (decodedText: string) => {
-                    scanner.clear();
-                    handleAuthWithCode(decodedText);
-                },
-                (error: any) => {
-                    // ignore scan errors
-                }
-            );
-
-            return () => {
-                scanner.clear().catch(console.error);
-            };
+      } else {
+        // Inicio de sesión de Cliente
+        const res = await fetch('/api/auth/session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: clientForm.email, password: clientForm.password, isClientLogin: true })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          window.location.href = '/cuenta';
+        } else {
+          setError(data.error || 'Correo o contraseña incorrectos.');
         }
-    }, [mode]);
+      }
+    } catch {
+      setError('Error de conexión con el servidor.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const [isFirstBoot, setIsFirstBoot] = useState(false);
-    const [setupForm, setSetupForm] = useState({ name: '', email: '', pin: '', confirmPin: '' });
-
-    useEffect(() => {
-        // Verificar si la base de datos está vacía al cargar
-        const checkUsers = async () => {
-            try {
-                const res = await fetch('/api/auth/session', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ pin: '000000' }) // Dummy pin to trigger count
-                });
-                const data = await res.json();
-                if (data.setupRequired) {
-                    setIsFirstBoot(true);
-                }
-            } catch (err) {
-                console.error("Error checking boot state:", err);
-            }
-        };
-        checkUsers();
-    }, []);
-
-    const handleAuthWithCode = async (code: string) => {
-        setLoading(true);
-        setError('');
-
-        try {
-            const { getDeviceFingerprint } = await import('@/lib/fingerprint');
-            const deviceId = getDeviceFingerprint();
-            
-            const res = await fetch('/api/auth/session', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ pin: code, deviceId })
-            });
-            const data = await res.json();
-
-            if (res.ok && data.success) {
-                const newSessionId = typeof crypto !== 'undefined' && crypto.randomUUID 
-                  ? crypto.randomUUID().replace(/-/g, '') 
-                  : Array.from(typeof crypto !== 'undefined' && crypto.getRandomValues ? crypto.getRandomValues(new Uint8Array(16)) : [1,2,3,4,5,6,7,8], b => b.toString(16).padStart(2, '0')).join('');
-                localStorage.setItem('msj-session-id', newSessionId);
-
-                if (data.requirePinChange) {
-                    window.location.href = '/onboarding/pin';
-                } else {
-                    window.location.href = '/dashboard';
-                }
-            } else if (data.setupRequired) {
-                setIsFirstBoot(true);
-            } else {
-                setError(data.error || 'PIN incorrecto o acceso denegado.');
-            }
-        } catch (err) {
-            setError('Error de conexión con el servidor local.');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleSetupSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (setupForm.pin !== setupForm.confirmPin) {
-            setError('Los PINs de seguridad no coinciden.');
-            return;
-        }
-        setLoading(true);
-        setError('');
-
-        try {
-            const res = await fetch('/api/auth/setup', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    name: setupForm.name,
-                    email: setupForm.email,
-                    pin: setupForm.pin
-                })
-            });
-            const data = await res.json();
-
-            if (res.ok && data.success) {
-                // Logearse inmediatamente con el PIN creado
-                setIsFirstBoot(false);
-                handleAuthWithCode(setupForm.pin);
-            } else {
-                setError(data.error || 'Error al guardar la clave inicial.');
-            }
-        } catch (err) {
-            setError('Error de comunicación con el servicio de arranque.');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handlePinSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        handleAuthWithCode(pin);
-    };
-
-    if (checkingSetup) {
-        return <div className="min-h-screen bg-slate-900 flex items-center justify-center"><Loader2 className="animate-spin text-purple-500" size={48} /></div>;
+  // Login Discreto por PIN para Trabajadores / Staff
+  const handleStaffPinAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!staffPin || staffPin.length < 4) {
+      setError('El PIN debe tener entre 4 y 6 dígitos numéricos.');
+      return;
     }
 
-    return (
-        <div className="min-h-screen relative flex flex-col items-center justify-center p-6 font-sans">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img 
-                src={bgImage} 
-                alt="Background" 
-                className="absolute inset-0 w-full h-full object-cover"
+    setLoading(true);
+    setError('');
+
+    try {
+      const { getDeviceFingerprint } = await import('@/lib/fingerprint');
+      const deviceId = getDeviceFingerprint();
+
+      const res = await fetch('/api/auth/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin: staffPin, deviceId })
+      });
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        // Acceso directo de lleno al Dashboard
+        window.location.href = '/dashboard';
+      } else {
+        setError(data.error || 'PIN de acceso denegado.');
+      }
+    } catch {
+      setError('Error de conexión con el servidor de la tienda.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-950 text-white relative flex flex-col items-center justify-center p-4 sm:p-6 overflow-hidden">
+      
+      {/* Fondo con brillo HSL */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-sky-500/10 blur-[140px] rounded-full pointer-events-none" />
+
+      {/* 🔒 BOTÓN DE CANDADO DISCRETO (Acceso Trabajadores / Admin en la Esquina Superior Derecha) */}
+      <div className="absolute top-5 right-5 z-40">
+        <button
+          onClick={() => {
+            setError('');
+            setShowStaffModal(true);
+          }}
+          className="group flex items-center gap-2 bg-slate-900/80 hover:bg-slate-800 backdrop-blur-xl border border-white/10 hover:border-amber-500/50 px-3.5 py-2 rounded-full shadow-lg transition-all duration-300 active:scale-95 text-slate-300 hover:text-white"
+          title="Acceso Exclusivo Personal / Staff (PIN 🔒)"
+        >
+          <div className="p-1 rounded-full bg-amber-500/20 text-amber-400 group-hover:scale-110 transition-transform">
+            <Lock className="w-3.5 h-3.5" />
+          </div>
+          <span className="text-xs font-bold tracking-wider hidden sm:inline">Acceso Staff</span>
+        </button>
+      </div>
+
+      {/* TARJETA PRINCIPAL: CLIENTES FINALES */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="w-full max-w-lg bg-slate-900/80 backdrop-blur-2xl border border-white/10 rounded-3xl p-6 sm:p-10 shadow-2xl relative z-10 overflow-hidden"
+      >
+        <div className="flex flex-col items-center text-center mb-8">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-sky-500 to-blue-600 flex items-center justify-center text-white shadow-lg shadow-sky-500/30 mb-4">
+            <Store className="w-7 h-7" />
+          </div>
+          <h1 className="text-2xl font-black text-white tracking-tight">
+            {isRegisterMode ? 'Crear Cuenta de Cliente' : 'Bienvenido a tu Tienda'}
+          </h1>
+          <p className="text-xs text-slate-400 mt-1 max-w-sm">
+            {isRegisterMode 
+              ? 'Guarda tus datos de entrega, acumula puntos de descuento y gestiona tus facturas.'
+              : 'Ingresa a tu portal de compras para rastrear pedidos y solicitar facturas CFDI.'}
+          </p>
+        </div>
+
+        {/* Formulario Cliente */}
+        <form onSubmit={handleClientSubmit} className="space-y-4">
+          {error && (
+            <div className="p-3.5 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-xs font-semibold text-center">
+              {error}
+            </div>
+          )}
+
+          {successMsg && (
+            <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-400 text-xs font-semibold text-center">
+              {successMsg}
+            </div>
+          )}
+
+          {isRegisterMode && (
+            <div>
+              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Nombre Completo *</label>
+              <input
+                type="text"
+                required
+                value={clientForm.name}
+                onChange={e => setClientForm({ ...clientForm, name: e.target.value })}
+                placeholder="Ej. Juan Pérez"
+                className="w-full bg-slate-950/70 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-sky-500 transition-colors"
+              />
+            </div>
+          )}
+
+          <div>
+            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Correo Electrónico *</label>
+            <input
+              type="email"
+              required
+              value={clientForm.email}
+              onChange={e => setClientForm({ ...clientForm, email: e.target.value })}
+              placeholder="tu@correo.com"
+              className="w-full bg-slate-950/70 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-sky-500 transition-colors"
             />
-            <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm mix-blend-multiply pointer-events-none"></div>
-            
-            <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-slate-900/70 backdrop-blur-xl border border-white/10 w-full max-w-lg rounded-[40px] p-10 shadow-2xl relative z-10"
+          </div>
+
+          <div>
+            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Contraseña *</label>
+            <input
+              type="password"
+              required
+              value={clientForm.password}
+              onChange={e => setClientForm({ ...clientForm, password: e.target.value })}
+              placeholder="••••••••"
+              className="w-full bg-slate-950/70 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-sky-500 transition-colors"
+            />
+          </div>
+
+          {isRegisterMode && (
+            <>
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Teléfono de Contacto</label>
+                <input
+                  type="tel"
+                  value={clientForm.phone}
+                  onChange={e => setClientForm({ ...clientForm, phone: e.target.value })}
+                  placeholder="55 1234 5678"
+                  className="w-full bg-slate-950/70 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-sky-500 transition-colors"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Dirección de Entrega</label>
+                <input
+                  type="text"
+                  value={clientForm.address}
+                  onChange={e => setClientForm({ ...clientForm, address: e.target.value })}
+                  placeholder="Calle, Número, Colonia, C.P."
+                  className="w-full bg-slate-950/70 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-sky-500 transition-colors"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">RFC (Para Facturación Opcional)</label>
+                <input
+                  type="text"
+                  value={clientForm.rfc}
+                  onChange={e => setClientForm({ ...clientForm, rfc: e.target.value.toUpperCase() })}
+                  placeholder="XAXX010101000"
+                  className="w-full bg-slate-950/70 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-sky-500 uppercase transition-colors"
+                />
+              </div>
+            </>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full mt-4 py-3.5 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-bold text-sm shadow-lg shadow-sky-500/25 flex items-center justify-center gap-2 transition-all active:scale-[0.99]"
+          >
+            {loading ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <>
+                <span>{isRegisterMode ? 'Crear mi Cuenta de Cliente' : 'Iniciar Sesión'}</span>
+                <ArrowRight className="w-4 h-4" />
+              </>
+            )}
+          </button>
+        </form>
+
+        {/* Cambiar entre Login y Registro */}
+        <div className="mt-6 pt-6 border-t border-slate-800 text-center">
+          <button
+            type="button"
+            onClick={() => {
+              setError('');
+              setIsRegisterMode(!isRegisterMode);
+            }}
+            className="text-xs text-sky-400 hover:text-sky-300 font-semibold transition-colors"
+          >
+            {isRegisterMode 
+              ? '¿Ya tienes cuenta de cliente? Inicia Sesión' 
+              : '¿Nuevo en la tienda? Registra tus datos aquí'}
+          </button>
+        </div>
+      </motion.div>
+
+      {/* 🔒 MODAL DE ACCESO DISCRETO PARA TRABAJADORES Y ADMIN (Activado por el candado) */}
+      <AnimatePresence>
+        {showStaffModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="w-full max-w-sm bg-slate-900 border border-amber-500/40 rounded-3xl p-6 sm:p-8 shadow-[0_0_50px_rgba(245,158,11,0.2)] relative overflow-hidden"
             >
-                <header className="flex flex-col items-center mb-8">
-                    <div className="p-4 rounded-3xl mb-4 shadow-inner bg-amber-500/20 text-amber-400 border border-amber-500/30">
-                        <ShieldCheck size={48} strokeWidth={2} />
-                    </div>
-                    <h1 className="text-3xl font-[950] text-white uppercase tracking-tight leading-none mb-2 drop-shadow-md text-center">{hostname}</h1>
-                    <p className="font-bold text-[0.65rem] uppercase tracking-[0.2em] text-slate-400">
-                        {isFirstBoot ? '🛠️ Configuración Inicial' : 'Acceso Restringido • Personal'}
-                    </p>
-                </header>
+              <button
+                onClick={() => setShowStaffModal(false)}
+                className="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg bg-slate-800"
+              >
+                <X className="w-5 h-5" />
+              </button>
 
-                <AnimatePresence mode="wait">
-                    {error && (
-                        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="bg-red-500/20 text-red-200 text-xs font-bold p-4 rounded-2xl border border-red-500/50 mb-6 backdrop-blur-md text-center">
-                            {error}
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+              <div className="flex flex-col items-center text-center mb-6">
+                <div className="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center mb-3">
+                  <Lock className="w-6 h-6" />
+                </div>
+                <h2 className="text-lg font-bold text-white">Acceso al Sistema</h2>
+                <p className="text-xs text-slate-400 mt-1">Ingresa tu PIN para acceder al panel de control.</p>
+              </div>
 
-                {isFirstBoot ? (
-                    <motion.form key="setup" initial={{ opacity: 0 }} animate={{ opacity: 1 }} onSubmit={handleSetupSubmit} className="space-y-4">
-                        <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs leading-normal mb-2 text-center">
-                            <strong>Bienvenido a BUNKKER.</strong> Crea la cuenta de Administrador Principal y define tu clave de seguridad para iniciar.
-                        </div>
-                        <div>
-                            <label className="text-[10px] font-bold text-slate-400 uppercase ml-2 tracking-wider">Nombre del Propietario</label>
-                            <input 
-                                type="text" placeholder="Ej. Juan Pérez" required
-                                value={setupForm.name} onChange={(e) => setSetupForm({ ...setupForm, name: e.target.value })}
-                                className="w-full mt-1.5 py-3 px-4 bg-slate-800/80 border border-slate-700/50 rounded-xl text-sm text-white outline-none focus:border-amber-500" 
-                            />
-                        </div>
-                        <div>
-                            <label className="text-[10px] font-bold text-slate-400 uppercase ml-2 tracking-wider">Correo Electrónico</label>
-                            <input 
-                                type="email" placeholder="admin@minegocio.com" required
-                                value={setupForm.email} onChange={(e) => setSetupForm({ ...setupForm, email: e.target.value })}
-                                className="w-full mt-1.5 py-3 px-4 bg-slate-800/80 border border-slate-700/50 rounded-xl text-sm text-white outline-none focus:border-amber-500" 
-                            />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="text-[10px] font-bold text-slate-400 uppercase ml-2 tracking-wider">PIN (4-6 dígitos)</label>
-                                <input 
-                                    type="password" placeholder="••••" required maxLength={6}
-                                    value={setupForm.pin} onChange={(e) => setSetupForm({ ...setupForm, pin: e.target.value.replace(/\D/g, '') })}
-                                    className="w-full mt-1.5 py-3 px-4 bg-slate-800/80 border border-slate-700/50 rounded-xl text-center font-mono text-xl text-white outline-none focus:border-amber-500" 
-                                />
-                            </div>
-                            <div>
-                                <label className="text-[10px] font-bold text-slate-400 uppercase ml-2 tracking-wider">Confirmar PIN</label>
-                                <input 
-                                    type="password" placeholder="••••" required maxLength={6}
-                                    value={setupForm.confirmPin} onChange={(e) => setSetupForm({ ...setupForm, confirmPin: e.target.value.replace(/\D/g, '') })}
-                                    className="w-full mt-1.5 py-3 px-4 bg-slate-800/80 border border-slate-700/50 rounded-xl text-center font-mono text-xl text-white outline-none focus:border-amber-500" 
-                                />
-                            </div>
-                        </div>
-
-                        <button 
-                            disabled={loading || setupForm.pin.length < 4}
-                            className="w-full mt-4 text-slate-900 py-4.5 rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl active:scale-[0.98] transition-all flex justify-center items-center gap-3 disabled:opacity-50 border bg-gradient-to-r from-amber-400 to-amber-600 shadow-amber-900/30 border-amber-500/30"
-                        >
-                            {loading ? <Loader2 className="animate-spin" /> : "Guardar y Abrir Sistema"}
-                        </button>
-                    </motion.form>
-                ) : (
-                    <>
-                        <div className="flex bg-slate-800/50 p-1 rounded-2xl mb-8">
-                            <button 
-                                onClick={() => setMode('pin')}
-                                className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider rounded-xl transition-all flex justify-center items-center gap-2 ${mode === 'pin' ? 'bg-amber-500 text-white shadow-lg shadow-amber-900/20' : 'text-slate-400 hover:text-white'}`}
-                            >
-                                <KeyRound size={16} /> PIN Acceso
-                            </button>
-                            <button 
-                                onClick={() => setMode('qr')}
-                                className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider rounded-xl transition-all flex justify-center items-center gap-2 ${mode === 'qr' ? 'bg-amber-500 text-white shadow-lg shadow-amber-900/20' : 'text-slate-400 hover:text-white'}`}
-                            >
-                                <QrCode size={16} /> Escanear QR
-                            </button>
-                        </div>
-
-                        {mode === 'pin' ? (
-                            <motion.form key="pin" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onSubmit={handlePinSubmit} className="space-y-6">
-                                <div className="space-y-2">
-                                    <label className="text-[0.7rem] font-black text-slate-400 uppercase ml-2 tracking-wider">PIN de Seguridad (4 a 6 dígitos)</label>
-                                    <div className="relative">
-                                        <Lock className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-                                        <input 
-                                            type="password" placeholder="••••" required minLength={4} maxLength={6}
-                                            value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
-                                            className="w-full py-5 pl-[68px] pr-6 bg-slate-800/80 border border-slate-700/50 rounded-2xl focus:border-amber-500 focus:bg-slate-800 focus:ring-1 focus:ring-amber-500 outline-none transition-all font-mono text-2xl text-center tracking-[1em] text-white placeholder-slate-600" 
-                                        />
-                                    </div>
-                                </div>
-
-                                <button 
-                                    disabled={loading || pin.length < 4}
-                                    className="w-full mt-4 text-slate-900 py-5 rounded-2xl font-black uppercase tracking-widest text-sm shadow-xl active:scale-[0.98] transition-all flex justify-center items-center gap-3 disabled:opacity-50 border bg-gradient-to-r from-amber-400 to-amber-600 hover:from-amber-300 hover:to-amber-500 shadow-amber-900/30 border-amber-500/30"
-                                >
-                                    {loading ? <Loader2 className="animate-spin" /> : "Desbloquear Sistema"}
-                                </button>
-                            </motion.form>
-                        ) : (
-                            <motion.div key="qr" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center">
-                                <style dangerouslySetInnerHTML={{__html: `
-                                    #reader { border: none !important; background: transparent !important; }
-                                    #reader__dashboard_section_csr span { color: #94a3b8 !important; font-size: 0.8rem; font-family: monospace; }
-                                    #reader__dashboard_section_csr button { 
-                                        background: #f59e0b !important; color: #1e293b !important; 
-                                        border: none !important; padding: 10px 20px !important; 
-                                        border-radius: 12px !important; font-weight: 800 !important; 
-                                        text-transform: uppercase !important; font-size: 0.75rem !important;
-                                        margin: 10px 0 !important; cursor: pointer; transition: all 0.2s;
-                                    }
-                                    #reader__dashboard_section_csr button:hover { opacity: 0.9 !important; transform: scale(0.98); }
-                                    #reader select { 
-                                        background: #1e293b !important; color: #cbd5e1 !important; 
-                                        border: 1px solid #334155 !important; padding: 8px !important; 
-                                        border-radius: 8px !important; outline: none; margin-bottom: 10px;
-                                    }
-                                    #reader__camera_selection { max-width: 100%; }
-                                    #reader video { border-radius: 16px !important; object-fit: cover !important; }
-                                    #html5-qrcode-anchor-scan-type-change { color: #38bdf8 !important; text-decoration: none !important; font-size: 0.75rem !important; }
-                                `}} />
-                                <div className="w-full aspect-square bg-slate-900/80 rounded-[24px] overflow-hidden border border-slate-700/50 shadow-inner relative flex items-center justify-center mb-6">
-                                    <div id="reader" className="w-full h-full p-2"></div>
-                                </div>
-                                <p className="text-slate-400 text-xs text-center px-4 leading-relaxed font-medium">
-                                    Coloca tu <strong className="text-amber-400">código QR</strong> frente a la cámara para desbloquear el portal de tu área.
-                                </p>
-                            </motion.div>
-                        )}
-                    </>
+              <form onSubmit={handleStaffPinAuth} className="space-y-4">
+                {error && (
+                  <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-xs text-center">
+                    {error}
+                  </div>
                 )}
 
-                <div className="mt-8 pt-8 border-t border-slate-700/50 flex flex-col items-center gap-4">
-                    <p className="text-slate-400 text-xs font-medium text-center">¿Eres cliente y deseas hacer pedidos?</p>
-                    <Link href="/registro" className="inline-flex items-center justify-center gap-2 text-sky-400 hover:text-sky-300 font-bold text-xs transition-colors group">
-                        Ir al Portal de Clientes <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-                    </Link>
+                <div>
+                  <label className="block text-[10px] font-bold text-amber-400 uppercase tracking-widest mb-1.5 text-center">PIN de Acceso</label>
+                  <input
+                    type="password"
+                    maxLength={6}
+                    required
+                    autoFocus
+                    value={staffPin}
+                    onChange={e => setStaffPin(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
+                    placeholder="•••••"
+                    className="w-full bg-slate-950 border border-amber-500/40 rounded-xl py-3 px-4 text-center text-2xl tracking-[0.4em] font-mono text-white focus:outline-none focus:border-amber-400 transition-colors"
+                  />
                 </div>
-            </motion.div>
 
-            <div className="mt-12 flex flex-col gap-2 text-slate-500 text-xs font-bold uppercase tracking-widest text-center relative z-10 pb-4">
-                <span>Derechos reservados &copy; {new Date().getFullYear()} {hostname}</span>
-                <div className="flex gap-4 justify-center">
-                    <a href="#" className="hover:text-amber-400 transition-colors">Términos y Condiciones</a>
-                    <span>|</span>
-                    <a href="#" className="hover:text-amber-400 transition-colors">Aviso de Privacidad</a>
-                </div>
-                <div className="mt-4 flex items-center justify-center gap-2 text-slate-400">
-                    <span className="text-xs">Powered by</span>
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 font-black text-sm tracking-widest drop-shadow-md">GEMINI</span>
-                </div>
-            </div>
-        </div>
-    );
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-sm shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2 transition-all active:scale-[0.99]"
+                >
+                  {loading ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <>
+                      <span>Ingresar al Sistema</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
+                </button>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+    </div>
+  );
 }

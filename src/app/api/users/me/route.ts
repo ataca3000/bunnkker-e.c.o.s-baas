@@ -62,9 +62,17 @@ export async function PATCH(req: NextRequest) {
 
         if (body.action === 'CHANGE_PIN') {
             const { newPin } = body;
+            const cleanPin = (newPin || '').trim();
+
+            const letters = cleanPin.match(/[A-Za-z]/g) || [];
+            const digits  = cleanPin.match(/\d/g) || [];
             
-            if (!newPin || newPin.length < 4 || newPin.length > 6 || newPin === '0000') {
-                return NextResponse.json({ success: false, error: 'PIN inválido' }, { status: 400 });
+            // Requerir 5 caracteres: 1 letra y 4 números en cualquier orden
+            if (cleanPin.length !== 5 || letters.length !== 1 || digits.length !== 4) {
+                return NextResponse.json({ 
+                    success: false, 
+                    error: 'El código de seguridad debe contener exactamente 5 caracteres (1 Letra y 4 Números en cualquier orden, ej. A1234, 1A234).' 
+                }, { status: 400 });
             }
 
             const pinSha = hashPinSha256(newPin);

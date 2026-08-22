@@ -1,6 +1,0 @@
-{
-  "name": "Admin.com",
-  "description": "Sistema Master ERP Integral (Inventarios, Facturación, Entregas, CRM, Compras).",
-  "requestFramePermissions": ["geolocation"],
-  "majorCapabilities": []
-}

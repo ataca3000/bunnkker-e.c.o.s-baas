@@ -25,6 +25,10 @@ const SERVICE_NAME = 'bunkker-master.local';
 const LEGACY_SERVICE_NAME = 'admin-com-master.local'; // Solo referencia, no se usa en código activo
 const PORT = 3001;
 let localSocket: WebSocket | null = null;
+let _masterIp: string | null = null;         // última IP conocida del maestro
+let _wsBackoffMs = 1_000;                    // backoff inicial 1s
+const WS_MAX_BACKOFF = 30_000;              // máximo 30s entre reintentos
+let _wsRetryTimer: ReturnType<typeof setTimeout> | null = null;
 
 /**
  * Estado global de la red para el UI
@@ -99,12 +103,21 @@ export function triggerManualDiscovery() {
 }
 
 /**
- * CONEXIÓN: Establece el túnel de WebSockets con el Maestro
+ * CONEXIÓN: Establece el túnel de WebSockets con el Maestro.
+ * Reintenta automáticamente con backoff exponencial si se corta.
  */
 function connectToMaster(ip: string) {
-    if (localSocket) return;
+    if (localSocket && localSocket.readyState === WebSocket.OPEN) return;
 
+    _masterIp = ip;
     localSocket = new WebSocket(`ws://${ip}:${PORT}`);
+
+    localSocket.onopen = () => {
+        _wsBackoffMs = 1_000; // reset al conectar
+        if (_wsRetryTimer) { clearTimeout(_wsRetryTimer); _wsRetryTimer = null; }
+        console.log(`✅ [P2P] Conectado al maestro ${ip}:${PORT}`);
+        flushOfflineQueue();
+    };
 
     localSocket.onmessage = (event) => {
         const payload = JSON.parse(event.data);
@@ -114,7 +127,15 @@ function connectToMaster(ip: string) {
 
     localSocket.onclose = () => {
         localSocket = null;
-        console.warn("Conexión perdida con el Maestro local. Reintentando...");
+        if (!_masterIp) return;
+        _wsBackoffMs = Math.min(_wsBackoffMs * 2, WS_MAX_BACKOFF);
+        console.warn(`⚠️  [P2P] Conexión perdida. Reconectando en ${_wsBackoffMs / 1000}s...`);
+        _wsRetryTimer = setTimeout(() => connectToMaster(_masterIp!), _wsBackoffMs);
+    };
+
+    localSocket.onerror = () => {
+        // El evento onclose se dispara después — allí manejamos el retry
+        localSocket?.close();
     };
 }
 

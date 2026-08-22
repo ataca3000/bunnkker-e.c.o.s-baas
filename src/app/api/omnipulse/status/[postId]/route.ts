@@ -7,7 +7,8 @@
  * cada 1.5 segundos hasta que todas las redes terminan.
  */
 import { NextRequest } from 'next/server';
-import { dispatchResults } from '../../dispatch/route';
+import { dispatchResults } from '@/lib/omnipulse/store';
+import type { DispatchResult } from '@/lib/omnipulse/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,7 +36,7 @@ export async function GET(
                 send({ postId, results, timestamp: Date.now() });
 
                 const allDone = results.length > 0 &&
-                    results.every(r => ['success', 'failed', 'skipped', 'rate_limited'].includes(r.status));
+                    results.every((r: DispatchResult) => ['success', 'failed', 'skipped', 'rate_limited'].includes(r.status));
 
                 if (allDone || iterations >= maxIterations) {
                     send({ postId, results, done: true, timestamp: Date.now() });
@@ -43,10 +44,7 @@ export async function GET(
                     controller.close();
                 }
             }, 1500);
-
-            // Limpiar si el cliente se desconecta
-            return () => clearInterval(interval);
-        },
+        }
     });
 
     return new Response(stream, {

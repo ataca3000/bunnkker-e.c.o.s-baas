@@ -56,7 +56,7 @@ export default function DeliveryView({
   const signatureRef = useRef<SignatureCanvas>(null);
 
   const openGoogleMaps = () => {
-    const url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(order.address)}`;
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(order.address || '')}`;
     window.open(url, '_blank');
   };
 
@@ -258,7 +258,7 @@ export default function DeliveryView({
       <div className="absolute inset-0 z-0 bg-slate-900 pointer-events-auto">
           <AdvancedMap 
             mode="route"
-            markers={[{ id: order.id, lat: order.lat || 19.4326, lng: order.lng || -99.1332, title: order.customerName, description: order.address }]}
+            markers={[{ id: order.id, lat: order.lat || 19.4326, lng: order.lng || -99.1332, title: order.customerName || 'Cliente', description: order.address || '' }]}
             routeIndices={[0]}
             warehouseLocation={[order.lat || 19.4326, order.lng || -99.1332]} // Center on order for individual view
             useOfflineTiles={true}

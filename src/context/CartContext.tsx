@@ -259,9 +259,18 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
                 };
             }
 
+            // LFEDS Timer: Auto-limpieza de reservas expiradas (>30 min)
+            const reservationCheckInterval = setInterval(() => {
+                const state = useERPStore.getState();
+                if (state.cleanExpiredReservations) {
+                    state.cleanExpiredReservations();
+                }
+            }, 60 * 1000);
+
             return () => {
                 newSocket.disconnect();
                 if (tabChannel) tabChannel.close();
+                clearInterval(reservationCheckInterval);
             };
         }
     }, []);

@@ -9,6 +9,7 @@ export interface CartSlice {
     openCart: () => void;
     closeCart: () => void;
     setCart: (cart: CartItem[]) => void;
+    cleanExpiredReservations: () => void;
     getTotal: () => number;
     getItemCount: () => number;
 }

@@ -3,7 +3,7 @@ config({ path: '.env.local' });
 
 import { PrismaClient } from '@prisma/client';
 import { initializeApp } from 'firebase/app';
-import { getFirestore, doc, setDoc, updateDoc, increment, getDoc } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, updateDoc, increment, getDoc, disableNetwork, enableNetwork } from 'firebase/firestore';
 
 const prisma = new PrismaClient();
 
@@ -20,9 +20,48 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+// ─── Estado de red y backoff exponencial ───────────────────────────────────────────
+let _networkOk = true;
+let _reconnectBackoffMs = 2_000;
+const MAX_BACKOFF_MS = 120_000; // 2 minutos máximo
+
+/** Detecta si un error es de red transitoria (TCP abortado, wsarecv, etc.) */
+function isNetworkError(err: any): boolean {
+  const msg = String(err?.message ?? err ?? '');
+  return (
+    msg.includes('stream reading error') ||
+    msg.includes('wsarecv') ||
+    msg.includes('WebChannelConnection') ||
+    msg.includes('transport errored') ||
+    msg.includes('UNAVAILABLE') ||
+    msg.includes('ECONNRESET') ||
+    msg.includes('ENOTFOUND') ||
+    msg.includes('ETIMEDOUT')
+  );
+}
+
+/** Reconecta Firestore con backoff exponencial */
+async function reconnectFirestore(): Promise<void> {
+  console.warn(`⚠️  [Worker] Red cortó. Reconectando en ${_reconnectBackoffMs / 1000}s...`);
+  _networkOk = false;
+  await new Promise(r => setTimeout(r, _reconnectBackoffMs));
+  try {
+    await disableNetwork(db);
+    await enableNetwork(db);
+    _networkOk = true;
+    _reconnectBackoffMs = 2_000; // reset
+    console.log('✅ [Worker] Reconectado a Firebase.');
+  } catch {
+    _reconnectBackoffMs = Math.min(_reconnectBackoffMs * 2, MAX_BACKOFF_MS);
+  }
+}
+
 console.log("🚀 [Worker] Iniciando Background Sync Worker...");
 
 async function processQueue() {
+    // Si la red está caida, saltar este ciclo
+    if (!_networkOk) return;
+
     try {
         // 1. Buscar registros pendientes o que fallaron anteriormente
         const pendingTasks = await prisma.syncQueue.findMany({
@@ -174,8 +213,13 @@ async function processQueue() {
                 }
             }
         }
-    } catch (e) {
-        console.error("[Worker] Error crítico en el ciclo de proceso:", e);
+    } catch (e: any) {
+        if (isNetworkError(e)) {
+            // Error de TCP/stream — reconectar silenciosamente con backoff
+            reconnectFirestore(); // No await — el siguiente ciclo verá _networkOk=false
+        } else {
+            console.error("[Worker] Error crítico en el ciclo de proceso:", e);
+        }
     }
 }
 

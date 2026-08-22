@@ -102,7 +102,7 @@ export default function AdminDeployLauncher() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Nombre del Cliente / Empresa</label>
-                                <input required value={clientName} onChange={e => setClientName(e.target.value)} type="text" className="w-full bg-[#1e293b] border border-slate-700 rounded-lg p-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all" placeholder="Ej: Ferretería El Sol" />
+                                <input required value={clientName} onChange={e => setClientName(e.target.value)} type="text" className="w-full bg-[#1e293b] border border-slate-700 rounded-lg p-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all" placeholder="Ej: Mi Tienda General" />
                             </div>
                             <div>
                                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Email del Administrador</label>

@@ -4,7 +4,7 @@
 console.warn("🐝 [COLMENA B2B] Firebase Admin MOCK Activado. Sin dependencias externas.");
 
 const createMockDoc = (_docId?: string) => ({
-    get: async () => ({ exists: false, data: () => ({}) }),
+    get: async () => ({ exists: false, data: (): any => ({}) }),
     set: async (..._args: any[]) => ({}),
     update: async (..._args: any[]) => ({}),
     delete: async (..._args: any[]) => ({})
@@ -16,7 +16,7 @@ const createMockCollection = (_colName?: string) => ({
     where: (..._args: any[]) => createMockCollection(_colName),
     orderBy: (..._args: any[]) => createMockCollection(_colName),
     limit: (..._args: any[]) => createMockCollection(_colName),
-    get: async () => ({ empty: true, docs: [] })
+    get: async (): Promise<any> => ({ empty: true, docs: [] as any[] })
 });
 
 const mockDb = {

@@ -43,7 +43,8 @@ export interface Order {
   total: number;
   date?: string;
   createdAt?: string;
-  status: 'pending' | 'paid' | 'pending_payment' | 'pending_confirmation' | 'paid_pending_delivery' | 'NIGHT_QUEUE' | 'READY_TO_SHIP' | 'OUT_FOR_DELIVERY' | 'DELIVERED' | 'COMPLETED' | 'cancelled' | string;
+  status: 'pending' | 'paid' | 'pending_payment' | 'pending_confirmation' | 'paid_pending_delivery' | 'NIGHT_QUEUE' | 'READY_TO_SHIP' | 'OUT_FOR_DELIVERY' | 'DELIVERED' | 'COMPLETED' | 'FLAG_A_ALMACEN' | 'FLAG_B_PATIO' | 'FLAG_C_REPARTIDOR' | 'FLAG_D_VALIDADO' | 'cancelled' | string;
+  flagState?: 'FLAG_0_ESTANTE' | 'FLAG_A_ALMACEN' | 'FLAG_B_PATIO' | 'FLAG_C_REPARTIDOR' | 'FLAG_D_VALIDADO';
   expiresAt?: string | null;
   paymentMethod?: string;
   requiresInvoice?: boolean;

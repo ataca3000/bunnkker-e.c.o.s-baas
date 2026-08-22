@@ -2,6 +2,32 @@ const { Server } = require('socket.io');
 const { PrismaClient } = require('@prisma/client');
 const path = require('path');
 
+// ─── Supresor de errores TCP transitorios ─────────────────────────────────────
+// Errores como wsarecv / stream reading error / ECONNRESET son normales en
+// conexiones WebSocket de larga duración (Windows corta streams inactivos).
+// Socket.IO maneja la reconexión automáticamente — no necesitamos crashear.
+const TCP_ERROR_PATTERNS = [
+  'stream reading error', 'wsarecv', 'ECONNRESET',
+  'WebChannelConnection', 'transport errored', 'ETIMEDOUT',
+];
+process.on('uncaughtException', (err) => {
+  const msg = err?.message ?? String(err);
+  if (TCP_ERROR_PATTERNS.some(p => msg.includes(p))) {
+    // Error de red transitorio — ignorar silenciosamente
+    return;
+  }
+  // Cualquier otro error sí debe interrumpir el proceso
+  console.error('💥 [radio-server] Error no manejado:', err);
+  process.exit(1);
+});
+process.on('unhandledRejection', (reason) => {
+  const msg = String(reason?.message ?? reason ?? '');
+  if (TCP_ERROR_PATTERNS.some(p => msg.includes(p))) return;
+  console.error('💥 [radio-server] Promesa rechazada sin manejar:', reason);
+});
+
+
+
 const dbPath = path.resolve(__dirname, 'prisma/dev.db');
 const prisma = new PrismaClient({
   datasources: {
