@@ -3,6 +3,8 @@
 import { prisma } from "@/lib/prisma";
 import type { VentaCoreParams, VentaResult } from "./index";
 
+import { calculateDOMHash } from "@/lib/domCrypto";
+
 export async function createLocalSale(datos: VentaCoreParams, total: number, isOffline: boolean): Promise<VentaResult> {
     try {
         // Ejecutamos una transacción local en SQLite
@@ -24,6 +26,14 @@ export async function createLocalSale(datos: VentaCoreParams, total: number, isO
                 }
             });
 
+            // 1b. Generar la firma criptográfica H_n (D.O.M. Hash Chain)
+            const { hash, prevHash } = calculateDOMHash({
+                id: order.id,
+                total: order.total,
+                timestamp: order.date.toISOString(),
+                usuario: "CAJERO_LOCAL"
+            });
+
             // 2. Descontar inventario local
             for (const item of datos.productos) {
                 await tx.product.update({
@@ -36,7 +46,7 @@ export async function createLocalSale(datos: VentaCoreParams, total: number, isO
                 });
             }
 
-            // 3. Encolar para sincronización
+            // 3. Encolar para sincronización con firma inmutable H_n
             await tx.syncQueue.create({
                 data: {
                     collection: "orders",
@@ -47,12 +57,14 @@ export async function createLocalSale(datos: VentaCoreParams, total: number, isO
                         total,
                         paymentMethod: datos.metodoPago,
                         status: "paid",
-                        date: new Date().toISOString()
+                        date: order.date.toISOString(),
+                        domHash: hash,
+                        domPrevHash: prevHash
                     })
                 }
             });
 
-            return order;
+            return { ...order, hash, prevHash };
         });
 
         return {
@@ -60,13 +72,17 @@ export async function createLocalSale(datos: VentaCoreParams, total: number, isO
             total: result.total,
             offline: result.offline,
             date: result.date.toISOString(),
-            status: result.status
+            status: result.status,
+            hash: result.hash,
+            prevHash: result.prevHash
         };
     } catch (e) {
         console.error("Error en createLocalSale:", e);
         throw e;
     }
 }
+
+import { productLRUCache } from "@/lib/lruCache";
 
 export async function syncLocalInventory(productos: any[]) {
     // Cuando el sistema arranca, puede descargar los productos de Firebase
@@ -90,24 +106,40 @@ export async function syncLocalInventory(productos: any[]) {
                 image: p.image
             }
         });
+        productLRUCache.invalidate(p.id);
     }
 }
 
 export async function getLocalProduct(idProducto: string) {
-    return await prisma.product.findUnique({
+    const cached = productLRUCache.get(idProducto);
+    if (cached) return cached;
+
+    const product = await prisma.product.findUnique({
         where: { id: idProducto }
     });
+
+    if (product) {
+        productLRUCache.set(idProducto, product);
+    }
+
+    return product;
 }
 
 export async function getLocalInventory(idProducto: string): Promise<number> {
+    const cachedProduct = productLRUCache.get(idProducto);
+    if (cachedProduct) return cachedProduct.stock;
+
     const p = await prisma.product.findUnique({
         where: { id: idProducto }
     });
     
-    if (p) return p.stock;
+    if (p) {
+        productLRUCache.set(idProducto, p);
+        return p.stock;
+    }
 
     // Para tests locales, si no existe lo creamos
-    await prisma.product.create({
+    const newProduct = await prisma.product.create({
         data: {
             id: idProducto,
             name: `Producto Test ${idProducto}`,
@@ -115,10 +147,12 @@ export async function getLocalInventory(idProducto: string): Promise<number> {
             price: 100
         }
     });
+    productLRUCache.set(idProducto, newProduct);
     return 100;
 }
 
 export async function decrementLocalInventory(idProducto: string, cantidad: number) {
+    productLRUCache.invalidate(idProducto);
     await prisma.product.update({
         where: { id: idProducto },
         data: {

@@ -28,6 +28,8 @@ export interface VentaResult {
     id: string;
     total: number;
     offline?: boolean;
+    hash?: string;
+    prevHash?: string;
     [key: string]: any;
 }
 

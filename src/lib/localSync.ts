@@ -102,6 +102,8 @@ export function triggerManualDiscovery() {
     });
 }
 
+import { unifiedSync } from './unifiedSyncEngine';
+
 /**
  * CONEXIÓN: Establece el túnel de WebSockets con el Maestro.
  * Reintenta automáticamente con backoff exponencial si se corta.
@@ -116,7 +118,7 @@ function connectToMaster(ip: string) {
         _wsBackoffMs = 1_000; // reset al conectar
         if (_wsRetryTimer) { clearTimeout(_wsRetryTimer); _wsRetryTimer = null; }
         console.log(`✅ [P2P] Conectado al maestro ${ip}:${PORT}`);
-        flushOfflineQueue();
+        unifiedSync.triggerFlush(localSocket);
     };
 
     localSocket.onmessage = (event) => {
@@ -140,94 +142,19 @@ function connectToMaster(ip: string) {
 }
 
 /**
- * SINCRONIZACIÓN ATÓMICA: Envía un cambio al maestro. 
- * Si no hay conexión, se encola en localStorage y se reintenta automáticamente (WAL - ISO Standard).
+ * SINCRONIZACIÓN ATÓMICA: Envía un cambio al maestro o lo encola simbióticamente.
  */
 export function emitToMaster(type: string, data: any) {
     if (typeof window === 'undefined') return;
 
-    // Generar un UUID (Transaction ID) para hacer la operación idempotente
-    const txId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2);
-    const timestamp = Date.now();
-    
-    const payload = { txId, timestamp, type, data };
-
-    if (!localSocket || localSocket.readyState !== WebSocket.OPEN) {
-        console.warn(`[P2P/WAL] Sin conexión activa. Encolando transacción: ${type} (${txId})`);
-        queueOfflineTransaction(payload);
-        return;
-    }
-    
-    try {
-        localSocket.send(JSON.stringify(payload));
-        console.log(`[P2P] Transacción enviada: ${type} (${txId})`);
-    } catch (err) {
-        console.error("[P2P] Error al emitir mensaje, encolando:", err);
-        queueOfflineTransaction(payload);
+    unifiedSync.enqueue({ type, data });
+    if (localSocket && localSocket.readyState === WebSocket.OPEN) {
+        unifiedSync.triggerFlush(localSocket);
     }
 }
 
-// --- ISO STANDARD: OFFLINE QUEUE (Write-Ahead Logging) ---
-
-function queueOfflineTransaction(payload: any) {
-    if (typeof window === 'undefined') return;
-    const QUEUE_KEY = 'bunkker_offline_queue';
-    try {
-        const queueStr = localStorage.getItem(QUEUE_KEY)
-            ?? localStorage.getItem('evo_offline_queue'); // Migración desde clave antigua
-        let queue = queueStr ? JSON.parse(queueStr) : [];
-        // Limpiar clave legacy si existía
-        localStorage.removeItem('evo_offline_queue');
-        if (queue.length >= 500) {
-            console.warn("[P2P/WAL] Límite de cola offline alcanzado (500 transacciones). Descartando la más antigua.");
-            queue.shift();
-        }
-        queue.push(payload);
-        localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
-    } catch (e) {
-        console.error("Error al encolar transacción local:", e);
-    }
-}
-
-function flushOfflineQueue() {
-    if (typeof window === 'undefined') return;
-    if (!localSocket || localSocket.readyState !== WebSocket.OPEN) return;
-    const QUEUE_KEY = 'bunkker_offline_queue';
-
-    try {
-        const queueStr = localStorage.getItem(QUEUE_KEY);
-        if (!queueStr) return;
-
-        let queue: any[] = JSON.parse(queueStr);
-        if (queue.length === 0) return;
-
-        console.log(`[P2P/WAL] Sincronizando cola offline... (${queue.length} transacciones pendientes)`);
-
-        while (queue.length > 0 && localSocket && localSocket.readyState === WebSocket.OPEN) {
-            const payload = queue[0];
-            try {
-                localSocket.send(JSON.stringify(payload));
-                console.log(`[P2P/WAL] Reintentado y confirmado: ${payload.type} (${payload.txId})`);
-            } catch (sendErr) {
-                console.error(`[P2P/WAL] Error al enviar ${payload.txId}. Deteniendo flush.`, sendErr);
-                localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
-                return;
-            }
-            queue.shift();
-            localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
-        }
-
-        if (queue.length === 0) {
-            localStorage.removeItem(QUEUE_KEY);
-        }
-    } catch (e) {
-        console.error("Error al vaciar la cola offline:", e);
-    }
-}
-
-// Iniciar el Auto-Retry Loop en el cliente
-if (typeof window !== 'undefined') {
-    setInterval(flushOfflineQueue, 3000);
+export function flushOfflineQueue() {
+    unifiedSync.triggerFlush(localSocket);
 }
 
 function getLocalIP() {

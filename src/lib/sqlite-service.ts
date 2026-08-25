@@ -35,13 +35,14 @@ export const localDB = {
     }
 };
 
+import { unifiedSync } from './unifiedSyncEngine';
+
 /**
  * Lógica de Sincronización Local (P2P):
- * Cuando una PC "Maestra" actualiza su SQLite, puede usar localSync.ts 
- * para emitir el cambio a las otras 4 PCs vía Wi-Fi.
+ * Cuando una PC "Maestra" actualiza su SQLite, usa unifiedSyncEngine
+ * para emitir el cambio a la red LAN (vía WebSockets) o a la nube.
  */
 export async function broadcastLocalChange(type: string, payload: any) {
-    // Aquí integramos con tu lógica de localSync.ts (WebSockets)
-    // para que las otras ventanas/PCs se enteren del cambio en SQLite.
-    console.log(`[P2P Sync] Difundiendo cambio de ${type} en red local.`);
+    console.log(`[P2P Sync] Difundiendo cambio de ${type} vía UnifiedSyncEngine.`);
+    unifiedSync.enqueue({ type, data: payload });
 }
