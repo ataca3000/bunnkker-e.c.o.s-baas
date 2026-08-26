@@ -15,7 +15,7 @@
   "scripts": {
     
       
-  "dev": "concurrently \"next dev -p 3000\" \"node radio-server.js\"",
+  "dev": "npx concurrently \"next dev -p 3000\" \"node radio-server.js\"",
     
       
   "dev:https": "next dev --experimental-https -p 3000",
