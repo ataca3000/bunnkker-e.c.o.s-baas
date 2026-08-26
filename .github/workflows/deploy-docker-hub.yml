@@ -5,6 +5,9 @@ on:
     branches: [ main ]
     tags: [ 'v*' ]
 
+permissions:
+  contents: read
+
 env:
   DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
   DOCKER_HUB_TOKEN: ${{ secrets.DOCKER_HUB_TOKEN }}
