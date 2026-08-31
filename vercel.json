@@ -1,0 +1,61 @@
+{
+  "buildCommand": "npx prisma generate && next build",
+  "framework": "nextjs",
+  "env": [
+    {
+      "key": "DATABASE_URL",
+      "description": "URL de conexión PostgreSQL Neon",
+      "example": "postgresql://user:password@ep-xxxx.us-east-1.neon.tech/neondb"
+    },
+    {
+      "key": "POSTGRES_URL",
+      "description": "URL alternativa PostgreSQL Neon",
+      "example": "postgresql://user:password@ep-xxxx.us-east-1.neon.tech/neondb"
+    },
+    {
+      "key": "POSTGRES_HOST",
+      "description": "Host PostgreSQL Neon",
+      "example": "ep-xxxx.us-east-1.neon.tech"
+    },
+    {
+      "key": "POSTGRES_PASSWORD",
+      "description": "Password de base de datos Neon"
+    },
+    {
+      "key": "POSTGRES_POOLING",
+      "description": "Conexión con pooling para Vercel Functions",
+      "example": "true"
+    },
+    {
+      "key": "PGUSER",
+      "description": "Usuario PostgreSQL Neon",
+      "example": "neondb_owner"
+    },
+    {
+      "key": "NEON_PROJECT_ID",
+      "description": "ID del proyecto en Neon Console"
+    },
+    {
+      "key": "STRIPE_SECRET_KEY",
+      "description": "API Key Secreta de Stripe",
+      "example": "sk_test_..."
+    },
+    {
+      "key": "NEXTAUTH_SECRET",
+      "description": "Secreto JWT para NextAuth",
+      "example": "openssl rand -hex 32"
+    },
+    {
+      "key": "VERCEL_TOKEN",
+      "description": "Token de Vercel API para despliegues multi-proyecto",
+      "example": "your_vercel_token"
+    }
+  ],
+  "functions": {
+    "src/app/api/**/*.ts": {
+      "runtime": "nodejs20.x",
+      "memory": 1024,
+      "maxDuration": 60
+    }
+  }
+}
