@@ -3,17 +3,20 @@
 @import "leaflet/dist/leaflet.css";
 
 :root {
-  /* Pro SaaS Palette - Aqua/Cyan Matte (Professional) */
-  --sanjose-blue: #0891B2;
-  --sanjose-blue-dark: #164E63;
-  --sanjose-gray-dark: #0F172A;
-  --sanjose-gray-light: #F8FAFC;
-  --saas-primary: #06B6D4;
-  --saas-accent: #22D3EE;
-  
-  /* FORZAR MODO OSCURO POR DEFECTO PARA EL DASHBOARD */
-  --foreground-rgb: 248, 250, 252;
-  --background-rgb: 3, 7, 18;
+  --terraform-ink: #13232b;
+  --terraform-surface: #f4f7f6;
+  --terraform-paper: #ffffff;
+  --terraform-teal: #087f8c;
+  --terraform-line: #d8e2e0;
+  --terraform-muted: #617277;
+  --foreground-rgb: 19, 35, 43;
+  --background-rgb: 244, 247, 246;
+  --sanjose-blue: #087f8c;
+  --sanjose-blue-dark: #13232b;
+  --sanjose-gray-dark: #13232b;
+  --sanjose-gray-light: #f4f7f6;
+  --saas-primary: #087f8c;
+  --saas-accent: #36a3a3;
 }
 
 @media (prefers-color-scheme: light) {
@@ -32,13 +35,8 @@ body {
   background-color: rgb(var(--background-rgb));
   color: rgb(var(--foreground-rgb));
   min-height: 100vh;
-  /* Ultra-smooth SaaS Gradient Background - Cyan/Aqua */
-  background-image: 
-    radial-gradient(circle at 15% 50%, rgba(6, 182, 212, 0.05), transparent 45%),
-    radial-gradient(circle at 85% 30%, rgba(14, 165, 233, 0.04), transparent 45%);
-  background-attachment: fixed;
-  background-size: cover;
-  transition: background-color 0.3s ease;
+  background-image: none;
+  transition: background-color 0.2s ease;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -199,6 +197,26 @@ button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* TERRAFORM ERP visual system */
+.terraform-shell .liquid-glass {
+  background: var(--terraform-paper) !important;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-color: var(--terraform-line) !important;
+  box-shadow: 0 10px 30px rgba(19, 35, 43, 0.06) !important;
+}
+.terraform-shell aside.liquid-glass {
+  background: var(--terraform-ink) !important;
+  color: var(--terraform-paper) !important;
+  border-right-color: var(--terraform-teal) !important;
+  box-shadow: 8px 0 24px rgba(19, 35, 43, 0.12) !important;
+}
+.terraform-shell aside a { color: rgba(255,255,255,0.78) !important; }
+.terraform-shell aside a:hover { background: rgba(255,255,255,0.08) !important; color: var(--terraform-paper) !important; }
+.terraform-shell aside a[style*="rgba(0,242,255"] { background: rgba(8,127,140,0.28) !important; color: var(--terraform-paper) !important; border-left-color: var(--terraform-teal) !important; text-shadow: none !important; }
+.terraform-shell main, .terraform-shell section { color: var(--terraform-ink); }
+.terraform-shell h1, .terraform-shell h2, .terraform-shell h3 { letter-spacing: -0.025em; }
 
 /* Responsive Utilities */
 @media (max-width: 768px) {
