@@ -1,4 +1,4 @@
-[MONETIZACION.md](https://github.com/user-attachments/files/31485881/MONETIZACION.md)<div align="center">
+https://bunnkker-e-c-o-s-baas.vercel.app/
 
 # 📜 BUNKKER E.C.O.S. (Ecosistema Comercial Offline Sincronizado)
 
