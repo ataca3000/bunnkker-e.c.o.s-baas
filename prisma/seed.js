@@ -1,5 +1,16 @@
 const { PrismaClient } = require('@prisma/client');
+const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const prisma = new PrismaClient();
+
+const demoUsers = [
+  ['SUPERADMIN', 'superadmin', '0000'],
+  ['Administrador', 'admin', '1111'],
+  ['Ventas', 'sales', '2222'],
+  ['Inventario', 'inventory', '3333'],
+  ['Marketing', 'marketing', '4444'],
+  ['Repartidor', 'driver', '5555'],
+];
 
 async function main() {
   const products = [
@@ -57,6 +68,21 @@ async function main() {
       create: product,
     });
   }
+  if (process.env.NODE_ENV === 'production' && process.env.ALLOW_DEMO_SEED !== 'true') {
+    console.log('Production detected: demo users were not seeded.');
+  } else {
+    for (const [name, role, plainPin] of demoUsers) {
+      const pinHash = await bcrypt.hash(plainPin, 10);
+      const pin = crypto.createHash('sha256').update(plainPin).digest('hex');
+      await prisma.user.upsert({
+        where: { pin },
+        update: { name, role, pinHash, active: true },
+        create: { name, role, pin, pinHash, active: true },
+      });
+    }
+    console.log('6 demo users seeded with PINs 0000–5555. Change them before production.');
+  }
+
   console.log("5 demo products seeded successfully.");
 }
 
