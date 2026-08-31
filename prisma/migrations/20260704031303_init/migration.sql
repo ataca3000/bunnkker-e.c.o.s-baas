@@ -14,7 +14,7 @@ CREATE TABLE "Customer" (
     "regimenFiscal" TEXT,
     "usoCFDI" TEXT,
     "codigoPostal" TEXT,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- CreateTable
@@ -40,7 +40,7 @@ CREATE TABLE "Order" (
     "paymentMethod" TEXT NOT NULL,
     "status" TEXT NOT NULL DEFAULT 'paid',
     "deliveryType" TEXT NOT NULL DEFAULT 'LOCAL',
-    "date" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "date" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "offline" BOOLEAN NOT NULL DEFAULT true,
     "synced" BOOLEAN NOT NULL DEFAULT false,
     "ventanilla" TEXT,
@@ -67,7 +67,7 @@ CREATE TABLE "SyncQueue" (
     "documentId" TEXT,
     "action" TEXT NOT NULL,
     "payload" TEXT NOT NULL,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "status" TEXT NOT NULL DEFAULT 'PENDING',
     "errorMsg" TEXT
 );
@@ -78,7 +78,7 @@ CREATE TABLE "AuditLog" (
     "action" TEXT NOT NULL,
     "details" TEXT,
     "userId" TEXT NOT NULL,
-    "timestamp" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "timestamp" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "synced" BOOLEAN NOT NULL DEFAULT false
 );
 
@@ -90,7 +90,7 @@ CREATE TABLE "SupportTicket" (
     "customerName" TEXT NOT NULL,
     "message" TEXT NOT NULL,
     "status" TEXT NOT NULL DEFAULT 'Pendiente',
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "synced" BOOLEAN NOT NULL DEFAULT false
 );
 
@@ -103,7 +103,7 @@ CREATE TABLE "CashRegisterLog" (
     "declaredAmount" REAL NOT NULL,
     "expectedAmount" REAL NOT NULL,
     "discrepancy" REAL NOT NULL,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "synced" BOOLEAN NOT NULL DEFAULT false
 );
 
@@ -117,7 +117,7 @@ CREATE TABLE "User" (
     "deviceId" TEXT,
     "role" TEXT NOT NULL DEFAULT 'sales',
     "active" BOOLEAN NOT NULL DEFAULT true,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "synced" BOOLEAN NOT NULL DEFAULT false
 );
 

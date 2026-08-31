@@ -120,13 +120,9 @@ export default async function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL('/login?error=unauthorized', request.url));
       }
     } else if (pathname === '/dashboard') {
-      // Root dashboard: redirigir al módulo principal del rol
-      if (role) {
-        const primaryPath = Object.entries(ROLE_PERMISSIONS).find(
-          ([_, roles]) => roles.includes(role)
-        )?.[0];
-        if (primaryPath) return NextResponse.redirect(new URL(primaryPath, request.url));
-      }
+      // El dashboard raíz renderiza el panel adecuado según el rol.
+      // No redirigir a /catalogo ni a un módulo secundario: el usuario debe
+      // aterrizar siempre en su panel operativo principal.
     } else if (role !== 'superadmin' && role !== 'admin') {
       if (process.env.NODE_ENV !== 'production') console.warn(`[RBAC] Ruta no permitida: ${role} en ${pathname}`);
       return NextResponse.redirect(new URL('/login?error=unauthorized', request.url));

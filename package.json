@@ -9,6 +9,8 @@
     "dev": "npx concurrently \"next dev -p 3000\" \"node radio-server.js\"",
     "dev:https": "next dev --experimental-https -p 3000",
     "build": "prisma generate && next build",
+    "db:migrate": "prisma migrate deploy",
+    "db:seed": "node prisma/seed.js",
     "guard:build": "node scripts/build-guard.js",
     "start": "concurrently \"node scripts/restore-node-modules.js && node .next/standalone/server.js\" \"node radio-server.js\"",
     "lint": "eslint .",
