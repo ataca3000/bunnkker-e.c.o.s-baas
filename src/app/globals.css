@@ -218,14 +218,6 @@ button:disabled {
 .terraform-shell main, .terraform-shell section { color: var(--terraform-ink); }
 .terraform-shell h1, .terraform-shell h2, .terraform-shell h3 { letter-spacing: -0.025em; }
 
-/* Subscription workspace */
-.terraform-subscriptions { background: var(--terraform-surface); color: var(--terraform-ink); }
-.terraform-subscriptions h1, .terraform-subscriptions h3 { color: var(--terraform-ink) !important; }
-.terraform-subscriptions p, .terraform-subscriptions span { color: var(--terraform-muted); }
-.terraform-subscriptions .card-sanjose { background: var(--terraform-paper) !important; border-color: var(--terraform-line) !important; box-shadow: 0 14px 34px rgba(19,35,43,.08) !important; }
-.terraform-subscriptions button { background: var(--terraform-teal) !important; color: var(--terraform-paper) !important; box-shadow: none !important; }
-.terraform-subscriptions [class*="bg-slate-900/"] { background: var(--terraform-surface) !important; }
-
 /* Responsive Utilities */
 @media (max-width: 768px) {
   .btn-sanjose,
