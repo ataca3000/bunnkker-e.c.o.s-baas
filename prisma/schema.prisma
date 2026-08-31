@@ -5,8 +5,7 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-  url      = env("
-DATABASE_URL="file:./prisma/dev.db.backup.20260711-135533")
+  url      = env("DATABASE_URL")
 }
 
 

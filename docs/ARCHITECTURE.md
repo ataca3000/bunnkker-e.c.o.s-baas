@@ -62,4 +62,43 @@ Usando `multicast-dns` (mDNS) y WebSockets, el **Nodo Maestro** (servidor local 
 
 ---
 
+## 5. Arquitectura de Producción
+
+```mermaid
+flowchart TB
+  U[Usuario web o Electron] --> V[Vercel CDN / Next.js App Router]
+  V --> A[API Routes + RBAC/HMAC]
+  A --> F[(Firestore multi-tenant)]
+  U --> L[(SQLite local + WAL)]
+  L <--> P[Red LAN P2P / WebSocket]
+  L --> S[Servicio de sincronización]
+  S --> F
+  V --> O[Logs y métricas Vercel]
+  F --> B[Backups y exportaciones controladas]
+```
+
+### Responsabilidades
+
+| Componente | Responsabilidad | No debe hacer |
+|---|---|---|
+| Cliente web/Electron | UI, captura offline y estado local | Confiar en roles solo del cliente |
+| Next.js API | Validación, autorización, operaciones idempotentes | Exponer secretos o aceptar `tenantId` sin validar |
+| SQLite/WAL | Continuidad y cola local | Marcar sincronizado antes de confirmación |
+| Firestore | Registro cloud multi-tenant y tiempo real | Servir como sustituto de controles RBAC |
+| Sincronizador P2P | Replicar entre nodos autorizados | Abrir puertos públicos automáticamente |
+| Vercel | Hosting, previews, producción y logs | Provisionar tenants mediante `/api/deploy` |
+
+### Variables por entorno
+
+- `INTERNAL_API_SECRET`: firma HMAC de sesiones internas; secreto.
+- `DATABASE_URL`: SQLite local o configuración equivalente del runtime; nunca commitear archivos de base de datos.
+- Firebase Admin/client variables: credenciales y configuración gestionadas fuera del repositorio.
+- `NEXT_PUBLIC_*`: únicamente valores seguros para el navegador.
+
+La lista exacta debe mantenerse en Vercel Vars y validarse durante el checklist de producción. Los nombres de secretos no deben imprimirse en logs.
+
+### Nota sobre aprovisionamiento
+
+El endpoint `/api/deploy` actual es una simulación de orquestación: genera un identificador, guarda el registro en `tenants_registry` y devuelve un dominio/puerto ficticios. No crea una instancia real, namespace, DNS, contenedor ni proyecto Vercel; cualquier flujo de provisioning futuro debe usar una integración autorizada, idempotency keys y auditoría.
+
 *Documentación de Arquitectura de BUNKKER E.C.O.S ERP v1.0-PRO*
