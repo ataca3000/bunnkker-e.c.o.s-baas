@@ -96,8 +96,8 @@ export default async function RootLayout({
   const tenantId = headersList.get('x-tenant-id') || 'default';
 
   return (
-    <html lang="es">
-      <body className={`${inter.className} bg-slate-900 text-slate-200 antialiased font-sans`}>
+    <html lang="es" className="bg-[var(--terraform-surface)]">
+      <body className={`${inter.className} bg-[var(--terraform-surface)] text-[var(--terraform-ink)] antialiased font-sans`}>
         <SchemaMarkup />
         <UsbLockScreen />
         <div className="flex flex-col min-h-screen">

@@ -468,7 +468,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     };
 
     return (
-        <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#0f111a', color: '#f8fafc' }}>
+        <div className="terraform-shell" style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--terraform-surface)', color: 'var(--terraform-ink)' }}>
 
             {/* ── Sidebar (Layer 3) ─────────────────────────────────────────── */}
             {isMasterAdmin && (

@@ -14,6 +14,7 @@ export default function LocalRadio() {
     const [isRecording, setIsRecording] = useState(false);
     const [isReceiving, setIsReceiving] = useState(false);
     const [rxSender, setRxSender] = useState<string>('');
+    const [connectionState, setConnectionState] = useState<'connecting' | 'connected' | 'offline'>('connecting');
     
     const mediaRecorder = useRef<MediaRecorder | null>(null);
     const audioChunks = useRef<Blob[]>([]);
@@ -29,10 +30,14 @@ export default function LocalRadio() {
     useEffect(() => {
         if (!isStaff || typeof window === 'undefined') return;
 
-        // Puerto de radio configurable (3002 por defecto)
+        // En producción la app vive en Vercel: la radio debe apuntar al PC
+        // servidor dentro de la LAN, no al hostname de Vercel.
+        const configuredUrl = process.env.NEXT_PUBLIC_RADIO_URL?.trim();
         const radioPort = process.env.NEXT_PUBLIC_RADIO_PORT || '3002';
         const host = window.location.hostname;
-        const newSocket = io(`http://${host}:${radioPort}`, {
+        const radioUrl = configuredUrl || `http://${host}:${radioPort}`;
+        setConnectionState('connecting');
+        const newSocket = io(radioUrl, {
             reconnection: true,
             reconnectionAttempts: Infinity,
             reconnectionDelay: 1000,
@@ -41,9 +46,15 @@ export default function LocalRadio() {
         });
         
         newSocket.on('connect', () => {
-            console.log('📻 Radio Conectado');
+            console.log('[v0] Radio LAN conectada:', radioUrl);
+            setConnectionState('connected');
             newSocket.emit('join_radio', { role: profile?.role, name: profile?.displayName || (profile as any)?.name });
         });
+        newSocket.on('connect_error', (error) => {
+            console.log('[v0] Radio LAN no disponible:', error.message);
+            setConnectionState('offline');
+        });
+        newSocket.on('disconnect', () => setConnectionState('offline'));
 
         newSocket.on('radio_rx', async (data: { senderId: string, senderName: string, audio: ArrayBuffer }) => {
             console.log(`📡 Recibiendo transmisión de: ${data.senderName}`);
@@ -216,7 +227,7 @@ export default function LocalRadio() {
                 )}
             </button>
             <p className="text-[9px] text-center text-slate-500 font-bold uppercase tracking-widest mt-2 hidden md:block">
-                PTT (Espacio)
+                {connectionState === 'connected' ? 'Radio LAN · PTT (Espacio)' : connectionState === 'connecting' ? 'Conectando radio local…' : 'Radio local offline · inicia radio-server.js'}
             </p>
         </div>
     );

@@ -1,4 +1,5 @@
 const { Server } = require('socket.io');
+const { createServer } = require('http');
 const { PrismaClient } = require('@prisma/client');
 const path = require('path');
 
@@ -155,9 +156,18 @@ console.log(`🟢 Servidor de Sincronización de Datos en ejecución en Puerto $
 // ═════════════════════════════════════════════════════════════════════════════
 // 2. PUERTO 3002: SERVIDOR EXCLUSIVO DE RADIO DE PERSONAL (ISOLATED STAFF ONLY)
 // ═════════════════════════════════════════════════════════════════════════════
-const RADIO_PORT = 3002;
-const radioIo = new Server(RADIO_PORT, {
-  cors: { origin: "*", methods: ["GET", "POST"] },
+const RADIO_PORT = Number(process.env.RADIO_PORT || 3002);
+const radioHttp = createServer((req, res) => {
+  if (req.url === '/health' || req.url === '/api/health') {
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+    res.end(JSON.stringify({ ok: true, service: 'bunkker-local-bridge', radioPort: RADIO_PORT, syncPort: SYNC_PORT, timestamp: new Date().toISOString() }));
+    return;
+  }
+  res.writeHead(404);
+  res.end('Not found');
+});
+const radioIo = new Server(radioHttp, {
+  cors: { origin: process.env.RADIO_ALLOWED_ORIGIN || '*', methods: ["GET", "POST"] },
   maxHttpBufferSize: 1e7 // 10MB buffer para audio HD
 });
 
@@ -198,4 +208,7 @@ radioIo.on('connection', (socket) => {
   });
 });
 
-console.log(`📻 Servidor Exclusivo de Radio Interna iniciado en Puerto ${RADIO_PORT} (Canal Aislado Staff)`);
+radioHttp.listen(RADIO_PORT, '0.0.0.0', () => {
+  console.log(`📻 Servidor Exclusivo de Radio Interna iniciado en Puerto ${RADIO_PORT} (Canal Aislado Staff)`);
+  console.log(`🩺 Health check disponible en http://<IP_DEL_PC>:${RADIO_PORT}/health`);
+});
