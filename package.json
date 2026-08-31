@@ -23,6 +23,7 @@
     "dist:win": "npm run build:standalone && electron-builder --win --x64",
     "dist:publish": "npm run build:standalone && electron-builder --win --publish always",
     "emulate:local": "firebase emulators:start --import=./firebase_data --export-on-exit",
+    "bridge:windows": "node radio-server.js",
     "validate:ports": "node src/lib/check-ports.js",
     "validate:comm": "node src/lib/validate-comm.js",
     "test:logic": "node scripts/test-logic.js",
