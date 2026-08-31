@@ -85,6 +85,7 @@ import AntiDevTools from "@/components/AntiDevTools";
 import DeviceLockScreen from "@/components/DeviceLockScreen";
 import ParticlesBackground from "@/components/ParticlesBackground";
 import ToastContainer from "@/components/ToastContainer";
+import { Analytics } from '@vercel/analytics/next';
 
 export default async function RootLayout({
   children,
@@ -117,6 +118,7 @@ export default async function RootLayout({
             </DeviceLockScreen>
           </AuthProvider>
         </div>
+        <Analytics />
       </body>
     </html>
   );
