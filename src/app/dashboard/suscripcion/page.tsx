@@ -121,7 +121,7 @@ export default function PricingPage() {
     };
 
     return (
-        <div className="min-h-full p-6 md:p-12 relative overflow-hidden flex flex-col items-center">
+        <div className="terraform-subscriptions min-h-full p-6 md:p-12 relative overflow-hidden flex flex-col items-center">
 
             {/* Background elements */}
             <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-cyan-900/30 blur-[120px] rounded-full pointer-events-none"></div>

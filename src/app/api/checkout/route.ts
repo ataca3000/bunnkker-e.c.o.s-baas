@@ -33,8 +33,8 @@ export async function POST(req: Request) {
         // 4. CREAR SESIÓN EN STRIPE
         const session = await stripe.checkout.sessions.create({
             mode: 'subscription',
-            payment_method_types: ['card'],
             customer_email: email, // Usamos el email seguro extraído del token
+            integration_identifier: `bunkker-subscription-${Math.random().toString(36).slice(2, 10)}`,
             line_items: [
                 {
                     price: priceId,
