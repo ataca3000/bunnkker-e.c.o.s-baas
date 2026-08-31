@@ -36,10 +36,10 @@ export default function LoginPage() {
     if (user && profile) {
       switch (profile.role) {
         case 'superadmin': router.push('/dashboard'); break;
-        case 'admin': router.push('/dashboard/inventory'); break;
-        case 'sales': router.push('/dashboard/sales'); break;
+        case 'admin': router.push('/dashboard'); break;
+        case 'sales': router.push('/dashboard'); break;
         case 'inventory': router.push('/dashboard'); break;
-        case 'driver': router.push('/dashboard/delivery'); break;
+        case 'driver': router.push('/dashboard'); break;
         case 'carga_descarga': router.push('/dashboard'); break;
         case 'marketing': router.push('/dashboard'); break;
         default: router.push('/cuenta');
