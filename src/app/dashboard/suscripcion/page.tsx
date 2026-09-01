@@ -12,9 +12,9 @@ import { toast } from '@/lib/toast';
 // https://dashboard.stripe.com/products
 // Formato: price_XXXXXXXXXXXXXXXXXXXXXXXX
 const STRIPE_PRICE_IDS = {
-    local:  process.env.NEXT_PUBLIC_STRIPE_PRICE_LOCAL  || 'price_local_placeholder',
-    hybrid: process.env.NEXT_PUBLIC_STRIPE_PRICE_HYBRID || 'price_hybrid_placeholder',
-    p2p:    process.env.NEXT_PUBLIC_STRIPE_PRICE_P2P    || 'price_p2p_placeholder',
+    local:  process.env.NEXT_PUBLIC_STRIPE_PRICE_LOCAL,
+    hybrid: process.env.NEXT_PUBLIC_STRIPE_PRICE_HYBRID,
+    p2p:    process.env.NEXT_PUBLIC_STRIPE_PRICE_P2P,
 };
 
 const plans = [
@@ -80,9 +80,9 @@ export default function PricingPage() {
         const priceId = STRIPE_PRICE_IDS[planId as keyof typeof STRIPE_PRICE_IDS];
 
         // Si el Price ID no está configurado aún, mostrar instrucción al admin
-        if (priceId.includes('placeholder')) {
+        if (!priceId || !/^price_[A-Za-z0-9]+$/.test(priceId)) {
             toast.warning(
-                'Configura los Price IDs de Stripe en .env.local para activar cobros reales.',
+                'Configura los Price IDs de Stripe en Vercel para activar cobros reales.',
                 '⚠️ Stripe no configurado'
             );
             return;

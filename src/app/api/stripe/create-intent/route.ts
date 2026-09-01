@@ -20,8 +20,7 @@ export async function POST(req: NextRequest) {
 
         // 3. Create Checkout Session
         const session = await stripe.checkout.sessions.create({
-            payment_method_types: ['card'],
-            line_items: [
+  line_items: [
                 {
                     price_data: {
                         currency: 'mxn',
