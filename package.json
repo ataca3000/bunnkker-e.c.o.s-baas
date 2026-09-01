@@ -1,7 +1,7 @@
 {
   "name": "bunkker-e.c.o.s-erp",
   "version": "1.0.0",
-  "description": "bunkker ERP — Ecosistema Comercial de Operaciones Simplificadas",
+  "description": "BUNKKER E.C.O.S. — ERP/POS local-first con sincronización LAN, dashboard multirol y billing SaaS.",
   "author": "brechasolucionesds",
   "private": true,
   "main": "electron-main.js",

@@ -1,60 +1,46 @@
-import Stripe from 'stripe';
+import crypto from 'node:crypto';
 import { NextResponse } from 'next/server';
+import Stripe from 'stripe';
 import { auth } from '@/lib/firebase-admin';
-
-// Requerimos la llave secreta en el entorno para mayor seguridad
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_dummy', {
-    apiVersion: '2026-02-25.clover' as any,
-});
+import { isConfiguredPriceId } from '@/lib/products';
 
 export async function POST(req: Request) {
-    try {
-        // 1. VERIFICACIÓN DE IDENTIDAD: Extraer el token de autorización
-        const authHeader = req.headers.get('Authorization');
-        if (!authHeader?.startsWith('Bearer ')) {
-            return NextResponse.json({ error: 'No autorizado: Falta Token' }, { status: 401 });
-        }
+  try {
+    const secretKey = process.env.STRIPE_SECRET_KEY;
+    if (!secretKey) return NextResponse.json({ error: 'Stripe no está configurado.' }, { status: 503 });
 
-        const idToken = authHeader.split('Bearer ')[1];
-        
-        // 2. VALIDAR TOKEN: Firebase se encarga de validar la firma del token
-        const decodedToken = await auth.verifyIdToken(idToken);
-        const userId = decodedToken.uid; // ID real y verificado por el backend
-        
-        // 3. OBTENER DATOS DE LA PETICIÓN
-        // Extraemos solo lo necesario. El email real del usuario lo sacamos de su token.
-        const { priceId } = await req.json();
-        const email = (decodedToken as any).email;
-
-        if (!priceId) {
-             return NextResponse.json({ error: 'Falta el identificador de precio (priceId)' }, { status: 400 });
-        }
-
-        // 4. CREAR SESIÓN EN STRIPE
-        const session = await stripe.checkout.sessions.create({
-            mode: 'subscription',
-            payment_method_types: ['card'],
-            customer_email: email, // Usamos el email seguro extraído del token
-            line_items: [
-                {
-                    price: priceId,
-                    quantity: 1,
-                },
-            ],
-            success_url: `${req.headers.get('origin')}/dashboard?payment=success`,
-            cancel_url: `${req.headers.get('origin')}/dashboard?payment=cancelled`,
-            metadata: {
-                userId: userId, // ID seguro para el webhook
-            },
-        });
-
-        return NextResponse.json({ url: session.url });
-
-    } catch (error: any) {
-        console.error("Error en Checkout API:", error);
-        return NextResponse.json(
-            { error: error.message || 'Error interno al procesar el pago' },
-            { status: 500 }
-        );
+    const authorization = req.headers.get('authorization');
+    if (!authorization?.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'No autorizado.' }, { status: 401 });
     }
+
+    const decodedToken = await auth.verifyIdToken(authorization.slice(7));
+    const email = (decodedToken as { email?: string }).email;
+    if (!email) return NextResponse.json({ error: 'La cuenta no tiene correo de facturación.' }, { status: 400 });
+    const { priceId } = await req.json();
+    if (!isConfiguredPriceId(priceId)) {
+      return NextResponse.json({ error: 'Plan no disponible o Price ID no configurado.' }, { status: 400 });
+    }
+
+    const origin = req.headers.get('origin') || process.env.NEXT_PUBLIC_BASE_URL;
+    if (!origin) return NextResponse.json({ error: 'Origen de checkout no configurado.' }, { status: 500 });
+
+    const stripe = new Stripe(secretKey, { apiVersion: '2026-06-24.dahlia' as any });
+    const session = await stripe.checkout.sessions.create(
+      {
+        mode: 'subscription',
+        customer_email: email,
+        line_items: [{ price: priceId, quantity: 1 }],
+        success_url: `${origin}/dashboard/suscripcion?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${origin}/dashboard/suscripcion?checkout=cancelled`,
+        metadata: { userId: decodedToken.uid },
+      },
+      { idempotencyKey: req.headers.get('idempotency-key') || crypto.randomUUID() },
+    );
+
+    return NextResponse.json({ url: session.url });
+  } catch (error) {
+    console.error('[checkout]', error);
+    return NextResponse.json({ error: 'No se pudo iniciar el checkout.' }, { status: 500 });
+  }
 }
