@@ -1,12 +1,19 @@
-# Arquitectura del Sistema BUNKKER E.C.O.S ERP
+# Arquitectura de referencia de BUNKKER E.C.O.S.
 
-## 1. Visión General
+> **Estado del documento:** **DISEÑO / ROADMAP**, salvo cuando una sección
+> indique explícitamente lo contrario. La fuente de verdad sobre lo que está
+> implementado y verificado en el repositorio es
+> [REAL_ARCHITECTURE.md](./REAL_ARCHITECTURE.md). Este documento conserva la
+> arquitectura objetivo y no debe usarse como evidencia de una capacidad de
+> producción.
+
+## 1. Visión General — **DISEÑO / ROADMAP**
 
 BUNKKER E.C.O.S (Ecosistema Comercial de Operaciones Simplificadas) es una plataforma integral de gestión de recursos empresariales (ERP) y Punto de Venta (POS) con diseño **Local-First**, soporte de red local P2P y sincronización automática en la nube (BaaS) mediante Firebase. El sistema está diseñado para funcionar en condiciones de conectividad inestable o nula, garantizando la continuidad operativa de los negocios.
 
-## 2. Stack Tecnológico
+## 2. Stack Tecnológico — **DISEÑO / ROADMAP**
 
-### Frontend & Runtimes
+### Frontend & Runtimes — **PARCIAL**
 
 * **Framework:** [Next.js 15](https://nextjs.org/) (App Router)
 * **React:** React 19 (Tipado estático estricto y renderizado optimizado)
@@ -14,13 +21,19 @@ BUNKKER E.C.O.S (Ecosistema Comercial de Operaciones Simplificadas) es una plata
 * **Estado Global:** Zustand (`useERPStore` para datos unificados) con adaptadores `CartContext` y `AuthContext` para retrocompatibilidad de UI.
 * **Sistema de Notificaciones:** Despachador de eventos `CustomEvent` global y contenedor `Framer Motion` (sin uso de `alert()` bloqueantes).
 
-### Backend & Almacenamiento Local-First
+### Backend & Almacenamiento Local-First — **DISEÑO / ROADMAP**
+
+> **Importante:** el estado real de datos no es todavía una arquitectura dual
+> validada. El esquema Prisma actual declara PostgreSQL, mientras que Electron
+> y radio-server referencian SQLite. Consultar
+> [REAL_ARCHITECTURE.md](./REAL_ARCHITECTURE.md#decisión-pendiente-datos-edge-y-cloud)
+> antes de modificar o desplegar estos componentes.
 
 * **Base de Datos Local:** SQLite (Prisma ORM) con cola de transacciones Write-Ahead Logging (WAL) offline.
 * **Base de Datos Cloud:** Google Cloud Firestore (NoSQL, sincronización en tiempo real).
 * **Autenticación:** Firebase Admin Auth y endpoints locales protegidos mediante firmas criptográficas.
 
-## 3. Estructura del Código Fuente
+## 3. Estructura del Código Fuente — **IMPLEMENTADO**
 
 ```bash
 src/
@@ -40,21 +53,21 @@ src/
 │   └── audit.ts          # Sistema de Logs de Auditoría Inmutables
 ```
 
-## 4. Patrones de Diseño Implementados
+## 4. Patrones de Diseño — **DISEÑO / ROADMAP salvo indicación contraria**
 
-### A. Local-First con Write-Ahead Logging (WAL)
+### A. Local-First con Write-Ahead Logging (WAL) — **PARCIAL**
 
 El sistema opera de forma autónoma sin conexión a internet. Las operaciones se guardan localmente en SQLite. Las transacciones pendientes de sincronización se encolan en una cola de Write-Ahead Logging (WAL) en `localStorage` (limitada a 500 registros para evitar quota overflow) y se reintentan de forma cíclica al recuperar la conexión.
 
-### B. Seguridad de Cookies con Firmas Criptográficas (HMAC SHA-256)
+### B. Seguridad de Cookies con Firmas Criptográficas (HMAC SHA-256) — **IMPLEMENTADO para rutas que usan el helper**
 
 Para prevenir la manipulación de roles (vulnerabilidad de bypass en cliente), el sistema firma la cookie de rol (`msj-role`) mediante un HMAC SHA-256 (`msj-role-sig`) utilizando la variable `INTERNAL_API_SECRET`. El middleware de Next.js y los helpers de la API verifican la firma de manera sincrónica en cada petición.
 
-### C. Descubrimiento y Sincronización P2P en Red Local
+### C. Descubrimiento y Sincronización P2P en Red Local — **PARCIAL**
 
 Usando `multicast-dns` (mDNS) y WebSockets, el **Nodo Maestro** (servidor local de la tienda) anuncia su presencia y los **Nodos Esclavos** se conectan automáticamente en la red local Wi-Fi/LAN, permitiendo actualización de inventarios en tiempo real sin salir a internet.
 
-### D. Estrategia de Seguridad (Defense in Depth)
+### D. Estrategia de Seguridad (Defense in Depth) — **DISEÑO / ROADMAP**
 
 1. **Nivel Aplicación (Cliente):** `LicenseGuard.tsx` (Validación de licencia vinculada al HWID real de la máquina vía IPC).
 2. **Nivel Datos:** Validación de tipos en TypeScript, tipado estructurado de auditoría forense y control de transacciones ACID en Prisma.
@@ -62,7 +75,7 @@ Usando `multicast-dns` (mDNS) y WebSockets, el **Nodo Maestro** (servidor local 
 
 ---
 
-## 5. Arquitectura de Producción
+## 5. Arquitectura objetivo de Producción — **DISEÑO / ROADMAP**
 
 ```mermaid
 flowchart TB
@@ -77,7 +90,7 @@ flowchart TB
   F --> B[Backups y exportaciones controladas]
 ```
 
-### Responsabilidades
+### Responsabilidades — **DISEÑO / ROADMAP**
 
 | Componente | Responsabilidad | No debe hacer |
 |---|---|---|
@@ -88,7 +101,7 @@ flowchart TB
 | Sincronizador P2P | Replicar entre nodos autorizados | Abrir puertos públicos automáticamente |
 | Vercel | Hosting, previews, producción y logs | Provisionar tenants mediante `/api/deploy` |
 
-### Variables por entorno
+### Variables por entorno — **PARCIAL**
 
 - `INTERNAL_API_SECRET`: firma HMAC de sesiones internas; secreto.
 - `DATABASE_URL`: SQLite local o configuración equivalente del runtime; nunca commitear archivos de base de datos.
@@ -97,8 +110,8 @@ flowchart TB
 
 La lista exacta debe mantenerse en Vercel Vars y validarse durante el checklist de producción. Los nombres de secretos no deben imprimirse en logs.
 
-### Nota sobre aprovisionamiento
+### Nota sobre aprovisionamiento — **IMPLEMENTADO como simulación**
 
 El endpoint `/api/deploy` actual es una simulación de orquestación: genera un identificador, guarda el registro en `tenants_registry` y devuelve un dominio/puerto ficticios. No crea una instancia real, namespace, DNS, contenedor ni proyecto Vercel; cualquier flujo de provisioning futuro debe usar una integración autorizada, idempotency keys y auditoría.
 
-*Documentación de Arquitectura de BUNKKER E.C.O.S ERP v1.0-PRO*
+*Documento de arquitectura objetivo. Ver estado verificable en `docs/REAL_ARCHITECTURE.md`.*
