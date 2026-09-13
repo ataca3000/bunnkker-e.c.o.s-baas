@@ -164,7 +164,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
                 
                 setFirebaseStatus('online'); // Using this status to represent "Local Server Online"
             } catch (err) {
-                console.warn('[Admin.com ERP] Local server unreachable. Working offline.', err);
+                console.warn('[BUNKKER ERP] No se pudo conectar al servidor local. El sistema continúa en modo offline.', err);
                 setFirebaseStatus('offline');
             } finally {
                 setLoading(false);

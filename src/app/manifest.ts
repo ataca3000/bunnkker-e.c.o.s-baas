@@ -2,8 +2,8 @@ import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Admin.com ERP",
-    short_name: "Admin.com",
+    name: "BUNKKER ERP",
+    short_name: "BUNKKER",
     description: "Sistema integral ERP P2P para gestión de recursos, inventario y ventas.",
     start_url: "/",
     display: "standalone",

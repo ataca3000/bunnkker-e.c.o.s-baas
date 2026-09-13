@@ -12,13 +12,13 @@ export default function InventoryDashboardWorker({ userName, greeting, products 
     const totalInvestment = products.reduce((acc: number, p: any) => acc + ((Number(p.price) || 0) * (Number(p.stock) || 0)), 0);
 
     return (
-        <main className="p-8 max-w-5xl mx-auto min-h-screen bg-[#0f111a] text-white">
+        <main className="bunkker-industrial p-8 max-w-5xl mx-auto min-h-screen bg-[#0f111a] text-white">
             <header className="mb-10 flex flex-col sm:flex-row justify-between items-center gap-6 bg-[#1a1d2d] p-6 rounded-3xl border border-white/5 shadow-[0_0_15px_rgba(14,165,233,0.1)]">
                 <div className="text-center sm:text-left">
                     <h1 className="text-3xl font-[900] text-rose-500 uppercase tracking-tighter flex items-center gap-2 justify-center sm:justify-start">
                         <Package size={32} /> CENTRAL DE INVENTARIO
                     </h1>
-                    <p className="text-gray-400 font-medium text-base mt-1">{greeting}, <b>{userName}</b>. Almacén activo en red local.</p>
+                    <p className="text-gray-400 font-medium text-base mt-1">{greeting}, <b>{userName}</b>. Revisa existencias, registra entradas y corrige alertas antes de surtir.</p>
                 </div>
                 <div className="flex gap-3">
                     <Link href="/dashboard/inventory" className="bg-[#0ea5e9] hover:bg-blue-600 text-white px-5 py-2.5 rounded-2xl font-bold uppercase text-xs tracking-wider transition-all shadow-md active:scale-95 flex items-center gap-2">
