@@ -1,5 +1,13 @@
 https://bunnkker-e-c-o-s-baas.vercel.app/
 
+# BUNKKER E.C.O.S. — ERP/POS local-first
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/ataca3000/bunnkker-e.c.o.s-baas&project-name=bunnkker-ecos)
+
+Template profesional para operaciones comerciales multirol, catálogo, inventario, suscripciones SaaS y bridge local por Wi‑Fi.
+
+> Para publicar una instalación real, configura PostgreSQL/Neon, secretos de autenticación y Stripe desde Vercel antes del primer acceso.
+
 # 📜 BUNKKER E.C.O.S. (Ecosistema Comercial Offline Sincronizado)
 
 **Memoria Técnica Descriptiva de Arquitectura, Ingeniería de Sistemas e Registro INDAUTOR**

@@ -38,4 +38,18 @@ La radio queda disponible en `http://IP_DEL_PC:3002` y el diagnóstico en `/heal
 
 El núcleo tiene una buena base funcional, pero debe considerarse production-ready únicamente después de verificar las variables del entorno, migraciones PostgreSQL, webhook firmado, backups y pruebas de integración. Los fallbacks de demo/local deben mantenerse fuera de producción.
 
+## Checklist de envío
+
+- [ ] Repositorio público o acceso de revisión habilitado.
+- [ ] Nombre, descripción y categoría revisados.
+- [ ] Capturas del dashboard y página de suscripciones preparadas.
+- [ ] `DATABASE_URL` configurada con PostgreSQL/Neon.
+- [ ] `INTERNAL_API_SECRET` generado y configurado en Vercel.
+- [ ] Stripe conectado con Price IDs reales y webhook firmado.
+- [ ] Bridge Windows documentado como componente opcional LAN.
+- [ ] Build, lint, TypeScript y smoke test ejecutados con variables reales.
+- [ ] No se incluyen secretos, bases locales ni credenciales en el repositorio.
+
+Vercel Marketplace requiere revisión y publicación desde la cuenta del proveedor; este repositorio queda preparado para ese proceso, pero el envío final no se realiza automáticamente desde la aplicación.
+
 © 2026 Brecha Soluciones S.A. de C.V. / Luis Felipe Durán Salinas.
