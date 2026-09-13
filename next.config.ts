@@ -1,23 +1,6 @@
 import type { NextConfig } from "next";
 import path from "path";
 
-let withPWA = (config: NextConfig) => config;
-
-if (process.env.NODE_ENV === 'production' && process.env.ENABLE_PWA === 'true') {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const withPWAInit = require("@ducanh2912/next-pwa").default;
-    withPWA = withPWAInit({
-      dest: "public",
-      disable: false,
-      register: true,
-      skipWaiting: true,
-    });
-  } catch (e: any) {
-    console.warn("[PWA] Plugin deshabilitado por falta de dependencias workbox:", e.message);
-  }
-}
-
 const nextConfig: NextConfig = {
   output: 'standalone',
   reactStrictMode: false,
@@ -45,4 +28,4 @@ const nextConfig: NextConfig = {
   }
 };
 
-export default withPWA(nextConfig);
+export default nextConfig;
