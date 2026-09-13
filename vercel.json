@@ -46,9 +46,24 @@
       "example": "openssl rand -hex 32"
     },
     {
-      "key": "VERCEL_TOKEN",
-      "description": "Token de Vercel API para despliegues multi-proyecto",
-      "example": "your_vercel_token"
+      "key": "INTERNAL_API_SECRET",
+      "description": "Secreto interno para firmar sesiones y proteger APIs",
+      "example": "genera-un-secreto-aleatorio-largo"
+    },
+    {
+      "key": "STRIPE_WEBHOOK_SECRET",
+      "description": "Secreto de firma del webhook de Stripe",
+      "example": "whsec_..."
+    },
+    {
+      "key": "STRIPE_MONTHLY_PRICE_ID",
+      "description": "Price ID mensual de Stripe para el plan seleccionado",
+      "example": "price_..."
+    },
+    {
+      "key": "STRIPE_ANNUAL_PRICE_ID",
+      "description": "Price ID anual de Stripe para el plan seleccionado",
+      "example": "price_..."
     }
   ],
   "functions": {
