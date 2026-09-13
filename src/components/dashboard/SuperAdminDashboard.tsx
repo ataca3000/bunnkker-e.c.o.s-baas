@@ -168,12 +168,12 @@ export default function SuperAdminDashboard({
     ];
 
     return (
-        <main style={{ padding: '2.5rem' }}>
+        <main className="bunkker-industrial" style={{ padding: '2.5rem' }}>
             {/* ── Header ────────────────────────────────────────── */}
             <header style={{ marginBottom: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
                 <div>
                     <h1 className="tornasol-text" style={{ fontSize: '2.2rem', margin: 0, letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        PANEL MAESTRO
+                        CENTRO DE CONTROL BUNKKER ERP
                     </h1>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '6px' }}>
                         <p style={{ color: '#64748b', fontSize: '0.9rem', margin: 0 }}>

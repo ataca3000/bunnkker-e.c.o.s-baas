@@ -38,7 +38,7 @@ export default function ConectarPage() {
         const port = window.location.port || '3000';
         const base = `http://${ip}:${port}`;
         setServerUrl(base);
-        setMdnsUrl(`http://camalion.local:${port}`);
+        setMdnsUrl(`http://bunkker.local:${port}`);
       })
       .catch(() => {
         setServerUrl(window.location.origin);
@@ -161,7 +161,7 @@ export default function ConectarPage() {
             <div className="flex items-center gap-2 bg-indigo-900/30 border border-indigo-500/30 rounded-xl px-4 py-3">
               <Share2 size={16} className="text-indigo-400 shrink-0" />
               <span className="text-indigo-200 text-sm font-mono flex-1 truncate">
-                camalion.local:3000/login
+bunkker.local:3000/login
               </span>
               <button
                 onClick={() => copyUrl(`http://camalion.local:3000/login`)}
@@ -281,7 +281,7 @@ export default function ConectarPage() {
 
       {/* Footer */}
       <p className="text-slate-600 text-xs mt-10 text-center">
-        Camalion Topics ERP • Red Local • Todos los dispositivos deben estar en el mismo WiFi
+        BUNKKER ERP • Red Local • Todos los dispositivos deben estar en el mismo WiFi
       </p>
     </div>
   );

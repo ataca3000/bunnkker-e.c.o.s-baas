@@ -14,7 +14,7 @@ export default function DashboardLayout({
       {children}
       {/* Radio de Personal PTT (Walkie-Talkie) Exclusivo para el Dashboard de Trabajadores */}
       <LocalRadio />
-      {/* Asistente Lion 🦁 — Tour Guiado Interactivo & Onboarding Pro */}
+      {/* Asistente Bunk — guía de configuración de BUNKKER ERP */}
       <LionAssistantTour />
       {/* Recordatorio Recurrente de Cambio de PIN (Cada 3 minutos para PINs por defecto) */}
       <PinReminderModal />
