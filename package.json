@@ -6,7 +6,7 @@
   "private": false,
   "main": "electron-main.js",
   "scripts": {
-    "dev": "npx concurrently \"next dev -p 3000\" \"node radio-server.js\"",
+    "dev": "npx concurrently \"next dev --webpack -p 3000\" \"node radio-server.js\"",
     "dev:https": "next dev --experimental-https -p 3000",
     "build": "prisma generate && next build",
     "db:migrate": "prisma migrate deploy",

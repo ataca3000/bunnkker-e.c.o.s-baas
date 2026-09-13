@@ -3,7 +3,7 @@ import path from "path";
 
 let withPWA = (config: NextConfig) => config;
 
-if (process.env.NODE_ENV === 'production' && process.env.DISABLE_PWA !== 'true') {
+if (process.env.NODE_ENV === 'production' && process.env.ENABLE_PWA === 'true') {
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const withPWAInit = require("@ducanh2912/next-pwa").default;
