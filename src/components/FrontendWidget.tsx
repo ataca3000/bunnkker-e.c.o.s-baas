@@ -34,7 +34,7 @@ export default function FrontendWidget({ page }: { page: string }) {
                         </div>
 
                         {/* Background Image */}
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        { }
                         <img 
                             src={widget.imageUrl || "https://images.unsplash.com/photo-1557683316-973673baf926?w=500&auto=format&fit=crop"} 
                             alt={widget.title} 

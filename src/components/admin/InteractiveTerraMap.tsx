@@ -11,7 +11,6 @@ import {
   Settings,
   ShieldCheck,
   QrCode,
-  CheckSquare
 } from 'lucide-react';
 
 interface ModuleNode {
@@ -44,7 +43,6 @@ export default function InteractiveTerraMap({ value, onChange }: InteractiveTerr
     { id: 'design', label: 'Branding UI', icon: Settings, x: 260, y: 110, description: 'Temas visuales y personalización' },
     { id: 'marketing', label: 'Marketing QR', icon: QrCode, x: 540, y: 110, description: 'Cupones y códigos de marketing' },
     { id: 'audit', label: 'Auditoría', icon: ShieldCheck, x: 260, y: 290, description: 'Bitácora de seguridad y logs' },
-    { id: 'tests', label: 'Pruebas QA', icon: CheckSquare, x: 540, y: 290, description: 'Laboratorio de testing local' },
   ];
 
   // Conexiones de red entre módulos para dibujar las rutas
@@ -62,8 +60,6 @@ export default function InteractiveTerraMap({ value, onChange }: InteractiveTerr
     { from: 'inventory', to: 'marketing' },
     { from: 'audit', to: 'delivery' },
     { from: 'billing', to: 'marketing' },
-    { from: 'delivery', to: 'tests' },
-    { from: 'tests', to: 'crm' }
   ];
 
   const toggleModule = (id: string) => {

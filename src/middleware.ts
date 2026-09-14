@@ -31,7 +31,6 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
   '/dashboard/qr':              ['superadmin', 'admin', 'marketing', 'sales', 'caja'],
   '/dashboard/demo':            ['superadmin'],
   '/dashboard/suscripcion':     ['superadmin'],
-  '/dashboard/tests':           ['superadmin'],
 };
 
 // Dominios que NO se tratan como sub-tenants

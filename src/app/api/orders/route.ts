@@ -134,7 +134,7 @@ export async function POST(request: NextRequest) {
 
 
 export async function PATCH(request: NextRequest) {
-    const auth = validateApiSession(request);
+    const auth = requireRole(request, WRITE_ROLES);
     if (!auth.ok) return auth.response;
 
     try {
@@ -144,11 +144,37 @@ export async function PATCH(request: NextRequest) {
         if (updates.driverId !== undefined) {
             updates.vendedorId = updates.driverId;
         }
+        const current = await prisma.order.findUnique({ where: { id } });
+        if (!current) return NextResponse.json({ success: false, error: 'Pedido no encontrado.' }, { status: 404 });
+        const currentStatus = String(current.status).toUpperCase();
+        const transitions: Record<string, string[]> = {
+            PENDING_PAYMENT: ['PREPARING', 'CANCELLED'],
+            PREPARING: ['READY_FOR_DELIVERY', 'READY_FOR_PICKUP', 'CANCELLED'],
+            READY_FOR_DELIVERY: ['PAID', 'CANCELLED'],
+            READY_FOR_PICKUP: ['PAID', 'CANCELLED'],
+            PAID: ['OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED'],
+            OUT_FOR_DELIVERY: ['DELIVERED'],
+            DELIVERED: ['RECEIVED']
+        };
+        if (updates.status) updates.status = String(updates.status).toUpperCase();
+        if (updates.status && updates.status !== currentStatus && !transitions[currentStatus]?.includes(updates.status)) {
+            return NextResponse.json({ success: false, error: `Transición no permitida: ${current.status} → ${updates.status}` }, { status: 409 });
+        }
+
+        if (updates.status === 'PREPARING') updates.preparedAt = new Date();
+        if (updates.status === 'PAID') updates.paidAt = new Date();
+        if (updates.status === 'OUT_FOR_DELIVERY') updates.dispatchedAt = new Date();
+        if (updates.status === 'DELIVERED') updates.deliveredAt = new Date();
+        if (updates.status === 'RECEIVED') { updates.receivedAt = new Date(); updates.customerReceived = true; }
+
+        if (updates.driverId !== undefined) {
+            updates.vendedorId = updates.driverId;
+        }
 
         const allowedFields = [
             'tenantId', 'total', 'paymentMethod', 'status', 'deliveryType', 
             'date', 'offline', 'synced', 'ventanilla', 'cajon', 
-            'vendedorId', 'vendedorName', 'confirmedAt', 'customerId'
+            'vendedorId', 'vendedorName', 'confirmedAt', 'customerId', 'preparedAt', 'paidAt', 'dispatchedAt', 'deliveredAt', 'receivedAt', 'deliveryPhoto', 'customerReceived'
         ];
         const prismaUpdates: any = {};
         for (const key of allowedFields) {
@@ -161,7 +187,7 @@ export async function PATCH(request: NextRequest) {
 
         let order;
 
-        if (updates.status === 'cancelled') {
+        if (updates.status === 'CANCELLED') {
             // Fetch items to restore stock
             const existingOrder = await prisma.order.findUnique({
                 where: { id },

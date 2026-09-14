@@ -15,8 +15,6 @@ export default function BarcodeScanner({ onScanSuccess, onClose, isOpen = true, 
     const scannerRef = useRef<any>(null);
     const [error, setError] = useState<string | null>(null);
 
-    if (!isOpen) return null;
-
     const handleScanSuccess = useCallback((decodedText: string) => {
         if (onScanSuccess) {
             onScanSuccess(decodedText);
@@ -24,6 +22,8 @@ export default function BarcodeScanner({ onScanSuccess, onClose, isOpen = true, 
     }, [onScanSuccess]);
 
     useEffect(() => {
+        if (!isOpen) return;
+
         // Inicializar escáner
         const scanner = new Html5QrcodeScanner(
             "reader",
@@ -56,7 +56,9 @@ export default function BarcodeScanner({ onScanSuccess, onClose, isOpen = true, 
                 /* Ignorar errores si el elemento ya no existe */
             });
         };
-    }, [handleScanSuccess]);
+    }, [handleScanSuccess, isOpen]);
+
+    if (!isOpen) return null;
 
     return (
         <div className="fixed inset-0 bg-black/90 z-[3000] flex flex-col items-center justify-center p-4">

@@ -7,7 +7,6 @@ import {
     FileSpreadsheet, TrendingUp, Package, Calculator, Printer, Upload, FileText, Cpu, Server
 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
-import DemoModeBanner from '@/components/DemoModeBanner';
 import { toast } from '@/lib/toast';
 
 interface SalesMetric {
@@ -208,7 +207,6 @@ export default function ReportsAndBackups() {
     return (
         <div style={{ backgroundColor: 'transparent', minHeight: '100vh', padding: '2.5rem' }}>
             <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-                <DemoModeBanner sectionName="Reportes y Respaldo Local" />
 
                 {/* Header */}
                 <header style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
