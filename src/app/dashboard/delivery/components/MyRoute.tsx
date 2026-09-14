@@ -166,6 +166,9 @@ export default function MyRoute({
                  <p className="text-xs text-slate-300 flex items-center gap-1.5 mt-1.5">
                     <MapPin size={14} className="text-sky-400" /> <span className="line-clamp-1">{order.address}</span>
                  </p>
+                 <p className="text-xs text-slate-400 mt-2 line-clamp-2">
+                    {order.items?.map((item) => `${item.quantity ?? item.cantidad ?? 1}× ${item.name ?? item.productName ?? item.productId ?? 'Producto'}`).join(' · ') || 'Sin productos registrados'}
+                 </p>
               </div>
               <button 
                 onClick={() => onStartDelivery(order.id)}
