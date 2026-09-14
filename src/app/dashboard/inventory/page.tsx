@@ -944,7 +944,7 @@ export default function InventoryDashboard() {
                                             />
                                             {formData.image && (
                                                 <div className="mt-4 h-32 w-32 rounded-xl overflow-hidden border-2 border-[#0ea5e9] shadow-lg shadow-blue-500/20">
-                                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                    { }
                                                     <img src={formData.image} alt="Preview" className="w-full h-full object-cover" />
                                                 </div>
                                             )}

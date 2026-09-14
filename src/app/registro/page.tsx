@@ -138,7 +138,7 @@ export default function RegisterPage() {
     return (
         <div className="min-h-screen relative flex flex-col items-center justify-center p-4 py-10 font-sans">
             {/* BG */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
+            { }
             <img src={BG} alt="bg" className="absolute inset-0 w-full h-full object-cover" />
             <div className="absolute inset-0 bg-slate-900/85 backdrop-blur-sm pointer-events-none" />
 

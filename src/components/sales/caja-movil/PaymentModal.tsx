@@ -142,7 +142,7 @@ export function PaymentModal({ isOpen, onClose, total, orderType, onConfirm, isP
                  />
                  {evidencePhoto && (
                      <div className="h-24 w-24 rounded-lg overflow-hidden border border-white/20">
-                         {/* eslint-disable-next-line @next/next/no-img-element */}
+                         { }
                          <img src={evidencePhoto} alt="Evidencia" className="w-full h-full object-cover" />
                      </div>
                  )}

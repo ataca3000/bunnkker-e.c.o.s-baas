@@ -20,7 +20,6 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
-import DemoModeBanner from '@/components/DemoModeBanner';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -35,35 +34,6 @@ interface PurchaseOrder {
     date: string; // ISO string
     createdAt?: unknown;
 }
-
-// ─── Demo fallback data ─────────────────────────────────────────────────────────
-
-const DEMO_ORDERS: PurchaseOrder[] = [
-    {
-        id: 'OC-DEMO-001',
-        supplier: 'Distribuidora Global S.A.',
-        concept: 'Reposición de materiales de oficina',
-        amount: 12500,
-        status: 'Pendiente',
-        date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-        id: 'OC-DEMO-002',
-        supplier: 'Suministros Industriales del Centro',
-        concept: 'Equipos de protección y seguridad',
-        amount: 45800,
-        status: 'En Tránsito',
-        date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-        id: 'OC-DEMO-003',
-        supplier: 'Logística Premium Corp.',
-        concept: 'Insumos para producción mensual',
-        amount: 89000,
-        status: 'Recibido',
-        date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-    },
-];
 
 // ─── Status config ──────────────────────────────────────────────────────────────
 
@@ -153,14 +123,14 @@ export default function PurchasesDashboard() {
             } else {
                 throw new Error(data.error);
             }
-        } catch (err: any) {
-            console.warn('[Purchases] Using demo fallback', err);
+        } catch (err: unknown) {
+            console.error('[Purchases] No se pudieron cargar las órdenes', err);
             setIsOffline(true);
-            setOrders(DEMO_ORDERS);
+            setOrders([]);
         } finally {
             setLoading(false);
         }
-    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    }, []);
 
     useEffect(() => {
         loadOrders();
@@ -314,7 +284,6 @@ export default function PurchasesDashboard() {
     return (
         <div style={{ backgroundColor: '#f5f5f5', minHeight: '100vh', padding: '2.5rem' }}>
             <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-                <DemoModeBanner sectionName="Compras y Proveedores" />
 
                 {/* ── Offline Banner ─────────────────────────────────────── */}
                 <AnimatePresence>
