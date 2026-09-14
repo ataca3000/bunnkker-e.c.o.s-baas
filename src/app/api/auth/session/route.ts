@@ -193,8 +193,9 @@ export async function POST(request: NextRequest) {
         } 
       });
 
-      // Si no existe el usuario en la BD pero es uno de los PINs iniciales predeterminados
-      if (!user && DEFAULT_INITIAL_PINS[pin]) {
+      // Los PINs iniciales solo pueden crear el primer usuario en desarrollo local.
+      // En producción, cualquier credencial debe existir previamente y estar provisionada.
+      if (!user && process.env.NODE_ENV !== 'production' && DEFAULT_INITIAL_PINS[pin]) {
         const defaultRoleInfo = DEFAULT_INITIAL_PINS[pin];
         const initialPinHash = await bcrypt.hash(pin, SALT_ROUNDS);
         

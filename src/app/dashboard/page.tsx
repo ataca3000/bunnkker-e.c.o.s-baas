@@ -25,8 +25,12 @@ const DeliveryDashboardWorker = dynamic(() => import('@/components/dashboard/Del
 
 export default function DashboardRouter() {
     const { orders, products, maintenanceBalance, ownerBalance, siteConfig, formatCurrency, startLoading, completeLoading } = useCart();
-    const { profile, signOut } = useAuth();
+    const { profile, loading: authLoading, signOut } = useAuth();
     const [isScannerOpen, setIsScannerOpen] = useState(false);
+
+    if (authLoading || !profile) {
+        return <LoadingFallback />;
+    }
 
     const handleAdminScan = (code: string) => {
         const product = products.find(p => p.id === code || p.barcode === code);

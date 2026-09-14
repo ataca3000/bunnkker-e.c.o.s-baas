@@ -122,8 +122,20 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (res.ok && data.success) {
-        // Acceso directo de lleno al Dashboard
-        window.location.href = '/dashboard';
+        // El dashboard decide la consola por el rol firmado; no enviamos todos los PIN a Caja.
+        const destinationByRole: Record<string, string> = {
+          superadmin: '/dashboard',
+          admin: '/dashboard',
+          sales: '/dashboard/sales',
+          billing: '/dashboard/sales',
+          inventory: '/dashboard/inventory',
+          carga_descarga: '/dashboard/patio',
+          driver: '/dashboard/delivery',
+          delivery: '/dashboard/delivery',
+          marketing: '/dashboard/marketing',
+          pickup: '/dashboard/pickup',
+        };
+        window.location.href = destinationByRole[data.role] || '/dashboard';
       } else {
         setError(data.error || 'PIN de acceso denegado.');
       }

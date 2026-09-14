@@ -15,13 +15,11 @@ const DELIVERY_ROLES = ['superadmin', 'admin', 'delivery', 'driver', 'carga_desc
 // ── Cookie Secret — nunca usa un valor hardcodeado en producción ───────────
 // Si INTERNAL_API_SECRET no está configurado, se genera un secreto efímero por proceso.
 // Esto evita un fallback inseguro y permite que el build y el arranque funcionen en CI.
-const COOKIE_SECRET = process.env.INTERNAL_API_SECRET || (() => {
-  const generated = crypto.randomBytes(32).toString('hex');
-  if (process.env.NODE_ENV === 'production') {
-    console.warn('INTERNAL_API_SECRET is not set; using an ephemeral secret for this process.');
-  }
-  return generated;
-})();
+const COOKIE_SECRET = process.env.INTERNAL_API_SECRET || crypto.randomBytes(32).toString('hex');
+
+if (!process.env.INTERNAL_API_SECRET && process.env.NODE_ENV === 'production') {
+  throw new Error('INTERNAL_API_SECRET must be configured in production.');
+}
 
 /**
  * Genera un entero aleatorio seguro dentro de un rango.
