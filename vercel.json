@@ -1,4 +1,7 @@
 {
-  "buildCommand": "npx prisma generate && next build",
-  "framework": "nextjs"
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "buildCommand": "npm run build",
+  "installCommand": "npm install",
+  "devCommand": "npm run dev:web"
 }
