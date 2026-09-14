@@ -65,12 +65,5 @@
       "description": "Price ID anual de Stripe para el plan seleccionado",
       "example": "price_..."
     }
-  ],
-  "functions": {
-    "src/app/api/**/*.ts": {
-      "runtime": "nodejs20.x",
-      "memory": 1024,
-      "maxDuration": 60
-    }
-  }
+  ]
 }
