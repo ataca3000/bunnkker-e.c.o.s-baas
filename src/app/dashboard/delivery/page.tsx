@@ -16,6 +16,7 @@ import MyRoute from './components/MyRoute';
 import DeliveryView from './components/DeliveryView';
 import { AlertCircle } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
+import { enqueueDeliveryAction, registerDeliverySync } from '@/lib/deliveryOfflineQueue';
 
 export default function DeliveryDashboard() {
     const { profile } = useAuth();
@@ -30,8 +31,8 @@ export default function DeliveryDashboard() {
             customerPhone: o.customer?.phone || '',
             customerRole: 'Cliente',
             address: o.customer?.address || 'Domicilio',
-            lat: 0, // Should be o.lat if added to schema
-            lng: 0, // Should be o.lng if added to schema
+            lat: Number(o.coordinates?.lat ?? o.lat ?? o.customer?.lat ?? 19.4326),
+            lng: Number(o.coordinates?.lng ?? o.lng ?? o.customer?.lng ?? -99.1332),
             status: o.status === 'delivered' ? 'completed' : ((o.driverId || o.vendedorId) ? 'claimed' : 'available'),
             driverId: o.driverId || o.vendedorId || undefined,
             total: o.total,
@@ -43,6 +44,21 @@ export default function DeliveryDashboard() {
     const [activeDeliveryId, setActiveDeliveryId] = useState<string | null>(null);
     const [panicLoading, setPanicLoading] = useState(false);
     const [driverLocation, setDriverLocation] = useState<{lat: number, lng: number} | null>(null);
+    const [isOnline, setIsOnline] = useState(true);
+
+    useEffect(() => {
+        setIsOnline(navigator.onLine);
+        const handleOnline = () => setIsOnline(true);
+        const handleOffline = () => setIsOnline(false);
+        window.addEventListener('online', handleOnline);
+        window.addEventListener('offline', handleOffline);
+        return () => {
+            window.removeEventListener('online', handleOnline);
+            window.removeEventListener('offline', handleOffline);
+        };
+    }, []);
+
+    useEffect(() => registerDeliverySync(), []);
     
     const lastGpsUpdate = useRef<number>(0);
     const GPS_THROTTLE_MS = 15000;
@@ -126,22 +142,24 @@ export default function DeliveryDashboard() {
     };
 
     const updateOrderInFirebase = async (id: string, updates: Partial<DeliveryOrder>) => {
+        const mappedStatus = updates.status === 'completed' ? 'delivered' : updates.status;
+        const dataToUpdate: any = { id };
         try {
-            const mappedStatus = updates.status === 'completed' ? 'delivered' : updates.status;
-            const dataToUpdate: any = { id };
             if (mappedStatus) dataToUpdate.status = mappedStatus;
             if (updates.driverId) dataToUpdate.driverId = updates.driverId;
             if (updates.signatureData) dataToUpdate.signatureData = updates.signatureData;
             if (updates.photoData) dataToUpdate.photoData = updates.photoData;
 
-            await fetch('/api/orders', {
+            const response = await fetch('/api/orders', {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(dataToUpdate)
             });
+            if (!response.ok) throw new Error(`Order update failed: ${response.status}`);
         } catch (error) {
-            console.error("Error updating order", error);
-            toast.error('No se pudo actualizar la orden. Verifica tu conexión.');
+            enqueueDeliveryAction(id, dataToUpdate);
+            console.warn('[Delivery] Acción guardada para reconciliación offline', error);
+            toast.warning('Sin conexión: la actualización quedó guardada y se sincronizará al volver internet.');
         }
     };
 
@@ -151,8 +169,17 @@ export default function DeliveryDashboard() {
              toast.warning('Esta orden ya fue tomada por otro repartidor.');
              return;
         }
-        // Guardar en Firebase
-        await updateOrderInFirebase(orderId, { status: 'claimed', driverId: profile?.uid });
+        try {
+            const response = await fetch('/api/orders', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: orderId, claim: true, driverId: profile?.uid, vendedorName: profile?.displayName || 'Repartidor' }),
+            });
+            if (!response.ok) throw new Error(`Claim failed: ${response.status}`);
+        } catch (error) {
+            enqueueDeliveryAction(orderId, { claim: true, driverId: profile?.uid, vendedorName: profile?.displayName || 'Repartidor' });
+            toast.warning('Sin conexión: la toma del pedido quedó pendiente de reconciliación.');
+        }
     };
 
     const handleUpdateOrder = async (orderId: string, updates: Partial<DeliveryOrder>) => {
@@ -186,9 +213,9 @@ export default function DeliveryDashboard() {
                 </div>
                 <div className="text-right">
                     <p className="text-sm font-medium text-slate-200">{profile?.displayName || 'Repartidor'}</p>
-                    <div className="flex items-center justify-end gap-1 text-xs text-emerald-400 mt-1">
-                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse drop-shadow-[0_0_5px_rgba(16,185,129,0.8)]"></span>
-                        En Línea
+                    <div className={`flex items-center justify-end gap-1 text-xs mt-1 ${isOnline ? 'text-emerald-400' : 'text-amber-400'}`}>
+                        <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'} drop-shadow-[0_0_5px_rgba(16,185,129,0.8)]`}></span>
+                        {isOnline ? 'En Línea' : 'Modo offline · cambios guardados'}
                     </div>
                 </div>
             </header>

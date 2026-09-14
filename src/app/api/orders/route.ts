@@ -139,7 +139,25 @@ export async function PATCH(request: NextRequest) {
 
     try {
         const body = await request.json();
-        const { id, ...updates } = body;
+        const { id, claim, ...updates } = body;
+
+        if (!id) throw new Error('Order ID is required');
+
+        if (claim && updates.driverId) {
+            const claimed = await prisma.order.updateMany({
+                where: {
+                    id,
+                    vendedorId: null,
+                    status: { in: ['PAID', 'READY_FOR_DELIVERY', 'OUT_FOR_DELIVERY'] },
+                },
+                data: { vendedorId: updates.driverId, vendedorName: updates.vendedorName ?? null },
+            });
+            if (claimed.count !== 1) {
+                return NextResponse.json({ success: false, error: 'El pedido ya fue tomado por otro repartidor.' }, { status: 409 });
+            }
+            const claimedOrder = await prisma.order.findUnique({ where: { id }, include: { items: true, customer: true } });
+            return NextResponse.json({ success: true, data: claimedOrder });
+        }
 
         if (updates.driverId !== undefined) {
             updates.vendedorId = updates.driverId;
@@ -183,8 +201,6 @@ export async function PATCH(request: NextRequest) {
             }
         }
         
-        if (!id) throw new Error('Order ID is required');
-
         let order;
 
         if (updates.status === 'CANCELLED') {
