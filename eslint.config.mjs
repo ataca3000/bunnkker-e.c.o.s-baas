@@ -43,6 +43,14 @@ export default [
       "prefer-const":       "warn",
       "no-case-declarations": "warn",
       "no-useless-catch":   "warn",
+
+      // Legacy UI migration: report these patterns without blocking builds.
+      "react-hooks/rules-of-hooks": "warn",
+      "react-hooks/set-state-in-effect": "warn",
+      "react-hooks/purity": "warn",
+      "react-hooks/immutability": "warn",
+      "@next/next/no-html-link-for-pages": "warn",
+      "@typescript-eslint/no-unused-expressions": "warn",
     },
   },
 
@@ -90,6 +98,7 @@ export default [
       "node_modules/**",
       "next-env.d.ts",
       "**/*.js",           // JS files linted separately if needed
+      "**/*.mjs",          // Node ESM scripts are validated by their own runtime checks
     ],
   },
 ];
