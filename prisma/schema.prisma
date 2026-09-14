@@ -72,11 +72,33 @@ model Order {
   vendedorId    String?
   vendedorName  String?
   confirmedAt   DateTime?
+  preparedAt    DateTime?
+  paidAt        DateTime?
+  dispatchedAt  DateTime?
+  deliveredAt   DateTime?
+  receivedAt    DateTime?
+  deliveryPhoto String?
+  customerReceived Boolean @default(false)
   
   customerId    String?
   customer      Customer? @relation(fields: [customerId], references: [id])
   
   items         OrderItem[]
+  receipts      DigitalReceipt[]
+  }
+
+model DigitalReceipt {
+  id          String   @id @default(uuid())
+  tenantId    String   @default("default")
+  orderId     String
+  cashierId   String
+  cashierName String
+  customerId  String?
+  total       Float
+  paymentMethod String
+  receiptNumber String @unique
+  createdAt   DateTime @default(now())
+  order       Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
 }
 
 // Detalle de la Venta Local
