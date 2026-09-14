@@ -229,8 +229,9 @@ export default function SalesDashboard() {
                     total: posTotal,
                     paymentMethod: 'cash',
                     status: finalStatus,
-                    items: posCart.map(i => ({ id: i.id, quantity: i.quantity, price: i.price })),
-                    customer: orderPayload.customer,
+                    items: posCart.map(i => ({ productId: i.id, quantity: i.quantity, price: i.price })),
+                    clientData: orderPayload.customer,
+                    deliveryType: orderType === 'delivery' ? 'DELIVERY' : 'LOCAL',
                     evidencePhoto: evidencePhoto || null
                 })
             }).catch(err => console.warn('Local Edge API sync failed (will retry):', err));

@@ -84,7 +84,8 @@ export default function RadarAuditPage() {
                         timestamp: { seconds: new Date(l.timestamp).getTime() / 1000 },
                         isoDate: l.timestamp,
                         isLocal: true,
-                        userId: l.userId
+                        userId: l.userId,
+                        metadata: l.metadata || {}
                     }));
                     
                     let finalLogs = mapped;
@@ -205,8 +206,7 @@ export default function RadarAuditPage() {
                 <div className="bg-emerald-500/10 border border-emerald-500/20 p-6 rounded-2xl">
                     <h3 className="text-emerald-400 font-bold text-xs uppercase tracking-widest mb-2">Ventas de Hoy</h3>
                     <p className="text-3xl font-black text-white">
-                        {/* Mock calculation for the demo based on logs */}
-                        ${filteredLogs.filter(l => l.type === 'ORDER_CREATE').reduce((acc, l) => acc + (l.metadata?.total || 0), 0).toFixed(2)}
+                        ${filteredLogs.filter(l => l.type === 'ORDER_CREATE').reduce((acc, l) => acc + Number(l.metadata?.total || 0), 0).toFixed(2)}
                     </p>
                 </div>
                 <div className="bg-red-500/10 border border-red-500/20 p-6 rounded-2xl">
