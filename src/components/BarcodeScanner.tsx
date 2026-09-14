@@ -70,12 +70,13 @@ export default function BarcodeScanner({ onScanSuccess, onClose, isOpen = true, 
                     <X size={24} />
                 </button>
 
-                <h3 className="text-center mb-5 font-bold text-lg text-gray-800">Escanea el Código QR</h3>
+                <h3 className="text-center mb-2 font-bold text-lg text-gray-800">Escanea el producto</h3>
+                <p className="text-center mb-5 text-sm text-gray-500">Alinea el código de barras o QR dentro del recuadro.</p>
 
                 <div id="reader" className="w-full overflow-hidden rounded-lg"></div>
 
                 <p className="text-center text-xs text-gray-500 mt-4 px-2">
-                    Apunta la cámara al código QR del producto.
+                    La cámara registra el código para buscarlo en el catálogo. Si no hay coincidencia, revisa el código en Almacén.
                 </p>
             </div>
         </div>

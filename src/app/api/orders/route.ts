@@ -1,14 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-import { validateApiSession } from '@/lib/apiAuth';
+import { requireRole, validateApiSession, WRITE_ROLES } from '@/lib/apiAuth';
 
 export const dynamic = 'force-dynamic';
 
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+    const auth = validateApiSession(request);
+    if (!auth.ok) return auth.response;
+
     try {
+        const tenantId = request.headers.get('x-tenant-id') || 'default-local';
         const orders = await prisma.order.findMany({
+            where: { tenantId },
             include: { items: true, customer: true },
             orderBy: { date: 'desc' }
         });
@@ -19,38 +24,51 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+    const auth = requireRole(request, WRITE_ROLES);
+    if (!auth.ok) return auth.response;
+
     try {
         const tenantId = request.headers.get('x-tenant-id') || 'default-local';
         const body = await request.json();
-        const { orderId, total, deliveryType, paymentMethod, clientData, items, deliveryMethod } = body;
+        const { orderId, total, deliveryType, paymentMethod, clientData, customer, items, deliveryMethod } = body;
+        const normalizedItems = Array.isArray(items) ? items.map((item: any) => ({
+            productId: item.productId || item.id,
+            quantity: Number(item.quantity),
+            price: Number(item.price),
+        })) : [];
+
+        if (!orderId || normalizedItems.length === 0 || normalizedItems.some((item: any) => !item.productId || !Number.isInteger(item.quantity) || item.quantity <= 0)) {
+            return NextResponse.json({ success: false, error: 'La venta requiere un folio y productos válidos.' }, { status: 400 });
+        }
 
         // Garantía de Transacción ACID local
         const orderResult = await prisma.$transaction(async (tx) => {
             
             // 1. Resolver o Crear Cliente por Teléfono (si existe clientData y tiene teléfono)
             let customerId: string | null = null;
-            if (clientData && clientData.phone) {
+            const customerInput = clientData || customer;
+            if (customerInput && customerInput.phone) {
                 let customer = await tx.customer.findUnique({
-                    where: { phone: clientData.phone }
+                    where: { phone: customerInput.phone }
                 });
 
                 if (!customer) {
                     customer = await tx.customer.create({
                         data: {
                             tenantId,
-                            name: clientData.name || 'Cliente Genérico',
-                            phone: clientData.phone,
-                            address: clientData.address || null,
-                            references: clientData.references || null
+                            name: customerInput.name || 'Cliente Genérico',
+                            phone: customerInput.phone,
+                            address: customerInput.address || null,
+                            references: customerInput.references || customerInput.reference || null
                         }
                     });
-                } else if (deliveryType === 'DELIVERY' && clientData.address) {
+                } else if (deliveryType === 'DELIVERY' && customerInput.address) {
                     // Actualizar datos de entrega si regresó con nueva dirección
                     customer = await tx.customer.update({
                         where: { id: customer.id },
                         data: {
-                            address: clientData.address,
-                            references: clientData.references
+                            address: customerInput.address,
+                            references: customerInput.references || customerInput.reference
                         }
                     });
                 }
@@ -62,7 +80,7 @@ export async function POST(request: NextRequest) {
             // Prisma ejecuta cada update de forma secuencial dentro de la transacción,
             // pero no bloquea el registro entre la lectura y la escritura a nivel SQL.
             // La solución correcta es: leer → validar → decrementar condicionalmente.
-            for (const item of items) {
+            for (const item of normalizedItems) {
                 // Paso A: Verificar stock actual antes de modificar
                 const current = await tx.product.findUnique({
                     where: { id: item.productId },
@@ -95,7 +113,7 @@ export async function POST(request: NextRequest) {
                     status: 'PENDING_PAYMENT', // Estado inicial en la fila de espera
                     customerId: customerId,
                     items: {
-                        create: items.map((item: any) => ({
+                        create: normalizedItems.map((item: any) => ({
                             productId: item.productId,
                             cantidad: item.quantity,
                             precio: item.price
