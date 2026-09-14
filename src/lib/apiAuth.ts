@@ -17,10 +17,6 @@ const DELIVERY_ROLES = ['superadmin', 'admin', 'delivery', 'driver', 'carga_desc
 // Esto evita un fallback inseguro y permite que el build y el arranque funcionen en CI.
 const COOKIE_SECRET = process.env.INTERNAL_API_SECRET || crypto.randomBytes(32).toString('hex');
 
-if (!process.env.INTERNAL_API_SECRET && process.env.NODE_ENV === 'production') {
-  throw new Error('INTERNAL_API_SECRET must be configured in production.');
-}
-
 /**
  * Genera un entero aleatorio seguro dentro de un rango.
  */
@@ -55,6 +51,16 @@ export function verifyRoleSignature(role: string, uid: string, signature: string
  * Lee las cookies httpOnly seteadas por /api/auth/session.
  */
 export function validateApiSession(request: NextRequest): ApiAuthResult {
+  if (!process.env.INTERNAL_API_SECRET && process.env.NODE_ENV === 'production') {
+    return {
+      ok: false,
+      response: NextResponse.json(
+        { success: false, error: 'El servidor no tiene configurado INTERNAL_API_SECRET.' },
+        { status: 503 }
+      ),
+    };
+  }
+
   const session = request.cookies.get('msj-session')?.value;
   const role    = request.cookies.get('msj-role')?.value;
   const sig     = request.cookies.get('msj-role-sig')?.value;
