@@ -22,7 +22,6 @@ import {
     Lock,
     ChevronLeft,
     ChevronRight,
-    Play,
     Wifi,
     WifiOff,
     Info,
@@ -35,7 +34,6 @@ import {
     User,
     Save,
     RefreshCw as Refresh,
-    Activity
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
@@ -46,7 +44,7 @@ import { toast } from '@/lib/toast';
 
 
 const rolePaths: Record<string, string[]> = {
-    superadmin: ['/dashboard', '/dashboard/admin/sales', '/dashboard/admin/users', '/dashboard/admin/customers', '/dashboard/inventory', '/dashboard/delivery', '/dashboard/pickup', '/dashboard/design', '/dashboard/marketing', '/dashboard/billing', '/dashboard/audit', '/dashboard/suscripcion', '/dashboard/qr', '/dashboard/demo', '/dashboard/tests'],
+    superadmin: ['/dashboard', '/dashboard/admin/sales', '/dashboard/admin/users', '/dashboard/admin/customers', '/dashboard/inventory', '/dashboard/delivery', '/dashboard/pickup', '/dashboard/design', '/dashboard/marketing', '/dashboard/billing', '/dashboard/audit', '/dashboard/suscripcion', '/dashboard/qr'],
     admin: ['/dashboard', '/dashboard/admin/sales', '/dashboard/admin/customers', '/dashboard/inventory', '/dashboard/delivery', '/dashboard/pickup', '/dashboard/billing', '/dashboard/audit', '/dashboard/suscripcion'],
     sales: ['/dashboard', '/dashboard/admin/sales', '/dashboard/admin/customers'],
     inventory: ['/dashboard', '/dashboard/inventory'],
@@ -66,7 +64,6 @@ const menuGroups = [
             { id: 'users',      title: 'Usuarios y Roles',   icon: <Users size={20} />,           href: '/dashboard/admin/users', premium: false },
             { id: 'customers',  title: 'CRM y Clientes',     icon: <User size={20} />,            href: '/dashboard/admin/customers', premium: false },
             { id: 'qr',         title: 'Vincular por QR',    icon: <Share2 size={20} />,          href: '/dashboard/qr',          premium: false },
-            { id: 'demo',       title: 'Test ISO / Demo',    icon: <Activity size={20} />,        href: '/dashboard/demo',        premium: false },
         ],
     },
     {
@@ -90,12 +87,6 @@ const menuGroups = [
             { id: 'billing',      title: 'Facturas SAT',       icon: <FileText size={20} />,  href: '/dashboard/billing',      premium: true  },
             { id: 'audit',        title: 'Registro Auditoría', icon: <History size={20} />,   href: '/dashboard/audit',        premium: false },
             { id: 'subscription', title: 'Mi Suscripción',     icon: <CreditCard size={20} />, href: '/dashboard/suscripcion', premium: false },
-        ],
-    },
-    {
-        label: 'Herramientas',
-        items: [
-            { id: 'tests', title: 'Pruebas de Lógica', icon: <Play size={20} />, href: '/dashboard/tests', premium: false },
         ],
     },
 ];
@@ -338,7 +329,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         setActiveModules(data.activeModules);
                     } else {
                         // Default fallback if not defined or empty
-                        setActiveModules(['sales', 'users', 'customers', 'qr', 'demo', 'inventory', 'delivery', 'pickup', 'design', 'marketing', 'billing', 'audit', 'dashboard', 'tests', 'subscription']);
+                        setActiveModules(['sales', 'users', 'customers', 'qr', 'demo', 'inventory', 'delivery', 'pickup', 'design', 'marketing', 'billing', 'audit', 'dashboard', 'subscription']);
                     }
                 }
             } catch (err) {
@@ -455,7 +446,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const labelsMap: Record<string, string> = {
         admin: 'ADMINISTRADOR', sales: 'VENTAS', inventory: 'INVENTARIO',
         design: 'DISEÑO', delivery: 'LOGÍSTICA',
-        billing: 'FACTURACIÓN', audit: 'AUDITORÍA', tests: 'PRUEBAS',
+        billing: 'FACTURACIÓN', audit: 'AUDITORÍA',
         users: 'USUARIOS', marketing: 'MARKETING', suscripcion: 'SUSCRIPCIÓN',
         crm: 'CRM', team: 'EQUIPO', purchases: 'COMPRAS', reports: 'REPORTES',
         soporte: 'SOPORTE', setup: 'CONFIGURACIÓN', guia: 'GUÍA',
