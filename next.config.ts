@@ -1,23 +1,6 @@
 import type { NextConfig } from "next";
 import path from "path";
 
-let withPWA = (config: NextConfig) => config;
-
-if (process.env.NODE_ENV === 'production' && process.env.DISABLE_PWA !== 'true') {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const withPWAInit = require("@ducanh2912/next-pwa").default;
-    withPWA = withPWAInit({
-      dest: "public",
-      disable: false,
-      register: true,
-      skipWaiting: true,
-    });
-  } catch (e: any) {
-    console.warn("[PWA] Plugin deshabilitado por falta de dependencias workbox:", e.message);
-  }
-}
-
 const nextConfig: NextConfig = {
   output: 'standalone',
   reactStrictMode: false,
@@ -26,10 +9,24 @@ const nextConfig: NextConfig = {
     root: path.resolve(__dirname),
   },
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
+  },
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          { key: 'Strict-Transport-Security', value: 'max-age=63072000' },
+          { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+        ],
+      },
+    ];
   },
   experimental: {
     optimizePackageImports: ['lucide-react', 'firebase', 'firebase/firestore', '@stripe/stripe-js', 'recharts', 'framer-motion']
@@ -45,4 +42,4 @@ const nextConfig: NextConfig = {
   }
 };
 
-export default withPWA(nextConfig);
+export default nextConfig;

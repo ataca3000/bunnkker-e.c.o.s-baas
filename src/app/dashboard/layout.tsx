@@ -1,7 +1,7 @@
 "use client";
 
 import LocalRadio from "@/components/LocalRadio";
-import { LionAssistantTour } from "@/components/LionAssistantTour";
+import { BunkAssistantTour } from "@/components/LionAssistantTour";
 import { PinReminderModal } from "@/components/PinReminderModal";
 
 export default function DashboardLayout({
@@ -14,8 +14,8 @@ export default function DashboardLayout({
       {children}
       {/* Radio de Personal PTT (Walkie-Talkie) Exclusivo para el Dashboard de Trabajadores */}
       <LocalRadio />
-      {/* Asistente Lion 🦁 — Tour Guiado Interactivo & Onboarding Pro */}
-      <LionAssistantTour />
+      {/* Asistente Bunk — guía de configuración de BUNKKER ERP */}
+      <BunkAssistantTour />
       {/* Recordatorio Recurrente de Cambio de PIN (Cada 3 minutos para PINs por defecto) */}
       <PinReminderModal />
     </div>

@@ -10,7 +10,6 @@ import {
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import CorteCajaCiego from '@/components/sales/CorteCajaCiego';
 import BarcodeScanner from '@/components/BarcodeScanner';
-import { printReceiptWithWebSerial } from '@/lib/thermalPrinter';
 import { db } from '@/lib/firebase';
 import { doc, writeBatch, increment, serverTimestamp } from 'firebase/firestore';
 import { logAudit } from '@/lib/audit';
@@ -225,12 +224,13 @@ export default function SalesDashboard() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    id: orderId,
+                    orderId,
                     total: posTotal,
                     paymentMethod: 'cash',
                     status: finalStatus,
-                    items: posCart.map(i => ({ id: i.id, quantity: i.quantity, price: i.price })),
-                    customer: orderPayload.customer,
+                    items: posCart.map(i => ({ productId: i.id, quantity: i.quantity, price: i.price })),
+                    clientData: orderPayload.customer,
+                    deliveryType: orderType === 'delivery' ? 'DELIVERY' : 'LOCAL',
                     evidencePhoto: evidencePhoto || null
                 })
             }).catch(err => console.warn('Local Edge API sync failed (will retry):', err));
@@ -244,22 +244,19 @@ export default function SalesDashboard() {
                 metadata: { orderId, total: posTotal, items: posCart.length },
             }).catch(() => {});
 
-            // Print native ticket
-            try {
-                await printReceiptWithWebSerial({
-                    businessName: siteConfig?.businessName || 'Caja Móvil',
-                    orderId: orderId,
-                    items: posCart.map(i => ({ name: i.name, quantity: i.quantity, price: i.price })),
-                    total: posTotal,
-                    date: new Date(),
-                    customerName: cName as string
-                });
-            } catch (e) {
-                console.warn('Fallback print window');
-                window.print();
-            }
+            const receiptResponse = await fetch('/api/receipts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    orderId,
+                    paymentMethod: 'DIGITAL',
+                    cashierId: profile?.uid || 'caja-local',
+                    cashierName: profile?.displayName || 'Caja'
+                })
+            });
+            if (!receiptResponse.ok) throw new Error('No se pudo generar el ticket digital.');
 
-            showToast('¡Venta completada exitosamente!');
+            showToast('Cobro registrado y ticket digital enviado al cliente.');
             setPosCart([]);
             setIsPaymentOpen(false);
             setDeliveryInfo(undefined);

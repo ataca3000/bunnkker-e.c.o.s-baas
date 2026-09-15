@@ -81,7 +81,7 @@ function GitHubSetupContent() {
           <div className="space-y-4">
             <Loader2 className="w-8 h-8 text-blue-500 animate-spin mx-auto" />
             <h2 className="text-2xl font-bold tracking-tight">Verificando Instalación...</h2>
-            <p className="text-gray-400 text-sm">Conectando tu cuenta de GitHub con Admin.com ERP</p>
+            <p className="text-gray-400 text-sm">Conectando tu cuenta de GitHub con BUNKKER ERP</p>
           </div>
         )}
 

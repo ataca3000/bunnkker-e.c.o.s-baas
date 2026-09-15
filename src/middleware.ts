@@ -31,7 +31,6 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
   '/dashboard/qr':              ['superadmin', 'admin', 'marketing', 'sales', 'caja'],
   '/dashboard/demo':            ['superadmin'],
   '/dashboard/suscripcion':     ['superadmin'],
-  '/dashboard/tests':           ['superadmin'],
 };
 
 // Dominios que NO se tratan como sub-tenants
@@ -74,7 +73,10 @@ export default async function middleware(request: NextRequest) {
     // ── Verificación HMAC de firma de rol (aplica a TODOS los roles, incluyendo superadmin) ──
     // Previene que alguien edite manualmente la cookie msj-role a 'superadmin'.
     if (role && sig) {
-      const secret = process.env.INTERNAL_API_SECRET || 'bunkker-ecos-default-local-dev-secret-key-2026';
+      const secret = process.env.INTERNAL_API_SECRET;
+      if (!secret) {
+        return NextResponse.redirect(new URL('/login?error=server-config', request.url));
+      }
       const encoder = new TextEncoder();
       let signatureValid = false;
       try {

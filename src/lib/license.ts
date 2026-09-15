@@ -58,7 +58,7 @@ export function generatePinForHardware(machineId: string, expDateStr: string): s
     // cuando estamos en el servidor, y un fallback para el cliente.
     if (typeof window === 'undefined') {
         // Node.js / Electron main process
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
+
         const nodeCrypto = require('crypto') as typeof import('crypto');
         const hmac = nodeCrypto.createHmac('sha256', effectiveSalt);
         hmac.update(input);

@@ -1,7 +1,10 @@
 import { PrismaClient } from '@prisma/client';
 
-if (!process.env.DATABASE_URL || process.env.DATABASE_URL.startsWith('file:')) {
-  throw new Error('DATABASE_URL debe apuntar a PostgreSQL/Neon; no se permite una base SQLite local.');
+function validateDatabaseUrl() {
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl || databaseUrl.startsWith('file:')) {
+    throw new Error('DATABASE_URL debe apuntar a PostgreSQL/Neon; no se permite una base SQLite local.');
+  }
 }
 
 const globalForPrisma = globalThis as unknown as {

@@ -10,7 +10,6 @@ import {
 import { db } from '@/lib/firebase';
 import { toast } from '@/lib/toast';
 import { useAuth } from '@/context/AuthContext';
-import DemoModeBanner from '@/components/DemoModeBanner';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -549,7 +548,6 @@ export default function SoportePage() {
     return (
         <div style={{ backgroundColor: '#f5f5f5', minHeight: '100vh', padding: '2.5rem 1.5rem' }}>
             <div style={{ maxWidth: '960px', margin: '0 auto' }}>
-                <DemoModeBanner sectionName="Centro de Soporte y Ayuda" />
 
                 {/* ── Header ── */}
                 <motion.header

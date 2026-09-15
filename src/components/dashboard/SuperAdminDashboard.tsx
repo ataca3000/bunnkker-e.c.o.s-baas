@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { useMemo, useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Users, FileText, ShieldCheck, CheckCircle, Maximize2, Share2, Map, TrendingUp, Zap, Package, ShoppingCart, Truck, Settings, ReceiptText, BookOpen, Cloud, BarChart3, Headphones, Terminal } from 'lucide-react';
+import { Users, FileText, ShieldCheck, CheckCircle, Maximize2, Share2, Map, TrendingUp, Zap, Package, ShoppingCart, Truck, Settings, ReceiptText, BookOpen, Cloud, BarChart3, Headphones } from 'lucide-react';
 import Link from 'next/link';
 import StaffRankingWidget from '@/components/admin/StaffRankingWidget';
 import RestockAlertWidget from '@/components/admin/RestockAlertWidget';
@@ -118,7 +118,6 @@ export default function SuperAdminDashboard({
         { id: 'audit',     title: 'Registro Auditoría',  icon: <Map size={26} />,            color: '#ef4444', href: '/dashboard/audit',         desc: 'Bitácora inmutable de operaciones y caja.' },
         { id: 'reports',   title: 'Reportes',             icon: <BarChart3 size={26} />,      color: '#0ea5e9', href: '/dashboard/reports',       desc: 'Análisis de ventas, KPIs y exportación de datos.' },
         { id: 'soporte',   title: 'Soporte y Tickets',   icon: <Headphones size={26} />,     color: '#14b8a6', href: '/dashboard/soporte',       desc: 'Gestión de tickets de soporte y quejas de clientes.' },
-        { id: 'tests',     title: 'Laboratorio de Estrés',icon: <Terminal size={26} />,      color: '#f97316', href: '/dashboard/tests',         desc: 'Simulaciones de carga y concurrencia local.' },
     ].filter(m => isModuleActive(m.id));
 
     const categoryCloud = isNube() ? [
@@ -168,12 +167,12 @@ export default function SuperAdminDashboard({
     ];
 
     return (
-        <main style={{ padding: '2.5rem' }}>
+        <main className="bunkker-industrial" style={{ padding: '2.5rem' }}>
             {/* ── Header ────────────────────────────────────────── */}
             <header style={{ marginBottom: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
                 <div>
                     <h1 className="tornasol-text" style={{ fontSize: '2.2rem', margin: 0, letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        PANEL MAESTRO
+                        CENTRO DE CONTROL BUNKKER ERP
                     </h1>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '6px' }}>
                         <p style={{ color: '#64748b', fontSize: '0.9rem', margin: 0 }}>
@@ -301,7 +300,7 @@ export default function SuperAdminDashboard({
                         className="relative z-10 bg-white hover:bg-sky-50 text-sky-900 font-black uppercase tracking-widest py-4 px-8 rounded-xl shadow-lg transition-transform hover:scale-105 active:scale-95 whitespace-nowrap flex items-center gap-2"
                         onClick={(e) => { e.preventDefault(); alert('¡Listo para compilar! Ejecuta npm run dist:win y sube el .exe a tu nube preferida para pegar el enlace aquí.'); }}
                     >
-                        <Terminal size={20} />
+                        <Zap size={20} />
                         Descargar .exe Gratis
                     </a>
                 </div>

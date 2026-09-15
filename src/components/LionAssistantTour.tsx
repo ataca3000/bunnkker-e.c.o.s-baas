@@ -14,7 +14,7 @@ export interface TourStep {
   id: number;
   title: string;
   subtitle: string;
-  lionMessage: string;
+  bunkMessage: string;
   icon: React.ReactNode;
   actionText?: string;
   targetPath?: string;
@@ -26,8 +26,8 @@ const TOUR_STEPS: TourStep[] = [
   {
     id: 1,
     title: "¡Despliegue Nuevo Detectado!",
-    subtitle: "Lion 🦁 · Inicialización de Tienda",
-    lionMessage: "¡Felicidades Administrador! Se ha detectado la creación de una nueva tienda/instancia. Soy Lion, tu IA de preconfiguración. Vamos a preparar tu plataforma para que esté lista para vender en 2 minutos.",
+    subtitle: "Bunk 🦁 · Inicialización de Tienda",
+    bunkMessage: "¡Bienvenido a BUNKKER ERP! Se ha detectado la creación de una nueva tienda/instancia. Soy Bunk, tu IA de preconfiguración. Vamos a preparar tu plataforma para que esté lista para vender en 2 minutos.",
     icon: <Bot className="w-8 h-8 text-amber-400 animate-pulse" />,
     actionText: "¡Iniciar Preconfiguración!",
     badge: "SuperAdmin · Paso 1 de 5",
@@ -37,7 +37,7 @@ const TOUR_STEPS: TourStep[] = [
     id: 2,
     title: "Branding Universal & Identidad",
     subtitle: "Personalización Marca Blanca",
-    lionMessage: "El sistema es 100% universal. En la sección de Diseño puedes definir el nombre oficial del negocio, eslogan, logo y colores. Tus clientes verán tu marca propia con el título 'Bienvenido a tu Tienda'.",
+    bunkMessage: "Desde Diseño puedes definir el nombre de tu negocio, logotipo, fondo, colores y datos de contacto. Revisa la vista previa antes de guardar. Tus clientes verán tu marca propia con el título 'Bienvenido a tu Tienda'.",
     icon: <Palette className="w-8 h-8 text-pink-400" />,
     targetPath: "/dashboard/design",
     actionText: "Configurar Marca",
@@ -48,7 +48,7 @@ const TOUR_STEPS: TourStep[] = [
     id: 3,
     title: "Motor de IA por Tópicos (es / en)",
     subtitle: "Catálogo e Inventario Inteligente",
-    lionMessage: "Cuando ingreses o importes tu lista de productos, clasificaré automáticamente la categoría por tópicos en español e inglés. Si realizas ajustes manuales, guardo el aprendizaje en disco local para ser más preciso.",
+    bunkMessage: "Cuando ingreses o importes tu lista de productos, clasificaré automáticamente la categoría por tópicos en español e inglés. Si realizas ajustes manuales, guardo el aprendizaje en disco local para ser más preciso.",
     icon: <PackagePlus className="w-8 h-8 text-cyan-400" />,
     targetPath: "/dashboard/inventory",
     actionText: "Revisar Inventario",
@@ -59,7 +59,7 @@ const TOUR_STEPS: TourStep[] = [
     id: 4,
     title: "Operación Multicaja (Mutex 0/1)",
     subtitle: "Reserva Atómica & Expiración 30min",
-    lionMessage: "Tu punto de venta cuenta con exclusión mutua 0/1 a 0ms de latencia. Si una vendedora selecciona una pieza, pasa a Estado 1 (Reservado) para evitar ventas dobles. Si pasan 30 minutos sin cobrar, vuelve a Estado 0 (Estante).",
+    bunkMessage: "Tu punto de venta cuenta con exclusión mutua 0/1 a 0ms de latencia. Si una vendedora selecciona una pieza, pasa a Estado 1 (Reservado) para evitar ventas dobles. Si pasan 30 minutos sin cobrar, vuelve a Estado 0 (Estante).",
     icon: <ShoppingBag className="w-8 h-8 text-emerald-400" />,
     targetPath: "/dashboard/admin/sales",
     actionText: "Ver Punto de Venta",
@@ -70,7 +70,7 @@ const TOUR_STEPS: TourStep[] = [
     id: 5,
     title: "Logística GPS & Radio de Personal",
     subtitle: "Canal PTT Exclusivo Puerto 3002",
-    lionMessage: "Tus repartidores y personal de patio cuentan con mapa GPS, notitas de entrega y un canal de Radio Walkie-Talkie en el puerto 3002. ¡Todo listo! La tienda queda configurada y operando.",
+    bunkMessage: "Tus repartidores y personal de patio cuentan con mapa GPS, notitas de entrega y un canal de Radio Walkie-Talkie en el puerto 3002. ¡Todo listo! La tienda queda configurada y operando.",
     icon: <MapPin className="w-8 h-8 text-indigo-400" />,
     targetPath: "/dashboard/delivery",
     actionText: "Finalizar & Despegar 🚀",
@@ -79,7 +79,7 @@ const TOUR_STEPS: TourStep[] = [
   }
 ];
 
-export function LionAssistantTour() {
+export function BunkAssistantTour() {
   const router = useRouter();
   const pathname = usePathname();
   const { profile, user } = useAuth();
@@ -106,7 +106,7 @@ export function LionAssistantTour() {
     setTypedText("");
     setIsTyping(true);
     let index = 0;
-    const fullText = currentStep.lionMessage;
+    const fullText = currentStep.bunkMessage;
 
     const timer = setInterval(() => {
       if (index < fullText.length) {
@@ -139,14 +139,14 @@ export function LionAssistantTour() {
   }
 
   if (!guidedTourActive) {
-    // Para el SuperAdmin, dejamos el botón flotante discreto de Lion en el Dashboard
+    // Para el SuperAdmin, dejamos el botón flotante discreto de Bunk en el Dashboard
     if (!pathname?.startsWith('/dashboard')) return null;
 
     return (
       <button
         onClick={() => startGuidedTour()}
         className="fixed bottom-5 right-5 z-50 group flex items-center gap-3 bg-slate-900/90 backdrop-blur-xl border border-amber-500/40 hover:border-amber-400 px-4 py-3 rounded-full shadow-[0_0_30px_rgba(245,158,11,0.25)] hover:shadow-[0_0_45px_rgba(245,158,11,0.4)] transition-all duration-300 active:scale-95"
-        title="Asistente de Preconfiguración Lion 🦁"
+        title="Asistente de Preconfiguración Bunk 🦁"
       >
         <div className="relative">
           <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-amber-500 to-orange-400 flex items-center justify-center text-slate-950 font-black shadow-inner">
@@ -157,7 +157,7 @@ export function LionAssistantTour() {
         </div>
         <div className="text-left hidden sm:block">
           <p className="text-[10px] font-black tracking-widest text-amber-400 uppercase">SuperAdmin</p>
-          <p className="text-xs font-bold text-white group-hover:text-amber-200 transition-colors">Preconfiguración Lion</p>
+          <p className="text-xs font-bold text-white group-hover:text-amber-200 transition-colors">Preconfiguración Bunk</p>
         </div>
         <Sparkles className="w-4 h-4 text-amber-400 animate-spin" style={{ animationDuration: '4s' }} />
       </button>
@@ -209,7 +209,7 @@ export function LionAssistantTour() {
           </button>
         </div>
 
-        {/* Diálogo del Asistente Lion */}
+        {/* Diálogo del Asistente Bunk */}
         <div className="flex flex-col sm:flex-row items-start gap-5 relative z-10 mb-8">
           
           <div className="relative flex-shrink-0">

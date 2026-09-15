@@ -16,16 +16,21 @@ const LoadingFallback = () => (
 
 // Dynamic Imports for Code Splitting
 const SuperAdminDashboard = dynamic(() => import('@/components/dashboard/SuperAdminDashboard'), { loading: () => <LoadingFallback /> });
-const SalesDashboardWorker = dynamic(() => import('@/components/dashboard/SalesDashboardWorker'), { loading: () => <LoadingFallback /> });
-const InventoryDashboardWorker = dynamic(() => import('@/components/dashboard/InventoryDashboardWorker'), { loading: () => <LoadingFallback /> });
+// Los roles operativos usan sus consolas completas y funcionales, no resúmenes.
+const SalesDashboard = dynamic(() => import('@/app/dashboard/sales/page'), { loading: () => <LoadingFallback /> });
+const InventoryDashboard = dynamic(() => import('@/app/dashboard/inventory/page'), { loading: () => <LoadingFallback /> });
 const CargaDescargaDashboardWorker = dynamic(() => import('@/components/dashboard/CargaDescargaDashboardWorker'), { loading: () => <LoadingFallback /> });
-const MarketingDashboardWorker = dynamic(() => import('@/components/dashboard/MarketingDashboardWorker'), { loading: () => <LoadingFallback /> });
+const MarketingDashboard = dynamic(() => import('@/app/dashboard/marketing/page'), { loading: () => <LoadingFallback /> });
 const DeliveryDashboardWorker = dynamic(() => import('@/components/dashboard/DeliveryDashboardWorker'), { loading: () => <LoadingFallback /> });
 
 export default function DashboardRouter() {
     const { orders, products, maintenanceBalance, ownerBalance, siteConfig, formatCurrency, startLoading, completeLoading } = useCart();
-    const { profile, signOut } = useAuth();
+    const { profile, loading: authLoading, signOut } = useAuth();
     const [isScannerOpen, setIsScannerOpen] = useState(false);
+
+    if (authLoading || !profile) {
+        return <LoadingFallback />;
+    }
 
     const handleAdminScan = (code: string) => {
         const product = products.find(p => p.id === code || p.barcode === code);
@@ -46,11 +51,11 @@ export default function DashboardRouter() {
     const role     = profile?.role || 'superadmin';
 
     /* ── Role routing ── */
-    if (role === 'sales') {
-        return <SalesDashboardWorker userName={userName} greeting={greeting} formatCurrency={formatCurrency} orders={orders} signOut={signOut} />;
+    if (role === 'sales' || role === 'billing') {
+        return <SalesDashboard />;
     }
     if (role === 'inventory') {
-        return <InventoryDashboardWorker userName={userName} greeting={greeting} products={products} signOut={signOut} formatCurrency={formatCurrency} />;
+        return <InventoryDashboard />;
     }
     if (role === 'carga_descarga') {
         return (
@@ -63,7 +68,7 @@ export default function DashboardRouter() {
         );
     }
     if (role === 'marketing') {
-        return <MarketingDashboardWorker userName={userName} greeting={greeting} orders={orders} signOut={signOut} formatCurrency={formatCurrency} />;
+        return <MarketingDashboard />;
     }
     if (role === 'driver') {
         return <DeliveryDashboardWorker userName={userName} greeting={greeting} orders={orders} signOut={signOut} />;

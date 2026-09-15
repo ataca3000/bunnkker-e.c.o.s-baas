@@ -11,7 +11,6 @@ import {
 import { toast } from '@/lib/toast';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
-import DemoModeBanner from '@/components/DemoModeBanner';
 
 // Acoustic feedback
 const playBeep = () => {
@@ -50,44 +49,6 @@ interface CustomerStats {
     totalOrders: number;
     totalSpent: number;
 }
-
-// ─── Demo fallback data (fully generic) ───────────────────────────────────────
-
-const DEMO_CUSTOMERS: Customer[] = [
-    {
-        id: 'DEMO-C001',
-        name: 'Empresa Industrial del Norte S.A.',
-        phone: '+52 555 100 2000',
-        email: 'compras@empresanorte.com',
-        address: 'Av. Industrial 45, Col. Parque Empresarial',
-        type: 'VIP',
-        totalOrders: 24,
-        totalSpent: 158400,
-        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 120).toISOString()
-    },
-    {
-        id: 'DEMO-C002',
-        name: 'Taller y Servicios Rápidos',
-        phone: '+52 555 987 6543',
-        email: 'taller.rapido@gmail.com',
-        address: 'Calle 5 Sur #120, Local B',
-        type: 'Frecuente',
-        totalOrders: 8,
-        totalSpent: 12350,
-        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 45).toISOString()
-    },
-    {
-        id: 'DEMO-C003',
-        name: 'María López Rodríguez',
-        phone: '+52 555 333 2211',
-        email: 'maria.lopez@yahoo.com',
-        address: 'Col. Centro, Local 2',
-        type: 'Nuevo',
-        totalOrders: 1,
-        totalSpent: 850,
-        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5).toISOString()
-    }
-];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -165,7 +126,7 @@ export default function CRMPage() {
                 throw new Error(result.error);
             }
         } catch (err: any) {
-            console.warn('[CRM] Local API unavailable — showing demo data.', err?.code || err?.message);
+            console.error('[CRM] No se pudieron cargar los clientes.', err);
             setIsOffline(true);
             setCustomers([]);
         } finally {

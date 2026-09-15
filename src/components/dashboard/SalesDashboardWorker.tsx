@@ -11,11 +11,11 @@ export default function SalesDashboardWorker({ userName, greeting, formatCurrenc
         .reduce((sum: number, o: any) => sum + o.total, 0);
 
     return (
-        <main className="p-8 max-w-5xl mx-auto min-h-screen bg-[#0f111a] text-white">
+        <main className="bunkker-industrial p-8 max-w-5xl mx-auto min-h-screen bg-[#0f111a] text-white">
             <header className="mb-10 flex flex-col sm:flex-row justify-between items-center gap-6 bg-[#1a1d2d] p-6 rounded-3xl border border-white/5 shadow-[0_0_15px_rgba(14,165,233,0.1)]">
                 <div className="text-center sm:text-left">
                     <h1 className="text-3xl font-[900] text-[#0ea5e9] uppercase tracking-tighter">ESTACIÓN DE CAJA</h1>
-                    <p className="text-gray-400 font-medium text-base mt-1">{greeting}, <b className="text-white">{userName}</b>. Buen turno.</p>
+                    <p className="text-gray-400 font-medium text-base mt-1">{greeting}, <b className="text-white">{userName}</b>. Revisa tus pendientes y comienza a cobrar con orden.</p>
                 </div>
                 <motion.button
                     whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
@@ -32,7 +32,7 @@ export default function SalesDashboardWorker({ userName, greeting, formatCurrenc
                         <div>
                             <ScanLine size={48} className="mb-6 opacity-80" />
                             <h2 className="text-3xl font-black mb-2">PUNTO DE VENTA</h2>
-                            <p className="text-emerald-100 text-sm font-medium">Abrir escáner, cobrar tickets y procesar carritos de clientes.</p>
+                            <p className="text-emerald-100 text-sm font-medium">Escanea productos, confirma cantidades, cobra y entrega el comprobante al cliente.</p>
                         </div>
                         <div className="mt-8 flex items-center font-bold uppercase tracking-widest text-sm">
                             Comenzar a Escanear <ChevronRight className="ml-2" />

@@ -7,6 +7,9 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 
 export default function B2BMarketPage() {
+  const [swarmActive, setSwarmActive] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState('ALL');
+
   if (!isNube()) {
     return (
       <div className="min-h-screen bg-[#0f172a] flex flex-col items-center justify-center p-8 text-center animate-in fade-in duration-700">
@@ -23,9 +26,6 @@ export default function B2BMarketPage() {
       </div>
     );
   }
-
-  const [swarmActive, setSwarmActive] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState('ALL');
 
   const categories = [
       { id: 'ALL', name: 'Todos los Aliados', icon: <Globe size={16} /> },

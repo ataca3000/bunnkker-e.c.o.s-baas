@@ -1,70 +1,53 @@
-https://bunnkker-e-c-o-s-baas.vercel.app/
+# BUNKKER E.C.O.S.
 
-# 📜 BUNKKER E.C.O.S. (Ecosistema Comercial Offline Sincronizado)
+ERP/POS local-first para operaciones comerciales, inventario, caja, pickup y entregas con sincronización offline.
 
-**Memoria Técnica Descriptiva de Arquitectura, Ingeniería de Sistemas e Registro INDAUTOR**
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/ataca3000/bunnkker-e.c.o.s-baas&project-name=bunnkker-ecos)
 
-[Uploading [PATENTE_NODOS_BANDERA.md](https://github.com/user-attachments/files/31485882/PATENTE_NODOS_BANDERA.md)[HISTORIA_Y_RESUMEN_PROYECTO.md](https://github.com/user-attachments/files/31485901/HISTORIA_Y_RESUMEN_PROYECTO.md)
-[FUNCTIONALITY_MAP.md](https://github.com/user-attachments/files/31485900/FUNCTIONALITY_MAP.md)
-[FILE_MANIFEST.md](https://github.com/user-attachments/files/31485898/FILE_MANIFEST.md)
-[CONTRIBUTING.md](https://github.com/user-attachments/files/31485897/CONTRIBUTING.md)
-[BUNKKER_ECOS_MEMORIA_TECNICA_INDAUTOR.md](https://github.com/user-attachments/files/31485896/BUNKKER_ECOS_MEMORIA_TECNICA_INDAUTOR.md)
-[BUNKKER_ECOS_ESPECIFICACION_TECNICA.md](https://github.com/user-attachments/files/31485895/BUNKKER_ECOS_ESPECIFICACION_TECNICA.md)
-[ARCHITECTURE.md](https://github.com/user-attachments/files/31485894/ARCHITECTURE.md)
-[ADDMIN_PROJECT_STORY.md](https://github.com/user-attachments/files/31485893/ADDMIN_PROJECT_STORY.md)
-[toc.md](https://github.com/user-attachments/files/31485892/toc.md)
-[sistema.md](https://github.com/user-attachments/files/31485891/sistema.md)
-[SECURITY.md](https://github.com/user-attachments/files/31485890/SECURITY.md)
-[ROLES_MAP.md](https://github.com/user-attachments/files/31485889/ROLES_MAP.md)
-[PROJECT_TREE.md](https://github.com/user-attachments/files/31485888/PROJECT_TREE.md)
-[PROJECT_STRUCTURE.md](https://github.com/user-attachments/files/31485887/PROJECT_STRUCTURE.md)
-[POLICIES.md](https://github.com/user-attachments/files/31485886/POLICIES.md)
-[PITCH_COMERCIAL_SAAS.md](https://github.com/user-attachments/files/31485883/PITCH_COMERCIAL_SAAS.md)
-MONETIZACION.md…]()
+## Template web para Vercel
 
----
+Esta instalación ejecuta la superficie web multirol de BUNKKER E.C.O.S. El bridge LAN, Electron, impresora térmica y radio local son módulos opcionales para instalaciones de escritorio; no son necesarios para desplegar el dashboard en Vercel.
 
-</div>
+Incluye:
 
+- Dashboard multirol para administración, caja, almacén, pickup y reparto.
+- Pedidos con estados controlados, tickets digitales y auditoría.
+- Mapa de entregas, toma atómica de pedidos y reconciliación offline.
+- PWA/service worker para rutas y acciones pendientes sin conexión.
+- PostgreSQL con Prisma y configuración lista para Vercel.
 
+## Deploy
 
-- **Denominación de la Obra:** BUNKKER E.C.O.S. (Ecosistema Comercial Offline Sincronizado)
-- **Titular de los Derechos:** Luis Felipe Durán Salinas (Philip Durán) / Brecha Soluciones S.A. de C.V.
-- **Campo de Aplicación:** Planificación de Recursos Empresariales (ERP), Puntos de Venta (POS) masivos y Orquestación Logística Descentralizada Local-First.
-- **Instancia Destinataria:** Instituto Nacional del Derecho de Autor (INDAUTOR) — México.
-- **Entorno Tecnológico:** TypeScript, Next.js 15 (App Router), React 19, Electron Core Node Environment, SQLite Embebido, Prisma ORM, Firebase / Cloud Firestore BaaS.
+1. Pulsa **Deploy with Vercel** o importa este repositorio en Vercel.
+2. Selecciona el framework **Next.js**.
+3. Configura las variables de `.env.example` en Project Settings → Environment Variables.
+4. Conecta una base PostgreSQL y ejecuta la migración Prisma en el entorno de despliegue.
+5. Abre `/login` y crea la primera cuenta administrativa desde el flujo de onboarding.
 
----
+No se incluyen cuentas, productos ni pedidos ficticios. El sistema inicia vacío para que cada instalación configure su propio negocio.
 
-## 🏛️ Resumen de Arquitectura e Ingeniería de Sistemas
-<img width="619" height="571" alt="Captura de pantalla 2026-06-15 140124" src="https://github.com/user-attachments/assets/48728144-adc9-4791-b547-12582557611a" />
+## Desarrollo
 
-```mermaid
-graph TD
-    MAESTRO["👑 NODO MAESTRO (Servidor Local 0ms)"] <-->|Sincronización P2P mDNS| ESCLAVO["📱 Nodos Esclavos (POS / Inventario)"]
-    MAESTRO <-->|Write-Ahead Logging| DB_LOCAL[("💾 SQLite WAL / IndexedDB")]
-    MAESTRO <-->|Hot Standby / Heredero al Trono| HOT_STANDBY["🛡️ Nodo Sucesor (Hot Standby)"]
-    MAESTRO -.->|Sincronización Asíncrona| CLOUD[("☁️ Google Cloud Firestore BaaS")]
+```bash
+npm install
+npm run dev
 ```
 
-### ⚡ Pilares de la Invención Registrada:
-1. **Matriz Operacional Descentralizada (D.O.M.):** Transacciones inmutables mediante cadena de hashes $H_n = \text{SHA256}(id_n \times monto_n \times timestamp_n \times usuario_n \times H_{n-1})$.
-2. **Arquitectura Multi-Vault (SQLite + Prisma + Firestore):** Operación ultrarrápida local (<70ms) con respaldo asíncrono pasivo en la nube.
-3. **Mecanismo Hot Standby ("Heredero al Trono"):** Conmutación por error en menos de 15s ante caídas del servidor maestro sin condición de cerebro dividido (split-brain).
-4. **Sesiones Offline Prolongadas:** Renovación silenciosa mediante `refreshToken` encriptado localmente para reconexiones sin interrupción.
+La aplicación web queda en `http://localhost:3000`. Para activar los servicios locales de escritorio usa `npm run dev:desktop`; esos servicios requieren Node/Electron y no forman parte del runtime serverless de Vercel.
 
----<img width="801" height="1042" alt="Captura de pantalla 2026-07-18 173014" src="https://github.com/user-attachments/assets/2891a8b7-c636-4b60-a8bf-7ae3ddba0c4f" />
+## Variables
 
+Copia `.env.example` a tu gestor de secretos. Nunca subas valores reales al repositorio. `DATABASE_URL` e `INTERNAL_API_SECRET` son necesarios para proteger el runtime web; Stripe, Firebase y Redis solo son necesarios si habilitas esos módulos.
 
-## 📑 Documentación Legal y Técnica Completa
+## Comandos de validación
 
-- 📜 [BUNKKER_ECOS_MEMORIA_TECNICA_INDAUTOR.md](./docs/BUNKKER_ECOS_MEMORIA_TECNICA_INDAUTOR.md) — Memoria Técnica Descriptiva Completa INDAUTOR.
-- 📜 [PATENTE_NODOS_BANDERA.md](./docs/PATENTE_NODOS_BANDERA.md) — Registro de Patente Nodal Terrestre.
-- 🏗️ [ARCHITECTURE.md](./docs/ARCHITECTURE.md) — Especificación Arquitectónica.
+```bash
+npm run lint
+npx tsc --noEmit
+npm test
+npm run build
+```
 
----
+## Licencia
 
-## 💳 Licenciamiento y Derechos Reservados
-
-© 2026 **Brecha Soluciones S.A. de C.V. / Luis Felipe Durán Salinas**. Todos los derechos reservados.  
-Obra registrada ante el Instituto Nacional del Derecho de Autor (INDAUTOR).
+© 2026 Brecha Soluciones S.A. de C.V. / Luis Felipe Durán Salinas. Todos los derechos reservados.
