@@ -1013,7 +1013,6 @@ export default function InventoryDashboard() {
     const handleToggleTagForDeletion = (product: Product) => {
         const nextState = !product.taggedForDeletion;
         setLocalProducts(prev => prev.map(p => p.id === product.id ? { ...p, taggedForDeletion: nextState } : p));
-        setProducts(prev => prev.map(p => p.id === product.id ? { ...p, taggedForDeletion: nextState } : p));
         if (nextState) {
             toast.info(`"${product.name}" marcado para eliminación.`, '🗑️ Marcado');
         } else {
