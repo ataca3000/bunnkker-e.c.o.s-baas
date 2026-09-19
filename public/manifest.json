@@ -1,0 +1,29 @@
+﻿{
+  "name": "Bunkker ERP",
+  "short_name": "Bunkker",
+  "description": "Sistema ERP local para tu tienda. Funciona sin internet.",
+  "start_url": "/?source=pwa",
+  "display": "standalone",
+  "orientation": "any",
+  "theme_color": "#0f172a",
+  "background_color": "#020617",
+  "lang": "es",
+  "categories": ["business", "productivity"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "prefer_related_applications": false,
+  "scope": "/"
+}
