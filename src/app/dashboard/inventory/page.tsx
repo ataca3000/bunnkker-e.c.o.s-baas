@@ -1030,7 +1030,6 @@ export default function InventoryDashboard() {
         try {
             // Eliminar de estados locales
             setLocalProducts(prev => prev.filter(p => !productIdsToDelete.includes(p.id)));
-            setProducts(prev => prev.filter(p => !productIdsToDelete.includes(p.id)));
 
             // Eliminar via API route
             await Promise.all(
@@ -1166,7 +1165,6 @@ export default function InventoryDashboard() {
             });
 
             setLocalProducts(prev => prev.map(p => p.id === product.id ? updatedProduct : p));
-            setProducts(prev => prev.map(p => p.id === product.id ? updatedProduct : p));
 
             toast.success(`Producto "${product.name}" reubicado correctamente a ${expectedEstante}`, '✅ Reubicación Exitosa');
 
