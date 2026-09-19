@@ -70,6 +70,3 @@ export async function DELETE(request: NextRequest) {
         return NextResponse.json({ error: err.message }, { status: 500 });
     }
 }
-
-// Exportar el store para que el dispatcher pueda acceder a los tokens
-export { accountStore };
