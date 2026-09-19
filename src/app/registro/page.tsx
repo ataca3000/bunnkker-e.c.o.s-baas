@@ -197,9 +197,9 @@ export default function RegisterPage() {
                                             value={age} onChange={e => setAge(e.target.value)} className={inputCls} />
                                     </div>
                                 </Field>
-                                <Field label="Sexo" icon={<Venus size={10} />}>
+                                <Field label="Sexo" icon={<User size={10} />}>
                                     <div className="relative">
-                                        <Venus className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                                        <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
                                         <select required value={gender} onChange={e => setGender(e.target.value)} className={selectCls}>
                                             <option value="" className="bg-slate-900">Seleccionar...</option>
                                             <option value="Masculino" className="bg-slate-900">Masculino</option>

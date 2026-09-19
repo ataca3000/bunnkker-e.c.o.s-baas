@@ -17,7 +17,7 @@ interface VirtualizedAuditListProps {
     loading: boolean;
     hasMore: boolean;
     onLoadMore: () => void;
-    RowComponent: React.ComponentType<ListChildComponentProps<AuditRowData>>;
+    RowComponent: React.ComponentType<any>;
     itemSize: number;
     height?: number;
     className?: string;
