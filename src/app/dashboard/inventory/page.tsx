@@ -1,7 +1,8 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, useMemo } from 'react';
 import { useCart, type Product } from '@/context/CartContext';
+import { useERPStore } from '@/store/useERPStore';
 import { useAuth } from '@/context/AuthContext';
 import DebouncedSearchInput from '@/components/ui/DebouncedSearchInput';
 import { db } from '@/lib/firebase';
@@ -906,7 +907,7 @@ export default function InventoryDashboard() {
         try {
             // Remove locally first
             setLocalProducts(prev => prev.filter(p => p.id !== productId));
-            setProducts(prev => prev.filter(p => p.id !== productId));
+            useERPStore.getState().deleteProduct(productId);
 
             // Delete via API route
             await fetch(`/api/products?id=${productId}`, {
