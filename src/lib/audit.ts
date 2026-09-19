@@ -18,7 +18,8 @@ export type AuditAction =
     | 'AI_CLASSIFICATION'
     | 'INVENTORY_MOVE'
     | 'CORTE_CAJA_CIEGO'
-    | 'ORDER_CANCELLED';
+    | 'ORDER_CANCELLED'
+    | 'REUBICACION';
 
 export interface AuditLog {
     type: AuditAction;

@@ -977,21 +977,6 @@ export default function InventoryDashboard() {
                 return p;
             }));
 
-            setProducts(prev => prev.map(p => {
-                const currentEstante = (p.location?.estante || p.estante || 'GENERAL').toUpperCase().trim();
-                if (currentEstante === sourceUpper) {
-                    return {
-                        ...p,
-                        location: {
-                            ...p.location,
-                            estante: targetUpper
-                        },
-                        estante: targetUpper
-                    };
-                }
-                return p;
-            }));
-
             await Promise.all(
                 productsToMove.map(p => 
                     fetch('/api/products', {
