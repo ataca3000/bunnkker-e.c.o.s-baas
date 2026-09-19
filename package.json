@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "BUNKKER E.C.O.S. — ERP/POS local-first con sincronización LAN, dashboard multirol y billing SaaS.",
   "author": "brechasolucionesds",
-  "private": true,
+  "private": false,
   "main": "electron-main.js",
   "scripts": {
     "dev": "npx concurrently \"next dev -p 3000\" \"node radio-server.js\"",
@@ -32,7 +32,7 @@
   },
   "build": {
     "appId": "com.bunkkererp.erp",
-    "productName": "Camalion Topics ERP",
+    "productName": "BUNKKER E.C.O.S. ERP",
     "copyright": "Copyright © 2026 brecha soluciones ds bunkker e.c.o.s",
     "directories": {
       "output": "dist-build-win",
