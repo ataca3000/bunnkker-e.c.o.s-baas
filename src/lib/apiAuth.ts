@@ -6,7 +6,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 
 export type ApiAuthResult =
-  | { ok: true; uid: string; role: string }
+  | { ok: true; uid: string; role: string; response?: undefined }
   | { ok: false; response: NextResponse };
 
 const WRITE_ROLES = ['superadmin', 'admin', 'inventory', 'sales', 'billing'];

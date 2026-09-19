@@ -9,7 +9,7 @@ import { cookies, headers } from 'next/headers';
  */
 export async function POST(request: NextRequest) {
     const auth = validateApiSession(request);
-    if (!auth.ok) return auth.response;
+    if (!auth.ok) return (auth as any).response;
     try {
         // Detectar si la petición viene por túnel seguro (HTTPS)
         const headersList = await headers();
