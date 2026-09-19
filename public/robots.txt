@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard/
+Disallow: /login/
+Disallow: /api/
+
+Sitemap: https://materialesanjose.com/sitemap.xml

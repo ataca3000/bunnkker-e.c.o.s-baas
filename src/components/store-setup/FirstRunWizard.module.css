@@ -1,0 +1,164 @@
+﻿/* FirstRunWizard */
+
+.backdrop {
+    position: fixed;
+    inset: 0;
+    background: #020617;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 1rem;
+    overflow-y: auto;
+}
+
+.wizard {
+    background: #0f172a;
+    border: 1px solid rgba(99,102,241,0.2);
+    border-radius: 1.5rem;
+    padding: 2rem;
+    width: 100%;
+    max-width: 480px;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+    animation: fadeIn 0.3s ease-out;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Progress */
+.progress {
+    display: flex;
+    gap: 0.5rem;
+}
+.progressStep {
+    flex: 1;
+    height: 4px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 99px;
+    transition: background 0.3s;
+}
+.progressStep.active {
+    background: #6366f1;
+}
+
+/* Step content */
+.stepContent {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+}
+
+.stepIcon {
+    font-size: 2.5rem;
+    line-height: 1;
+    text-align: center;
+}
+
+.title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #f1f5f9;
+    margin: 0;
+    text-align: center;
+}
+
+.subtitle {
+    font-size: 0.875rem;
+    color: #64748b;
+    margin: 0;
+    text-align: center;
+    line-height: 1.6;
+}
+
+/* Inputs */
+.label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.input {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 0.625rem;
+    color: #f1f5f9;
+    font-size: 0.95rem;
+    padding: 0.65rem 0.875rem;
+    outline: none;
+    transition: border-color 0.15s, background 0.15s;
+    width: 100%;
+    box-sizing: border-box;
+}
+.input:focus {
+    border-color: #6366f1;
+    background: rgba(99,102,241,0.05);
+}
+.input option { background: #1e293b; color: #f1f5f9; }
+
+/* Color picker */
+.colorRow {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+.colorPicker {
+    width: 48px;
+    height: 36px;
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    padding: 2px;
+    background: rgba(255,255,255,0.06);
+}
+.colorHex {
+    font-family: monospace;
+    font-size: 0.9rem;
+    color: #a5b4fc;
+}
+
+/* Buttons */
+.btnPrimary {
+    background: #6366f1;
+    color: #fff;
+    border: none;
+    border-radius: 0.75rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    padding: 0.8rem 1.5rem;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    text-align: center;
+}
+.btnPrimary:hover:not(:disabled) { background: #4f46e5; }
+.btnPrimary:active { transform: scale(0.98); }
+.btnPrimary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btnSecondary {
+    background: transparent;
+    color: #94a3b8;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 0.75rem;
+    font-size: 0.95rem;
+    font-weight: 500;
+    padding: 0.8rem 1.25rem;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.btnSecondary:hover { background: rgba(255,255,255,0.05); }
+
+.btnRow {
+    display: flex;
+    gap: 0.75rem;
+}
+.btnRow .btnSecondary { flex: 0 0 auto; }
+.btnRow .btnPrimary   { flex: 1; }

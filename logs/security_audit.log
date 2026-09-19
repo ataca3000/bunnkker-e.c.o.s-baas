@@ -1,0 +1,4 @@
+{"timestamp":"2026-09-16T13:36:47.481Z","level":"INFO","type":"LOGIN_SUCCESS","ip":"::ffff:127.0.0.1","details":{"message":"Inicio de sesión exitoso.","userId":"usr-superadmin","role":"superadmin"}}
+{"timestamp":"2026-09-16T13:36:52.021Z","level":"INFO","type":"LOGIN_SUCCESS","ip":"::ffff:127.0.0.1","details":{"message":"Inicio de sesión exitoso.","userId":"usr-sales","role":"sales"}}
+{"timestamp":"2026-09-18T22:09:05.825Z","level":"INFO","type":"LOGIN_SUCCESS","ip":"::1","details":{"message":"Inicio de sesión exitoso.","userId":"usr-superadmin","role":"superadmin"}}
+{"timestamp":"2026-09-18T22:10:15.014Z","level":"INFO","type":"LOGIN_SUCCESS","ip":"::1","details":{"message":"Inicio de sesión exitoso.","userId":"usr-superadmin","role":"superadmin"}}

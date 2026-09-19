@@ -1,0 +1,8 @@
+{
+  "name": "BUNKKER E.C.O.S. ERP",
+  "description": "Sistema ERP/POS Local-First con sincronización LAN, gestión de inventario, ventas, auditoría y marketing omnicanal",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
