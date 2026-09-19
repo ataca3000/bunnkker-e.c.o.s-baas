@@ -8,5 +8,6 @@ export interface AuditLog {
         nanoseconds: number;
     };
     isLocal?: boolean;
+    isoDate?: string;
     metadata?: any;
 }
