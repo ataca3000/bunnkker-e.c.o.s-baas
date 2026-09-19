@@ -3,7 +3,7 @@ import { validateApiSession } from '@/lib/apiAuth';
 
 export async function POST(req: NextRequest) {
     const auth = validateApiSession(req);
-    if (!auth.ok) return auth.response;
+    if (!auth.ok) return (auth as any).response;
 
     try {
         const body = await req.json();

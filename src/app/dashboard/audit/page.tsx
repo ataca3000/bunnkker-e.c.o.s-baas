@@ -1,12 +1,12 @@
-﻿"use client";
+"use client";
 /* hint-disable no-inline-styles */
 
 import { useMemo, useState, useEffect, useCallback, memo, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import VirtualizedAuditList, { type AuditRowData } from '@/components/audit/VirtualizedAuditList';
 import { type AuditLog } from '@/types/audit';
-// @ts-expect-error - react-window types not resolved
-import { areEqual, type ListChildComponentProps } from 'react-window';
+type ListChildComponentProps<T> = { index: number; style: React.CSSProperties; data: T };
+const areEqual = (prev: any, next: any) => prev.index === next.index && prev.style === next.style && prev.data === next.data;
 import Link from 'next/link';
 import { Settings } from 'lucide-react';
 

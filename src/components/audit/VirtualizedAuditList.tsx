@@ -1,7 +1,7 @@
 "use client";
 import { useRef, useState, useCallback, useMemo } from 'react';
-// @ts-ignore - react-window typings missing
-import { FixedSizeList as List, type ListChildComponentProps } from 'react-window';
+const { FixedSizeList: List } = require('react-window');
+type ListChildComponentProps = any;
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowUp } from 'lucide-react';
 import { type AuditLog } from '@/types/audit';

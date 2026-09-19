@@ -12,7 +12,7 @@ import { useRouter } from 'next/navigation';
 import {
     UserPlus, Mail, Lock, User, Phone, Loader2,
     ArrowRight, ShieldCheck, KeyRound, MapPin,
-    CreditCard, Calendar, Venus, CheckCircle2, ChevronLeft
+    CreditCard, Calendar, CheckCircle2, ChevronLeft
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
