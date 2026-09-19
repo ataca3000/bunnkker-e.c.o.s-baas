@@ -1,20 +1,22 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# BUNKKER E.C.O.S — PWA ERP & BaaS Architecture (Local-First)
 
-# Run and deploy your AI Studio app
+> **Autor & Propietario Intelectual:** LUISHALO69 <luishalo69@gmail.com> (ataca3000)  
+> **Ingeniería & Desarrollo:** Brecha Soluciones DS & Gemini (Google DeepMind)
 
-This contains everything you need to run your app locally.
+---
 
-View your app in AI Studio: https://ai.studio/apps/417a19f1-4ab4-48e4-bcd5-1cd0b4a3580e
+## ⚡ Características Principales
 
-## Run Locally
+1. **Local-First Zero-Cloud DB:** El 100% de la lógica opera en la memoria IndexedDB del dispositivo maestro.
+2. **Edge Store Guard (`?s=[storeId]`):** Validación Edge que responde `404 Not Found` ante accesos no autorizados.
+3. **Modos de Acceso Dual:**
+   - `mode=catalog`: Menú y pedidos rápidos para clientes (sin instalador de tienda).
+   - `mode=staff`: ERP para personal con seguridad ciega RBAC (`404 Rewrite`).
+4. **Monetización con Gancho Invisible:** Contador silencioso de 200 operaciones antes de activar el modal de suscripción ilimitada ($300 MXN/mes).
+5. **Anti-Trampas & Marcas Stealth:** Marcas digitales criptográficas (`1998 BSF` / `MTk5OCBCU0Y=`) para rastrear derivados en GitHub.
 
-**Prerequisites:**  Node.js
+---
 
+## 🚀 Despliegue en Producción
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+El proyecto está optimizado para desplegarse a costo $0 en Vercel / GitHub Pages.
