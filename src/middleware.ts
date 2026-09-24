@@ -34,6 +34,20 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
   '/dashboard/tests':           ['superadmin'],
 };
 
+// Redirecciones directas desde /dashboard según el rol del empleado
+const WORKER_DASHBOARD_REDIRECTS: Record<string, string> = {
+  inventory: '/dashboard/inventory',
+  almacen: '/dashboard/inventory',
+  sales: '/dashboard/sales',
+  caja: '/dashboard/sales',
+  billing: '/dashboard/audit',
+  driver: '/dashboard/patio',
+  delivery: '/dashboard/patio',
+  carga_descarga: '/dashboard/patio',
+  repartidor: '/dashboard/patio',
+  marketing: '/dashboard/marketing',
+};
+
 // Dominios que NO se tratan como sub-tenants
 const PUBLIC_DOMAINS = [
   'admin.com',
@@ -120,9 +134,9 @@ export default async function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL('/login?error=unauthorized', request.url));
       }
     } else if (pathname === '/dashboard') {
-      // El dashboard raíz renderiza el panel adecuado según el rol.
-      // No redirigir a /catalogo ni a un módulo secundario: el usuario debe
-      // aterrizar siempre en su panel operativo principal.
+      if (role && WORKER_DASHBOARD_REDIRECTS[role]) {
+        return NextResponse.redirect(new URL(WORKER_DASHBOARD_REDIRECTS[role], request.url));
+      }
     } else if (role !== 'superadmin' && role !== 'admin') {
       if (process.env.NODE_ENV !== 'production') console.warn(`[RBAC] Ruta no permitida: ${role} en ${pathname}`);
       return NextResponse.redirect(new URL('/login?error=unauthorized', request.url));

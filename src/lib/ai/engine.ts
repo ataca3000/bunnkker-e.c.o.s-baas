@@ -112,6 +112,7 @@ export const INTENT_MAPPINGS: Record<string, { label: string; terms: string[]; r
   audit:     { label: 'Registro de Auditoría',         terms: ['auditoria','bitacora','log','historial','seguridad','acceso','registro','operaciones','audit','log','history','security','access'], redirect: '/dashboard/audit' },
   users:     { label: 'Usuarios y Roles',              terms: ['usuario','empleado','pin','acceso','rol','permiso','contraseña','user','employee','role','permission','pin','password','access'], redirect: '/dashboard/users' },
   reports:   { label: 'Reportes y Estadísticas',       terms: ['reporte','estadistica','grafica','resumen','ventas','dia','semana','mes','report','stats','chart','summary','analytics'], redirect: '/dashboard/reports' },
+  tests:     { label: 'Pruebas de Carga y Simulación', terms: ['prueba','pruebas','estres','stress','simulacion','carga','benchmark','test','tests'], redirect: '/dashboard/tests' },
 };
 
 // ─── Cargador de modelo ──────────────────────────────────────────────────────
@@ -331,18 +332,26 @@ export function resolveIntent(query: string): IntentResult {
 
   // 2️⃣ Si no hay match directo, usar el modelo semántico
   if (!bestIntent || maxScore < 3) {
+    let semanticBestIntent: string | null = null;
+    let semanticMaxScore = 0;
+
     for (const lang of ['es', 'en'] as const) {
       const topics = loadModel(lang);
       const best = scoreTopics(words, topics);
-      if (!best) continue;
+      if (!best || best.score < 2) continue;
 
       for (const [intent, meta] of Object.entries(INTENT_MAPPINGS)) {
         const overlap = best.topic.words.filter(w => meta.terms.includes(w)).length;
-        if (overlap === 0) continue;
+        if (overlap < 2) continue;
         const score = best.score + overlap * 0.75;
-        if (score > maxScore) { maxScore = score; bestIntent = intent; }
+        if (score > semanticMaxScore) { semanticMaxScore = score; semanticBestIntent = intent; }
       }
-      if (bestIntent) break; // español primero — si hay match, no seguir con inglés
+      if (semanticBestIntent) break; // español primero — si hay match, no seguir con inglés
+    }
+
+    if (semanticBestIntent && semanticMaxScore >= 5.0) {
+      bestIntent = semanticBestIntent;
+      maxScore = semanticMaxScore;
     }
   }
 

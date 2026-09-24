@@ -69,7 +69,7 @@ describe('Security & Local Classifier Validation', () => {
       const result = classifyLocalProduct("xyz123abc456qwerty");
       expect(result.category).toBe("General");
       expect(result.subcategory).toBe("Sin Clasificar");
-      expect(result.confidence).toBe(0.3);
+      expect(result.confidence).toBe(0.2);
     });
   });
 

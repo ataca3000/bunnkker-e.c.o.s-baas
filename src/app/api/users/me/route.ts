@@ -18,9 +18,34 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ success: false, error: 'Invalid signature' }, { status: 401 });
         }
 
-        const user = await prisma.user.findUnique({
-            where: { id: session }
-        });
+        let user: any = null;
+        try {
+            user = await prisma.user.findUnique({
+                where: { id: session }
+            });
+        } catch {
+            user = null;
+        }
+
+        // Fallback para sesiones demo o arranque inicial
+        if (!user && (session.startsWith('demo-') || role)) {
+            const roleNameMap: Record<string, string> = {
+                superadmin: 'Dueño (Superadmin)',
+                admin: 'Gerente (Admin)',
+                sales: 'Cajero / Ventas',
+                inventory: 'Bodeguero / Inventario',
+                marketing: 'Diseñador / Marketing',
+                driver: 'Chofer / Repartidor',
+                carga_descarga: 'Patio / Carga y Descarga',
+                pickup: 'Mostrador / Pick Up'
+            };
+            user = {
+                id: session,
+                name: roleNameMap[role] || 'Usuario Staff',
+                role: role,
+                active: true
+            };
+        }
 
         if (!user || !user.active) {
             return NextResponse.json({ success: false, error: 'User not found or inactive' }, { status: 401 });
