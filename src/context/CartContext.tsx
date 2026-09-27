@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useCallback, useMemo } from 'react';
+import { createContext, useContext, useEffect, useCallback, useMemo, useRef } from 'react';
 import { logAudit } from '@/lib/audit';
 import { useAuth } from './AuthContext';
 import { useERPStore, fallbackProducts, defaultSiteConfig } from '@/store/useERPStore';
@@ -130,6 +130,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     const setFirebaseStatus = useERPStore((s) => s.setFirebaseStatus);
     const setLoading        = useERPStore((s) => s.setLoading);
     const firebaseStatus    = useERPStore((s) => s.firebaseStatus);
+    const localMutationInFlight = useRef(0);
 
     // ─── Local API Sync for Operational Data (Products & Orders) ──────────────
     useEffect(() => {
@@ -137,7 +138,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         
         let isFetching = false;
         const fetchLocalData = async () => {
-            if (isFetching) return;
+            if (isFetching || localMutationInFlight.current > 0) return;
             isFetching = true;
             try {
                 // Fetch Products from Local API

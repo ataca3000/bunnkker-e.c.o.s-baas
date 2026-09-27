@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useCart, type Product } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { db } from '@/lib/firebase';
@@ -37,8 +37,10 @@ export default function InventoryDashboard() {
     const [loading, setLoading] = useState(false);
     const [editingProductId, setEditingProductId] = useState<string | null>(null);
     const [localProducts, setLocalProducts] = useState<Product[]>([]);
+    const mutationInFlight = useRef(0);
 
     useEffect(() => {
+        if (mutationInFlight.current > 0) return;
         // Sort products by orderIndex to keep them stable
         const sorted = [...products].sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0));
         setLocalProducts(sorted);
@@ -137,7 +139,10 @@ export default function InventoryDashboard() {
     const handleDragEnd = async (event: DragEndEvent) => {
         const { active, over } = event;
         setDraggedProductId(null);
-        if (!over) return;
+        if (!over) {
+            mutationInFlight.current = Math.max(0, mutationInFlight.current - 1);
+            return;
+        }
 
         const productId = active.id as string;
         const overId = over.id as string;
@@ -160,7 +165,10 @@ export default function InventoryDashboard() {
 
         const activeIndex = localProducts.findIndex(p => p.id === productId);
         const product = localProducts[activeIndex];
-        if (!product) return;
+        if (!product) {
+            mutationInFlight.current = Math.max(0, mutationInFlight.current - 1);
+            return;
+        }
 
         const currentShelfName = product.location?.estante || 'Sin Asignar';
         const currentLevelName = product.location?.fila || 'Nivel 1';
@@ -211,7 +219,7 @@ export default function InventoryDashboard() {
                 };
                 setLocalProducts(newProducts);
 
-                await fetch('/api/products', {
+                const moveRes = await fetch('/api/products', {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -220,6 +228,10 @@ export default function InventoryDashboard() {
                         fila: targetLevelName
                     })
                 });
+                const moveResult = await moveRes.json().catch(() => null);
+                if (!moveRes.ok || !moveResult?.success) {
+                    throw new Error(moveResult?.error || 'No se pudo guardar la ubicación');
+                }
 
                 await logAudit({
                     type: 'INVENTORY_MOVE',
@@ -239,9 +251,11 @@ export default function InventoryDashboard() {
                 toast.error('No se pudo reubicar el producto.');
             }
         }
+        mutationInFlight.current = Math.max(0, mutationInFlight.current - 1);
     };
 
     const handleDragStart = (event: DragStartEvent) => {
+        mutationInFlight.current += 1;
         setDraggedProductId(event.active.id as string);
     };
 
@@ -592,6 +606,7 @@ export default function InventoryDashboard() {
         }
 
         setLoading(true);
+        mutationInFlight.current += 1;
         const productId = editingProductId || `PROD-${Date.now().toString().slice(-6)}`;
         
         const newProduct: Product = {
@@ -628,7 +643,10 @@ export default function InventoryDashboard() {
                 body: JSON.stringify(dataToSave)
             });
 
-            if (!res.ok) throw new Error('Error guardando en Edge API local');
+            const result = await res.json().catch(() => null);
+            if (!res.ok || !result?.success) {
+                throw new Error(result?.error || 'Error guardando en Edge API local');
+            }
 
             await logAudit({
                 type: 'CONFIG_UPDATE',
@@ -656,6 +674,7 @@ export default function InventoryDashboard() {
             toast.error('Error al guardar el producto: ' + (error.message || 'Error desconocido'), 'Error');
         } finally {
             setLoading(false);
+            mutationInFlight.current = Math.max(0, mutationInFlight.current - 1);
         }
     };
 
@@ -671,9 +690,14 @@ export default function InventoryDashboard() {
         
         if (confirm(`¿ESTÁS SEGURO? Eliminarás definitivamente "${productName}" del sistema. Esta acción es irreversible y resolverá cualquier estado de "fantasma" / "merma" pendiente para este artículo.`)) {
             try {
-                const { deleteDoc } = await import('firebase/firestore');
-                await deleteDoc(doc(db, 'products', productId));
-                
+                const res = await fetch(`/api/products?id=${encodeURIComponent(productId)}`, {
+                    method: 'DELETE',
+                });
+                const result = await res.json().catch(() => null);
+                if (!res.ok || !result?.success) {
+                    throw new Error(result?.error || 'No se pudo eliminar el producto');
+                }
+
                 await logAudit({
                     type: 'SECURITY_ALERT',
                     userId: profile?.uid || 'SYSTEM',

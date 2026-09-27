@@ -44,10 +44,10 @@ export default function ShelfColumn({ shelfName, products, onProductClick, onAdd
           {onAddProductClick && (
              <button 
                onClick={() => onAddProductClick(shelfName, sortedLevels[0] || 'GENERAL')}
-               className="bg-[#0ea5e9] hover:bg-sky-400 text-white p-2 rounded-xl transition-all shadow-[0_0_15px_rgba(14,165,233,0.5)] animate-pulse hover:animate-none active:scale-95"
+               className="min-h-11 min-w-11 px-3 bg-[#0ea5e9] hover:bg-sky-400 text-white rounded-xl transition-all shadow-[0_0_15px_rgba(14,165,233,0.5)] animate-pulse hover:animate-none active:scale-95 inline-flex items-center justify-center gap-2 text-xs font-black uppercase tracking-wide"
                title={`Nuevo Ingreso en ${shelfName}`}
              >
-               <Plus size={18} strokeWidth={3} />
+               <Plus size={20} strokeWidth={3} /><span className="hidden sm:inline">Agregar</span>
              </button>
           )}
         </div>
