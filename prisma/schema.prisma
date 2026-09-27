@@ -72,6 +72,21 @@ model Order {
   vendedorId    String?
   vendedorName  String?
   confirmedAt   DateTime?
+  // Datos operativos del flujo de preparación, patio y reparto
+  deliveryPin   String?
+  deliveryLat   Float?
+  deliveryLng   Float?
+  deliveryAddress String?
+  loadedBy      String?
+  loadedByUid   String?
+  loadingStartedAt DateTime?
+  loadingFinishedAt DateTime?
+  isLoaded      Boolean @default(false)
+  assignedDriverId String?
+  signatureData String?
+  photoData     String?
+  completedAt   DateTime?
+  rejectionReason String?
   
   customerId    String?
   customer      Customer? @relation(fields: [customerId], references: [id])

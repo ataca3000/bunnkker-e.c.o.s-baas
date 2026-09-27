@@ -95,11 +95,11 @@ export default function DeliveryView({
       ? signatureRef.current.toDataURL('image/png') 
       : null;
 
-    onUpdate({ 
-      status: 'completed', 
+    onUpdate({
+      status: 'DELIVERED',
       signatureData: sigData,
       photoData,
-      completedAt: new Date().toISOString() 
+      completedAt: new Date().toISOString()
     });
     onFinish();
   };

@@ -12,7 +12,7 @@ export default function CargaDescargaDashboardWorker({ userName, greeting, order
     const [showScanner, setShowScanner]     = useState(false);
 
     const pendingLoads = orders.filter((o: any) => {
-        const validStatus  = o.status === 'paid' || o.status === 'PREPARANDO' || o.status === 'NIGHT_QUEUE' || o.status === 'PENDIENTE_LLEGADA';
+        const validStatus  = o.status === 'paid' || o.status === 'PREPARANDO' || o.status === 'READY_TO_SHIP' || o.status === 'NIGHT_QUEUE' || o.status === 'PENDIENTE_LLEGADA';
         const notLoaded    = !(o as any).isLoaded && o.status !== 'DELIVERED';
         const custName     = o.customer?.name || o.customerName || 'Cliente';
         const matchesSearch = o.id.toLowerCase().includes(searchTerm.toLowerCase()) || custName.toLowerCase().includes(searchTerm.toLowerCase());

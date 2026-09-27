@@ -92,7 +92,11 @@ export async function POST(request: NextRequest) {
                     total,
                     deliveryType: deliveryType || (deliveryMethod === 'repartidor' ? 'DELIVERY' : (deliveryMethod === 'pickup' ? 'PICKUP' : 'LOCAL')),
                     paymentMethod: paymentMethod || 'CASH', // Aseguramos el método de pago obligatorio
-                    status: 'PENDING_PAYMENT', // Estado inicial en la fila de espera
+                    status: body.status || 'PENDING_PAYMENT',
+                    deliveryPin: body.deliveryPin || null,
+                    deliveryLat: typeof body.lat === 'number' ? body.lat : null,
+                    deliveryLng: typeof body.lng === 'number' ? body.lng : null,
+                    deliveryAddress: clientData?.address || null,
                     customerId: customerId,
                     items: {
                         create: items.map((item: any) => ({
@@ -130,7 +134,11 @@ export async function PATCH(request: NextRequest) {
         const allowedFields = [
             'tenantId', 'total', 'paymentMethod', 'status', 'deliveryType', 
             'date', 'offline', 'synced', 'ventanilla', 'cajon', 
-            'vendedorId', 'vendedorName', 'confirmedAt', 'customerId'
+            'vendedorId', 'vendedorName', 'confirmedAt', 'customerId',
+            'deliveryPin', 'deliveryLat', 'deliveryLng', 'deliveryAddress',
+            'loadedBy', 'loadedByUid', 'loadingStartedAt', 'loadingFinishedAt',
+            'isLoaded', 'assignedDriverId', 'signatureData', 'photoData',
+            'completedAt', 'rejectionReason'
         ];
         const prismaUpdates: any = {};
         for (const key of allowedFields) {

@@ -515,7 +515,12 @@ export const useCart = () => {
                     id: orderId,
                     isLoaded: true,
                     loadingFinishedAt: new Date().toISOString(),
-                    status: 'OUT_FOR_DELIVERY'
+                    status: (() => {
+                        const order = useERPStore.getState().orders.find((item) => item.id === orderId);
+                        return order?.deliveryType === 'PICKUP' || order?.deliveryMethod === 'pickup'
+                            ? 'READY_FOR_PICKUP'
+                            : 'OUT_FOR_DELIVERY';
+                    })()
                 })
             });
 
