@@ -1,4 +1,5 @@
 # BUNKKER E.C.O.S.
+<img width="1279" height="591" alt="Captura de pantalla 2026-09-14 214300" src="https://github.com/user-attachments/assets/66e4bd2b-df7f-4fdc-82f0-052160a21d22" />
 
 **Ecosistema Comercial Omnipotente Sincronizado** — ERP/POS local-first para negocios físicos.
 
@@ -17,7 +18,7 @@
 Sistema completo para operar un negocio físico (ferretería, abarrotes, distribuidora) desde múltiples terminales conectadas por WiFi local. Funciona sin internet. Cuando hay conexión, sincroniza con la nube automáticamente.
 
 ## Qué hace
-
+- **plataforma de administration y operation catalogo virtual local cero filas wifi syn hibrido bidirectional local 
 - **Punto de Venta (POS)** con cobro en efectivo, tarjeta y multimoneda
 - **Inventario** con ubicación física por estante/fila y drag & drop
 - **8 roles de acceso** (dueño, gerente, cajero, bodeguero, chofer, patio, marketing, mostrador)
