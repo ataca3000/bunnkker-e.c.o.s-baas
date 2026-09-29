@@ -20,7 +20,7 @@
     "build:standalone": "node ./scripts/run-next-build.js desktop local && node scripts/copy-standalone.js",
     "build:secure": "npm run build:standalone",
     "dist": "npm run build:secure && electron-builder",
-    "dist:win": "npm run build:standalone && electron-builder --win --x64",
+    "dist:win": "npm run build:standalone && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win --x64",
     "win": "npm run dist:win",
     "dist:publish": "npm run build:standalone && electron-builder --win --publish always",
     "emulate:local": "firebase emulators:start --import=./firebase_data --export-on-exit",
