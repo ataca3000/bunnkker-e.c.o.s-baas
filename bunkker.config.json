@@ -1,0 +1,12 @@
+{
+  "reservation": {
+    "timeoutMs": 1800000,
+    "timeoutMinutes": 30,
+    "timeoutHours": 0.5
+  },
+  "checkout": {
+    "enableWebPayments": true,
+    "allowWebCheckout": true,
+    "requireCashierInspection": true
+  }
+}
