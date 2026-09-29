@@ -30,6 +30,17 @@ export async function generateMetadata(): Promise<Metadata> {
       description: "BUNKKER E.C.O.S. — Ecosistema Comercial Offline Sincronizado. El mejor sistema de gestión empresarial, punto de venta y logística para PYMEs.",
       keywords: ["BUNKKER", "BUNKKER ERP", "ERP", "punto de venta", "gestión empresarial", "facturación", "local-first"],
       manifest: '/manifest.json',
+      icons: {
+        icon: [
+          { url: '/favicon.ico' },
+          { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+          { url: '/icon-192x192.png', sizes: '192x192', type: 'image/png' },
+          { url: '/icon.svg', type: 'image/svg+xml' }
+        ],
+        apple: [
+          { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }
+        ]
+      },
       verification: defaultVerification,
       alternates: {
         canonical: baseUrl,
@@ -55,6 +66,17 @@ export async function generateMetadata(): Promise<Metadata> {
     title: `${storeName} | Tienda`,
     description: `Catálogo oficial de ${storeName}, impulsado de forma segura por BUNKKER E.C.O.S.`,
     manifest: '/manifest.json',
+    icons: {
+      icon: [
+        { url: '/favicon.ico' },
+        { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+        { url: '/icon-192x192.png', sizes: '192x192', type: 'image/png' },
+        { url: '/icon.svg', type: 'image/svg+xml' }
+      ],
+      apple: [
+        { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }
+      ]
+    },
     verification: defaultVerification,
     alternates: {
       canonical: baseUrl,
