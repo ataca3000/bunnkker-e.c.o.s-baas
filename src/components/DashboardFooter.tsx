@@ -1,5 +1,6 @@
 "use client";
 
+import Link from 'next/link';
 import { Mail, MapPin, MessageSquare } from 'lucide-react';
 
 export default function DashboardFooter() {
@@ -52,7 +53,21 @@ export default function DashboardFooter() {
                 </div>
             </div>
             
-            <div className="text-center mt-6">
+            <div className="flex flex-wrap justify-center gap-4 text-xs font-semibold text-gray-500 mt-6 pt-4 border-t border-gray-100">
+                <Link href="/dashboard/migracion" className="hover:text-[#0ea5e9] transition-colors">
+                    📲 Migración y Respaldo de Dispositivo
+                </Link>
+                <span>•</span>
+                <Link href="/privacidad" className="hover:text-[#0ea5e9] transition-colors">
+                    Política de Privacidad (Play Store)
+                </Link>
+                <span>•</span>
+                <Link href="/terminos" className="hover:text-[#0ea5e9] transition-colors">
+                    Términos de Servicio
+                </Link>
+            </div>
+
+            <div className="text-center mt-4">
                 <p className="text-[0.6rem] text-gray-300 font-bold uppercase">
                     &copy; {new Date().getFullYear()} {devInfo.company} - Hecho en Tlaxcala para el mundo
                 </p>

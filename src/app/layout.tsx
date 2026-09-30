@@ -109,6 +109,7 @@ import ParticlesBackground from "@/components/ParticlesBackground";
 import ToastContainer from "@/components/ToastContainer";
 import FreemiumLockModal from "@/components/FreemiumLockModal";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
+import CookieConsent from "@/components/CookieConsent";
 
 export default async function RootLayout({
   children,
@@ -143,7 +144,7 @@ export default async function RootLayout({
             </DeviceLockScreen>
           </AuthProvider>
         </div>
-        <Analytics />
+        <CookieConsent />
       </body>
     </html>
   );
