@@ -47,6 +47,22 @@ export default function LoginPage() {
     }
   }, [user, profile, router]);
 
+  // Detección de pase QR automático (?pin=...&auto=true)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const urlPin = params.get('pin');
+      const isAuto = params.get('auto') === 'true';
+      if (urlPin) {
+        setStaffPin(urlPin);
+        setShowStaffModal(true);
+        if (isAuto && /^[A-Za-z0-9]{4,6}$/.test(urlPin)) {
+          performStaffLogin(urlPin);
+        }
+      }
+    }
+  }, []);
+
   // Login de Cliente Final (Email/Password)
   const handleClientSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,14 +115,8 @@ export default function LoginPage() {
     }
   };
 
-  // Login Discreto por PIN para Trabajadores / Staff
-  const handleStaffPinAuth = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!/^[A-Za-z0-9]{4,6}$/.test(staffPin)) {
-      setError('El PIN debe tener entre 4 y 6 caracteres alfanuméricos.');
-      return;
-    }
-
+  // Función centralizada de autenticación por PIN (usada manual y por escaneo QR)
+  const performStaffLogin = async (pinCandidate: string) => {
     setLoading(true);
     setError('');
 
@@ -117,12 +127,12 @@ export default function LoginPage() {
       const res = await fetch('/api/auth/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin: staffPin, deviceId })
+        body: JSON.stringify({ pin: pinCandidate, deviceId })
       });
       const data = await res.json();
 
       if (res.ok && data.success) {
-        // Acceso directo de lleno al Dashboard
+        // Redirigir al dashboard según rol
         window.location.href = '/dashboard';
       } else {
         setError(data.error || 'PIN de acceso denegado.');
@@ -132,6 +142,16 @@ export default function LoginPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Login Discreto por PIN para Trabajadores / Staff
+  const handleStaffPinAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!/^[A-Za-z0-9]{4,6}$/.test(staffPin)) {
+      setError('El PIN debe tener entre 4 y 6 caracteres alfanuméricos.');
+      return;
+    }
+    await performStaffLogin(staffPin);
   };
 
   return (

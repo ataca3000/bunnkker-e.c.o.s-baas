@@ -107,9 +107,8 @@ import AntiDevTools from "@/components/AntiDevTools";
 import DeviceLockScreen from "@/components/DeviceLockScreen";
 import ParticlesBackground from "@/components/ParticlesBackground";
 import ToastContainer from "@/components/ToastContainer";
-import { Analytics } from '@vercel/analytics/next';
-
 import FreemiumLockModal from "@/components/FreemiumLockModal";
+import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 
 export default async function RootLayout({
   children,
@@ -139,6 +138,7 @@ export default async function RootLayout({
                 <FreemiumLockModal />
                 <Footer />
                 <ToastContainer />
+                <PWAInstallPrompt />
               </CartProvider>
             </DeviceLockScreen>
           </AuthProvider>
