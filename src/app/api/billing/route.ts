@@ -8,10 +8,18 @@ import { prisma } from '@/lib/prisma';
 // The API key is ONLY retrieved from secure environment variables.
 // It is no longer read from the public-facing Firestore 'config' collection.
 async function getFacturapiKey() {
-    const secretSnap = await db.collection('secrets').doc('billing').get();
-    if (secretSnap.exists) {
-        return secretSnap.data()?.facturapi_key;
+    if (process.env.FACTURAPI_SECRET_KEY) {
+        return process.env.FACTURAPI_SECRET_KEY;
     }
+    if (process.env.FACTURAPI_KEY) {
+        return process.env.FACTURAPI_KEY;
+    }
+    try {
+        const secretSnap = await db.collection('secrets').doc('billing').get();
+        if (secretSnap.exists) {
+            return secretSnap.data()?.facturapi_key;
+        }
+    } catch {}
     return null;
 }
 

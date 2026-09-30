@@ -2,10 +2,12 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { useCart, type Product } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { 
-    Clock, Bell, History, User, Store, ShieldAlert, Wifi, Globe, TerminalSquare, AlertCircle, XCircle, CheckCircle2, Phone, Lock, Unlock 
+    Clock, Bell, History, User, Store, ShieldAlert, Wifi, Globe, TerminalSquare, AlertCircle, XCircle, CheckCircle2, Phone, Lock, Unlock,
+    LayoutDashboard, LogOut, ShoppingCart, Trash2, Zap, UserCheck
 } from 'lucide-react';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import CorteCajaCiego from '@/components/sales/CorteCajaCiego';
@@ -28,11 +30,13 @@ import type { DeliveryInfo } from '@/components/sales/caja-movil/DeliveryModal';
 import { AnimatePresence, motion } from 'framer-motion';
 
 export default function SalesDashboard() {
+    const router = useRouter();
     const { products, orders, confirmRequest, claimCashierOrder, cancelOrder, formatCurrency, createOrder, siteConfig } = useCart();
-    const { profile } = useAuth();
+    const { profile, signOut } = useAuth();
     
     // UI State
     const [activeTab, setActiveTab] = useState<'pos' | 'online'>('pos');
+    const [orderFilter, setOrderFilter] = useState<'all' | 'pending' | 'ready' | 'delivery'>('all');
     const [showCorteCaja, setShowCorteCaja] = useState(false);
     const [showCameraScanner, setShowCameraScanner] = useState(false);
     const [currentTime, setCurrentTime] = useState('');
@@ -321,7 +325,78 @@ export default function SalesDashboard() {
         }
     };
 
-    const pendingOrders = orders.filter(o => o.status === 'READY_TO_SHIP' || o.status === 'READY_FOR_PICKUP');
+    const isTestOrder = (o: any) => {
+        const id = (o.id || '').toLowerCase();
+        const cust = (o.customer?.name || o.customerName || o.clientName || '').toLowerCase();
+        return id.startsWith('test') || id.includes('demo') || cust.includes('test') || cust.includes('prueba');
+    };
+
+    const handleDeleteOrder = async (orderId: string) => {
+        if (!window.confirm(`¿Estás seguro de eliminar permanentemente la orden ${orderId}? Esta acción no se puede deshacer.`)) {
+            return;
+        }
+        try {
+            const res = await fetch(`/api/orders?id=${encodeURIComponent(orderId)}`, {
+                method: 'DELETE'
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast(`🗑️ Pedido ${orderId} eliminado.`);
+                broadcastSync();
+            } else {
+                toast.error(data.error || 'Error al eliminar el pedido.');
+            }
+        } catch {
+            toast.error('Error de red al eliminar el pedido.');
+        }
+    };
+
+    const handleClaimOrder = async (orderId: string) => {
+        try {
+            setClaimingOrderId(orderId);
+            const res = await fetch('/api/orders', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: orderId, action: 'claim_cashier' })
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast(`✅ Pedido ${orderId} tomado en tu caja.`);
+                broadcastSync();
+            } else {
+                toast.error(data.error || 'No se pudo tomar el pedido.');
+            }
+        } catch {
+            toast.error('Error al tomar el pedido.');
+        } finally {
+            setClaimingOrderId(null);
+        }
+    };
+
+    const PENDING_CASHIER_STATUSES = [
+        'pending_payment',
+        'pending_confirmation',
+        'pending',
+        'READY_TO_SHIP',
+        'READY_FOR_PICKUP',
+        'pending_delivery',
+        'NIGHT_QUEUE'
+    ];
+
+    const pendingOrders = orders.filter(o => PENDING_CASHIER_STATUSES.includes(o.status) && !isTestOrder(o));
+
+    const displayedOrders = pendingOrders.filter(o => {
+        if (orderFilter === 'pending') {
+            return ['pending_payment', 'pending_confirmation', 'pending', 'NIGHT_QUEUE'].includes(o.status);
+        }
+        if (orderFilter === 'ready') {
+            return ['READY_TO_SHIP', 'READY_FOR_PICKUP'].includes(o.status);
+        }
+        if (orderFilter === 'delivery') {
+            return o.status === 'pending_delivery';
+        }
+        return true;
+    });
 
     return (
         <div className="fixed inset-0 z-50 flex flex-col h-screen bg-slate-950 text-white overflow-hidden font-sans">
@@ -356,7 +431,7 @@ export default function SalesDashboard() {
                         onClick={() => setActiveTab('online')}
                         className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-bold transition-all relative ${activeTab === 'online' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30 shadow-md' : 'text-zinc-500 hover:text-zinc-300'}`}
                     >
-                        <Globe className="w-4 h-4" /> COLA ONLINE
+                        <Globe className="w-4 h-4" /> PEDIDOS / COLA ({pendingOrders.length})
                         {pendingOrders.length > 0 && (
                             <span className="absolute top-1 right-2 w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
                         )}
@@ -366,7 +441,7 @@ export default function SalesDashboard() {
                     </button>
                 </div>
 
-                <div className="flex items-center gap-4 text-zinc-300">
+                <div className="flex items-center gap-2 sm:gap-3 text-zinc-300">
                     <div className="hidden lg:flex items-center gap-1.5 text-xs bg-black/40 border border-white/5 py-1.5 px-3 rounded-full">
                         <Clock className="h-3.5 w-3.5 text-zinc-400" />
                         <span className="font-mono">{currentTime}</span>
@@ -386,11 +461,38 @@ export default function SalesDashboard() {
                         <ShieldAlert className="h-4 w-4" />
                         <span className="text-xs font-bold hidden sm:block">CORTE</span>
                     </button>
-                    <div className="flex items-center gap-2 pl-4 border-l border-white/10">
+
+                    {/* Botón Salir al Dashboard */}
+                    <button
+                        onClick={() => router.push('/dashboard')}
+                        className="hover:text-white transition-colors flex items-center gap-1.5 bg-cyan-950/60 hover:bg-cyan-900/80 text-cyan-300 px-3 py-1.5 rounded-lg border border-cyan-800 text-xs font-bold"
+                        title="Volver al Menú Principal del Dashboard"
+                    >
+                        <LayoutDashboard className="h-4 w-4" />
+                        <span className="hidden sm:inline">DASHBOARD</span>
+                    </button>
+
+                    {/* Botón Cerrar Sesión */}
+                    <button
+                        onClick={async () => {
+                            if (posCart.length > 0) {
+                                if (!confirm("Hay productos pendientes en el carrito de caja. ¿Deseas cerrar sesión de todos modos?")) return;
+                            }
+                            await signOut();
+                            window.location.href = '/login';
+                        }}
+                        className="hover:text-red-300 transition-colors flex items-center gap-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 px-3 py-1.5 rounded-lg border border-red-500/30 text-xs font-bold"
+                        title="Cerrar sesión del cajero"
+                    >
+                        <LogOut className="h-4 w-4" />
+                        <span className="hidden sm:inline">SALIR</span>
+                    </button>
+
+                    <div className="hidden sm:flex items-center gap-2 pl-3 border-l border-white/10">
                         <div className="w-8 h-8 rounded-full bg-black/40 flex items-center justify-center border border-white/10 text-zinc-400">
                             <User className="h-4 w-4" />
                         </div>
-                        <div className="hidden sm:block text-xs">
+                        <div className="hidden lg:block text-xs">
                             <p className="font-semibold text-white">{profile?.displayName || 'Cajero'}</p>
                             <p className="text-zinc-400">{profile?.role || 'Piso Local'}</p>
                         </div>
@@ -429,143 +531,220 @@ export default function SalesDashboard() {
                     </>
                 ) : (
                     /* COLA ONLINE */
-                    <div className="flex-1 overflow-y-auto p-6 bg-transparent custom-scrollbar">
+                    <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-transparent custom-scrollbar space-y-6">
+                        {/* Selector de Filtros de Cola */}
+                        <div className="flex flex-wrap gap-2 max-w-7xl mx-auto items-center justify-between">
+                            <div className="flex flex-wrap gap-2">
+                                <button
+                                    onClick={() => setOrderFilter('all')}
+                                    className={`px-4 py-2 rounded-xl text-xs font-bold uppercase transition-all ${
+                                        orderFilter === 'all'
+                                            ? 'bg-blue-600 text-white shadow-md'
+                                            : 'bg-zinc-900/60 text-zinc-400 hover:text-white border border-white/5'
+                                    }`}
+                                >
+                                    Todos ({pendingOrders.length})
+                                </button>
+                                <button
+                                    onClick={() => setOrderFilter('pending')}
+                                    className={`px-4 py-2 rounded-xl text-xs font-bold uppercase transition-all ${
+                                        orderFilter === 'pending'
+                                            ? 'bg-amber-600 text-white shadow-md'
+                                            : 'bg-zinc-900/60 text-zinc-400 hover:text-white border border-white/5'
+                                    }`}
+                                >
+                                    Por Cobrar ({pendingOrders.filter(o => ['pending_payment', 'pending_confirmation', 'pending', 'NIGHT_QUEUE'].includes(o.status)).length})
+                                </button>
+                                <button
+                                    onClick={() => setOrderFilter('ready')}
+                                    className={`px-4 py-2 rounded-xl text-xs font-bold uppercase transition-all ${
+                                        orderFilter === 'ready'
+                                            ? 'bg-emerald-600 text-white shadow-md'
+                                            : 'bg-zinc-900/60 text-zinc-400 hover:text-white border border-white/5'
+                                    }`}
+                                >
+                                    Listos Entrega ({pendingOrders.filter(o => ['READY_TO_SHIP', 'READY_FOR_PICKUP'].includes(o.status)).length})
+                                </button>
+                                <button
+                                    onClick={() => setOrderFilter('delivery')}
+                                    className={`px-4 py-2 rounded-xl text-xs font-bold uppercase transition-all ${
+                                        orderFilter === 'delivery'
+                                            ? 'bg-indigo-600 text-white shadow-md'
+                                            : 'bg-zinc-900/60 text-zinc-400 hover:text-white border border-white/5'
+                                    }`}
+                                >
+                                    Repartos ({pendingOrders.filter(o => o.status === 'pending_delivery').length})
+                                </button>
+                            </div>
+                            <span className="text-[11px] text-zinc-500 font-mono">
+                                Actualización en tiempo real
+                            </span>
+                        </div>
+
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
-                            {pendingOrders.length === 0 ? (
-                                <div className="col-span-full py-24 text-center bg-zinc-900/40 backdrop-blur-md rounded-[32px] border border-white/10 shadow-lg">
-                                    <Globe size={60} className="mx-auto text-blue-500/50 mb-4" />
-                                    <h2 className="text-2xl font-extrabold text-white mb-2">Bandeja Vacía</h2>
-                                    <p className="text-zinc-400 text-base font-medium">No hay pedidos preparados pendientes de pago.</p>
+                            {displayedOrders.length === 0 ? (
+                                <div className="col-span-full py-20 text-center bg-zinc-900/40 backdrop-blur-md rounded-[32px] border border-white/10 shadow-lg">
+                                    <Globe size={50} className="mx-auto text-blue-500/50 mb-3" />
+                                    <h2 className="text-xl font-extrabold text-white mb-1">Sin Pedidos Pendientes</h2>
+                                    <p className="text-zinc-400 text-sm">No hay pedidos en la categoría seleccionada.</p>
                                 </div>
                             ) : (
-                                pendingOrders.map(order => (
-                                    <div key={order.id} className="bg-zinc-900/60 backdrop-blur-md rounded-3xl p-6 border border-blue-500/20 shadow-lg">
-                                        <div className="flex justify-between items-start mb-4 border-b border-white/10 pb-4">
+                                displayedOrders.map(order => {
+                                    const isAwaitingPayment = ['pending_payment', 'pending_confirmation', 'pending', 'NIGHT_QUEUE'].includes(order.status);
+                                    const isReady = ['READY_TO_SHIP', 'READY_FOR_PICKUP'].includes(order.status);
+                                    
+                                    return (
+                                        <div key={order.id} className="bg-zinc-900/60 backdrop-blur-md rounded-3xl p-5 sm:p-6 border border-white/10 shadow-lg flex flex-col justify-between">
                                             <div>
-                                                <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1">Referencia</p>
-                                                <p className="text-lg font-black text-white">{order.id}</p>
-                                            </div>
-                                            <span className="text-[10px] font-bold uppercase px-2 py-1 rounded bg-orange-500/20 text-orange-400 border border-orange-500/30">
-                                                {order.status === 'READY_FOR_PICKUP' ? 'LISTO PARA RECOGER' : 'LISTO - PASE A CAJA'}
-                                            </span>
-                                        </div>
-
-                                        <div className="space-y-2 mb-4">
-                                            <p className="text-sm font-medium text-zinc-300 flex items-center gap-2"><User size={14} className="text-blue-400"/> {order.customer?.name || 'Cliente'}</p>
-                                            <p className="text-sm font-medium text-zinc-400 flex items-center gap-2"><Phone size={14} className="text-blue-400"/> {order.customer?.phone || 'Sin Teléfono'}</p>
-                                        </div>
-
-                                        <div className="bg-black/40 rounded-xl p-4 mb-6 border border-white/5 flex justify-between items-center">
-                                            <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Total</span>
-                                            <span className="text-xl font-extrabold text-blue-400">{formatCurrency(order.total)}</span>
-                                        </div>
-
-                                        {/* Estado y Acciones de la Fila */}
-                                        {['READY_TO_SHIP', 'READY_FOR_PICKUP'].includes(order.status) ? (
-                                            <>
-                                                {/* Selector de Punto de Entrega */}
-                                                <div className="mb-4 bg-black/20 p-3 rounded-xl border border-white/5">
-                                                    <label className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1.5">Asignar punto de entrega</label>
-                                                    <div className="flex gap-2">
-                                                        <select 
-                                                            value={assignments[order.id]?.type || 'ventanilla'}
-                                                            onChange={(e) => setAssignments(prev => ({
-                                                                ...prev,
-                                                                [order.id]: {
-                                                                    type: e.target.value as 'ventanilla' | 'cajon',
-                                                                    number: prev[order.id]?.number || '1'
-                                                                }
-                                                            }))}
-                                                            className="flex-1 bg-zinc-950 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs font-bold text-white focus:outline-none focus:border-blue-500"
+                                                <div className="flex justify-between items-start mb-3 border-b border-white/10 pb-3">
+                                                    <div>
+                                                        <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">Folio / Pedido</p>
+                                                        <p className="text-base font-black text-white font-mono">{order.id}</p>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className={`text-[10px] font-bold uppercase px-2.5 py-1 rounded-full border ${
+                                                            isAwaitingPayment ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' :
+                                                            isReady ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' :
+                                                            'bg-indigo-500/20 text-indigo-400 border-indigo-500/30'
+                                                        }`}>
+                                                            {isAwaitingPayment ? 'POR COBRAR' : isReady ? 'LISTO ENTREGA' : 'REPARTO'}
+                                                        </span>
+                                                        <button
+                                                            onClick={() => handleDeleteOrder(order.id)}
+                                                            title="Eliminar este pedido permanentemente"
+                                                            className="p-1 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 transition-all hover:scale-105"
                                                         >
-                                                            <option value="ventanilla">🚪 Ventanilla</option>
-                                                            <option value="cajon">🚗 Cajón</option>
-                                                        </select>
-                                                        <select 
-                                                            value={assignments[order.id]?.number || '1'}
-                                                            onChange={(e) => setAssignments(prev => ({
-                                                                ...prev,
-                                                                [order.id]: {
-                                                                    type: prev[order.id]?.type || 'ventanilla',
-                                                                    number: e.target.value
-                                                                }
-                                                            }))}
-                                                            className="flex-1 bg-zinc-950 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs font-bold text-white focus:outline-none focus:border-blue-500"
-                                                        >
-                                                            <option value="1">Número 1</option>
-                                                            <option value="2">Número 2</option>
-                                                            <option value="3">Número 3</option>
-                                                            <option value="4">Número 4</option>
-                                                            <option value="5">Número 5</option>
-                                                        </select>
+                                                            <Trash2 size={13} />
+                                                        </button>
                                                     </div>
                                                 </div>
 
-                                                {!order.vendedorId ? (
-                                                    <button
-                                                        disabled={claimingOrderId === order.id}
-                                                        onClick={async () => {
-                                                            setClaimingOrderId(order.id);
-                                                            try {
-                                                                await claimCashierOrder(order.id);
-                                                                showToast('Pedido asignado a tu caja. Confirma el pago cuando lo recibas.');
-                                                                broadcastSync();
-                                                            } catch (error) {
-                                                                toast.error(error instanceof Error ? error.message : 'Otro cajero tomó este pedido.');
-                                                            } finally {
-                                                                setClaimingOrderId(null);
+                                                <div className="space-y-1.5 mb-3 text-xs">
+                                                    <p className="font-medium text-zinc-200 flex items-center gap-2">
+                                                        <User size={13} className="text-blue-400 shrink-0"/> {order.customer?.name || 'Cliente Mostrador'}
+                                                    </p>
+                                                    {order.customer?.phone && (
+                                                        <p className="font-medium text-zinc-400 flex items-center gap-2">
+                                                            <Phone size={13} className="text-blue-400 shrink-0"/> {order.customer?.phone}
+                                                        </p>
+                                                    )}
+                                                </div>
+
+                                                {/* Detalle de Artículos */}
+                                                {order.items && order.items.length > 0 && (
+                                                    <div className="bg-black/30 rounded-xl p-3 mb-4 border border-white/5 max-h-32 overflow-y-auto custom-scrollbar text-xs space-y-1">
+                                                        <span className="text-[10px] uppercase font-bold text-zinc-500 block mb-1">Artículos ({order.items.length}):</span>
+                                                        {order.items.map((it: any, idx: number) => (
+                                                            <div key={idx} className="flex justify-between text-zinc-300 text-[11px]">
+                                                                <span className="truncate max-w-[180px]">{it.quantity}x {it.name || it.productName || it.productId || 'Item'}</span>
+                                                                <span className="font-mono text-zinc-400">${Number(it.price * it.quantity).toFixed(2)}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+
+                                                <div className="bg-black/40 rounded-xl p-3 mb-4 border border-white/5 flex justify-between items-center">
+                                                    <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Total a Pagar</span>
+                                                    <span className="text-lg font-extrabold text-blue-400">{formatCurrency(order.total)}</span>
+                                                </div>
+                                            </div>
+
+                                            {/* Acciones de Caja */}
+                                            <div className="space-y-2 pt-2 border-t border-white/5">
+                                                {/* Estado de atención del cajero */}
+                                                <div className="flex items-center justify-between text-[11px] px-1 py-0.5 text-zinc-400">
+                                                    <span>Atención:</span>
+                                                    <span className={`font-semibold ${order.vendedorId === profile?.uid ? 'text-green-400' : order.vendedorName ? 'text-amber-400' : 'text-blue-400'}`}>
+                                                        {order.vendedorName ? (order.vendedorId === profile?.uid ? '✓ Atendido en tu caja' : `Tomado por ${order.vendedorName}`) : '⚡ Libre para tomar'}
+                                                    </span>
+                                                </div>
+
+                                                {/* Botones Tomar y Cargar al POS */}
+                                                <div className="flex gap-2">
+                                                    {(!order.vendedorId || order.vendedorId !== profile?.uid) && (
+                                                        <button 
+                                                            onClick={() => handleClaimOrder(order.id)}
+                                                            disabled={claimingOrderId === order.id}
+                                                            className="flex-1 py-2 px-2 bg-blue-600/20 border border-blue-500/30 text-blue-300 font-bold rounded-xl hover:bg-blue-600/30 text-xs transition-colors flex items-center justify-center gap-1.5"
+                                                            title="Asignar este pedido a mi caja"
+                                                        >
+                                                            <UserCheck size={14} /> Tomar
+                                                        </button>
+                                                    )}
+                                                    <button 
+                                                        onClick={() => {
+                                                            if (order.items && order.items.length > 0) {
+                                                                const converted = order.items.map((it: any) => ({
+                                                                    id: it.productId || it.id,
+                                                                    name: it.name || it.productName || 'Producto',
+                                                                    price: it.price || 0,
+                                                                    stock: 99,
+                                                                    quantity: it.quantity || 1
+                                                                }));
+                                                                setPosCart(converted);
+                                                                setActiveTab('pos');
+                                                                showToast(`Pedido ${order.id} cargado en Punto de Venta.`);
                                                             }
                                                         }}
-                                                        className="w-full py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-500 uppercase tracking-widest text-xs disabled:opacity-50"
+                                                        className="flex-1 py-2 px-2 bg-purple-600/20 border border-purple-500/30 text-purple-300 font-bold rounded-xl hover:bg-purple-600/30 text-xs transition-colors flex items-center justify-center gap-1.5"
+                                                        title="Cargar artículos al POS para modificar o cobrar"
                                                     >
-                                                        {claimingOrderId === order.id ? 'TOMANDO PEDIDO...' : 'TOMAR PEDIDO EN CAJA'}
+                                                        <ShoppingCart size={14} /> Cargar POS
                                                     </button>
-                                                ) : order.vendedorId === profile?.uid ? (
-                                                    <div className="flex gap-3">
-                                                        <button
-                                                            onClick={() => setOrderToCancel(order.id)}
-                                                            className="flex-1 flex items-center justify-center gap-2 py-3 bg-red-500/10 border border-red-500/20 text-red-400 font-bold rounded-xl hover:bg-red-500/20 transition-colors uppercase tracking-widest text-xs"
-                                                        >
-                                                            <XCircle size={14} /> Rechazar
-                                                        </button>
-                                                        <button
+                                                </div>
+
+                                                {isReady ? (
+                                                    <div className="space-y-2">
+                                                        <div className="bg-black/20 p-2 rounded-xl border border-white/5 flex gap-2">
+                                                            <select 
+                                                                value={assignments[order.id]?.type || 'ventanilla'}
+                                                                onChange={(e) => setAssignments(prev => ({
+                                                                    ...prev,
+                                                                    [order.id]: {
+                                                                        type: e.target.value as 'ventanilla' | 'cajon',
+                                                                        number: prev[order.id]?.number || '1'
+                                                                    }
+                                                                }))}
+                                                                className="flex-1 bg-zinc-950 border border-white/10 rounded-lg px-2 py-1 text-xs font-bold text-white"
+                                                            >
+                                                                <option value="ventanilla">🚪 Ventanilla</option>
+                                                                <option value="cajon">🚗 Cajón</option>
+                                                            </select>
+                                                            <select 
+                                                                value={assignments[order.id]?.number || '1'}
+                                                                onChange={(e) => setAssignments(prev => ({
+                                                                    ...prev,
+                                                                    [order.id]: {
+                                                                        type: prev[order.id]?.type || 'ventanilla',
+                                                                        number: e.target.value
+                                                                    }
+                                                                }))}
+                                                                className="flex-1 bg-zinc-950 border border-white/10 rounded-lg px-2 py-1 text-xs font-bold text-white"
+                                                            >
+                                                                <option value="1">#1</option>
+                                                                <option value="2">#2</option>
+                                                                <option value="3">#3</option>
+                                                                <option value="4">#4</option>
+                                                                <option value="5">#5</option>
+                                                            </select>
+                                                        </div>
+                                                        <button 
                                                             onClick={async () => {
                                                                 const ass = assignments[order.id] || { type: 'ventanilla', number: '1' };
                                                                 try {
                                                                     await confirmRequest(order.id, { [ass.type]: ass.number });
                                                                     broadcastSync();
-                                                                } catch (error) {
-                                                                    toast.error(error instanceof Error ? error.message : 'No se pudo confirmar el cobro.');
+                                                                    showToast("✅ Entrega confirmada.");
+                                                                } catch (err: any) {
+                                                                    toast.error(err?.message || "Error al confirmar.");
                                                                 }
                                                             }}
-                                                            className="flex-[2] py-3 bg-green-600 text-white font-bold rounded-xl hover:bg-green-500 uppercase tracking-widest text-xs"
+                                                            className="w-full py-2.5 bg-green-600 text-white font-bold rounded-xl hover:bg-green-500 text-xs flex justify-center items-center gap-1.5"
                                                         >
-                                                            <CheckCircle2 size={16} className="inline mr-2" /> CONFIRMAR PAGO
+                                                            <CheckCircle2 size={15} /> Confirmar Entrega
                                                         </button>
                                                     </div>
                                                 ) : (
-                                                    <div className="border border-amber-500/20 bg-amber-500/10 p-3 text-center text-xs font-bold text-amber-300">
-                                                        Tomado por {order.vendedorName || 'otra caja'}
-                                                    </div>
-                                                )}
-                                            </>
-                                        ) : (
-                                            <>
-                                                {/* Indicación de Ubicación Asignada */}
-                                                <div className="mb-4 bg-emerald-500/10 p-3 rounded-xl border border-emerald-500/20 text-center">
-                                                    <span className="block text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-1">PUNTO ASIGNADO</span>
-                                                    <span className="text-sm font-extrabold text-white">
-                                                        {order.ventanilla ? `🚪 Ventanilla ${order.ventanilla}` : `🚗 Cajón ${order.cajon}`}
-                                                    </span>
-                                                </div>
-
-                                                <div className="flex gap-3">
-                                                    <button 
-                                                        onClick={() => setOrderToCancel(order.id)}
-                                                        className="flex-1 flex items-center justify-center gap-2 py-3 bg-red-500/10 border border-red-500/20 text-red-400 font-bold rounded-xl hover:bg-red-500/20 transition-colors uppercase tracking-widest text-xs"
-                                                    >
-                                                        <XCircle size={14} /> Cancelar
-                                                    </button>
                                                     <button 
                                                         onClick={async () => {
                                                             try {
@@ -575,22 +754,40 @@ export default function SalesDashboard() {
                                                                     body: JSON.stringify({ id: order.id, status: 'paid' })
                                                                 });
                                                                 if (res.ok) {
-                                                                    showToast("✅ Pago registrado con éxito. Enviado a patio para despacho.");
+                                                                    showToast("✅ Cobro registrado en caja. Pedido enviado a despacho.");
                                                                     broadcastSync();
+                                                                } else {
+                                                                    toast.error("No se pudo registrar el pago.");
                                                                 }
-                                                            } catch (e) {
+                                                            } catch {
                                                                 toast.error("Error al registrar el pago.");
                                                             }
                                                         }}
-                                                        className="flex-[2] py-3 bg-green-600 text-white font-bold rounded-xl hover:bg-green-500 uppercase tracking-widest text-xs shadow-[0_0_15px_rgba(22,163,74,0.4)] flex justify-center items-center gap-2 transition-all"
+                                                        className="w-full py-2.5 bg-gradient-to-r from-emerald-600 to-green-600 text-white font-black rounded-xl hover:from-emerald-500 hover:to-green-500 uppercase tracking-widest text-xs shadow-[0_0_20px_rgba(16,185,129,0.3)] flex justify-center items-center gap-2 transition-all active:scale-95"
                                                     >
-                                                        <CheckCircle2 size={16} /> Confirmar Pago
+                                                        <CheckCircle2 size={15} /> Cobrar y Despachar
+                                                    </button>
+                                                )}
+
+                                                {/* Botones Rechazar / Cancelar y Eliminar */}
+                                                <div className="flex gap-2 pt-1">
+                                                    <button 
+                                                        onClick={() => setOrderToCancel(order.id)}
+                                                        className="flex-1 py-2 bg-amber-500/10 border border-amber-500/20 text-amber-400 font-bold rounded-xl hover:bg-amber-500/20 text-xs transition-colors flex items-center justify-center gap-1"
+                                                    >
+                                                        <XCircle size={13} /> Cancelar
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => handleDeleteOrder(order.id)}
+                                                        className="flex-1 py-2 bg-red-500/10 border border-red-500/20 text-red-400 font-bold rounded-xl hover:bg-red-500/20 text-xs transition-colors flex items-center justify-center gap-1"
+                                                    >
+                                                        <Trash2 size={13} /> Eliminar
                                                     </button>
                                                 </div>
-                                            </>
-                                        )}
-                                    </div>
-                                ))
+                                            </div>
+                                        </div>
+                                    );
+                                })
                             )}
                         </div>
                     </div>

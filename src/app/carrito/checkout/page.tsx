@@ -119,7 +119,7 @@ export default function CheckoutPage() {
     const handleCheckout = async () => {
         if (!customerAccount) {
             toast.warning('Regístrate o inicia sesión para generar tu pedido.');
-            window.location.href = '/cuenta';
+            window.location.href = '/cuenta?redirect=/carrito/checkout';
             return;
         }
         if (method === 'delivery' && (!clientAddress.trim() || !clientGps)) {

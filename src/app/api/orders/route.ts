@@ -292,7 +292,7 @@ export async function PATCH(request: NextRequest) {
         const cashierRoles = ['sales', 'billing', 'admin', 'superadmin'];
         const loadingRoles = ['carga_descarga', 'inventory', 'admin', 'superadmin'];
         const deliveryRoles = ['driver', 'carga_descarga', 'admin', 'superadmin'];
-        const cashierReadyStatuses = ['READY_TO_SHIP', 'READY_FOR_PICKUP'];
+        const cashierReadyStatuses = ['READY_TO_SHIP', 'READY_FOR_PICKUP', 'pending_payment', 'pending_confirmation', 'pending', 'NIGHT_QUEUE'];
 
         if (action === 'claim_cashier') {
             if (!cashierRoles.includes(actorRole)) return NextResponse.json({ success: false, error: 'Rol sin permiso para tomar cobros.' }, { status: 403 });
@@ -321,7 +321,7 @@ export async function PATCH(request: NextRequest) {
             try {
                 const order = await prisma.$transaction(async (tx) => {
                     const current = await tx.order.findUnique({ where: { id }, include: { items: true } });
-                    if (!current || !cashierReadyStatuses.includes(current.status) || current.confirmedAt || current.vendedorId !== auth.uid || (current.expiresAt && current.expiresAt.getTime() <= Date.now())) {
+                    if (!current || !cashierReadyStatuses.includes(current.status) || current.confirmedAt || (current.vendedorId && current.vendedorId !== auth.uid) || (current.expiresAt && current.expiresAt.getTime() <= Date.now())) {
                         throw new Error('ORDER_CONFLICT:El pedido no está listo, ya fue pagado o pertenece a otro cajero.');
                     }
 
@@ -344,7 +344,15 @@ export async function PATCH(request: NextRequest) {
                         ? isDelivery ? 'OUT_FOR_DELIVERY' : isPickup ? 'READY_FOR_PICKUP_PAID' : 'COMPLETED'
                         : 'paid';
                     const updated = await tx.order.updateMany({
-                        where: { id, status: current.status, confirmedAt: null, vendedorId: auth.uid },
+                        where: {
+                            id,
+                            status: current.status,
+                            confirmedAt: null,
+                            OR: [
+                                { vendedorId: auth.uid },
+                                { vendedorId: null }
+                            ]
+                        },
                         data: {
                             status: nextStatus,
                             paymentMethod: updates.paymentMethod || 'cash',
@@ -588,3 +596,54 @@ export async function PATCH(request: NextRequest) {
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
 }
+
+export async function DELETE(request: NextRequest) {
+    const auth = validateApiSession(request);
+    if (!auth.ok) return auth.response;
+
+    try {
+        const { searchParams } = new URL(request.url);
+        let id = searchParams.get('id');
+        if (!id) {
+            const body = await request.json().catch(() => ({}));
+            id = body.id;
+        }
+
+        if (!id) {
+            return NextResponse.json({ success: false, error: 'ID de orden requerido.' }, { status: 400 });
+        }
+
+        const cashierRoles = ['sales', 'billing', 'admin', 'superadmin'];
+        if (!cashierRoles.includes(auth.role)) {
+            return NextResponse.json({ success: false, error: 'Rol sin permiso para eliminar pedidos.' }, { status: 403 });
+        }
+
+        const current = await prisma.order.findUnique({
+            where: { id },
+            include: { items: true }
+        });
+
+        if (!current) {
+            return NextResponse.json({ success: false, error: 'Pedido no encontrado.' }, { status: 404 });
+        }
+
+        // Si tenía stock reservado y no había sido entregado, liberar la reserva
+        if (current.confirmedAt && current.status !== 'DELIVERED' && current.status !== 'cancelled') {
+            for (const item of current.items) {
+                await prisma.product.update({
+                    where: { id: item.productId },
+                    data: { reservedStock: { decrement: item.cantidad } }
+                }).catch(() => {});
+            }
+        }
+
+        await prisma.order.delete({
+            where: { id }
+        });
+
+        return NextResponse.json({ success: true, message: 'Pedido eliminado correctamente.' });
+    } catch (error: any) {
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    }
+}
+

@@ -38,6 +38,12 @@ export default function UserAccount() {
             const res = await fetch('/api/customer/me');
             const data = await res.json();
             if (data.success) {
+                const searchParams = new URLSearchParams(window.location.search);
+                const redirectParam = searchParams.get('redirect');
+                if (redirectParam) {
+                    window.location.href = redirectParam;
+                    return;
+                }
                 setCustomer(data.customer);
                 setOrders(data.customer.orders || []);
                 setProfileData({
@@ -78,7 +84,11 @@ export default function UserAccount() {
             });
             const data = await res.json();
             if (data.success) {
-                if (data.redirect) {
+                const searchParams = new URLSearchParams(window.location.search);
+                const redirectParam = searchParams.get('redirect');
+                if (redirectParam) {
+                    window.location.href = redirectParam;
+                } else if (data.redirect) {
                     window.location.href = data.redirect;
                 } else {
                     fetchProfile();

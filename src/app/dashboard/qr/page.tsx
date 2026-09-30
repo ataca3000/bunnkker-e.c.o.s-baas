@@ -5,7 +5,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { 
   Printer, Share2, Link as LinkIcon, Users, ShoppingBag, 
   Shield, Truck, Package, CreditCard, Receipt, UserCheck, 
-  Sparkles, CheckCircle2, Copy, Smartphone
+  Sparkles, CheckCircle2, Copy, Smartphone, ExternalLink, RefreshCw
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from '@/lib/toast';
@@ -80,7 +80,7 @@ export default function QRGeneratorPage() {
   const [staffPin, setStaffPin] = useState(STAFF_ROLES[0].defaultPin);
   const [employeeName, setEmployeeName] = useState('');
 
-  useEffect(() => {
+  const detectIp = () => {
     if (typeof window !== 'undefined') {
       const currentHost = window.location.hostname;
       if (currentHost === 'localhost' || currentHost === '127.0.0.1') {
@@ -95,6 +95,10 @@ export default function QRGeneratorPage() {
         setBaseUrl(window.location.origin);
       }
     }
+  };
+
+  useEffect(() => {
+    detectIp();
   }, []);
 
   // Cambiar rol y actualizar PIN por defecto
@@ -224,23 +228,42 @@ export default function QRGeneratorPage() {
                 Este enlace puede compartirse en redes sociales, WhatsApp o tarjetas de presentación. Los clientes entran al modo tienda con seguridad total (cero acceso a paneles internos).
               </p>
               
-              <div className="flex items-center gap-2 bg-slate-950 p-4 rounded-2xl border border-slate-800">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 bg-slate-950 p-3 rounded-2xl border border-slate-800">
                 <input 
                   type="text" 
-                  readOnly 
                   value={clientUrl}
-                  className="bg-transparent border-none text-sky-300 w-full outline-none font-mono text-sm"
-                />
-                <button 
-                  onClick={() => {
-                    navigator.clipboard.writeText(clientUrl);
-                    toast.success('Enlace copiado al portapapeles.', '✅ Copiado');
+                  onChange={(e) => {
+                    const raw = e.target.value.replace(/\/?\??mode=client|\/catalogo/g, '');
+                    setBaseUrl(raw);
                   }}
-                  className="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-xl text-sm font-bold transition-colors whitespace-nowrap flex items-center gap-1.5"
-                >
-                  <Copy size={14} />
-                  Copiar
-                </button>
+                  className="bg-transparent border-none text-sky-300 w-full outline-none font-mono text-sm px-2 py-1"
+                />
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button 
+                    onClick={detectIp}
+                    title="Re-detectar IP local del servidor"
+                    className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition-colors"
+                  >
+                    <RefreshCw size={15} />
+                  </button>
+                  <button 
+                    onClick={() => {
+                      navigator.clipboard.writeText(clientUrl);
+                      toast.success('Enlace copiado al portapapeles.', '✅ Copiado');
+                    }}
+                    className="bg-slate-800 hover:bg-slate-700 text-white px-3 py-2 rounded-xl text-xs font-bold transition-colors whitespace-nowrap flex items-center gap-1"
+                  >
+                    <Copy size={13} />
+                    Copiar
+                  </button>
+                  <button 
+                    onClick={() => window.open(clientUrl, '_blank')}
+                    className="bg-sky-600 hover:bg-sky-500 text-white px-3 py-2 rounded-xl text-xs font-bold transition-colors whitespace-nowrap flex items-center gap-1"
+                  >
+                    <ExternalLink size={13} />
+                    Abrir Link
+                  </button>
+                </div>
               </div>
 
               <div className="mt-8 p-5 bg-sky-950/30 border border-sky-500/20 rounded-2xl">

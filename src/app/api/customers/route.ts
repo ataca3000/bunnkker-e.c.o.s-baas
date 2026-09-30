@@ -14,16 +14,36 @@ export async function GET(request: NextRequest) {
             include: {
                 orders: {
                     select: {
+                        id: true,
+                        date: true,
                         total: true,
-                        status: true
-                    }
+                        status: true,
+                        paymentMethod: true,
+                        deliveryType: true,
+                        confirmedAt: true,
+                        items: {
+                            select: {
+                                id: true,
+                                productId: true,
+                                cantidad: true,
+                                precio: true,
+                                product: {
+                                    select: {
+                                        name: true,
+                                        unit: true
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    orderBy: { date: 'desc' }
                 }
             },
             orderBy: { createdAt: 'desc' }
         });
 
         const enrichedCustomers = customers.map(c => {
-            const paidOrders = c.orders.filter(o => o.status === 'paid' || o.status === 'delivered');
+            const paidOrders = c.orders.filter(o => o.status === 'paid' || o.status === 'delivered' || o.status === 'DELIVERED' || o.status === 'completed');
             const totalOrders = paidOrders.length;
             const totalSpent = paidOrders.reduce((sum, o) => sum + o.total, 0);
 
@@ -38,10 +58,30 @@ export async function GET(request: NextRequest) {
                 phone: c.phone,
                 email: c.email || '',
                 address: c.address || '',
+                rfc: c.rfc || '',
+                razonSocial: c.razonSocial || '',
                 type,
                 totalOrders,
                 totalSpent,
-                createdAt: c.createdAt.toISOString()
+                createdAt: c.createdAt.toISOString(),
+                orders: c.orders.map(o => ({
+                    id: o.id,
+                    date: o.date ? new Date(o.date).toISOString() : new Date().toISOString(),
+                    total: o.total,
+                    status: o.status,
+                    paymentMethod: o.paymentMethod || 'cash',
+                    deliveryType: o.deliveryType || 'LOCAL',
+                    confirmedAt: o.confirmedAt ? new Date(o.confirmedAt).toISOString() : null,
+                    items: o.items.map(it => ({
+                        id: it.id,
+                        productId: it.productId,
+                        name: it.product?.name || it.productId,
+                        unit: it.product?.unit || 'pza',
+                        cantidad: it.cantidad,
+                        precio: it.precio,
+                        total: it.cantidad * it.precio
+                    }))
+                }))
             };
         });
 
