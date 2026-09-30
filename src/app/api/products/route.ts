@@ -35,26 +35,44 @@ export async function POST(request: NextRequest) {
         const tenantId = getTenantId(request);
         const body = await request.json();
 
-        // Limpiar payload para Prisma (evitar 'Unknown arg' errors y floats en Int)
-        const prismaData = {
-            id: body.id,
-            tenantId,
-            name: String(body.name),
-            price: Number(body.price),
-            stock: Math.floor(Number(body.stock)), // SQLite schema exige Int
-            category: body.category || null,
-            image: body.image || null,
-            barcode: body.barcode || null,
-            description: body.description || null,
-            estante: body.location?.estante || body.estante || null,
-            fila: body.location?.fila || body.fila || null,
-            orderIndex: typeof body.orderIndex === 'number' ? body.orderIndex : 0
-        };
+        const id = typeof body.id === 'string' && body.id.trim() ? body.id.trim() : null;
+        if (!id) return NextResponse.json({ success: false, error: 'Product ID is required' }, { status: 400 });
 
-        const product = await prisma.product.upsert({
-            where: { id: prismaData.id },
-            update: prismaData,
-            create: prismaData,
+        // POST también se usa para ediciones parciales (por ejemplo, solo precio).
+        // No debemos convertir campos ausentes en "undefined", null o stock 0.
+        const data: Record<string, unknown> = {};
+        if (body.name !== undefined) data.name = String(body.name).trim();
+        if (body.price !== undefined) data.price = Number(body.price);
+        if (body.stock !== undefined) data.stock = Math.floor(Number(body.stock));
+        for (const field of ['category', 'image', 'barcode', 'description'] as const) {
+            if (body[field] !== undefined) data[field] = body[field] || null;
+        }
+        if (body.estante !== undefined || body.location?.estante !== undefined) {
+            data.estante = body.location?.estante ?? body.estante ?? null;
+        }
+        if (body.fila !== undefined || body.location?.fila !== undefined) {
+            data.fila = body.location?.fila ?? body.fila ?? null;
+        }
+        if (typeof body.orderIndex === 'number') data.orderIndex = body.orderIndex;
+
+        if (data.price !== undefined && (!Number.isFinite(data.price as number) || (data.price as number) < 0)) {
+            return NextResponse.json({ success: false, error: 'Precio inválido' }, { status: 400 });
+        }
+        if (data.stock !== undefined && (!Number.isInteger(data.stock as number) || (data.stock as number) < 0)) {
+            return NextResponse.json({ success: false, error: 'Stock inválido' }, { status: 400 });
+        }
+
+        const existing = await prisma.product.findFirst({ where: { id, tenantId } });
+        if (existing) {
+            const product = await prisma.product.update({ where: { id }, data });
+            return NextResponse.json({ success: true, data: product });
+        }
+
+        if (!data.name || data.price === undefined) {
+            return NextResponse.json({ success: false, error: 'Nombre y precio son obligatorios' }, { status: 400 });
+        }
+        const product = await prisma.product.create({
+            data: { id, tenantId, name: data.name as string, price: data.price as number, ...(data as any) },
         });
         return NextResponse.json({ success: true, data: product });
     } catch (error: any) {
