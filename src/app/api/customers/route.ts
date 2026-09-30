@@ -29,8 +29,7 @@ export async function GET(request: NextRequest) {
                                 precio: true,
                                 product: {
                                     select: {
-                                        name: true,
-                                        unit: true
+                                        name: true
                                     }
                                 }
                             }
@@ -76,7 +75,7 @@ export async function GET(request: NextRequest) {
                         id: it.id,
                         productId: it.productId,
                         name: it.product?.name || it.productId,
-                        unit: it.product?.unit || 'pza',
+                        unit: 'pza',
                         cantidad: it.cantidad,
                         precio: it.precio,
                         total: it.cantidad * it.precio

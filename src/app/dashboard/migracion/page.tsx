@@ -10,9 +10,9 @@ import {
 import { 
     generateMigrationBundle, downloadMigrationFile, getMigrationQrPayload,
     restoreFromMigrationBundle, restoreFromQrPayload, checkZeroTapRestoration,
-    MigrationBundle 
+    type MigrationBundle 
 } from "@/lib/deviceMigration";
-import { getMemoryReport, optimizeAppMemory, MemoryReport } from "@/lib/memoryOptimizer";
+import { getMemoryReport, optimizeAppMemory, type MemoryReport } from "@/lib/memoryOptimizer";
 import { toast } from "@/lib/toast";
 
 export default function MigracionPage() {
