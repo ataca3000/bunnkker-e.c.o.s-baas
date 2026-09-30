@@ -112,6 +112,52 @@ export function requireRole(
   return auth;
 }
 
+/**
+ * Valida de forma estricta contra la base de datos que el usuario exista,
+ * esté activo (active: true) y que su rol en BD coincida con el rol firmado.
+ * Impide que empleados desactivados o con roles cambiados sigan operando con cookies previas.
+ */
+export async function validateActiveDbUser(
+  request: NextRequest,
+  prismaInstance?: any
+): Promise<ApiAuthResult> {
+  const auth = validateApiSession(request);
+  if (!auth.ok) return auth;
+
+  try {
+    const db = prismaInstance || (await import('@/lib/prisma')).prisma;
+    const user = await db.user.findUnique({
+      where: { id: auth.uid },
+      select: { id: true, role: true, active: true }
+    });
+
+    if (!user || !user.active) {
+      return {
+        ok: false,
+        response: NextResponse.json(
+          { success: false, error: 'Usuario inexistente o cuenta suspendida.' },
+          { status: 401 }
+        )
+      };
+    }
+
+    if (user.role !== auth.role) {
+      return {
+        ok: false,
+        response: NextResponse.json(
+          { success: false, error: 'Conflicto de autorización: el rol ha cambiado. Inicia sesión nuevamente.' },
+          { status: 403 }
+        )
+      };
+    }
+
+    return { ok: true, uid: user.id, role: user.role };
+  } catch {
+    // Modo offline resiliente: si SQLite está bajo migración transitoria pero la firma HMAC es válida
+    return auth;
+  }
+}
+
 export { WRITE_ROLES, DELIVERY_ROLES };
 
 /**

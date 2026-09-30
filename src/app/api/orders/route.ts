@@ -130,6 +130,17 @@ export async function POST(request: NextRequest) {
             throw new Error('Order ID, total y productos son obligatorios.');
         }
 
+        // IDEMPOTENCIA EN BASE DE DATOS: Si la orden ya existe en SQLite (por reintento de red o reinicio del nodo),
+        // responder inmediatamente con la orden existente para evitar descontar inventario doble.
+        const existingOrder = await prisma.order.findUnique({
+            where: { id: orderId },
+            include: { items: true, customer: true }
+        });
+        if (existingOrder) {
+            console.log(`[IDEMPOTENCIA DB] Orden ${orderId} ya procesada previamente en SQLite. Evitando duplicación.`);
+            return NextResponse.json({ success: true, data: existingOrder, duplicated: true });
+        }
+
         const staffUser = staffSession.ok
             ? await prisma.user.findUnique({ where: { id: staffSession.uid }, select: { name: true } })
             : null;

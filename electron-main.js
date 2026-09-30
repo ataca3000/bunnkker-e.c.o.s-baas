@@ -329,22 +329,32 @@ ipcMain.handle('get-machine-id', () => machineIdSync(true));
 ipcMain.handle('get-rni-url', () => global.rniUrl || null);
 ipcMain.handle('restore-backup', async (event, fileContent) => {
     try {
-        if (!fileContent.startsWith('BUNKKER_SECURE_V1\n')) {
+        let decrypted;
+        if (fileContent.startsWith('BUNKKER_SECURE_V2\n')) {
+            const content = fileContent.substring('BUNKKER_SECURE_V2\n'.length);
+            const [ivHex, authTagHex, encryptedBase64] = content.split(':');
+            if (!ivHex || !authTagHex || !encryptedBase64) {
+                return { success: false, message: 'Formato de encriptación V2 inválido.' };
+            }
+            const iv = Buffer.from(ivHex, 'hex');
+            const authTag = Buffer.from(authTagHex, 'hex');
+            const encrypted = Buffer.from(encryptedBase64, 'base64');
+            const decipher = crypto.createDecipheriv('aes-256-gcm', SECRET_KEY, iv);
+            decipher.setAuthTag(authTag);
+            decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()]);
+        } else if (fileContent.startsWith('BUNKKER_SECURE_V1\n')) {
+            const content = fileContent.substring('BUNKKER_SECURE_V1\n'.length);
+            const [ivHex, encryptedBase64] = content.split(':');
+            if (!ivHex || !encryptedBase64) {
+                return { success: false, message: 'Formato de encriptación V1 inválido.' };
+            }
+            const iv = Buffer.from(ivHex, 'hex');
+            const encrypted = Buffer.from(encryptedBase64, 'base64');
+            const decipher = crypto.createDecipheriv('aes-256-cbc', SECRET_KEY, iv);
+            decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()]);
+        } else {
             return { success: false, message: 'Formato de backup inválido o corrupto.' };
         }
-        
-        const content = fileContent.substring('BUNKKER_SECURE_V1\n'.length);
-        const [ivHex, encryptedBase64] = content.split(':');
-        if (!ivHex || !encryptedBase64) {
-            return { success: false, message: 'Formato de encriptación inválido.' };
-        }
-        
-        const iv = Buffer.from(ivHex, 'hex');
-        const encrypted = Buffer.from(encryptedBase64, 'base64');
-        
-        const decipher = crypto.createDecipheriv('aes-256-cbc', SECRET_KEY, iv);
-        let decrypted = decipher.update(encrypted);
-        decrypted = Buffer.concat([decrypted, decipher.final()]);
         
         const tempZipPath = path.join(app.getPath('temp'), 'restore_temp.zip');
         fs.writeFileSync(tempZipPath, decrypted);
@@ -607,16 +617,16 @@ app.whenReady().then(async () => {
             if (!fs.existsSync(tempZipPath)) return;
             
             const fileBuffer = fs.readFileSync(tempZipPath);
-            const iv = crypto.randomBytes(16);
-            const cipher = crypto.createCipheriv('aes-256-cbc', SECRET_KEY, iv);
-            let encrypted = cipher.update(fileBuffer);
-            encrypted = Buffer.concat([encrypted, cipher.final()]);
+            const iv = crypto.randomBytes(12);
+            const cipher = crypto.createCipheriv('aes-256-gcm', SECRET_KEY, iv);
+            let encrypted = Buffer.concat([cipher.update(fileBuffer), cipher.final()]);
+            const authTag = cipher.getAuthTag();
             
-            const backupContent = "BUNKKER_SECURE_V1\n" + iv.toString('hex') + ':' + encrypted.toString('base64');
+            const backupContent = "BUNKKER_SECURE_V2\n" + iv.toString('hex') + ':' + authTag.toString('hex') + ':' + encrypted.toString('base64');
             
             if (usbDrive) {
                 fs.writeFileSync(`${usbDrive}:\\BUNKKER_SECURE_BACKUP.txt`, backupContent);
-                console.log('[BUNKKER] Respaldo Militar USB Creado');
+                console.log('[BUNKKER] Respaldo Militar USB Creado (AES-256-GCM)');
             }
             
             // --- NAS / USB AUTOMÁTICO (Descubierto por el script) ---
