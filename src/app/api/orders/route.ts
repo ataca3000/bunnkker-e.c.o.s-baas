@@ -288,30 +288,63 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: true, data: orderResult });
 
     } catch (error: any) {
-        // IDEMPOTENCIA CONCURRENTE EXTREMA: Si dos peticiones simultáneas con el mismo orderId
-        // IDEMPOTENCIA Y CONFLICTOS CONCURRENTES:
-        // Si dos peticiones simultáneas con el mismo orderId superaron el findUnique previo,
-        // o si SQLite reporta colisión de Primary Key (P2002) o conflicto de serialización (P2034 / SQLITE_BUSY),
-        // SQLite hace ROLLBACK de la transacción que no alcanzó a escribir.
-        // Verificamos si la orden ya existe para retornar 200 OK idempotente.
-        if (error.code === 'P2002' || error.code === 'P2034' || error.message?.includes('Unique constraint failed') || error.message?.includes('conflict')) {
+        const bodyJson = await request.clone().json().catch(() => ({}));
+        const collisionId = bodyJson.orderId || bodyJson.id;
+
+        // 1. COLISIÓN DE PRIMARY KEY (P2002 / Unique constraint):
+        // Verificar estrictamente si la colisión ocurrió sobre el identificador de la orden (Order.id).
+        const isOrderPkCollision = error.code === 'P2002' || (
+            typeof error.message === 'string' &&
+            error.message.includes('Unique constraint failed') &&
+            (!error.meta?.target || (Array.isArray(error.meta.target) && error.meta.target.includes('id')))
+        );
+
+        if (isOrderPkCollision && collisionId) {
             try {
-                const bodyJson = await request.clone().json().catch(() => ({}));
-                const collisionId = bodyJson.orderId || bodyJson.id;
-                if (collisionId) {
-                    const existing = await prisma.order.findUnique({
-                        where: { id: collisionId },
-                        include: { items: true, customer: true }
-                    });
-                    if (existing) {
-                        console.log(`[CONCURRENCY RACE HANDLED] Carrera concurrente neutralizada para ${collisionId}. Rollback ejecutado y orden retornada.`);
-                        return NextResponse.json({ success: true, data: existing, duplicated: true });
-                    }
+                const existing = await prisma.order.findUnique({
+                    where: { id: collisionId },
+                    include: { items: true, customer: true }
+                });
+                if (existing) {
+                    console.log(`[IDEMPOTENCIA P2002] Orden ${collisionId} ya existía en BD. Retornando 200 idempotente.`);
+                    return NextResponse.json({ success: true, data: existing, duplicated: true });
                 }
-            } catch (collisionLookupError) {
-                console.error('[IDEMPOTENCY] Error recuperando orden tras colisión concurrente:', collisionLookupError);
+            } catch (pkLookupError) {
+                console.error('[IDEMPOTENCY] Error al buscar orden tras colisión P2002:', pkLookupError);
             }
         }
+
+        // 2. CONFLICTO DE SERIALIZACIÓN / BLOQUEO TRANSITORIO (P2034 / SQLITE_BUSY):
+        const isBusyOrLockConflict = error.code === 'P2034' || 
+            (typeof error.message === 'string' && (
+                error.message.includes('SQLITE_BUSY') || 
+                error.message.includes('database is locked') ||
+                error.message.includes('Transaction failed due to a write conflict')
+            ));
+
+        if (isBusyOrLockConflict) {
+            if (collisionId) {
+                // Verificar si otra transacción paralela que ganó el lock ya completó la orden
+                const existing = await prisma.order.findUnique({
+                    where: { id: collisionId },
+                    include: { items: true, customer: true }
+                }).catch(() => null);
+
+                if (existing) {
+                    console.log(`[CONCURRENCY RACE HANDLED] Orden ${collisionId} fue completada por transacción paralela. Retornando 200 idempotente.`);
+                    return NextResponse.json({ success: true, data: existing, duplicated: true });
+                }
+            }
+
+            // Si la orden NO existe, fue una contención real de concurrencia: retornar 409 reintentable
+            console.warn(`[CONCURRENCY CONTENTION] Bloqueo transitorio en SQLite (P2034/SQLITE_BUSY). Orden ${collisionId} no creada.`);
+            return NextResponse.json({
+                success: false,
+                error: 'Conflicto de concurrencia en base de datos. Por favor reintente la operación.',
+                retryable: true
+            }, { status: 409 });
+        }
+
         console.error(`[ACID Transaction Error]: ${error.message}`);
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
@@ -319,7 +352,7 @@ export async function POST(request: NextRequest) {
 
 
 export async function PATCH(request: NextRequest) {
-    const auth = validateApiSession(request);
+    const auth = await validateActiveDbUser(request);
     if (!auth.ok) return auth.response;
 
     try {
@@ -558,13 +591,18 @@ export async function PATCH(request: NextRequest) {
                 if (changed.count !== 1) throw new Error('ORDER_CONFLICT:El pedido cambió mientras se cancelaba.');
 
                 // CANCELACIÓN INTELIGENTE:
-                // Si estaba cobrado/en ruta pero no entregado, liberamos reservedStock.
-                // Si por alguna razón ya estaba DELIVERED (reversa administrativa), devolvemos al stock físico.
+                // Si la venta ya había descontado el stock físico directamente (venta local COMPLETED / delivery DELIVERED):
+                // -> Incrementamos 'stock' físico para regresarlo a anaquel.
+                // Si la orden estaba en proceso (preventa / picking / ruta) y tenía el stock en 'reservedStock':
+                // -> Decrementamos 'reservedStock' para liberar el apartado sin tocar stock físico.
                 if (current.confirmedAt) {
-                    const wasAlreadyDelivered = current.status === 'DELIVERED';
+                    const wasPhysicalStockDeducted = current.status === 'DELIVERED' || current.status === 'COMPLETED' || current.deliveryType === 'LOCAL';
                     for (const item of current.items) {
-                        if (wasAlreadyDelivered) {
-                            await tx.product.update({ where: { id: item.productId }, data: { stock: { increment: item.cantidad } } });
+                        if (wasPhysicalStockDeducted) {
+                            await tx.product.update({
+                                where: { id: item.productId },
+                                data: { stock: { increment: item.cantidad } }
+                            });
                         } else {
                             await tx.product.update({ 
                                 where: { id: item.productId }, 
@@ -639,7 +677,7 @@ export async function PATCH(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-    const auth = validateApiSession(request);
+    const auth = await validateActiveDbUser(request);
     if (!auth.ok) return auth.response;
 
     try {
@@ -668,13 +706,21 @@ export async function DELETE(request: NextRequest) {
             return NextResponse.json({ success: false, error: 'Pedido no encontrado.' }, { status: 404 });
         }
 
-        // Si tenía stock reservado y no había sido entregado, liberar la reserva
-        if (current.confirmedAt && current.status !== 'DELIVERED' && current.status !== 'cancelled') {
+        // Si tenía stock descontado o apartado y no estaba cancelado, restaurar:
+        if (current.confirmedAt && current.status !== 'cancelled') {
+            const wasPhysicalStockDeducted = current.status === 'DELIVERED' || current.status === 'COMPLETED' || current.deliveryType === 'LOCAL';
             for (const item of current.items) {
-                await prisma.product.update({
-                    where: { id: item.productId },
-                    data: { reservedStock: { decrement: item.cantidad } }
-                }).catch(() => {});
+                if (wasPhysicalStockDeducted) {
+                    await prisma.product.update({
+                        where: { id: item.productId },
+                        data: { stock: { increment: item.cantidad } }
+                    }).catch(() => {});
+                } else {
+                    await prisma.product.update({
+                        where: { id: item.productId },
+                        data: { reservedStock: { decrement: item.cantidad } }
+                    }).catch(() => {});
+                }
             }
         }
 
