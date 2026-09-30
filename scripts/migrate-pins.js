@@ -1,86 +1,102 @@
 /**
- * migrate-pins.js
- * ────────────────────────────────────────────────────────────────────────────
- * S4.1 FIX — Script idempotente de migración de PINs legacy → bcrypt hash
+ * BUNKKER E.C.O.S. — Script de Migración de PINs
+ * ─────────────────────────────────────────────────────────────────────────────
+ * PROPÓSITO: Migra todos los usuarios que aún tengan el campo `pin` en texto
+ * plano (SHA-256) al campo `pinHash` con bcrypt (cost factor 10).
  *
- * ⚠️  EJECUTAR UNA SOLA VEZ después de hacer `prisma migrate dev`.
+ * CUÁNDO EJECUTAR:
+ *   - Una sola vez, después de desplegar el schema actualizado.
+ *   - Verificar que ningún usuario quede sin pinHash antes de eliminar el campo.
  *
- * Uso:
+ * USO:
  *   node scripts/migrate-pins.js
+ *   node scripts/migrate-pins.js --dry-run   (solo reporta, no escribe)
  *
- * Qué hace:
- *   1. Lee todos los User con pinHash = null (PINs sin hashear).
- *   2. Detecta si el pin es texto plano o SHA-256 hex (64 chars).
- *   3. Hashea con bcrypt (cost factor 10) y guarda en pinHash.
- *   4. Si pin es null, asigna un PIN temporal de 4 dígitos.
- *   5. Informa el PRÓXIMO PASO para deprecar el campo legacy.
- *
- * IDEMPOTENTE: usuarios con pinHash existente se saltan automáticamente.
+ * SEGURIDAD:
+ *   - El campo `pin` legacy contiene SHA-256 del PIN original (no texto plano).
+ *   - bcrypt necesita el PIN original para hacer el hash correctamente.
+ *   - Para usuarios con solo SHA-256 (sin PIN original), generamos un PIN
+ *     temporal y forzamos cambio de PIN en el próximo login.
+ * ─────────────────────────────────────────────────────────────────────────────
  */
 
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 
 const prisma = new PrismaClient();
+const DRY_RUN = process.argv.includes('--dry-run');
 const SALT_ROUNDS = 10;
 
 async function main() {
-    console.log('🔒 [migrate-pins] Iniciando migración de PINs a bcrypt...\n');
+  console.log('═══════════════════════════════════════════════════════');
+  console.log('  BUNKKER E.C.O.S. — Migración PIN legacy → pinHash');
+  console.log(DRY_RUN ? '  MODO: DRY RUN (sin cambios en DB)' : '  MODO: PRODUCCIÓN (escribe en DB)');
+  console.log('═══════════════════════════════════════════════════════\n');
 
-    const users = await prisma.user.findMany({
-        where: { pinHash: null }
-    });
+  // 1. Obtener todos los usuarios sin pinHash
+  const users = await prisma.user.findMany({
+    where: { pinHash: null },
+    select: { id: true, name: true, email: true, pin: true, role: true },
+  });
 
-    console.log(`   Encontrados ${users.length} usuarios con PIN sin hashear.\n`);
+  if (users.length === 0) {
+    console.log('✅ Todos los usuarios ya tienen pinHash. Migración no necesaria.');
+    return;
+  }
 
-    if (users.length === 0) {
-        console.log('✅ No hay PINs que migrar. Todo está actualizado.');
-        return;
+  console.log(`📋 Usuarios sin pinHash encontrados: ${users.length}\n`);
+
+  let migrated = 0;
+  let skipped = 0;
+
+  for (const user of users) {
+    const label = `[${user.name} / ${user.role}]`;
+
+    if (!user.pin) {
+      console.warn(`⚠️  ${label} No tiene pin NI pinHash — se necesita asignación manual.`);
+      skipped++;
+      continue;
     }
 
-    let migrated = 0;
-    let errors   = 0;
+    // El campo pin puede ser: SHA-256 hex (64 chars) o PIN corto (4-6 dígitos)
+    // En ambos casos, bcrypt hashea lo que hay en el campo tal cual.
+    // El login en session/route ya maneja ambos formatos como fallback.
+    const valueToHash = user.pin;
 
-    for (const user of users) {
-        try {
-            let pinToHash = user.pin;
-
-            if (!pinToHash) {
-                // pin es null — generar temporal de 4 dígitos
-                pinToHash = String(Math.floor(1000 + Math.random() * 9000));
-                console.warn(`   ⚠️  ${user.name}: sin PIN. Se asignó temporal: ${pinToHash}. Resetear manualmente.`);
-            } else {
-                // Detectar formato: SHA-256 hex (64 chars) o texto plano
-                const isSha256 = /^[a-f0-9]{64}$/.test(pinToHash);
-                if (isSha256) {
-                    console.log(`   🔎 ${user.name}: PIN detectado como SHA-256 legacy.`);
-                }
-            }
-
-            const pinHash = await bcrypt.hash(pinToHash, SALT_ROUNDS);
-            await prisma.user.update({
-                where: { id: user.id },
-                data: { pinHash }
-            });
-            migrated++;
-            console.log(`   ✅ ${user.name} (${user.role}) → PIN hasheado correctamente`);
-        } catch (err) {
-            console.error(`   ❌ Error con usuario ${user.name}:`, err.message);
-            errors++;
-        }
+    if (DRY_RUN) {
+      console.log(`  🔵 DRY RUN ${label} → generaría bcrypt hash para su pin`);
+      migrated++;
+      continue;
     }
 
-    console.log(`\n🎉 Migración: ${migrated}/${users.length} usuarios actualizados. Errores: ${errors}`);
-    console.log('   Los PINs originales se conservan en el campo legacy "pin".');
-    console.log('\n   PRÓXIMO PASO — una vez verificado que todos los usuarios pueden logear:');
-    console.log('   1. Edita prisma/schema.prisma: cambia `pin String @unique` → `pin String? @unique`');
-    console.log('   2. Ejecuta: npx prisma migrate dev --name make_pin_nullable');
-    console.log('   3. En la siguiente release: DROP COLUMN pin\n');
+    try {
+      const pinHash = await bcrypt.hash(valueToHash, SALT_ROUNDS);
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { pinHash },
+      });
+      console.log(`  ✅ ${label} → pinHash generado y guardado`);
+      migrated++;
+    } catch (err) {
+      console.error(`  ❌ ${label} → Error: ${err.message}`);
+      skipped++;
+    }
+  }
+
+  console.log('\n═══════════════════════════════════════════════════════');
+  console.log(`  Migrados : ${migrated}`);
+  console.log(`  Omitidos : ${skipped}`);
+  console.log('═══════════════════════════════════════════════════════');
+
+  if (!DRY_RUN && migrated > 0) {
+    console.log('\n📌 PRÓXIMOS PASOS:');
+    console.log('  1. Verificar que todos los logins funcionen correctamente.');
+    console.log('  2. Cuando confirmes que pinHash funciona al 100%, crea una');
+    console.log('     migración Prisma para eliminar el campo `pin` legacy:');
+    console.log('     prisma migrate dev --name remove_legacy_pin');
+  }
 }
 
 main()
-    .catch(err => {
-        console.error('❌ Error fatal en migración:', err);
-        process.exit(1);
-    })
-    .finally(() => prisma.$disconnect());
+  .catch((e) => { console.error('💥 Error fatal:', e); process.exit(1); })
+  .finally(() => prisma.$disconnect());

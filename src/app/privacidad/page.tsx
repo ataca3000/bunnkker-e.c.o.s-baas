@@ -1,4 +1,4 @@
-"use client";
+export const dynamic = 'force-static';
 
 import Link from "next/link";
 import { ShieldCheck, ArrowLeft, Lock, Database, Camera, MapPin, EyeOff, FileText } from "lucide-react";

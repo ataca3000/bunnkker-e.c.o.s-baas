@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "BUNKKER E.C.O.S. — ERP/POS local-first con sincronización LAN, dashboard multirol y billing SaaS.",
   "author": "brechasolucionesds",
-  "private": false,
+  "private": true,
   "main": "electron-main.js",
   "scripts": {
     "dev": "npx concurrently \"next dev -H 0.0.0.0 -p 3000\" \"node radio-server.js\"",
@@ -29,7 +29,10 @@
     "validate:comm": "node src/lib/validate-comm.js",
     "test:logic": "node scripts/test-logic.js",
     "test": "vitest run",
-    "update:file": "node scripts/update-file.js"
+    "update:file": "node scripts/update-file.js",
+    "migrate:pins": "node scripts/migrate-pins.js",
+    "migrate:pins:dry": "node scripts/migrate-pins.js --dry-run",
+    "validate:schemas": "node scripts/validate-schemas.js"
   },
   "build": {
     "appId": "com.bunkkererp.erp",
@@ -102,8 +105,6 @@
     "@opentelemetry/api": "^1.9.0",
     "@prisma/client": "^5.22.0",
     "@stripe/stripe-js": "^9.8.0",
-    "@types/nodemailer": "^8.0.1",
-    "@types/uuid": "^10.0.0",
     "@vercel/analytics": "^2.0.1",
     "ajv": "^8.12.0",
     "bcryptjs": "^3.0.3",
@@ -158,8 +159,10 @@
     "@types/multicast-dns": "^7.2.2",
     "@types/natural": "^5.1.5",
     "@types/node": "^20.19.43",
+    "@types/nodemailer": "^8.0.1",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
+    "@types/uuid": "^10.0.0",
     "concurrently": "^10.0.3",
     "cross-env": "^10.1.0",
     "electron": "42.3.3",

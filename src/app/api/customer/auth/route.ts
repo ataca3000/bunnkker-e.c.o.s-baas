@@ -68,13 +68,27 @@ export async function POST(req: NextRequest) {
                 return res;
             }
 
-            // Real worker check by PIN
-            const worker = await prisma.user.findUnique({ where: { pin } });
-            if (worker && worker.active) {
-                const sig = signRole(worker.role, worker.id);
-                const res = NextResponse.json({ success: true, customer: { role: worker.role }, redirect: '/dashboard' });
-                res.cookies.set('msj-session', worker.id, { path: '/' });
-                res.cookies.set('msj-role', worker.role, { path: '/' });
+            // Real worker check by PIN (findFirst — pin ya no es @unique por migración a pinHash)
+            const rawPin = String(pin).trim();
+            // Busca por pinHash (bcrypt) primero, fallback a pin legacy
+            const workers = await prisma.user.findMany({
+                where: { active: true },
+                select: { id: true, role: true, active: true, pin: true, pinHash: true },
+            });
+            let matchedWorker = null;
+            for (const w of workers) {
+                if (w.pinHash) {
+                    const { compare } = await import('bcryptjs');
+                    if (await compare(rawPin, w.pinHash)) { matchedWorker = w; break; }
+                } else if (w.pin && w.pin === rawPin) {
+                    matchedWorker = w; break;
+                }
+            }
+            if (matchedWorker && matchedWorker.active) {
+                const sig = signRole(matchedWorker.role, matchedWorker.id);
+                const res = NextResponse.json({ success: true, customer: { role: matchedWorker.role }, redirect: '/dashboard' });
+                res.cookies.set('msj-session', matchedWorker.id, { path: '/' });
+                res.cookies.set('msj-role', matchedWorker.role, { path: '/' });
                 res.cookies.set('msj-role-sig', sig, { path: '/' });
                 return res;
             }

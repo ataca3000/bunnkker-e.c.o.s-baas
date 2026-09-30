@@ -1,4 +1,4 @@
-"use client";
+export const dynamic = 'force-static';
 
 import Link from "next/link";
 import { Cookie, ArrowLeft, Check, Shield } from "lucide-react";

@@ -9,23 +9,24 @@ import {
     Clock, Bell, History, User, Store, ShieldAlert, Wifi, Globe, TerminalSquare, AlertCircle, XCircle, CheckCircle2, Phone, Lock, Unlock,
     LayoutDashboard, LogOut, ShoppingCart, Trash2, Zap, UserCheck
 } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
-import CorteCajaCiego from '@/components/sales/CorteCajaCiego';
-import BarcodeScanner from '@/components/BarcodeScanner';
 import { printReceiptWithWebSerial } from '@/lib/thermalPrinter';
-import { db } from '@/lib/firebase';
-import { doc, writeBatch, increment, serverTimestamp } from 'firebase/firestore';
 import { logAudit } from '@/lib/audit';
 import { toast } from '@/lib/toast';
 import { useERPStore } from '@/store/useERPStore';
 import { broadcastSync } from '@/lib/syncNotifier';
 
-// Nuevos Componentes de Caja Móvil
+// Lazy loading de componentes pesados (cero bloqueo en el arranque del POS)
+const CorteCajaCiego = dynamic(() => import('@/components/sales/CorteCajaCiego'), { ssr: false });
+const BarcodeScanner = dynamic(() => import('@/components/BarcodeScanner'), { ssr: false });
+const PaymentModal = dynamic(() => import('@/components/sales/caja-movil/PaymentModal').then(m => m.PaymentModal), { ssr: false });
+const DeliveryModal = dynamic(() => import('@/components/sales/caja-movil/DeliveryModal').then(m => m.DeliveryModal), { ssr: false });
+
+// Componentes de Caja Móvil
 import { Catalog } from '@/components/sales/caja-movil/Catalog';
 import { Cart } from '@/components/sales/caja-movil/Cart';
 import type { OrderType } from '@/components/sales/caja-movil/Cart';
-import { PaymentModal } from '@/components/sales/caja-movil/PaymentModal';
-import { DeliveryModal } from '@/components/sales/caja-movil/DeliveryModal';
 import type { DeliveryInfo } from '@/components/sales/caja-movil/DeliveryModal';
 import { AnimatePresence, motion } from 'framer-motion';
 

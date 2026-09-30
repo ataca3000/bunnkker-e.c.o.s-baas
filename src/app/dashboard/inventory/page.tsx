@@ -1,10 +1,9 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
+import dynamic from 'next/dynamic';
 import { useCart, type Product } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
-import { db } from '@/lib/firebase';
-import { doc, setDoc, updateDoc, serverTimestamp, collection, addDoc, getDocs, query, where, orderBy, onSnapshot, writeBatch } from 'firebase/firestore';
 import { logAudit } from '@/lib/audit';
 import { QRCodeSVG } from 'qrcode.react';
 import { 
@@ -19,7 +18,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { DndContext, DragOverlay, closestCorners, PointerSensor, useSensor, useSensors, KeyboardSensor } from '@dnd-kit/core';
 import type { DragStartEvent, DragEndEvent } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
-import BarcodeScanner from '@/components/BarcodeScanner';
+const BarcodeScanner = dynamic(() => import('@/components/BarcodeScanner'), { ssr: false });
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import Link from 'next/link';
 import ShelfColumn from './components/ShelfColumn';

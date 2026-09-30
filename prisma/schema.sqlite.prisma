@@ -115,14 +115,18 @@ model OrderEvent {
 }
 
 model SyncQueue {
-  id         String   @id @default(uuid())
-  collection String
-  documentId String?
-  action     String
-  payload    String
-  createdAt  DateTime @default(now())
-  status     String   @default("PENDING")
-  errorMsg   String?
+  id           String    @id @default(uuid())
+  collection   String
+  documentId   String?
+  action       String
+  payload      String
+  createdAt    DateTime  @default(now())
+  status       String    @default("PENDING")
+  errorMsg     String?
+  retryCount   Int       @default(0)
+  processAfter DateTime?
+
+  @@index([status])
 }
 
 model AuditLog {
@@ -171,7 +175,7 @@ model User {
   id        String   @id @default(uuid())
   name      String
   email     String?  @unique
-  pin       String   @unique
+  pin       String?
   pinHash   String?
   deviceId  String?
   role      String   @default("sales")
