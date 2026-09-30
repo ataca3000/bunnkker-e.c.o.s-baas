@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { validateApiSession, hashPinSha256 } from '@/lib/apiAuth';
+import { validateActiveDbUser, hashPinSha256 } from '@/lib/apiAuth';
 import bcrypt from 'bcryptjs';
 
 const SALT_ROUNDS = 10;
 
 export async function GET(request: NextRequest) {
-    const auth = validateApiSession(request);
+    const auth = await validateActiveDbUser(request);
     if (!auth.ok) return auth.response;
 
     try {
@@ -28,9 +28,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-    const auth = validateApiSession(request);
+    const auth = await validateActiveDbUser(request);
     if (!auth.ok || auth.role !== 'superadmin') {
-        return NextResponse.json({ success: false, error: 'Unauthorized. Only superadmin can create users.' }, { status: 401 });
+        return NextResponse.json({ success: false, error: 'Unauthorized. Only active superadmin can create users.' }, { status: 403 });
     }
 
     try {

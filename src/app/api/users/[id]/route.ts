@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { validateApiSession } from '@/lib/apiAuth';
+import { validateActiveDbUser } from '@/lib/apiAuth';
 
 // Next.js 15: params es una Promise en route handlers dinámicos
 export async function PUT(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
-    const auth = validateApiSession(request);
+    const auth = await validateActiveDbUser(request);
     if (!auth.ok || auth.role !== 'superadmin') {
-        return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+        return NextResponse.json({ success: false, error: 'Unauthorized. Only active superadmin can edit users.' }, { status: 403 });
     }
 
     try {
@@ -38,9 +38,9 @@ export async function DELETE(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
-    const auth = validateApiSession(request);
+    const auth = await validateActiveDbUser(request);
     if (!auth.ok || auth.role !== 'superadmin') {
-        return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+        return NextResponse.json({ success: false, error: 'Unauthorized. Only active superadmin can delete users.' }, { status: 403 });
     }
 
     try {

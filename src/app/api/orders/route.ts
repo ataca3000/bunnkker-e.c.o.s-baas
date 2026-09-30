@@ -282,6 +282,25 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: true, data: orderResult });
 
     } catch (error: any) {
+        // IDEMPOTENCIA CONCURRENTE EXTREMA: Si dos peticiones simultáneas con el mismo orderId
+        // superaron el findUnique previo, SQLite Serializable bloquea la escritura y la segunda
+        // transacción colisiona con el Primary Key (P2002), haciendo ROLLBACK automático del stock.
+        if (error.code === 'P2002' || error.message?.includes('Unique constraint failed')) {
+            try {
+                const bodyJson = await request.clone().json().catch(() => ({}));
+                const collisionId = bodyJson.orderId || bodyJson.id;
+                if (collisionId) {
+                    const existing = await prisma.order.findUnique({
+                        where: { id: collisionId },
+                        include: { items: true, customer: true }
+                    });
+                    if (existing) {
+                        console.log(`[CONCURRENCY RACE HANDLED] Carrera concurrente neutralizada para ${collisionId}. Rollback ejecutado y orden retornada.`);
+                        return NextResponse.json({ success: true, data: existing, duplicated: true });
+                    }
+                }
+            } catch {}
+        }
         console.error(`[ACID Transaction Error]: ${error.message}`);
         return NextResponse.json({ error: error.message }, { status: 500 });
     }

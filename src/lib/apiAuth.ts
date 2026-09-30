@@ -115,7 +115,7 @@ export function requireRole(
 /**
  * Valida de forma estricta contra la base de datos que el usuario exista,
  * esté activo (active: true) y que su rol en BD coincida con el rol firmado.
- * Impide que empleados desactivados o con roles cambiados sigan operando con cookies previas.
+ * SEGURIDAD FAIL-CLOSED: Si la base de datos falla o no responde, NUNCA permite el acceso.
  */
 export async function validateActiveDbUser(
   request: NextRequest,
@@ -152,10 +152,40 @@ export async function validateActiveDbUser(
     }
 
     return { ok: true, uid: user.id, role: user.role };
-  } catch {
-    // Modo offline resiliente: si SQLite está bajo migración transitoria pero la firma HMAC es válida
-    return auth;
+  } catch (error: any) {
+    console.error('[AUTH FAIL-CLOSED] Fallo al validar usuario en SQLite:', error?.message);
+    return {
+      ok: false,
+      response: NextResponse.json(
+        { success: false, error: 'Servicio no disponible: No se pudo verificar la identidad en la base de datos local.' },
+        { status: 503 }
+      )
+    };
   }
+}
+
+/**
+ * Valida sesión en vivo contra la base de datos Y exige roles autorizados.
+ */
+export async function requireActiveRole(
+  request: NextRequest,
+  allowedRoles: string[],
+  prismaInstance?: any
+): Promise<ApiAuthResult> {
+  const auth = await validateActiveDbUser(request, prismaInstance);
+  if (!auth.ok) return auth;
+
+  if (!allowedRoles.includes(auth.role)) {
+    return {
+      ok: false,
+      response: NextResponse.json(
+        { success: false, error: `Acceso denegado. Rol requerido: ${allowedRoles.join(' | ')}` },
+        { status: 403 }
+      ),
+    };
+  }
+
+  return auth;
 }
 
 export { WRITE_ROLES, DELIVERY_ROLES };
