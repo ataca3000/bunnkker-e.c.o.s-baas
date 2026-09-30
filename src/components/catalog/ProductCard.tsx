@@ -2,9 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingCart, Plus, Minus, Package, FileText, X, MessageSquare } from 'lucide-react';
+import { ShoppingCart, Plus, Minus, Package, X, MessageSquare } from 'lucide-react';
 import { useCart, type Product } from '@/context/CartContext';
-import CFDIModal from '../CFDIModal';
 import { StarRating } from './CatalogUtils';
 import { toast } from '@/lib/toast';
 import { db } from '@/lib/firebase';
@@ -16,14 +15,13 @@ interface ProductCardProps {
     p: Product;
     index: number;
     onOpenDetails: (p: Product) => void;
-    onGenerateCFDI: (p: Product) => void;
 }
 
 /**
  * Tarjeta de producto del catálogo con stock flotante en tiempo real.
  * Muestra imagen, nombre, precio, disponibilidad y controles de cantidad.
  */
-export function ProductCard({ p, onOpenDetails, onGenerateCFDI }: ProductCardProps) {
+export function ProductCard({ p, onOpenDetails }: ProductCardProps) {
     const { addToCart, floatingStock = {} } = useCart();
     const floatHold = floatingStock[p.id] || 0;
     const availableStock = Math.max(0, p.stock - floatHold);
@@ -84,14 +82,6 @@ export function ProductCard({ p, onOpenDetails, onGenerateCFDI }: ProductCardPro
                     <span className="text-[0.65rem] font-bold tracking-widest uppercase text-slate-400 bg-white/5 border border-white/10 px-2 py-1 rounded-md">
                         {p.category}
                     </span>
-                    <button
-                        type="button"
-                        title="Generar Factura CFDI"
-                        onClick={e => { e.stopPropagation(); onGenerateCFDI(p); }}
-                        className="text-emerald-400 hover:text-emerald-300 transition-colors bg-emerald-500/10 p-1.5 rounded-md"
-                    >
-                        <FileText size={16} />
-                    </button>
                 </div>
 
                 <h3 className="text-lg font-bold text-white mb-2 line-clamp-2 group-hover:text-blue-400 transition-colors">
@@ -153,17 +143,15 @@ export function ProductCard({ p, onOpenDetails, onGenerateCFDI }: ProductCardPro
 interface ProductDetailDrawerProps {
     product: Product | null;
     onClose: () => void;
-    onFacturar: (p: Product) => void;
 }
 
 /**
  * Panel lateral deslizable con detalles del producto y reseñas en tiempo real.
  * El estado del producto seleccionado vive en MarketCatalog.
  */
-export function ProductDetailDrawer({ product, onClose, onFacturar }: ProductDetailDrawerProps) {
+export function ProductDetailDrawer({ product, onClose }: ProductDetailDrawerProps) {
     const { addToCart } = useCart();
     const [realReviews, setRealReviews] = useState<any[]>([]);
-    const [cfdiProduct, setCfdiProduct] = useState<Product | null>(null);
 
     useEffect(() => {
         if (!product) return;
@@ -227,15 +215,9 @@ export function ProductDetailDrawer({ product, onClose, onFacturar }: ProductDet
                                     <button
                                         onClick={() => { addToCart(product, 1); toast.success(`${product.name} agregado al carrito.`, '🛒 Carrito'); }}
                                         disabled={product.stock === 0}
-                                        className={`btn-sanjose flex-1 py-4 flex justify-center items-center gap-2 rounded-xl text-sm font-bold shadow-lg ${product.stock === 0 ? 'grayscale opacity-50 cursor-not-allowed' : 'active:scale-95 transition-all'}`}
+                                        className={`btn-sanjose w-full py-4 flex justify-center items-center gap-2 rounded-xl text-sm font-bold shadow-lg ${product.stock === 0 ? 'grayscale opacity-50 cursor-not-allowed' : 'active:scale-95 transition-all'}`}
                                     >
                                         <ShoppingCart size={18} /> {product.stock === 0 ? 'PRODUCTO AGOTADO' : 'AÑADIR AL CARRITO'}
-                                    </button>
-                                    <button
-                                        onClick={() => { onClose(); onFacturar(product); }}
-                                        className="bg-emerald-500 text-white hover:bg-emerald-600 px-6 py-4 flex justify-center items-center gap-2 rounded-xl font-bold transition-all active:scale-95"
-                                    >
-                                        <FileText size={18} /> FACTURAR
                                     </button>
                                 </div>
 
@@ -257,7 +239,7 @@ export function ProductDetailDrawer({ product, onClose, onFacturar }: ProductDet
                                         </div>
                                     )) : (
                                         <div className="text-center py-8 text-slate-400 font-bold italic text-sm">
-                                            Aún no hay opiniones. ¡Sé el primero en calificarlo tras comprar!
+                                            Aún no hay opiniones.
                                         </div>
                                     )}
                                 </div>
@@ -265,10 +247,6 @@ export function ProductDetailDrawer({ product, onClose, onFacturar }: ProductDet
                         </motion.div>
                     </div>
                 )}
-            </AnimatePresence>
-
-            <AnimatePresence>
-                {cfdiProduct && <CFDIModal product={cfdiProduct} onClose={() => setCfdiProduct(null)} />}
             </AnimatePresence>
         </>
     );

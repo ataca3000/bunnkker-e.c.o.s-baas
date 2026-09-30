@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
                 select: { name: true }
             });
         } else {
-            const customerToken = request.cookies.get('admincom_session')?.value;
+            const customerToken = request.cookies.get('msj-session')?.value || request.cookies.get('admincom_session')?.value;
             if (!customerToken) return staffSession.response;
 
             try {

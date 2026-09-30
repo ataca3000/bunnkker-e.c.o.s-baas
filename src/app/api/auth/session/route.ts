@@ -19,13 +19,16 @@ import bcrypt from 'bcryptjs';
 import fs from 'fs';
 import path from 'path';
 
-const COOKIE_OPTS = {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === 'production' && !process.env.MACHINE_HWID,
-  sameSite: 'lax' as const,
-  path: '/',
-  maxAge: 60 * 60 * 24, // 24 horas
-};
+function getCookieOpts(request?: NextRequest) {
+  const isHttps = request ? (request.url.startsWith('https://') || request.headers.get('x-forwarded-proto') === 'https') : false;
+  return {
+    httpOnly: true,
+    secure: isHttps, // Solo exigir cookie segura si la conexión es HTTPS (evita rechazos en HTTP LAN 192.168.x.x)
+    sameSite: 'lax' as const,
+    path: '/',
+    maxAge: 60 * 60 * 24, // 24 horas
+  };
+}
 
 const SALT_ROUNDS = 10;
 
@@ -116,7 +119,7 @@ export async function POST(request: NextRequest) {
 
     // Obtener la IP del cliente para mitigar ataques de brute-force
     const clientIp = request.headers.get('x-forwarded-for') || '127.0.0.1';
-    const isLocalhost = clientIp === '127.0.0.1' || clientIp === '::1' || clientIp.includes('localhost') || process.env.NODE_ENV !== 'production';
+    const isLocalhost = clientIp === '127.0.0.1' || clientIp === '::1' || clientIp.includes('localhost') || clientIp.startsWith('192.168.') || clientIp.startsWith('10.') || clientIp.startsWith('172.') || process.env.NODE_ENV !== 'production';
 
     const failedAttemptsKey = `failed_attempts:${clientIp}`;
 
@@ -298,12 +301,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Firma y cookies
+    const cookieOpts = getCookieOpts(request);
     const isInitialPin = Boolean(pin && INITIAL_STAFF_PIN_VALUES.includes(pin));
     const sig = signRole(finalRole, finalUid);
     const response = NextResponse.json({ success: true, role: finalRole, uid: finalUid, signature: sig, requirePinChange: isInitialPin });
-    response.cookies.set('msj-session', finalUid, COOKIE_OPTS);
-    response.cookies.set('msj-role', finalRole, COOKIE_OPTS);
-    response.cookies.set('msj-role-sig', sig, COOKIE_OPTS);
+    response.cookies.set('msj-session', finalUid, cookieOpts);
+    response.cookies.set('msj-role', finalRole, cookieOpts);
+    response.cookies.set('msj-role-sig', sig, cookieOpts);
 
     // Generar una IP privada virtual aleatoria para trabajadores para el bypass de firewall en túnel
     if (finalRole !== 'client') {
@@ -312,8 +316,8 @@ export async function POST(request: NextRequest) {
       const virtualIp = `10.240.${x}.${y}`;
       const vipSig = signRole('worker-vip', virtualIp);
       
-      response.cookies.set('msj-worker-vip', virtualIp, COOKIE_OPTS);
-      response.cookies.set('msj-worker-vip-sig', vipSig, COOKIE_OPTS);
+      response.cookies.set('msj-worker-vip', virtualIp, cookieOpts);
+      response.cookies.set('msj-worker-vip-sig', vipSig, cookieOpts);
     }
 
     return response;

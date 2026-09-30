@@ -92,14 +92,15 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
     const isStaff = ['sales', 'admin', 'superadmin', 'billing'].includes(profile?.role || '');
     const canPlaceOrder = isStaff || !!customerAccount;
 
+    const [showAuthRequiredModal, setShowAuthRequiredModal] = useState(false);
+
     const handleFormChange = (patch: Partial<CheckoutFormData>) => {
         setFormData(prev => ({ ...prev, ...patch }));
     };
 
     const handleCheckout = async () => {
         if (!isStaff && !customerAccount) {
-            toast.warning('Regístrate o inicia sesión para generar tu pedido.');
-            window.location.href = '/cuenta';
+            setShowAuthRequiredModal(true);
             return;
         }
 
@@ -134,9 +135,11 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
                     const product = products.find((current: any) => current.id === item.id);
                     return [item.id, Math.max(0, (product?.stock || 0) - (product?.reservedStock || 0))];
                 }));
-                const reservation: any = await new Promise(resolve => {
+                const reservationPromise = new Promise(resolve => {
                     socket.emit('reserve_stock', { reservationId: orderId, items: itemsToReserve, dbStockMap }, resolve);
                 });
+                const timeoutPromise = new Promise(resolve => setTimeout(() => resolve({ success: true, timedOut: true }), 1500));
+                const reservation: any = await Promise.race([reservationPromise, timeoutPromise]);
                 if (!reservation?.success) {
                     throw new Error(`Inventario insuficiente para: ${(reservation?.failedItems || []).join(', ')}`);
                 }
@@ -217,8 +220,7 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
                                             return;
                                         }
                                         if (!canPlaceOrder) {
-                                            toast.warning('Regístrate o inicia sesión antes de comprar.');
-                                            window.location.href = '/cuenta';
+                                            setShowAuthRequiredModal(true);
                                             return;
                                         }
                                         setStep('checkout');
@@ -230,6 +232,97 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
                         )}
                     </motion.div>
                 </>
+            )}
+
+            {/* Modal de Autenticación Requerida */}
+            {showAuthRequiredModal && (
+                <div style={{
+                    position: 'fixed',
+                    inset: 0,
+                    zIndex: 99999,
+                    backgroundColor: 'rgba(10, 5, 20, 0.85)',
+                    backdropFilter: 'blur(8px)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '20px'
+                }}>
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        style={{
+                            backgroundColor: '#0f172a',
+                            border: '1px solid rgba(56, 189, 248, 0.3)',
+                            borderRadius: '24px',
+                            padding: '32px',
+                            maxWidth: '420px',
+                            width: '100%',
+                            textAlign: 'center',
+                            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+                            color: '#ffffff'
+                        }}
+                    >
+                        <div style={{
+                            width: '64px',
+                            height: '64px',
+                            borderRadius: '20px',
+                            background: 'linear-gradient(135deg, #38bdf8 0%, #3b82f6 100%)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            margin: '0 auto 20px auto',
+                            fontSize: '28px',
+                            boxShadow: '0 10px 25px -5px rgba(56, 189, 248, 0.4)'
+                        }}>
+                            🔐
+                        </div>
+                        <h3 style={{ fontSize: '20px', fontWeight: '900', margin: '0 0 10px 0' }}>
+                            Iniciar Sesión o Registro
+                        </h3>
+                        <p style={{ fontSize: '14px', color: '#94a3b8', margin: '0 0 24px 0', lineHeight: 1.5 }}>
+                            Para procesar tu compra y guardar tus datos de entrega y facturación CFDI, necesitas ingresar a tu cuenta de cliente.
+                        </p>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            <button
+                                onClick={() => {
+                                    setShowAuthRequiredModal(false);
+                                    window.location.href = '/cuenta?redirect=/carrito';
+                                }}
+                                style={{
+                                    width: '100%',
+                                    padding: '14px',
+                                    borderRadius: '14px',
+                                    background: 'linear-gradient(90deg, #38bdf8, #3b82f6)',
+                                    color: '#ffffff',
+                                    fontWeight: '800',
+                                    fontSize: '14px',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    boxShadow: '0 10px 20px -5px rgba(56, 189, 248, 0.3)'
+                                }}
+                            >
+                                Entrar a mi Cuenta / Registrarme
+                            </button>
+                            <button
+                                onClick={() => setShowAuthRequiredModal(false)}
+                                style={{
+                                    width: '100%',
+                                    padding: '12px',
+                                    borderRadius: '14px',
+                                    backgroundColor: 'transparent',
+                                    color: '#64748b',
+                                    fontWeight: '600',
+                                    fontSize: '13px',
+                                    border: '1px solid #334155',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                Seguir viendo productos
+                            </button>
+                        </div>
+                    </motion.div>
+                </div>
             )}
         </AnimatePresence>
     );

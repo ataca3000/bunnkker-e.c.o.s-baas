@@ -17,7 +17,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, QrCode } from 'lucide-react';
 import { useCart, type Product } from '@/context/CartContext';
 import BarcodeScanner from './BarcodeScanner';
-import CFDIModal from './CFDIModal';
 import { CategoryFilter, PromoBanners } from './catalog/CatalogFilters';
 import { ProductCard, ProductDetailDrawer } from './catalog/ProductCard';
 import { toast } from '@/lib/toast';
@@ -30,7 +29,6 @@ export default function MarketCatalog({ initialCategory, hideHeader }: { initial
     const [search, setSearch]               = useState('');
     const [showScanner, setShowScanner]     = useState(false);
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-    const [cfdiProduct, setCfdiProduct]     = useState<Product | null>(null);
     const [visibleCount, setVisibleCount]   = useState(6);
 
     // Leer parámetro ?search= de la URL (enviado por Navbar al escanear)
@@ -180,7 +178,6 @@ export default function MarketCatalog({ initialCategory, hideHeader }: { initial
                                 p={p}
                                 index={index}
                                 onOpenDetails={setSelectedProduct}
-                                onGenerateCFDI={setCfdiProduct}
                             />
                         ))
                     ) : (
@@ -207,18 +204,12 @@ export default function MarketCatalog({ initialCategory, hideHeader }: { initial
             <ProductDetailDrawer
                 product={selectedProduct}
                 onClose={() => setSelectedProduct(null)}
-                onFacturar={setCfdiProduct}
             />
 
             {/* Escáner QR */}
             {showScanner && (
                 <BarcodeScanner onScanSuccess={handleScan} onClose={() => setShowScanner(false)} />
             )}
-
-            {/* Modal CFDI */}
-            <AnimatePresence>
-                {cfdiProduct && <CFDIModal product={cfdiProduct} onClose={() => setCfdiProduct(null)} />}
-            </AnimatePresence>
         </section>
     );
 }

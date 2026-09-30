@@ -18,56 +18,41 @@
 Sistema completo para operar un negocio físico (ferretería, abarrotes, distribuidora) desde múltiples terminales conectadas por WiFi local. Funciona sin internet. Cuando hay conexión, sincroniza con la nube automáticamente.
 
 ## Qué hace
-- **plataforma de administration y operation catalogo virtual local cero filas wifi syn hibrido bidirectional local 
-- **Punto de Venta (POS)** con cobro en efectivo, tarjeta y multimoneda
-- **Inventario** con ubicación física por estante/fila y drag & drop
-- **8 roles de acceso** (dueño, gerente, cajero, bodeguero, chofer, patio, marketing, mostrador)
-- **Sincronización P2P** entre cajas por red WiFi/LAN sin servidor externo
-- **Funciona offline** — cada terminal tiene su base de datos SQLite local
-- **Auditoría cifrada** de cada operación con AES-256
-- **Facturación CFDI** (México) vía Facturapi
-- **Backup automático** a USB cifrado cuando se conecta una llave física
-- **Marketing** con publicación coordinada en 16 redes sociales (OMNIPULSE)
-- **B2B entre sucursales** — una tienda puede pedir stock a otra automáticamente
-- **IA local** que recomienda ajustes de precios por rotación de inventario
+- **Plataforma de Administración y Operación:** Catálogo virtual local sin filas, sync híbrido bidireccional y multi-dispositivo LAN.
+- **Acceso Multi-Dispositivo LAN (Wi-Fi Local):** Protocolo dinámico HTTP/HTTPS para que cualquier celular (iOS/Android), tablet o laptop en la red local (`http://192.168.x.x:3000`) ingrese por PIN sin rechazo de cookies.
+- **Cola de Trabajo por Rol & Pizarrón Público (Kanban):** Sistema de colas por rol (Cajero, Almacén, Chofer, Patio) con reclamo exclusivo (*Lock-Claim*) y liberación/delegación instantánea en 1-click (*release_order*).
+- **Reserva de Inventario con TTL de 30 Minutos:** Los productos en el carrito reservan stock en vivo con temporizador de expiración automática de 30 minutos.
+- **Punto de Venta (POS):** Cobro en efectivo, tarjeta (Stripe/MercadoPago), corte de caja e inspección opcional de transferencias.
+- **Licenciamiento 1 PC Maestro = 1 Tienda:** Licencia atada al HWID físico de la máquina con gateways QR dedicados por rol.
+- **Asistente Oficial:** Mascota **Lion - Tu Gerente de Sucursal** en login, onboarding y barra de aplicación.
+- **Inventario:** Ubicación física por estante/fila y drag & drop.
+- **Sincronización P2P:** Entre cajas por red WiFi/LAN sin servidor externo.
+- **Funciona offline:** Cada terminal tiene su base de datos SQLite local persistente.
+- **Auditoría cifrada:** Registro de operaciones cifrado en AES-256.
 
-## Stack técnico
-
-| Capa | Tecnología |
-|---|---|
-| Frontend + API | Next.js 15 + React 19 |
-| Base de datos nube | Supabase (PostgreSQL) |
-| Base de datos local | SQLite vía Prisma |
-| Desktop | Electron (Windows .exe) |
-| Sync P2P | Socket.IO + mDNS |
-| Pagos | Stripe + MercadoPago |
-| Facturación | Facturapi (CFDI México) |
-
-## Cómo funciona la red local
+## Qué hace la red local y multi-dispositivo
 
 ```
-Terminal Maestro (arranca servidor)
-├── Caja 1 (se conecta por WiFi)
-├── Caja 2 (se conecta por WiFi)
-└── Bodega  (se conecta por WiFi)
+Terminal Maestro (Next.js :3000 + Radio Server :3001)
+├── Caja Mobile / Celular (Acceso WiFi por IP LAN 192.168.X.X)
+├── Tablet Almacén / QR (Escaneo de estanterías y recolección)
+└── Chofer / Repartidor (PWA offline con captura de firma)
 ```
 
-El maestro corre Next.js en puerto 3000 y el radio server en 3001/3002. Los nodos simplemente abren el navegador apuntando al IP del maestro. Se detectan automáticamente por mDNS.
+El maestro corre Next.js en puerto 3000 y el radio server en 3001/3002. Los nodos y teléfonos abren el navegador apuntando a la IP del maestro (`http://192.168.x.x:3000`). Se detectan automáticamente por mDNS y conservan cookies de sesión mediante resolución dinámica de protocolo.
 
-## Roles y acceso
+## Roles y PINs de Acceso
 
-| PIN | Rol | Dashboard |
-|---|---|---|
-| 0000 | Dueño (superadmin) | Panel completo con KPIs, IA y control total |
-| 1111 | Gerente (admin) | Igual que dueño sin demo/suscripción |
-| 2222 | Cajero (sales) | POS con carrito, cobro y corte de caja |
-| 3333 | Bodeguero (inventory) | Inventario, estanterías, merma, import/export Excel |
-| 4444 | Marketing | Branding, OMNIPULSE, editor de tienda, QR |
-| 5555 | Chofer (driver) | Entregas, rutas GPS, confirmación por PIN |
-| 6666 | Patio (carga/descarga) | Cola de carga, bahías, tiempos |
-| 7777 | Mostrador (pickup) | Ventanillas y cajones de recolección |
-
-Los PINs son de fábrica. Al primer uso, el sistema pide cambiarlos.
+| PIN Numérico | PIN Alfanumérico | Rol | Dashboard / Función |
+|---|---|---|---|
+| `0000` | `A0000` | Dueño (superadmin) | Panel completo con KPIs, IA y control total |
+| `1111` / `1234` | `A1111` | Gerente (admin) | Control operativo, activación de pagos web e inspección |
+| `2222` | `A2222` | Cajero (sales) | POS, cobro en efectivo/tarjeta, validación serial |
+| `3333` | `A3333` | Bodeguero (inventory) | Estanterías, escaneo QR, cola de surtido |
+| `4444` | `A4444` | Diseñador (marketing) | OMNIPULSE, editor de tienda, QR por rol |
+| `5555` | `A5555` | Chofer (driver) | Entregas, rutas GPS, firma digital del cliente |
+| `6666` | `A6666` | Patio (carga_descarga) | Carga/descarga, bahías y tiempos de patio |
+| `7777` | `A7777` | Mostrador (pickup) | Pick-Up y ventanillas de recolección |
 
 ## Instalación local (desarrollo)
 

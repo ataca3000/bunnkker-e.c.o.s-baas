@@ -36,13 +36,17 @@ export async function POST(req: NextRequest) {
                 .setExpirationTime('30d')
                 .sign(JWT_SECRET);
 
-            const res = NextResponse.json({ success: true, customer: newCustomer });
-            res.cookies.set('admincom_session', token, {
+            const isHttps = req.url.startsWith('https://') || req.headers.get('x-forwarded-proto') === 'https';
+            const cookieOpts = {
                 httpOnly: true,
-                secure: process.env.NODE_ENV === 'production',
-                sameSite: 'lax',
+                secure: isHttps,
+                sameSite: 'lax' as const,
+                path: '/',
                 maxAge: 30 * 24 * 60 * 60
-            });
+            };
+            const res = NextResponse.json({ success: true, customer: newCustomer });
+            res.cookies.set('admincom_session', token, cookieOpts);
+            res.cookies.set('msj-session', token, cookieOpts);
             return res;
         }
 
@@ -117,13 +121,17 @@ export async function POST(req: NextRequest) {
             .setExpirationTime('30d')
             .sign(JWT_SECRET);
 
-        const res = NextResponse.json({ success: true, customer });
-        res.cookies.set('admincom_session', token, {
+        const isHttps = req.url.startsWith('https://') || req.headers.get('x-forwarded-proto') === 'https';
+        const cookieOpts = {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
+            secure: isHttps,
+            sameSite: 'lax' as const,
+            path: '/',
             maxAge: 30 * 24 * 60 * 60
-        });
+        };
+        const res = NextResponse.json({ success: true, customer });
+        res.cookies.set('admincom_session', token, cookieOpts);
+        res.cookies.set('msj-session', token, cookieOpts);
         
         return res;
     } catch (error: any) {

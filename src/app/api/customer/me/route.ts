@@ -7,7 +7,7 @@ const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'super_sec
 
 export async function GET(req: NextRequest) {
     try {
-        const token = req.cookies.get('admincom_session')?.value;
+        const token = req.cookies.get('msj-session')?.value || req.cookies.get('admincom_session')?.value;
         if (!token) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 
         const { payload } = await jwtVerify(token, JWT_SECRET);
@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
     try {
-        const token = req.cookies.get('admincom_session')?.value;
+        const token = req.cookies.get('msj-session')?.value || req.cookies.get('admincom_session')?.value;
         if (!token) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 
         const { payload } = await jwtVerify(token, JWT_SECRET);
