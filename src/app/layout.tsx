@@ -110,7 +110,7 @@ import ParticlesBackground from "@/components/ParticlesBackground";
 import ToastContainer from "@/components/ToastContainer";
 import FreemiumLockModal from "@/components/FreemiumLockModal";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
-import CookieConsent from "@/components/CookieConsent";
+import ClientBootGuard from "@/components/ClientBootGuard";
 
 export default async function RootLayout({
   children,
@@ -132,7 +132,9 @@ export default async function RootLayout({
                 <ConnectionStatus />
                 <Navbar />
                 <AdminLayout>
-                  {children}
+                  <ClientBootGuard>
+                    {children}
+                  </ClientBootGuard>
                 </AdminLayout>
                 <AdminAsistente />
                 <ClickSoundProvider />

@@ -80,6 +80,7 @@ export default function RegisterTenantPage() {
     });
 
     localStorage.setItem('msj-session-id', newSessionId);
+    localStorage.setItem('bunkker_tenant_id', tenantId);
     document.cookie = `msj-session=${user.uid}; path=/; max-age=86400; SameSite=Lax`;
     document.cookie = `msj-role=superadmin; path=/; max-age=86400; SameSite=Lax`;
     
