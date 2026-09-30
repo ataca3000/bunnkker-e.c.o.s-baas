@@ -66,6 +66,7 @@ export async function GET(req: NextRequest) {
                 id: user.id,
                 name: user.name,
                 role: user.role,
+                signature: sig,
                 isInitialPin
             }
         });

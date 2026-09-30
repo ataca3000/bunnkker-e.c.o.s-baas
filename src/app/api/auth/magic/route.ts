@@ -1,57 +1,104 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { signRole, decryptToken } from '@/lib/apiAuth';
 import { prisma } from '@/lib/prisma';
+import { redis } from '@/lib/redis';
+import fs from 'fs';
+import path from 'path';
 
 const COOKIE_OPTS = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production' && !process.env.MACHINE_HWID,
   sameSite: 'lax' as const,
   path: '/',
-  maxAge: 60 * 60 * 24 * 365, // Permanente (1 año) según requerimiento
+  maxAge: 60 * 60 * 24, // 24 horas por sesión activa
 };
 
+function logSecurityEvent(event: string, details: Record<string, any>) {
+  try {
+    const logEntry = {
+      timestamp: new Date().toISOString(),
+      type: event,
+      ...details
+    };
+    const logsDir = path.join(process.cwd(), 'logs');
+    if (!fs.existsSync(logsDir)) fs.mkdirSync(logsDir, { recursive: true });
+    fs.appendFileSync(path.join(logsDir, 'security_audit.log'), JSON.stringify(logEntry) + '\n', 'utf8');
+  } catch {}
+}
+
 export async function GET(request: NextRequest) {
+  const clientIp = request.headers.get('x-forwarded-for') || '127.0.0.1';
   try {
     const searchParams = request.nextUrl.searchParams;
     const token = searchParams.get('token');
 
     if (!token) {
+      logSecurityEvent('QR_INVALID', { reason: 'Token ausente', ip: clientIp });
       return NextResponse.redirect(new URL('/login?error=invalid_magic_link', request.url));
     }
 
     // El token está cifrado con AES-256-CBC
     const payload = decryptToken(token);
     if (!payload) {
+      logSecurityEvent('QR_INVALID', { reason: 'Desencriptación fallida o secreto incorrecto', ip: clientIp });
       return NextResponse.redirect(new URL('/login?error=invalid_magic_link', request.url));
     }
 
-    const { uid, pin, expiresAt } = payload;
+    const { uid, pin, nodeId, nonce, expiresAt } = payload;
 
-    if (!uid || !pin) {
+    if (!uid) {
+      logSecurityEvent('QR_INVALID', { reason: 'UID ausente en payload', ip: clientIp });
       return NextResponse.redirect(new URL('/login?error=invalid_magic_link', request.url));
     }
 
-    // Validar expiración del Magic Link (15 minutos)
+    // 1. Validar expiración del Magic Link / QR (15 minutos)
     if (expiresAt && Date.now() > expiresAt) {
+      logSecurityEvent('QR_EXPIRED', { uid, expiresAt, ip: clientIp });
       return NextResponse.redirect(new URL('/login?error=expired_magic_link', request.url));
     }
 
-    // Buscamos al usuario
+    // 2. Validar que el QR pertenece a este nodo soberano
+    const currentNodeId = process.env.INSTALLATION_ID;
+    if (nodeId && currentNodeId && nodeId !== currentNodeId) {
+      logSecurityEvent('NODE_ID_MISMATCH', { qrNodeId: nodeId, currentNodeId, ip: clientIp });
+      return NextResponse.redirect(new URL('/login?error=node_mismatch', request.url));
+    }
+
+    // 3. Validar Nonce anti-replay (uso único)
+    if (nonce) {
+      const nonceKey = `used_qr_nonce:${nonce}`;
+      const wasUsed = await redis.get(nonceKey);
+      if (wasUsed) {
+        logSecurityEvent('QR_REPLAY_ATTEMPT', { uid, nonce, ip: clientIp });
+        return NextResponse.redirect(new URL('/login?error=qr_already_used', request.url));
+      }
+      await redis.set(nonceKey, '1');
+      await redis.expire(nonceKey, 15 * 60); // 15 minutos de ventana
+    }
+
+    // 4. Buscar usuario y verificar que esté activo en la base de datos
     const user = await prisma.user.findFirst({
-      where: { id: uid, pin: pin }
+      where: { 
+        id: uid,
+        ...(pin ? { pin: { in: [pin] } } : {})
+      }
     });
 
     if (!user) {
+      logSecurityEvent('QR_AUTH_FAILED', { reason: 'Usuario no encontrado o credencial inválida', uid, ip: clientIp });
       return NextResponse.redirect(new URL('/login?error=user_not_found', request.url));
     }
 
     if (!user.active) {
+      logSecurityEvent('QR_AUTH_FAILED', { reason: 'Usuario inactivo', uid, ip: clientIp });
       return NextResponse.redirect(new URL('/login?error=user_inactive', request.url));
     }
 
-    // Firmar y crear sesión
+    // Firmar y crear sesión legítima
     const sig = signRole(user.role, user.id);
     
+    logSecurityEvent('LOGIN_SUCCESS_QR', { uid: user.id, role: user.role, ip: clientIp });
+
     // Redirigir al dashboard
     const response = NextResponse.redirect(new URL('/dashboard', request.url));
     
@@ -61,8 +108,9 @@ export async function GET(request: NextRequest) {
 
     return response;
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error en magic link:", error);
+    logSecurityEvent('QR_ERROR', { error: error.message, ip: clientIp });
     return NextResponse.redirect(new URL('/login?error=invalid_magic_link', request.url));
   }
 }

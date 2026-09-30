@@ -47,7 +47,12 @@ export default function LocalRadio() {
         newSocket.on('connect', () => {
             console.log('[v0] Radio LAN conectada:', radioUrl);
             setConnectionState('connected');
-            newSocket.emit('join_radio', { role: profile?.role, name: profile?.displayName || (profile as any)?.name });
+            newSocket.emit('join_radio', { 
+                role: profile?.role, 
+                uid: profile?.uid,
+                signature: (profile as any)?.signature,
+                name: profile?.displayName || (profile as any)?.name 
+            });
         });
         newSocket.on('connect_error', (error) => {
             console.log('[v0] Radio LAN no disponible:', error.message);

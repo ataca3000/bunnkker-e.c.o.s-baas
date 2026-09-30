@@ -145,6 +145,48 @@ const createServer = () => {
             ? process.env.DATABASE_URL 
             : `file:${persistentDbPath.replace(/\\/g, '/')}`;
 
+        // Generar o recuperar INSTALLATION_ID e INSTALLATION_SECRET únicos y persistentes por nodo
+        const currentHwid = machineIdSync(true);
+        const installMetaPath = path.join(app.getPath('userData'), 'installation_meta.json');
+        let installationId = '';
+        let installationSecret = '';
+        let meta = null;
+        try {
+            if (fs.existsSync(installMetaPath)) {
+                meta = JSON.parse(fs.readFileSync(installMetaPath, 'utf8'));
+                // Detección anti-clonación: Si la carpeta %APPDATA% fue copiada a otra máquina física
+                if (meta && meta.boundHwid && meta.boundHwid !== currentHwid) {
+                    console.warn('[SECURITY ALERT] ⚠️ Nodo clonado detectado (HWID mismatch). Regenerando identidad soberana...');
+                    fs.appendFileSync(logPath, `[SECURITY ALERT] Nodo clonado detectado. Hardware previo: ${meta.boundHwid}, Actual: ${currentHwid}\n`);
+                    meta = null; // Forzar regeneración de identidad para el nuevo hardware
+                } else if (meta) {
+                    installationId = meta.installationId || '';
+                    installationSecret = meta.installationSecret || '';
+                }
+            }
+        } catch (e) {
+            console.warn('[Installation] Error al leer installation_meta.json:', e.message);
+        }
+
+        if (!installationId || !installationSecret) {
+            const cryptoModule = require('crypto');
+            installationId = (cryptoModule.randomUUID ? cryptoModule.randomUUID() : `NODE-${Date.now()}-${cryptoModule.randomBytes(4).toString('hex')}`);
+            installationSecret = cryptoModule.randomBytes(32).toString('hex');
+            try {
+                fs.writeFileSync(installMetaPath, JSON.stringify({
+                    installationId,
+                    installationSecret,
+                    boundHwid: currentHwid,
+                    createdAt: new Date().toISOString()
+                }, null, 2), { mode: 0o600 });
+                console.log(`[Installation] Nuevo nodo inicializado con ID: ${installationId}`);
+            } catch (e) {
+                console.error('[Installation] No se pudo guardar installation_meta.json:', e.message);
+            }
+        }
+
+        const effectiveInternalSecret = process.env.INTERNAL_API_SECRET || installationSecret;
+
         serverProcess = fork(serverPath, [], {
             cwd: serverDir,
             env: {
@@ -152,8 +194,9 @@ const createServer = () => {
                 PORT: '3000',
                 HOSTNAME: '0.0.0.0', // Permite conexiones externas (WiFi/LAN)
                 NODE_ENV: 'production',
-                MACHINE_HWID: machineIdSync(true), // Inyecta el HWID para que Next.js valide la licencia
-                INTERNAL_API_SECRET: process.env.INTERNAL_API_SECRET || 'terraform-default-secret-key-123456789',
+                MACHINE_HWID: currentHwid, // Inyecta el HWID para que Next.js valide la licencia
+                INSTALLATION_ID: installationId,
+                INTERNAL_API_SECRET: effectiveInternalSecret,
                 DATABASE_URL: effectiveDbUrl
             },
             stdio: ['ignore', 'pipe', 'pipe', 'ipc']
@@ -163,7 +206,15 @@ const createServer = () => {
         const radioServerPath = path.join(app.getAppPath(), 'radio-server.js');
         if (fs.existsSync(radioServerPath)) {
             console.log('[Radio] Iniciando radio-server.js...');
-            fork(radioServerPath, [], { stdio: 'inherit' });
+            fork(radioServerPath, [], { 
+                stdio: 'inherit',
+                env: {
+                    ...process.env,
+                    INTERNAL_API_SECRET: effectiveInternalSecret,
+                    INSTALLATION_ID: installationId,
+                    DATABASE_URL: effectiveDbUrl
+                }
+            });
         }
 
         let serverLogs = '';
@@ -446,35 +497,77 @@ app.whenReady().then(async () => {
         // setupAutoUpdater(); // Desactivado por solicitud del usuario para evitar notificaciones molestas de actualización
 
         // ─── LocalTunnel / Cloudflared RNI (Red de Nodos Independientes) ───
+        // FILOSOFÍA DE NODO SOBERANO: El túnel público solo se abre por decisión explícita
+        // del usuario mediante setting 'enableTunnel: true' o acción en el dashboard.
+        let tunnelInstance = null;
         const startTunnel = async () => {
             try {
-                // TODO: Si isNube() o License === PRO, invocar binario de 'cloudflared' en su lugar.
-                // Por ahora, usamos localtunnel con BUCLE DE RECONEXIÓN para nodos gratuitos.
+                if (tunnelInstance) return;
                 const localtunnel = require('localtunnel');
-                let tunnel = await localtunnel({ port: 3000, subdomain: 'camalion-erp-node' });
+                tunnelInstance = await localtunnel({ port: 3000, subdomain: 'camalion-erp-node' });
                 
-                console.log(`[P2P Enjambre] Nodo RNI activo en: ${tunnel.url}`);
-                global.rniUrl = tunnel.url;
+                console.log(`[P2P Enjambre] Nodo RNI activo en: ${tunnelInstance.url}`);
+                global.rniUrl = tunnelInstance.url;
                 
-                tunnel.on('close', () => {
-                    console.warn('[P2P Enjambre] Túnel cerrado. Reconectando en 5 segundos (Modo Zombie)...');
-                    setTimeout(startTunnel, 5000); // Bucle infinito de reconexión
+                tunnelInstance.on('close', () => {
+                    console.warn('[P2P Enjambre] Túnel cerrado.');
+                    tunnelInstance = null;
+                    global.rniUrl = null;
                 });
                 
-                tunnel.on('error', (err) => {
+                tunnelInstance.on('error', (err) => {
                     console.error('[P2P Enjambre] Error en el túnel:', err);
-                    tunnel.close();
+                    try { tunnelInstance.close(); } catch {}
+                    tunnelInstance = null;
+                    global.rniUrl = null;
                 });
                 
                 if (mainWindow && mainWindow.webContents) {
-                    mainWindow.webContents.send('rni-url-ready', tunnel.url);
+                    mainWindow.webContents.send('rni-url-ready', tunnelInstance.url);
                 }
             } catch (err) {
                 console.error('Error al iniciar el Túnel RNI:', err);
-                setTimeout(startTunnel, 10000);
+                tunnelInstance = null;
             }
         };
-        startTunnel();
+
+        const stopTunnel = () => {
+            if (tunnelInstance) {
+                try { tunnelInstance.close(); } catch {}
+                tunnelInstance = null;
+                global.rniUrl = null;
+                console.log('[P2P Enjambre] Túnel RNI desactivado manualmente.');
+            }
+        };
+
+        ipcMain.handle('toggle-rni-tunnel', async (event, enable) => {
+            if (enable) {
+                await startTunnel();
+                return { success: true, url: global.rniUrl };
+            } else {
+                stopTunnel();
+                return { success: true, url: null };
+            }
+        });
+
+        // Solo iniciar si el usuario configuró explícitamente 'enableTunnel: true'
+        let autoStartTunnel = false;
+        try {
+            const netConfig = path.join(app.getPath('userData'), 'network_config.json');
+            if (fs.existsSync(netConfig)) {
+                const parsedNet = JSON.parse(fs.readFileSync(netConfig, 'utf8'));
+                if (parsedNet.enableTunnel === true || parsedNet.rniTunnelEnabled === true) {
+                    autoStartTunnel = true;
+                }
+            }
+        } catch {}
+
+        if (autoStartTunnel) {
+            console.log('[RNI] Iniciando túnel remoto según configuración explícita del usuario...');
+            startTunnel();
+        } else {
+            console.log('[RNI] Modo Soberano: Túnel remoto en espera (solo LAN local activa).');
+        }
 
     } catch (err) {
         console.error('[App] Error fatal:', err);

@@ -70,6 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                             email: data.user.email || '',
                             displayName: data.user.name || 'Usuario ERP',
                             role: data.user.role || 'sales',
+                            signature: data.user.signature || '',
                             nodeAccess: [],
                             lastLogin: Date.now(),
                             isPremium: true

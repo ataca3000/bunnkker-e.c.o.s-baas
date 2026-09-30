@@ -2,7 +2,10 @@ const { Server } = require('socket.io');
 const { createServer } = require('http');
 const { PrismaClient } = require('@prisma/client');
 const path = require('path');
+const fs = require('fs');
+const crypto = require('crypto');
 const bunkkerConfig = require('./bunkker.config.json');
+
 // ─── Supresor de errores TCP transitorios ─────────────────────────────────────
 // Errores como wsarecv / stream reading error / ECONNRESET son normales en
 // conexiones WebSocket de larga duración (Windows corta streams inactivos).
@@ -27,16 +30,37 @@ process.on('unhandledRejection', (reason) => {
   console.error('💥 [radio-server] Promesa rechazada sin manejar:', reason);
 });
 
+// Resolver ruta unificada de SQLite: comparte la misma base que Electron y Next.js
+let defaultSqlitePath;
+if (process.env.APPDATA) {
+  const electronDb = path.join(process.env.APPDATA, 'bunnkker-ecos', 'database.sqlite');
+  const electronDbAlt = path.join(process.env.APPDATA, 'bunnkker-e.c.o.s-baas', 'database.sqlite');
+  if (fs.existsSync(electronDb)) defaultSqlitePath = electronDb;
+  else if (fs.existsSync(electronDbAlt)) defaultSqlitePath = electronDbAlt;
+}
+if (!defaultSqlitePath) {
+  defaultSqlitePath = path.resolve(__dirname, 'prisma/dev.db');
+}
+const effectiveDbUrl = process.env.DATABASE_URL || `file:${defaultSqlitePath.replace(/\\/g, '/')}`;
 
-
-const dbPath = path.resolve(__dirname, 'prisma/dev.db');
 const prisma = new PrismaClient({
   datasources: {
     db: {
-      url: process.env.DATABASE_URL || `file:${dbPath}`
+      url: effectiveDbUrl
     }
   }
 });
+
+const COOKIE_SECRET = process.env.INTERNAL_API_SECRET || 'bunkker-ecos-default-local-dev-secret-key-2026';
+function verifyRoleSignature(role, uid, signature) {
+  if (!role || !uid || !signature) return false;
+  const expected = crypto.createHmac('sha256', COOKIE_SECRET).update(`${role}:${uid}`).digest('hex');
+  try {
+    return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature));
+  } catch {
+    return expected === signature;
+  }
+}
 
 // ═════════════════════════════════════════════════════════════════════════════
 // 1. PUERTO 3001: SINCRONIZACIÓN DE DATOS E INVENTARIO FLOATING (PUBLIC / POS)
@@ -226,19 +250,72 @@ const radioIo = new Server(radioHttp, {
 radioIo.on('connection', (socket) => {
   console.log(`🔒 [Radio Server - Port 3002] Conexión entrante: ${socket.id}`);
 
-  socket.on('join_radio', (data) => {
-      const role = data?.role;
+  socket.on('join_radio', async (data) => {
+      const { role, uid, signature, name } = data || {};
 
-      // RECHAZO ABSOLUTO A CLIENTES Y VISITANTES WEB DE LA TIENDA
-      if (!role || role === 'client' || role === 'cliente' || role === 'guest') {
-          console.warn(`🚫 [RADIO SEGURA] Intento de acceso rechazado desde cliente/visitante web: ${socket.id}`);
+      // 1. RECHAZO INMEDIATO SI NO PRESENTA CREDENCIALES
+      if (!role || !uid || !signature) {
+          console.warn(`🚫 [RADIO SEGURA] Intento de acceso sin firma criptográfica desde: ${socket.id}`);
+          socket.emit('radio_error', { error: 'No autorizado. Se requiere firma criptográfica de sesión.' });
+          socket.disconnect(true);
+          return;
+      }
+
+      // 2. RECHAZO A CLIENTES Y VISITANTES
+      const forbiddenRoles = ['client', 'cliente', 'guest'];
+      if (forbiddenRoles.includes(role)) {
+          console.warn(`🚫 [RADIO SEGURA] Intento de acceso rechazado desde cliente/visitante: ${socket.id} (uid: ${uid})`);
           socket.emit('radio_error', { error: 'Acceso Denegado. Canal reservado exclusivamente para trabajadores.' });
           socket.disconnect(true);
           return;
       }
 
+      // 3. VERIFICACIÓN CRIPTOGRÁFICA DE LA FIRMA HMAC
+      const isSigValid = verifyRoleSignature(role, uid, signature);
+      if (!isSigValid) {
+          console.warn(`🚫 [RADIO SEGURA] Firma de rol inválida desde ${socket.id} (uid: ${uid}, role: ${role})`);
+          socket.emit('radio_error', { error: 'Firma de autenticación rechazada.' });
+          socket.disconnect(true);
+          return;
+      }
+
+      // 4. VERIFICACIÓN DE ESTADO DEL USUARIO EN LA BASE DE DATOS DEL NODO
+      let verifiedName = name || 'Personal Interno';
+      let verifiedRole = role;
+      try {
+          const dbUser = await prisma.user.findUnique({
+              where: { id: uid },
+              select: { id: true, name: true, role: true, active: true }
+          });
+
+          if (dbUser) {
+              if (!dbUser.active) {
+                  console.warn(`🚫 [RADIO SEGURA] Usuario inactivo en BD intentó conectar: ${uid}`);
+                  socket.emit('radio_error', { error: 'Cuenta de usuario inactiva.' });
+                  socket.disconnect(true);
+                  return;
+              }
+              if (forbiddenRoles.includes(dbUser.role)) {
+                  console.warn(`🚫 [RADIO SEGURA] Rol en BD denegado para radio: ${dbUser.role} (uid: ${uid})`);
+                  socket.emit('radio_error', { error: 'Acceso Denegado. Rol no autorizado para canal de radio.' });
+                  socket.disconnect(true);
+                  return;
+              }
+              verifiedName = dbUser.name || verifiedName;
+              verifiedRole = dbUser.role || verifiedRole;
+          }
+      } catch (err) {
+          console.warn(`⚠️ [RADIO SEGURA] Advertencia consultando BD para radio (modo offline/resiliente): ${err.message}`);
+      }
+
+      socket.data = {
+          uid,
+          role: verifiedRole,
+          name: verifiedName
+      };
+
       socket.join('staff_radio');
-      console.log(`📻 [RADIO INTERNA] Empleado autorizado conectado al canal: ${data?.name || socket.id} (${role})`);
+      console.log(`📻 [RADIO INTERNA] Empleado verificado conectado al canal: ${verifiedName} (${verifiedRole}) [uid: ${uid}]`);
   });
 
   socket.on('radio_tx', (data) => {
@@ -250,13 +327,13 @@ radioIo.on('connection', (socket) => {
 
       socket.to('staff_radio').emit('radio_rx', {
           senderId: socket.id,
-          senderName: data.name || 'Personal Interno',
+          senderName: socket.data?.name || data?.name || 'Personal Interno',
           audio: data.audio
       });
   });
 
   socket.on('disconnect', () => {
-      console.log(`📻 [Radio Server] Empleado desconectado: ${socket.id}`);
+      console.log(`📻 [Radio Server] Empleado desconectado: ${socket.data?.name || socket.id}`);
   });
 });
 

@@ -19,14 +19,21 @@ export async function GET(request: NextRequest, props: { params: Promise<{ id: s
             return NextResponse.json({ success: false, error: 'Usuario no encontrado' }, { status: 404 });
         }
 
-        // Generar el payload cifrado con el UID y el PIN real de la base de datos (expira en 15 minutos)
+        // Generar payload criptográfico robusto con nodeId, role, nonce anti-replay y expiración (15 minutos)
+        const crypto = require('crypto');
+        const nonce = crypto.randomBytes(16).toString('hex');
+        const nodeId = process.env.INSTALLATION_ID || 'bunkker-local-node';
         const payload = encryptToken({ 
+            nodeId,
             uid: user.id, 
+            role: user.role,
             pin: user.pin,
+            nonce,
+            issuedAt: Date.now(),
             expiresAt: Date.now() + 15 * 60 * 1000 
         });
 
-        return NextResponse.json({ success: true, payload });
+        return NextResponse.json({ success: true, payload, nodeId, expiresAt: Date.now() + 15 * 60 * 1000 });
 
     } catch (error: any) {
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });

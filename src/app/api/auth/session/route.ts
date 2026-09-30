@@ -29,9 +29,8 @@ const COOKIE_OPTS = {
 
 const SALT_ROUNDS = 10;
 
-// BUG-3 FIX: Umbral único de bloqueo — antes existían dos umbrales distintos (5 y 10)
-// que producían mensajes inconsistentes al usuario y lógica de bloqueo impredecible.
-const MAX_FAILED_ATTEMPTS = 5;
+// Regla de Seguridad Soberana: Máximo 4 intentos fallidos antes de bloqueo de IP/Usuario
+const MAX_FAILED_ATTEMPTS = 4;
 const LOCKOUT_DURATION_MS  = 5 * 60 * 1000; // 5 minutos
 
 // Evitar inundación de RAM y timers en el event loop ante ataques de denegación de servicio (DDoS)
@@ -156,13 +155,13 @@ export async function POST(request: NextRequest) {
 
     // ── 3. VALIDACIÓN DE CREDENCIALES (PIN / ID_TOKEN) ──────────────────────
     if (pin) {
-      // Validar que el PIN/Código sea de 4 a 6 caracteres alfanuméricos
+      // Validar que el PIN/Código sea de máximo 4 caracteres alfanuméricos
       const rawPin = pin.trim();
       const cleanPin = rawPin.toUpperCase();
-      if (!/^[A-Za-z0-9]{4,6}$/.test(rawPin)) {
+      if (!/^[A-Za-z0-9]{1,4}$/.test(rawPin)) {
         await throttleDelay();
         return NextResponse.json(
-          { success: false, error: 'Formato de PIN/Código inválido. Debe contener entre 4 y 6 caracteres.' },
+          { success: false, error: 'Formato de PIN/Código inválido. Debe contener como máximo 4 caracteres alfanuméricos.' },
           { status: 400 }
         );
       }
@@ -301,7 +300,7 @@ export async function POST(request: NextRequest) {
     // Firma y cookies
     const isInitialPin = Boolean(pin && INITIAL_STAFF_PIN_VALUES.includes(pin));
     const sig = signRole(finalRole, finalUid);
-    const response = NextResponse.json({ success: true, role: finalRole, uid: finalUid, requirePinChange: isInitialPin });
+    const response = NextResponse.json({ success: true, role: finalRole, uid: finalUid, signature: sig, requirePinChange: isInitialPin });
     response.cookies.set('msj-session', finalUid, COOKIE_OPTS);
     response.cookies.set('msj-role', finalRole, COOKIE_OPTS);
     response.cookies.set('msj-role-sig', sig, COOKIE_OPTS);
