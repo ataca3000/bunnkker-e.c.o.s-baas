@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { adminDb } from '@/lib/firebase-admin';
 import crypto from 'crypto';
+import { sendMetaPurchaseEvent } from '@/lib/meta-conversions';
 
 // Initialize Stripe with secret key
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_mock', {
@@ -74,6 +75,17 @@ export async function POST(req: NextRequest) {
       });
 
       console.log(`[Stripe Webhook] Inquilino ${tenantId} provisionado. Serial generado: ${code}`);
+
+      try {
+        await sendMetaPurchaseEvent({
+          email: customerEmail,
+          value: (session.amount_total || 0) / 100,
+          currency: session.currency || 'USD',
+          eventId: session.id,
+        });
+      } catch (metaError) {
+        console.error('[Meta CAPI] No se pudo registrar Purchase:', metaError);
+      }
     }
 
     // Handle successful monthly renewals
