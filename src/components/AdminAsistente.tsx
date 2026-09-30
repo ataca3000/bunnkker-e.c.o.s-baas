@@ -40,7 +40,7 @@ export default function AdminAsistente() {
             setMessages([
                 { 
                     role: 'assistant', 
-                    content: `¡Hola Jefe! Soy Leon, tu Asistente Gerente 24/7. El sistema está operando con normalidad. En la versión PRO podré analizar a tus competidores y sugerirte precios con IA avanzada (Gemini). Por ahora, ¿qué métricas o alertas necesitas revisar hoy?` 
+                    content: `¡Hola Jefe! Soy Leon, tu Asistente Gerente Inteligente con IA Gemini. Estoy monitoreando en tiempo real las existencias, ventas y alertas operativas de tu sucursal. ¿Qué métricas o productos deseas revisar hoy?` 
                 }
             ]);
         } else {
@@ -125,21 +125,36 @@ export default function AdminAsistente() {
                 }
             }
             
-            // Determine Role
+            // Determine Role dynamically
             let aiRole = 'customer';
-            if (isOwner) aiRole = 'superadmin';
-            else if (profile?.role === 'admin' || profile?.role === 'marketing' || profile?.role === 'inventory' || profile?.role === 'sales') {
-                aiRole = 'staff';
+            const storedRole = typeof window !== 'undefined' ? (localStorage.getItem('user_role') || localStorage.getItem('CURRENT_ROLE')) : null;
+            const currentRole = profile?.role || storedRole;
+
+            if (isOwner || currentRole === 'admin' || currentRole === 'superadmin') {
+                aiRole = 'superadmin';
+            } else if (currentRole === 'sales') {
+                aiRole = 'sales';
+            } else if (currentRole === 'inventory' || currentRole === 'bodega') {
+                aiRole = 'inventory';
+            } else if (currentRole === 'driver' || currentRole === 'carga_descarga' || currentRole === 'patio') {
+                aiRole = 'driver';
+            } else if (currentRole === 'billing') {
+                aiRole = 'billing';
             }
 
             // Build Context
-            let contextData: any = { businessName: siteConfig?.businessName || 'BUNKKER E.C.O.S.' };
+            let contextData: any = { businessName: siteConfig?.businessName || 'BUNKKER E.C.O.s.' };
             if (aiRole === 'superadmin') {
                 contextData.products = products?.map((p:any) => ({name: p.name, stock: p.stock, price: p.price}));
                 contextData.ordersCount = orders?.length;
                 contextData.activeModules = (siteConfig as any)?.activeModules;
-            } else if (aiRole === 'staff') {
-                contextData.products = products?.map((p:any) => ({name: p.name, location: p.location || 'Bodega General', stock: p.stock}));
+            } else if (aiRole === 'sales') {
+                contextData.products = products?.map((p:any) => ({name: p.name, price: p.price, stock: p.stock}));
+            } else if (aiRole === 'inventory') {
+                contextData.products = products?.map((p:any) => ({name: p.name, location: p.location || 'Bodega Principal', stock: p.stock}));
+            } else if (aiRole === 'driver') {
+                contextData.ordersCount = orders?.length;
+                contextData.products = products?.map((p:any) => ({name: p.name, stock: p.stock}));
             } else {
                 contextData.products = products?.filter((p:any) => p.stock > 0).map((p:any) => ({name: p.name, price: p.price, desc: p.description}));
             }
@@ -174,9 +189,13 @@ export default function AdminAsistente() {
                 }
             }
 
+            const storedKey = typeof window !== 'undefined' ? localStorage.getItem('bunkker_gemini_key') : null;
             const response = await fetch('/api/ai/chat', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    ...(storedKey ? { 'x-gemini-key': storedKey } : {})
+                },
                 body: JSON.stringify({
                     messages: messages.concat([{ role: 'user', content: userMsg }]),
                     contextData,
@@ -187,10 +206,9 @@ export default function AdminAsistente() {
             const data = await response.json();
             
             if (!response.ok) {
-                // Si la API falla (ej. sin KEY), caemos en un fallback elegante.
                 setMessages(prev => [...prev, { 
                     role: 'assistant', 
-                    content: `Modo Local Activo: ${data.error || 'No se pudo contactar a Gemini'}. \n(Para habilitar IA avanzada, añade GEMINI_API_KEY en tu .env o Setup).` 
+                    content: data.reply || "Modo local activo. ¿Qué productos o precios deseas consultar en el catálogo?" 
                 }]);
             } else {
                 setMessages(prev => [...prev, { role: 'assistant', content: data.reply }]);
