@@ -12,7 +12,7 @@
     "db:migrate": "prisma migrate deploy",
     "db:seed": "node prisma/seed.js",
     "guard:build": "node scripts/build-guard.js",
-    "start": "concurrently \"node scripts/restore-node-modules.js && node .next/standalone/server.js\" \"node radio-server.js\"",
+    "start": "concurrently \"node scripts/restore-node-modules.js && cross-env HOSTNAME=0.0.0.0 PORT=3000 node .next/standalone/server.js\" \"node radio-server.js\"",
     "lint": "eslint .",
     "dev:electron": "electron .",
     "build:web": "node ./scripts/run-next-build.js web nube",

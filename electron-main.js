@@ -497,11 +497,26 @@ ipcMain.handle('scan-for-vault-drive', async () => {
             }
         });
     });
-});
+const ensureFirewallRules = () => {
+    if (process.platform !== 'win32') return;
+    try {
+        const { exec } = require('child_process');
+        exec('netsh advfirewall firewall show rule name="BUNKKER ERP LAN"', (err, stdout) => {
+            if (err || !stdout || !stdout.includes('BUNKKER ERP LAN')) {
+                exec('netsh advfirewall firewall add rule name="BUNKKER ERP LAN" dir=in action=allow protocol=TCP localport=3000,3001,3002 profile=any', (addErr) => {
+                    if (!addErr) {
+                        console.log('[Firewall] ✅ Regla de Firewall para LAN configurada en puertos 3000, 3001 y 3002.');
+                    }
+                });
+            }
+        });
+    } catch {}
+};
 
 // ─── App lifecycle ───────────────────────────────────────────────────────────
 app.whenReady().then(async () => {
     try {
+        ensureFirewallRules();
         const urlHost = await createServer();
         createWindow(urlHost);
         // setupAutoUpdater(); // Desactivado por solicitud del usuario para evitar notificaciones molestas de actualización

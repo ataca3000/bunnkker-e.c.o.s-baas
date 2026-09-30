@@ -65,14 +65,25 @@ function verifyRoleSignature(role, uid, signature) {
 // ═════════════════════════════════════════════════════════════════════════════
 // 1. PUERTO 3001: SINCRONIZACIÓN DE DATOS E INVENTARIO FLOATING (PUBLIC / POS)
 // ═════════════════════════════════════════════════════════════════════════════
-const SYNC_PORT = 3001;
-const syncIo = new Server(SYNC_PORT, {
-  // S1.5 FIX: CORS restrictivo — solo acepta el origen configurado.
-  // En LAN local, configurar SYNC_ALLOWED_ORIGIN='http://localhost:3000'
-  // En nube, configurar con la URL del tenant específico.
+const SYNC_PORT = Number(process.env.SYNC_PORT || 3001);
+const syncHttp = createServer((req, res) => {
+  if (req.url === '/health' || req.url === '/api/health') {
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+    res.end(JSON.stringify({ ok: true, service: 'bunkker-sync-bridge', syncPort: SYNC_PORT, timestamp: new Date().toISOString() }));
+    return;
+  }
+  res.writeHead(404);
+  res.end('Not found');
+});
+
+const syncIo = new Server(syncHttp, {
   cors: {
-    origin: process.env.SYNC_ALLOWED_ORIGIN || 'http://localhost:3000',
-    methods: ["GET", "POST"]
+    origin: (origin, callback) => {
+      // Permitir cualquier conexión local o LAN (192.168.x.x, 10.x.x.x, etc.)
+      callback(null, true);
+    },
+    methods: ["GET", "POST"],
+    credentials: true
   },
   maxHttpBufferSize: 1e6
 });
@@ -226,7 +237,10 @@ syncIo.on('connection', (socket) => {
   });
 });
 
-console.log(`🟢 Servidor de Sincronización de Datos en ejecución en Puerto ${SYNC_PORT}`);
+syncHttp.listen(SYNC_PORT, '0.0.0.0', () => {
+  console.log(`🟢 Servidor de Sincronización de Datos en ejecución en Puerto ${SYNC_PORT} (0.0.0.0 LAN abierta)`);
+  console.log(`🩺 Health check disponible en http://<IP_DEL_PC>:${SYNC_PORT}/health`);
+});
 
 
 // ═════════════════════════════════════════════════════════════════════════════
