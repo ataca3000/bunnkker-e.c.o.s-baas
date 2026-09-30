@@ -87,8 +87,7 @@ export async function POST(request: NextRequest) {
         // SEGURIDAD FAIL-CLOSED: Validar sesión activa directamente en SQLite (no solo la firma HMAC)
         const staffSession = await validateActiveDbUser(request);
         let authenticatedCustomerId: string | null = null;
-        let authorizedTenantId = 'default';
-        let staffUser: { name: string; tenantId?: string | null } | null = null;
+        let staffUser: { name: string } | null = null;
 
         if (staffSession.ok) {
             if (!['superadmin', 'admin', 'sales', 'billing', 'inventory'].includes(staffSession.role)) {
@@ -96,10 +95,8 @@ export async function POST(request: NextRequest) {
             }
             staffUser = await prisma.user.findUnique({
                 where: { id: staffSession.uid },
-                select: { name: true, tenantId: true }
+                select: { name: true }
             });
-            // AISLAMIENTO DE TENANT: Se deriva de la identidad autorizada en la base de datos, no del header del cliente
-            authorizedTenantId = staffUser?.tenantId || 'default';
         } else {
             const customerToken = request.cookies.get('admincom_session')?.value;
             if (!customerToken) return staffSession.response;
@@ -115,7 +112,9 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        const tenantId = authorizedTenantId;
+        // AISLAMIENTO DE TENANT: Se deriva de la configuración soberana en base de datos, no de headers arbitrarios
+        const appConfig = await prisma.appConfig.findUnique({ where: { id: 'global' } }).catch(() => null);
+        const tenantId = appConfig?.tenantId || 'default';
         const body = await request.json();
         const orderId = body.orderId || body.id;
         const total = body.total;
@@ -150,9 +149,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ success: true, data: existingOrder, duplicated: true });
         }
 
-        const staffUser = staffSession.ok
-            ? await prisma.user.findUnique({ where: { id: staffSession.uid }, select: { name: true } })
-            : null;
+        // staffUser ya fue cargado previamente para derivar tenantId
         const actorId = authenticatedCustomerId || (staffSession.ok ? staffSession.uid : 'SYSTEM');
         const actorName = authenticatedCustomerId ? (clientData.name || 'Cliente') : (staffUser?.name || 'Personal');
         const actorRole = authenticatedCustomerId ? 'customer' : (staffSession.ok ? staffSession.role : 'system');
