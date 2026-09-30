@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { jwtVerify } from 'jose';
 
-import { validateApiSession } from '@/lib/apiAuth';
+import { validateApiSession, validateActiveDbUser } from '@/lib/apiAuth';
 import bunkkerConfig from '../../../../bunkker.config.json';
 const CUSTOMER_JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'super_secret_local_key');
 
@@ -84,13 +84,22 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
     try {
-        const staffSession = validateApiSession(request);
+        // SEGURIDAD FAIL-CLOSED: Validar sesión activa directamente en SQLite (no solo la firma HMAC)
+        const staffSession = await validateActiveDbUser(request);
         let authenticatedCustomerId: string | null = null;
+        let authorizedTenantId = 'default';
+        let staffUser: { name: string; tenantId?: string | null } | null = null;
 
         if (staffSession.ok) {
             if (!['superadmin', 'admin', 'sales', 'billing', 'inventory'].includes(staffSession.role)) {
                 return NextResponse.json({ success: false, error: 'No tienes permiso para crear pedidos.' }, { status: 403 });
             }
+            staffUser = await prisma.user.findUnique({
+                where: { id: staffSession.uid },
+                select: { name: true, tenantId: true }
+            });
+            // AISLAMIENTO DE TENANT: Se deriva de la identidad autorizada en la base de datos, no del header del cliente
+            authorizedTenantId = staffUser?.tenantId || 'default';
         } else {
             const customerToken = request.cookies.get('admincom_session')?.value;
             if (!customerToken) return staffSession.response;
@@ -106,7 +115,7 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        const tenantId = request.headers.get('x-tenant-id') || 'default-local';
+        const tenantId = authorizedTenantId;
         const body = await request.json();
         const orderId = body.orderId || body.id;
         const total = body.total;
@@ -283,9 +292,12 @@ export async function POST(request: NextRequest) {
 
     } catch (error: any) {
         // IDEMPOTENCIA CONCURRENTE EXTREMA: Si dos peticiones simultáneas con el mismo orderId
-        // superaron el findUnique previo, SQLite Serializable bloquea la escritura y la segunda
-        // transacción colisiona con el Primary Key (P2002), haciendo ROLLBACK automático del stock.
-        if (error.code === 'P2002' || error.message?.includes('Unique constraint failed')) {
+        // IDEMPOTENCIA Y CONFLICTOS CONCURRENTES:
+        // Si dos peticiones simultáneas con el mismo orderId superaron el findUnique previo,
+        // o si SQLite reporta colisión de Primary Key (P2002) o conflicto de serialización (P2034 / SQLITE_BUSY),
+        // SQLite hace ROLLBACK de la transacción que no alcanzó a escribir.
+        // Verificamos si la orden ya existe para retornar 200 OK idempotente.
+        if (error.code === 'P2002' || error.code === 'P2034' || error.message?.includes('Unique constraint failed') || error.message?.includes('conflict')) {
             try {
                 const bodyJson = await request.clone().json().catch(() => ({}));
                 const collisionId = bodyJson.orderId || bodyJson.id;
@@ -299,7 +311,9 @@ export async function POST(request: NextRequest) {
                         return NextResponse.json({ success: true, data: existing, duplicated: true });
                     }
                 }
-            } catch {}
+            } catch (collisionLookupError) {
+                console.error('[IDEMPOTENCY] Error recuperando orden tras colisión concurrente:', collisionLookupError);
+            }
         }
         console.error(`[ACID Transaction Error]: ${error.message}`);
         return NextResponse.json({ error: error.message }, { status: 500 });
