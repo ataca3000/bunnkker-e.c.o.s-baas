@@ -175,9 +175,10 @@ export default function SalesDashboard() {
         const socket = (window as any).__inventorySocket;
         let reservationHeld = false;
 
-        // Si es delivery, creamos una orden para repartidor (READY_TO_SHIP / pending_confirmation)
-        // En este caso al pagarlo en caja, la orden queda "READY_TO_SHIP" lista para patio
-        const finalStatus = orderType === 'delivery' ? 'READY_TO_SHIP' : 'completed';
+        // La venta ya está cobrada, pero todavía debe pasar por almacén.
+        // "paid" es el estado común que habilita la preparación y después
+        // deriva a pickup o reparto según deliveryType.
+        const finalStatus = 'paid';
         const cName = orderType === 'delivery' ? deliveryInfo?.customerName : 'Cliente Mostrador';
         
         const orderPayload = {
@@ -237,8 +238,8 @@ export default function SalesDashboard() {
                     total: posTotal,
                     paymentMethod: 'cash',
                     status: finalStatus,
-                    deliveryType: orderType === 'delivery' ? 'DELIVERY' : 'LOCAL',
-                    deliveryMethod: orderType === 'delivery' ? 'repartidor' : 'piso',
+                    deliveryType: orderType === 'delivery' ? 'DELIVERY' : 'PICKUP',
+                    deliveryMethod: orderType === 'delivery' ? 'repartidor' : 'pickup',
                     vendedorId: profile?.uid || 'LOCAL',
                     vendedorName: profile?.displayName || 'Cajero',
                     confirmedAt: orderDate,
