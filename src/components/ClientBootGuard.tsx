@@ -14,6 +14,8 @@ export default function ClientBootGuard({ children }: { children: React.ReactNod
     const localTenant = localStorage.getItem("bunkker_tenant_id");
 
     // Rutas públicas que no requieren redirección obligatoria de primer arranque
+    // DESHABILITADO: El cliente solicitó remover la creación de instancias con Firebase
+    /*
     const isAllowedWithoutBoot =
       pathname.startsWith("/register-tenant") ||
       pathname.startsWith("/login") ||
@@ -22,12 +24,13 @@ export default function ClientBootGuard({ children }: { children: React.ReactNod
       pathname.startsWith("/t/") ||
       pathname.startsWith("/api/");
 
-    // Si entra al dashboard o punto de venta en el .exe sin un tenant guardado, enviar a registro
     if (!localTenant && !isAllowedWithoutBoot && pathname.startsWith("/dashboard")) {
       router.push("/register-tenant");
     } else {
       setChecking(false);
     }
+    */
+    setChecking(false);
   }, [pathname, router]);
 
   if (checking) {
