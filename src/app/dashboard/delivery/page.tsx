@@ -219,6 +219,39 @@ export default function DeliveryDashboard() {
                 <div className="flex-1 overflow-y-auto w-full h-full flex flex-col">
                     {currentView === 'pool' && <OrderPool orders={availableOrders} onClaim={handleClaim} loading={false} driverLocation={driverLocation} />}
                     {currentView === 'route' && <MyRoute orders={currentRoute} onStartDelivery={startDelivery} onBackToPool={() => setCurrentView('pool')} />}
+                    {currentView === 'map' && (
+                        <div className="w-full h-full min-h-[450px] rounded-3xl overflow-hidden border border-cyan-500/20 shadow-2xl relative">
+                            {typeof window !== 'undefined' && (
+                                <React.Suspense fallback={<div className="p-8 text-center text-slate-400">Cargando Mapa GPS...</div>}>
+                                    {(() => {
+                                        const AdvancedRouteMap = require('@/components/AdvancedRouteMap').default;
+                                        const routeMarkers = currentRoute.map(o => ({
+                                            id: o.id,
+                                            lat: o.lat || 19.4326,
+                                            lng: o.lng || -99.1332,
+                                            title: `Orden ${o.id.slice(-6)} - ${o.customerName}`,
+                                            description: `${o.address} | Total: $${o.total}`,
+                                            isDelivered: o.status === 'completed'
+                                        }));
+                                        const centerPos: [number, number] = driverLocation 
+                                            ? [driverLocation.lat, driverLocation.lng] 
+                                            : [19.4326, -99.1332];
+
+                                        return (
+                                            <AdvancedRouteMap 
+                                                mode="route"
+                                                center={centerPos}
+                                                zoom={13}
+                                                markers={routeMarkers}
+                                                warehouseLocation={centerPos}
+                                                onMarkerClick={(m: any) => startDelivery(m.id)}
+                                            />
+                                        );
+                                    })()}
+                                </React.Suspense>
+                            )}
+                        </div>
+                    )}
                     {currentView === 'delivery' && activeDeliveryId && (
                         <DeliveryView 
                             order={orders.find(o => o.id === activeDeliveryId)!} 

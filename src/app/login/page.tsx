@@ -132,8 +132,19 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (res.ok && data.success) {
-        // Redirigir al dashboard según rol
-        window.location.href = '/dashboard';
+        // Redirigir al dashboard según el rol del trabajador/PIN
+        const roleRedirects: Record<string, string> = {
+          superadmin: '/dashboard',
+          admin: '/dashboard',
+          sales: '/dashboard/sales',
+          inventory: '/dashboard/inventory',
+          marketing: '/dashboard/design',
+          driver: '/dashboard/delivery',
+          carga_descarga: '/dashboard/patio',
+          pickup: '/dashboard/pickup'
+        };
+        const targetUrl = roleRedirects[data.role] || '/dashboard';
+        window.location.href = targetUrl;
       } else {
         setError(data.error || 'PIN de acceso denegado.');
       }

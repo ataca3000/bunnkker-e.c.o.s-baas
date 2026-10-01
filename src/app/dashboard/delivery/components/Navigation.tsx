@@ -30,7 +30,7 @@ export default function Navigation({
           className={cn("flex flex-col items-center p-2 text-slate-400 hover:text-slate-200 transition-colors relative", currentView === 'route' && "text-sky-400 drop-shadow-[0_0_8px_rgba(56,189,248,0.5)]")}
         >
           <div className="relative">
-             <Map size={24} />
+             <PackageSearch size={24} />
              {routeCount > 0 && (
                 <span className="absolute -top-2 -right-2 bg-sky-500 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full font-bold shadow-[0_0_10px_rgba(56,189,248,0.6)]">
                   {routeCount}
@@ -38,6 +38,14 @@ export default function Navigation({
              )}
           </div>
           <span className="text-[10px] font-medium mt-1 uppercase tracking-wider">Mi Ruta</span>
+        </button>
+
+        <button 
+          onClick={() => onViewChange('map')}
+          className={cn("flex flex-col items-center p-2 text-slate-400 hover:text-slate-200 transition-colors relative", currentView === 'map' && "text-cyan-400 drop-shadow-[0_0_8px_rgba(6,182,212,0.6)]")}
+        >
+          <Map size={24} />
+          <span className="text-[10px] font-medium mt-1 uppercase tracking-wider">Mapa GPS</span>
         </button>
 
         {activeDeliveryId && (

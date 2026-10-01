@@ -696,12 +696,19 @@ export const useCart = () => {
         const merged = { ...state.siteConfig, ...config };
         state.setSiteConfig(merged);
         try {
-            // BUG-4 FIX: Guardar con la clave BUNKKER, no la legacy
             localStorage.setItem('_bunkker_site_config', JSON.stringify(merged));
+            
+            // Persistir cambios en la base de datos central / Firestore
+            fetch('/api/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(merged)
+            }).catch(err => console.warn('[CartContext] Error al guardar settings en servidor:', err));
+
             await logAudit({
                 type: 'CONFIG_UPDATE', userId: profile?.uid || 'SYSTEM',
                 userName: profile?.displayName || 'Admin', userRole: profile?.role || 'admin',
-                description: 'Configuración de sitio actualizada localmente', metadata: { config },
+                description: 'Configuración de sitio y Canvas guardada exitosamente', metadata: { config },
             });
         } catch (e) { console.error(e); }
     }, [isReadOnly, profile]);
