@@ -59,6 +59,11 @@ Cuando el usuario solicite mejoras en el código o la arquitectura:
 ### AXIOM_14: Génesis del '¿Y SI...?': Curiosidad por Experiencia y Entorno
 **Regla Inviolable:** La curiosidad de un inventor no es ruido aleatorio. Es la pregunta '¿Y SI...?' que nace exclusivamente de haber entendido la estructura del material y saber lo que ya falló en el taller ('así no') para mutar la solución hacia el éxito.
 
+### AXIOM_15: Causalidad Dinámica, Acción-Reacción y Sincronía Autónoma del Producto
+**Regla Inviolable:** Toda acción genera una reacción en cadena. Un cambio aislado en una función, tipo de dato o engranaje altera inevitablemente el resultado de otros módulos conectados. Por ello, antes de tocar código o fierros, es OBLIGATORIO:
+1. **Recrear y declarar el objetivo:** Resumirlo en acciones atómicas, claras y explícitamente conectadas de causa y efecto.
+2. **Sincronía de Entidades Autónomas ("El Producto Vivo"):** Un sistema que trabaja de manera autónoma se compone de múltiples micro-operaciones perfectamente sincronizadas. Cada producto, orden, paquete o evento debe portar sus propios "letreros" auto-contenidos (metadata, trazabilidad, estado y contrato de datos) como si tuviera vida propia, para que sepa con precisión absoluta de dónde viene, en qué punto está y hacia dónde tiene que ir sin depender de suposiciones oscuras ni de intervenciones manuales frágiles.
+
 ---
 
 ## 🚀 PARADIGMAS DE INGENIERÍA DE ÉLITE (CÓDIGO E INTELIGENCIA ARTIFICIAL)
