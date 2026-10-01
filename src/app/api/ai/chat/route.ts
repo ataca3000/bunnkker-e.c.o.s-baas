@@ -62,26 +62,26 @@ function generateLocalIntelligentReply(role: string, query: string, contextData:
         if (q.includes('migra') || q.includes('respaldo') || q.includes('celular') || q.includes('dispositivo')) {
             return `Para clonar o respaldar esta terminal en un nuevo celular:\n1. Ve a **/dashboard/migracion**.\n2. Muestra el código QR generado.\n3. Abre la cámara del dispositivo nuevo para restaurar todo con **Zero-Tap Restore** en un segundo.`;
         }
-        return `Hola Jefe, estoy monitoreando tu sucursal en ${bName}. El catálogo cuenta con ${products.length} productos registrados. Puedo ayudarte a auditar inventarios, verificar precios o darte alertas operativas. ¿Qué deseas revisar?`;
+        return `Hola Jefe, soy LION 🦁. Estoy monitoreando tu sucursal en ${bName}. El catálogo cuenta con ${products.length} productos registrados. Puedo ayudarte a auditar inventarios, verificar precios o darte alertas operativas. ¿Qué deseas revisar?`;
     }
 
     if (role === 'sales') {
         if (q.includes('cambio') || q.includes('cobrar') || q.includes('ticket')) {
             return `Para cobrar rápidamente:\n1. Escanea o busca los productos en el buscador superior.\n2. Agrega al carrito y presiona **Cobrar (F12 o botón)**.\n3. Ingresa el monto recibido para calcular el cambio exacto y emite el ticket físico o digital.`;
         }
-        return `¡Listo en Caja! Estoy preparado para ayudarte a consultar existencias rápidas, ubicaciones de productos o precios para agilizar la fila de cobro.`;
+        return `¡Listo en Caja! Soy LION 🦁, preparado para ayudarte a consultar existencias rápidas, ubicaciones de productos o precios para agilizar la fila de cobro.`;
     }
 
     if (role === 'inventory' || role === 'bodega') {
-        return `Asistente de Bodega activo. Tienes ${products.length} artículos en catálogo. Pregúntame por cualquier material (cemento, varilla, herramientas) para decirte cuántas piezas hay registradas y sus ubicaciones en estante.`;
+        return `Soy LION 🦁 en Bodega. Tienes ${products.length} artículos en catálogo. Pregúntame por cualquier material (cemento, varilla, herramientas) para decirte cuántas piezas hay registradas y sus ubicaciones en estante.`;
     }
 
     if (role === 'driver' || role === 'patio') {
-        return `Asistente de Logística y Patio listo. Revisa tu lista de remisiones y pedidos asignados para verificar que la carga en batea coincida antes de salir a ruta.`;
+        return `Soy LION 🦁 en Logística y Patio. Revisa tu lista de remisiones y pedidos asignados para verificar que la carga en batea coincida antes de salir a ruta.`;
     }
 
     // Default / Customer
-    return `¡Bienvenido a ${bName}! Estoy aquí para ayudarte a encontrar productos de nuestro catálogo, cotizar pedidos o resolver tus dudas. ¿Qué artículo estás buscando hoy?`;
+    return `¡Bienvenido a ${bName}! Soy LION 🦁, tu asistente virtual. Estoy aquí para ayudarte a encontrar productos de nuestro catálogo, cotizar pedidos o resolver tus dudas. ¿Qué artículo estás buscando hoy?`;
 }
 
 export async function POST(req: NextRequest) {
@@ -103,15 +103,15 @@ export async function POST(req: NextRequest) {
             try {
                 let systemPrompt = '';
                 if (effectiveRole === 'superadmin' || effectiveRole === 'admin') {
-                    systemPrompt = `Eres Leon, el Asistente Gerencial de BUNKKER E.C.O.S. para la empresa "${contextData.businessName || 'BUNKKER'}". Tu misión es brindar asesoría gerencial ejecutiva, auditar inventarios, alertar sobre stock crítico y analizar finanzas. Responde en español con estilo conciso, profesional y con mentalidad de dueño de negocio. Contexto de datos disponibles: ${JSON.stringify(contextData)}`;
+                    systemPrompt = `Eres LION 🦁, el Gerente Inteligente de la plataforma BUNKKER E.C.O.S para "${contextData.businessName || 'BUNKKER'}". Tu misión es personalizar y coordinar la operación, auditar inventarios en tiempo real, alertar sobre stock crítico y analizar finanzas. Responde en español con estilo conciso, profesional y con mentalidad de dueño de negocio. Contexto de datos disponibles: ${JSON.stringify(contextData)}`;
                 } else if (effectiveRole === 'sales') {
-                    systemPrompt = `Eres el Asistente de Caja y Punto de Venta de BUNKKER E.C.O.S. Tu objetivo es ayudar al cajero a resolver dudas de precios, existencias y agilizar el cobro a clientes. Contexto actual: ${JSON.stringify(contextData)}`;
+                    systemPrompt = `Eres LION 🦁, el Asistente de Caja y Punto de Venta de BUNKKER E.C.O.S. Tu objetivo es ayudar al cajero a resolver dudas de precios, existencias y agilizar el cobro a clientes. Contexto actual: ${JSON.stringify(contextData)}`;
                 } else if (effectiveRole === 'inventory' || effectiveRole === 'bodega') {
-                    systemPrompt = `Eres el Asistente de Almacén y Bodega de BUNKKER E.C.O.S. Ayudas a ubicar materiales, verificar existencias físicas, recepciones de proveedores y mermas. Contexto: ${JSON.stringify(contextData)}`;
+                    systemPrompt = `Eres LION 🦁, el Asistente de Almacén y Bodega de BUNKKER E.C.O.S. Ayudas a ubicar materiales, verificar existencias físicas, recepciones de proveedores y mermas. Contexto: ${JSON.stringify(contextData)}`;
                 } else if (effectiveRole === 'driver' || effectiveRole === 'patio') {
-                    systemPrompt = `Eres el Asistente de Patio y Reparto de BUNKKER E.C.O.S. Asistes a los choferes y despachadores a validar cargas, remisiones y entregas. Contexto: ${JSON.stringify(contextData)}`;
+                    systemPrompt = `Eres LION 🦁, el Asistente de Patio y Reparto de BUNKKER E.C.O.S. Asistes a los choferes y despachadores a validar cargas, remisiones y entregas. Contexto: ${JSON.stringify(contextData)}`;
                 } else {
-                    systemPrompt = `Eres el Asesor Virtual de la tienda "${contextData.businessName || 'BUNKKER'}". Guía amablemente a los clientes para encontrar productos, conocer precios y realizar sus compras. Catálogo disponible: ${JSON.stringify(contextData)}`;
+                    systemPrompt = `Eres LION 🦁, el Asistente Virtual de BUNKKER E.C.O.S para la tienda "${contextData.businessName || 'BUNKKER'}". Guía amablemente a los clientes para encontrar productos, conocer precios y realizar sus compras. Catálogo disponible: ${JSON.stringify(contextData)}`;
                 }
 
                 const formattedContents = [

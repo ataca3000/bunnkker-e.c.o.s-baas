@@ -22,7 +22,7 @@ export const defaultSiteConfig: SiteConfig = {
     pagesData: {
         inicio: {
             layout: [
-                { id: 'hero', type: 'hero', order: 0, visible: true, settings: { fontSize: 48, alignment: 'center', titleText: 'Tu Negocio Digital', subtitleText: 'Entra al panel de configuración para personalizar este texto e imagen.', imageUrl: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=1920&auto=format&fit=crop', backgroundColor: '#0f172a' } },
+                { id: 'hero', type: 'hero', order: 0, visible: true, settings: { fontSize: 48, alignment: 'center', titleText: 'BUNKKER E.C.O.S & LION', subtitleText: 'Plataforma soberana y gerente inteligente para tu operación física y digital.', imageUrl: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=1920&auto=format&fit=crop', backgroundColor: '#0f172a' } },
                 { id: 'catalog', type: 'catalog', order: 1, visible: true, settings: { columns: 3, categoryFilter: 'Catálogo', showRatings: false, borderRadius: 12 } },
             ],
             canvasLayers: []

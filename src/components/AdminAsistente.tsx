@@ -40,14 +40,14 @@ export default function AdminAsistente() {
             setMessages([
                 { 
                     role: 'assistant', 
-                    content: `¡Hola Jefe! Soy Leon, tu Asistente Gerente Inteligente con IA Gemini. Estoy monitoreando en tiempo real las existencias, ventas y alertas operativas de tu sucursal. ¿Qué métricas o productos deseas revisar hoy?` 
+                    content: `¡Hola Jefe! Soy LION 🦁, tu Gerente Inteligente en BUNKKER E.C.O.S. Monitoreo existencias, ventas y coordino tu operación en tiempo real. ¿Qué métricas o productos deseas revisar hoy?` 
                 }
             ]);
         } else {
             setMessages([
                 { 
                     role: 'assistant', 
-                    content: `¡Hola! Soy Leon, el asistente virtual de ${siteConfig.businessName || 'tu negocio'}. ¿En qué te puedo asesorar hoy respecto a nuestros productos, cotizaciones o soporte?` 
+                    content: `¡Hola! Soy LION 🦁, el asistente virtual de ${siteConfig.businessName || 'BUNKKER E.C.O.S'}. ¿En qué te puedo asesorar hoy respecto a nuestros productos, cotizaciones o pedidos?` 
                 }
             ]);
         }
@@ -260,7 +260,7 @@ export default function AdminAsistente() {
                     className={`${styles.fab} ${isOpen ? styles.fabHidden : ''}`}
                     style={{ position: 'relative', right: 'auto', bottom: 'auto', background: isOwner ? '#0f172a' : undefined }}
                 >
-                    {isOwner ? <Sparkles size={30} color="#38bdf8" /> : <Bot size={30} />}
+                    <span style={{ fontSize: '28px', lineHeight: 1 }}>🦁</span>
                 </motion.button>
             </div>
 
@@ -274,14 +274,15 @@ export default function AdminAsistente() {
                     >
                         <div className={styles.chatHeader} style={isOwner ? { background: '#0f172a' } : {}}>
                             <div className={styles.chatHeaderTitle}>
-                                {isOwner ? <Sparkles size={20} color="#38bdf8" /> : <Sparkles size={20} color="#FFCB05" />}
-                                <span className={styles.chatHeaderLabel}>{isOwner ? 'LEON - GERENTE AI (PRO)' : 'LEON - ASISTENTE VIRTUAL'}</span>
+                                <span style={{ fontSize: '22px' }}>🦁</span>
+                                <span className={styles.chatHeaderLabel}>{isOwner ? 'LION — GERENTE INTELIGENTE' : 'LION — ASISTENTE VIRTUAL'}</span>
                             </div>
                             <X size={20} className={styles.chatClose} onClick={() => setIsOpen(false)} />
                         </div>
 
-                        <div className={styles.chatWarning} style={isOwner ? { background: '#fdf4ff', color: '#a21caf' } : {}}>
-                            <AlertTriangle size={12} /> {isOwner ? 'Actualiza a PRO para IA Autónoma (Gemini) y Análisis de Competencia.' : `Soporte inteligente activo para ${siteConfig.businessName || 'la tienda'}.`}
+                        <div className={styles.chatWarning} style={{ background: 'rgba(14, 165, 233, 0.08)', color: '#0284c7', borderBottom: '1px solid rgba(14, 165, 233, 0.15)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <Sparkles size={13} className="text-sky-500 animate-pulse flex-shrink-0" />
+                            <span><strong>BUNKKER E.C.O.S & LION:</strong> Gerente que personaliza y coordina tu operación.</span>
                         </div>
 
                         <div ref={scrollRef} className={styles.chatBody}>

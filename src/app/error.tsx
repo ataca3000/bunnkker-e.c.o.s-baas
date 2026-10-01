@@ -27,7 +27,7 @@ export default function GlobalError({
           <ShieldAlert size={40} />
         </div>
         
-        <h2 className="text-2xl font-black mb-3 tracking-wide">El Camaleón dice: ¡Ups!</h2>
+        <h2 className="text-2xl font-black mb-3 tracking-wide">LION dice: ¡Ups!</h2>
         <p className="text-slate-400 text-sm leading-relaxed mb-8">
           Algo interrumpió el proceso. No te preocupes, el sistema BUNKKER está diseñado para recuperarse sin perder tus datos locales.
         </p>

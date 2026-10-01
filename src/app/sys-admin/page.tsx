@@ -146,7 +146,7 @@ export default function SysAdmin() {
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `camaleon_backup_${Date.now()}.json`;
+                a.download = `bunkker_backup_${Date.now()}.json`;
                 document.body.appendChild(a);
                 a.click();
                 a.remove();

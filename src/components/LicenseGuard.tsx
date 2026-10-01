@@ -104,7 +104,7 @@ export default function LicenseGuard({ children }: { children: React.ReactNode }
                     
                     <h2 className={styles.title}>Licencia Requerida</h2>
                     <p className={styles.subtitle}>
-                        El periodo de uso de <strong>Camaleón Topics</strong> ha caducado. 
+                        El periodo de uso de <strong>BUNKKER E.C.O.S & LION</strong> ha caducado. 
                         Adquiere tu suscripción mensual para continuar operando.
                     </p>
 
@@ -164,7 +164,7 @@ export default function LicenseGuard({ children }: { children: React.ReactNode }
                     )}
 
                     <div className={styles.footerText}>
-                        Camaleón Topics — brecha system mexico
+                        BUNKKER E.C.O.S & LION — Plataforma y Gerente Autónomo
                     </div>
                 </div>
             </div>
@@ -181,7 +181,7 @@ export default function LicenseGuard({ children }: { children: React.ReactNode }
                     <div className="flex items-center gap-2">
                         <Clock size={14} className="animate-spin-slow" />
                         <span>
-                            <strong>Periodo de Prueba de Camaleón Topics:</strong> Te quedan <strong>{license.daysRemaining} días</strong> de prueba. Adquiere tu suscripción a <strong>luishalo69@gmail.com</strong>.
+                            <strong>Periodo de Prueba de BUNKKER E.C.O.S & LION:</strong> Te quedan <strong>{license.daysRemaining} días</strong> de prueba. Adquiere tu suscripción a <strong>luishalo69@gmail.com</strong>.
                         </span>
                     </div>
                     <button 

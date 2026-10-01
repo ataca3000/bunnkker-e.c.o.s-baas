@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
             status: 200,
             headers: {
                 'Content-Type': 'application/json',
-                'Content-Disposition': `attachment; filename="camaleon_backup_${Date.now()}.json"`
+                'Content-Disposition': `attachment; filename="bunkker_backup_${Date.now()}.json"`
             }
         });
     } catch (error: any) {
