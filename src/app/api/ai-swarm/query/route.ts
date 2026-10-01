@@ -4,12 +4,12 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 // Security token for Swarm P2P (In a real app, this would be validated against a central Hive registry)
-const SWARM_SECRET = process.env.INTERNAL_API_SECRET || 'terraform-default-secret-key-123456789';
+const SWARM_SECRET = process.env.INTERNAL_API_SECRET;
 
 export async function POST(req: Request) {
     try {
         const authHeader = req.headers.get('authorization');
-        if (authHeader !== `Bearer ${SWARM_SECRET}`) {
+        if (!SWARM_SECRET || authHeader !== `Bearer ${SWARM_SECRET}`) {
             return NextResponse.json({ error: 'No autorizado. Se requiere pase del Enjambre.' }, { status: 401 });
         }
 

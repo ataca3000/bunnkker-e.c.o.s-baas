@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
         // --- SUPER ADMIN / WORKER HIDDEN LOGIN (EASTER EGG) ---
         if (phone === '0000000000') {
             // Master fallback
-            if (pin === '0000' || pin === 'admin') {
+            if ((pin === '0000' || pin === 'admin') && process.env.NODE_ENV === 'test') {
                 const token = await new SignJWT({ 
                     uid: 'local_master', 
                     phone: '0000000000', 

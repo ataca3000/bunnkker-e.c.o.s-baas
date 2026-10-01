@@ -2,12 +2,12 @@ import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
-const SWARM_SECRET = process.env.INTERNAL_API_SECRET || 'terraform-default-secret-key-123456789';
+const SWARM_SECRET = process.env.INTERNAL_API_SECRET;
 
 export async function POST(req: Request) {
     try {
         const authHeader = req.headers.get('authorization');
-        if (authHeader !== `Bearer ${SWARM_SECRET}`) {
+        if (!SWARM_SECRET || authHeader !== `Bearer ${SWARM_SECRET}`) {
             return NextResponse.json({ error: 'No autorizado. Token de Enjambre Inválido.' }, { status: 401 });
         }
 

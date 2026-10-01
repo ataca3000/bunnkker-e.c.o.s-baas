@@ -20,16 +20,14 @@ if (!/^\d{4}-\d{2}-\d{2}$/.test(expDateStr)) {
     process.exit(1);
 }
 
+const crypto = require('crypto');
+
 function generatePinForHardware(mid, dateStr) {
     const salt = "terraform-secret-salt-2026";
     const input = `${mid}-${dateStr}-${salt}`;
-    let hash = 0;
-    for (let i = 0; i < input.length; i++) {
-        const char = input.charCodeAt(i);
-        hash = ((hash << 5) - hash) + char;
-        hash = hash & hash; // Convert to 32bit integer
-    }
-    return String(Math.abs(hash) % 1000000).padStart(6, '0');
+    const hashHex = crypto.createHmac('sha256', salt).update(input).digest('hex');
+    const hashNum = parseInt(hashHex.slice(0, 8), 16);
+    return String(Math.abs(hashNum) % 1000000).padStart(6, '0');
 }
 
 const pin = generatePinForHardware(machineId, expDateStr);
