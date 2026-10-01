@@ -16,7 +16,7 @@ export interface CheckoutFormData {
     lng: number;
     pickupTime: string;
     tip: number;
-    deliveryMethod: 'tienda' | 'piso' | 'pickup' | 'repartidor';
+    deliveryMethod: 'tienda' | 'piso' | 'pickup' | 'patio' | 'repartidor';
     paymentMethod: string;
     rfc: string;
     regimenFiscal: string;
@@ -71,8 +71,8 @@ export function CheckoutForm({ formData, onChange, userRole, onClose, isLoggedIn
                         Entrega
                     </label>
                     <div style={{ display: 'flex', gap: '5px' }}>
-                        {(['piso', 'pickup', 'repartidor'] as const).map(method => {
-                            const labels: Record<string, string> = { piso: '🏬 En Piso', pickup: '📦 Pick Up', repartidor: '🛵 Domicilio' };
+                        {(['piso', 'patio', 'repartidor'] as const).map(method => {
+                            const labels: Record<string, string> = { piso: '📦 Piso/Caja', patio: '🏗️ Carga/Patio', repartidor: '🛵 Repartidor' };
                             return (
                                 <button
                                     key={method}

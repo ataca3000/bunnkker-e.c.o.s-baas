@@ -60,11 +60,21 @@ export async function GET() {
         }
 
         const orders = await prisma.order.findMany({
-            include: { items: true, customer: true, events: { orderBy: { createdAt: 'asc' } } },
+            include: { 
+                items: { include: { product: true } }, 
+                customer: true, 
+                events: { orderBy: { createdAt: 'asc' } } 
+            },
             orderBy: { date: 'desc' }
         });
         const data = orders.map((order) => ({
             ...order,
+            items: order.items.map((it: any) => ({
+                ...it,
+                quantity: it.cantidad,
+                price: it.precio,
+                name: it.product?.name || 'Producto'
+            })),
             deliveryMethod: order.deliveryType === 'DELIVERY'
                 ? 'repartidor'
                 : order.deliveryType === 'PATIO'

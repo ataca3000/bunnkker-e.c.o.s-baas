@@ -12,8 +12,7 @@ import { broadcastSync } from '@/lib/syncNotifier';
 
 export default function CheckoutPage() {
     const { cart, siteConfig, createOrder, products } = useCart();
-    const hasBulkItems = true;
-    const [method, setMethod] = useState<'delivery' | 'pickup'>(hasBulkItems ? 'delivery' : 'pickup');
+    const [method, setMethod] = useState<'delivery' | 'pickup' | 'patio'>('pickup');
     
     // Form States
     const [clientName, setClientName] = useState('');
@@ -155,9 +154,10 @@ export default function CheckoutPage() {
                         resolve(response);
                     });
                 });
-                
-                const reserveResult: any = await reservationPromise;
-                if (!reserveResult.success) {
+                const timeoutPromise = new Promise(resolve => setTimeout(() => resolve({ success: true, timedOut: true }), 1500));
+                const reserveResult: any = await Promise.race([reservationPromise, timeoutPromise]);
+
+                if (!reserveResult?.success) {
                     toast.error(`Stock agotado para algunos productos mientras comprabas. IDs: ${reserveResult.failedItems?.join(', ')}`, '❌ Sin Stock');
                     setIsProcessing(false);
                     setProcessStatus('');
@@ -169,15 +169,22 @@ export default function CheckoutPage() {
             setProcessStatus('Creando tu pedido...');
 
             // 2. Crear el Pedido (Deduce de DB)
+            const deliveryMethodSelected = method === 'patio' ? 'patio' : method === 'delivery' ? 'repartidor' : 'pickup';
+            const defaultAddress = method === 'patio' 
+                ? 'Retiro en Patio de Maniobras' 
+                : method === 'delivery' 
+                    ? clientAddress 
+                    : 'Entrega en Mostrador / Piso';
+
             const res = await (createOrder as any)({
                 orderId,
                 name: customerAccount.name,
                 phone: customerAccount.phone,
-                address: method === 'delivery' ? clientAddress : 'Recoge en Tienda',
+                address: defaultAddress,
                 rfc: clientRfc || undefined,
                 regimenFiscal: clientRazonSocial || undefined,
                 usoCFDI: 'G03',
-                deliveryMethod: method === 'pickup' ? 'pickup' : 'repartidor',
+                deliveryMethod: deliveryMethodSelected,
                 paymentMethod: 'pago_caja',
                 gpsCoords: clientGps
                     ? { lat: Number(clientGps.split(',')[0]), lng: Number(clientGps.split(',')[1]) }
@@ -342,29 +349,39 @@ export default function CheckoutPage() {
                             <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.2rem', marginBottom: '1.5rem', color: '#0ea5e9' }}>
                                 <Truck size={20} /> 1. MÉTODO DE ENTREGA
                             </h3>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                                <div
-                                    onClick={() => hasBulkItems && setMethod('delivery')}
-                                    style={{
-                                        padding: '1.5rem', border: method === 'delivery' ? '2px solid #0ea5e9' : '2px solid rgba(255,255,255,0.1)',
-                                        borderRadius: '8px', cursor: hasBulkItems ? 'pointer' : 'not-allowed', backgroundColor: method === 'delivery' ? 'rgba(14, 165, 233, 0.1)' : 'transparent',
-                                        opacity: hasBulkItems ? 1 : 0.5
-                                    }}
-                                >
-                                    <div style={{ fontWeight: 'bold' }}>A DOMICILIO / OBRA</div>
-                                    <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                                        'Pedido en espera; paga en caja antes de que almacén lo libere a ruta.'
-                                    </div>
-                                </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
                                 <div
                                     onClick={() => setMethod('pickup')}
                                     style={{
-                                        padding: '1.5rem', border: method === 'pickup' ? '2px solid #0ea5e9' : '2px solid rgba(255,255,255,0.1)',
-                                        borderRadius: '8px', cursor: 'pointer', backgroundColor: method === 'pickup' ? 'rgba(14, 165, 233, 0.1)' : 'transparent'
+                                        padding: '1.25rem', border: method === 'pickup' ? '2px solid #0ea5e9' : '2px solid rgba(255,255,255,0.1)',
+                                        borderRadius: '12px', cursor: 'pointer', backgroundColor: method === 'pickup' ? 'rgba(14, 165, 233, 0.12)' : 'transparent',
+                                        transition: 'all 0.2s'
                                     }}
                                 >
-                                    <div style={{ fontWeight: 'bold' }}>RECOGER EN TIENDA</div>
-                                    <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Cero esperas. Almacén alista primero, pagas al recoger en tu lugar asignado.</div>
+                                    <div style={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}>📦 PISO / CAJA</div>
+                                    <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '4px' }}>Entrega en mostrador para herramientas y piezas de mostrador.</div>
+                                </div>
+                                <div
+                                    onClick={() => setMethod('patio')}
+                                    style={{
+                                        padding: '1.25rem', border: method === 'patio' ? '2px solid #0ea5e9' : '2px solid rgba(255,255,255,0.1)',
+                                        borderRadius: '12px', cursor: 'pointer', backgroundColor: method === 'patio' ? 'rgba(14, 165, 233, 0.12)' : 'transparent',
+                                        transition: 'all 0.2s'
+                                    }}
+                                >
+                                    <div style={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}>🏗️ CARGA / PATIO</div>
+                                    <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '4px' }}>Para bultos grandes, varillas o material pesado. Carga en bahía.</div>
+                                </div>
+                                <div
+                                    onClick={() => setMethod('delivery')}
+                                    style={{
+                                        padding: '1.25rem', border: method === 'delivery' ? '2px solid #0ea5e9' : '2px solid rgba(255,255,255,0.1)',
+                                        borderRadius: '12px', cursor: 'pointer', backgroundColor: method === 'delivery' ? 'rgba(14, 165, 233, 0.12)' : 'transparent',
+                                        transition: 'all 0.2s'
+                                    }}
+                                >
+                                    <div style={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}>🛵 REPARTIDOR / OBRA</div>
+                                    <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '4px' }}>Envío en ruta directa a tu dirección o coordenadas de GPS.</div>
                                 </div>
                             </div>
                         </div>

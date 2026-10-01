@@ -74,10 +74,11 @@ async function main() {
     for (const [name, role, plainPin] of demoUsers) {
       const pinHash = await bcrypt.hash(plainPin, 10);
       const pin = crypto.createHash('sha256').update(plainPin).digest('hex');
+      const email = `${role}@bunnkker.local`;
       await prisma.user.upsert({
-        where: { pin },
-        update: { name, role, pinHash, active: true },
-        create: { name, role, pin, pinHash, active: true },
+        where: { email },
+        update: { name, role, pin, pinHash, active: true },
+        create: { name, role, email, pin, pinHash, active: true },
       });
     }
     console.log('6 demo users seeded with PINs 0000–5555. Change them before production.');

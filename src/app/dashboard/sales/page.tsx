@@ -421,18 +421,18 @@ export default function SalesDashboard() {
                 </div>
 
                 {/* Central Tabs for POS and Online */}
-                <div className="hidden md:flex bg-black/40 p-1 rounded-xl border border-white/5 mx-4 shadow-inner">
+                <div className="flex bg-black/40 p-1 rounded-xl border border-white/5 mx-2 sm:mx-4 shadow-inner">
                     <button 
                         onClick={() => setActiveTab('pos')}
-                        className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'pos' ? 'bg-white/10 text-white shadow-md' : 'text-zinc-500 hover:text-zinc-300'}`}
+                        className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all ${activeTab === 'pos' ? 'bg-white/10 text-white shadow-md' : 'text-zinc-500 hover:text-zinc-300'}`}
                     >
-                        <Store className="w-4 h-4" /> PUNTO DE VENTA
+                        <Store className="w-4 h-4" /> <span className="hidden xs:inline">PUNTO DE</span> VENTA
                     </button>
                     <button 
                         onClick={() => setActiveTab('online')}
-                        className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-bold transition-all relative ${activeTab === 'online' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30 shadow-md' : 'text-zinc-500 hover:text-zinc-300'}`}
+                        className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all relative ${activeTab === 'online' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30 shadow-md' : 'text-zinc-500 hover:text-zinc-300'}`}
                     >
-                        <Globe className="w-4 h-4" /> PEDIDOS / COLA ({pendingOrders.length})
+                        <Globe className="w-4 h-4" /> COLA ({pendingOrders.length})
                         {pendingOrders.length > 0 && (
                             <span className="absolute top-1 right-2 w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
                         )}

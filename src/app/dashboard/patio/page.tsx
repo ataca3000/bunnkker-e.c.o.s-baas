@@ -140,8 +140,21 @@ export default function PatioDashboard() {
                             className={`bg-slate-800/80 rounded-3xl p-6 border-l-8 shadow-lg flex flex-col md:flex-row justify-between items-center gap-6 ${isNight ? 'border-purple-500 bg-purple-50' : isPending ? 'border-amber-500 bg-amber-50' : order.loadedBy ? 'border-orange-500' : 'border-[#0ea5e9]'}`}
                         >
                             <div className="flex-1">
-                                <div className="flex items-center gap-3 mb-3">
-                                    <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs font-black">{order.id}</span>
+                                <div className="flex flex-wrap items-center gap-2 mb-3">
+                                    <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-xs font-black">{order.id}</span>
+                                    {order.deliveryType === 'PATIO' ? (
+                                        <span className="bg-amber-100 text-amber-800 border border-amber-300 px-3 py-1 rounded-full text-[10px] font-black uppercase flex items-center gap-1">
+                                            🏗️ CARGA / PATIO
+                                        </span>
+                                    ) : order.deliveryType === 'DELIVERY' ? (
+                                        <span className="bg-sky-100 text-sky-800 border border-sky-300 px-3 py-1 rounded-full text-[10px] font-black uppercase flex items-center gap-1">
+                                            🛵 REPARTO RUTA
+                                        </span>
+                                    ) : (
+                                        <span className="bg-emerald-100 text-emerald-800 border border-emerald-300 px-3 py-1 rounded-full text-[10px] font-black uppercase flex items-center gap-1">
+                                            📦 PISO / CAJA
+                                        </span>
+                                    )}
                                     {isNight && (
                                         <span className="bg-purple-200 text-purple-700 px-3 py-1 rounded-full text-[10px] font-black uppercase">
                                             COLA NOCTURNA (Turno Siguiente)
@@ -164,15 +177,17 @@ export default function PatioDashboard() {
                                     Destino: {order.customer?.address || order.customerAddress || 'Retiro en Sucursal / Local'}
                                 </p>
                                 <div className="mt-2 flex flex-col gap-2">
-                                    {order.items.map((item: any, i: number) => {
+                                    {(order.items || []).map((item: any, i: number) => {
                                         const fullProduct = products.find((p: any) => p.id === (item.productId || item.id));
                                         const loc = fullProduct?.location;
                                         const locationStr = loc && loc.estante ? `📍 ${loc.estante} - ${loc.fila || 'N/A'}` : '📍 Bodega General';
+                                        const qty = item.quantity ?? item.cantidad ?? 1;
+                                        const itemName = item.name || item.product?.name || fullProduct?.name || 'Material';
                                         
                                         return (
                                             <div key={i} className="flex flex-col bg-blue-50 text-[#0ea5e9] px-3 py-2 rounded-lg text-sm font-bold border border-blue-100">
                                                 <div className="flex justify-between items-center">
-                                                    <span>{item.quantity}x {item.product?.name || item.name || fullProduct?.name || 'Producto Desconocido'}</span>
+                                                    <span>{qty}x {itemName}</span>
                                                 </div>
                                                 <span className="text-xs text-blue-500/80 mt-1">{locationStr}</span>
                                             </div>

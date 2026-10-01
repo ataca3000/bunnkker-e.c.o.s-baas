@@ -389,7 +389,7 @@ export const useCart = () => {
             asRequest,
             paymentMethod: asRequest ? 'pago_caja' : (isOnline ? 'Online' : 'Venta Directa'), requiresInvoice,
             deliveryMethod: customerData.deliveryMethod || 'tienda',
-            deliveryType: customerData.deliveryMethod === 'repartidor' ? 'DELIVERY' : ['pickup', 'tienda'].includes(customerData.deliveryMethod || '') ? 'PICKUP' : 'LOCAL',
+            deliveryType: customerData.deliveryMethod === 'repartidor' ? 'DELIVERY' : ['patio', 'PATIO'].includes(customerData.deliveryMethod || '') ? 'PATIO' : ['pickup', 'tienda', 'piso'].includes(customerData.deliveryMethod || '') ? 'PICKUP' : 'LOCAL',
             lat: customerData.lat ?? customerData.gpsCoords?.lat,
             lng: customerData.lng ?? customerData.gpsCoords?.lng,
             deliveryPin
