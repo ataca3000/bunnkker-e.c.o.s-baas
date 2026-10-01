@@ -1,46 +1,47 @@
-# Mapa de Funcionalidades — Admin.com ERP
+# Mapa de Funcionalidades — BUNKKER E.C.O.S & LION
 
-A continuación se presenta la topología funcional del sistema, organizada por el núcleo operativo, herramientas de aseguramiento y la lógica comercial.
+A continuación se presenta la topología funcional del sistema, organizada por el núcleo operativo, la coordinación inteligente con LION, herramientas de aseguramiento y la lógica de flujo de órdenes.
 
 ```mermaid
 mindmap
-  root((Admin.com ERP))
-    Arquitectura Híbrida
-      Next.js 14/15 + React
+  root((BUNKKER E.C.O.S & LION))
+    Arquitectura Híbrida Local-First
+      Next.js 15 + React 19
       Electron Desktop (Maestro)
-      Local-First (Offline POS)
-      Firebase Cloud Sync
-      Aleatorizador de Puertos Local
+      Base SQLite Central (WAL Local)
+      Sync Híbrido Firebase
+      Multi-Dispositivo LAN Wi-Fi
       Aislamiento Multi-Tenant
-    Módulo de IA (SanJoseAI)
-      Clasificación de Productos
-        Reglas Locales + Regex
-        Medidas y Materiales
-        Fallback GPT-4o-mini
-      Importador Inteligente
-        Parse de Excel/CSV a DB
+    LION 🦁 (Gerente Inteligente)
+      Coordinación de Operaciones
+      Consultas de Stock y Cortes
+      Cero Avisos de API Key
+      Motor Autónomo Local
+    Flujo de Órdenes & Entregas
+      3 Métodos de Entrega
+        Piso / Caja (Mostrador)
+        Carga / Patio (Pesados)
+        Repartidor / Obra (Ruta)
+      Pizarras Públicas por Rol
+      Lock-Claim Exclusivo
+      Validación Foto + Firma + QR
+      Auditoría Inmutable (OrderEvent)
     Mapeo de Roles y Accesos (RBAC)
-      Login Camuflado (Detrás del Telón)
+      Login Camuflado / Gateways QR
       Bypass de Emergencia Local
       Super Admin Único (Guardia)
     Seguridad & Licencia
-      Machine ID (Huella Digital)
-      Google Cloud Functions Sync
-      Logs Inmutables
-      Re-ofuscación Cíclica (5s)
+      Machine ID (HWID Físico)
+      Firmas Criptográficas HMAC
+      Auditoría Cifrada AES-256
     Punto de Venta (POS)
       Escáner Láser (<70ms)
       Corte Ciego de Caja
-      Tickets e Impresión
-    Marketplace Público
-      Canvas Magnético (Diseño)
-      Filtro de Categorías
-      Checkout Offline/Online
-      Selector de Umbral SAT
+      Tickets e Impresión Térmica
+      Timeout Fusible (1.5s)
     Pruebas y Diagnóstico
+      Banco de Pruebas Unitarias
       Consola QA Visual (/dashboard/tests)
-      CLI Runner (test:logic)
-      Tour Onboarding (Guía Dueño)
 ```
 
 ---

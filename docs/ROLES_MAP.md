@@ -1,6 +1,6 @@
-# Mapeo de Roles, Seguridad y Licencias — Admin.com ERP
+# Mapeo de Roles, Seguridad y Licencias — BUNKKER E.C.O.S & LION
 
-Este documento establece la matriz de accesos y responsabilidades lógicas, el comportamiento del portal de acceso discreto y las políticas de monetización del sistema.
+Este documento establece la matriz de accesos y responsabilidades lógicas, el comportamiento del portal de acceso discreto, la sincronía de roles en la preparación de órdenes y las políticas de monetización del sistema.
 
 ---
 
@@ -8,14 +8,26 @@ Este documento establece la matriz de accesos y responsabilidades lógicas, el c
 
 | Rol | Dashboard Asignado | Capacidad Operativa |
 | :--- | :--- | :--- |
-| **superadmin** | `/dashboard/guia` (Maestro) | **Dueño del Negocio.** Control absoluto, altas de personal, configuración de Facturapi, y revisión de logs. Solo puede existir un Super Admin. |
+| **superadmin** | `/dashboard/guia` (Maestro) | **Dueño del Negocio.** Control absoluto, altas de personal, configuración fiscal y revisión de auditoría. Solo puede existir un Super Admin. |
 | **admin** | `/dashboard/inventory` | **Gerente de Sucursal.** Gestión del catálogo, control de stock alto, y visualización de reportes locales. |
-| **sales** | `/dashboard/sales` | **Cajero/Vendedor.** Apertura y cobro en Punto de Venta, escáner, cola de ventas y Corte Ciego de caja. |
-| **inventory** | `/dashboard/inventory` | **Almacenista.** Altas de producto, control de existencias físicas e importación por IA de productos. |
+| **sales** | `/dashboard/sales` | **Cajero/Vendedor.** Apertura y cobro en Punto de Venta, escáner, cola de pedidos mostrador (`📦 PISO / CAJA`) y corte ciego de caja. |
+| **inventory** | `/dashboard/inventory` | **Almacenista.** Altas de producto, control de existencias físicas, apoyo opcional en recolección y optimización del almacén. |
 | **billing** | `/dashboard/billing` | **Contabilidad.** Timbrado y auditoría fiscal de facturas SAT. |
-| **driver** | `/dashboard/delivery` | **Repartidor.** Gestión de despachos, itinerario de rutas de entrega y mapa de navegación GPS. |
-| **carga_descarga** | `/dashboard/patio` | **Operador de Patio.** Carga, descarga y control de cola de entregas físicas. |
-| **client** | `/catalogo` o `/cuenta` | **Cliente Final.** Compra en línea, historial de pedidos, y solicitud de facturación SAT (en modo PRO). |
+| **driver** | `/dashboard/delivery` | **Repartidor.** Despachos en ruta (`🛵 REPARTIDOR / OBRA`), itinerario de rutas GPS, firma digital y foto de evidencia. |
+| **carga_descarga** | `/dashboard/patio` | **Operador de Patio.** Carga, descarga y control de cola de entregas pesadas (`🏗️ CARGA / PATIO`), bahías de patio. |
+| **client** | `/catalogo` o `/cuenta` | **Cliente Final.** Compra en línea o en tienda por autoservicio, selección de método de entrega, QR de orden e historial de pedidos. |
+
+---
+
+## 🔄 Sincronía Autónoma en Preparación de Órdenes (AXIOM_15)
+
+Cuando un cliente genera una orden desde el carrito (mostrador o web):
+1. **Publicación en Pizarra:** El pedido se expone en la pizarra pública correspondiente a su método de entrega (`/dashboard/sales` para Piso, `/dashboard/patio` para Patio, `/dashboard/delivery` para Ruta).
+2. **Reclamo Exclusivo (Lock-Claim):** Cualquier miembro del rol asignado (o el almacenista de soporte) puede tomar la orden. Al dar clic en "Tomar Pedido", la orden queda bloqueada para los demás evitando duplicidades.
+3. **Validación de Entrega y Cierre:**
+   - Para Patio o Reparto: Se valida con foto de la carga o entrega y firma digital del cliente.
+   - Para Piso/Caja: Se valida el pase de entrega escaneando el QR o confirmando el cobro en mostrador.
+4. **Registro Forense Inmutable (`OrderEvent`):** Cada pase de estado (creada, reclamada, cargada, entregada) graba el ID del usuario, su nombre, su rol y su timestamp en SQLite sin posibilidad de alteración.
 
 ---
 

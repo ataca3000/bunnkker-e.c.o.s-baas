@@ -21,6 +21,14 @@ Transformar el ERP BUNKKER en una "Colmena B2B" (Arquitectura Local-First), dond
   - Crear un Agente Actualizador que reciba parches por el túnel.
   - Script remoto de bloqueo/desbloqueo de licencias a la escucha.
 
-## 🔄 Estado Actual (Memoria de Corto Plazo)
-- **Fase:** Rompiendo la dependencia de la nube sin dañar la UI.
-- **Acción actual:** Engañando al sistema con el Firebase Mock y construyendo el árbol de memoria espejo (`lfeds/`) para evitar quemar cuotas de IA.
+## 🔄 Estado Actual (Memoria de Corto Plazo — Hito Operacional Verificado)
+- **Fase:** Operación de Mostrador Desbloqueada y Marca Unificada bajo BUNKKER E.C.O.S & LION.
+- **Hitos Completados:**
+  - ✅ **Flujo de Órdenes Desbloqueado:** Carrito -> Checkout -> Base SQLite Central -> Pizarras Kanban de Patio, Caja y Reparto.
+  - ✅ **3 Canales de Entrega Operacionales:** `📦 PISO / CAJA`, `🏗️ CARGA / PATIO`, `🛵 REPARTIDOR / OBRA`.
+  - ✅ **Timeout Fusible (1,500 ms):** `Promise.race` en checkout evita que la pantalla se congele ante fluctuaciones de Wi-Fi local.
+  - ✅ **Event Sourcing Inmutable (`OrderEvent`):** Trazabilidad total de cada micro-operación con actor, rol, timestamp, foto y firma digital.
+  - ✅ **Identidad Consolidada:** Plataforma = BUNKKER E.C.O.S, Gerente Inteligente = LION 🦁.
+  - ✅ **Asistente LION 100% Autónomo:** Cero bloqueos por API keys o avisos de pago; motor local de stock y ventas activo.
+  - ✅ **Suite de Pruebas:** 86/86 pruebas pasando en verde y TypeScript compilando al 100%.
+- **Siguiente Prioridad:** Mantenimiento de la estabilidad de mostrador bajo pruebas de estrés en campo y optimización del túnel LAN para dispositivos móviles.

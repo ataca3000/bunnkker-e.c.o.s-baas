@@ -15,20 +15,28 @@
 
 ## Qué es
 
-Sistema completo para operar un negocio físico (ferretería, abarrotes, distribuidora) desde múltiples terminales conectadas por WiFi local. Funciona sin internet. Cuando hay conexión, sincroniza con la nube automáticamente.
+**BUNKKER E.C.O.S & LION** es un sistema integral para operar un negocio físico (ferreterías, abarrotes, bodegas de materiales, distribuidoras) desde múltiples terminales conectadas por WiFi local sobre una única base de datos central:
+- **BUNKKER E.C.O.S:** Plataforma de infraestructura, ERP soberano, base de datos local embebida (SQLite WAL) y sincronización híbrida.
+- **LION 🦁:** La mascota y gerente inteligente que personaliza, asiste y coordina la operación del negocio sin fricción ni bloqueos.
+
+Funciona de manera continua sin internet (Local-First). Cuando hay conexión, sincroniza con la nube automáticamente.
 
 ## Qué hace
 - **Plataforma de Administración y Operación:** Catálogo virtual local sin filas, sync híbrido bidireccional y multi-dispositivo LAN.
+- **3 Métodos de Entrega Integrados:**
+  1. `📦 PISO / CAJA`: Entrega inmediata y cobro en mostrador.
+  2. `🏗️ CARGA / PATIO`: Despacho para materiales pesados en patio de maniobras con pizarrones de carga.
+  3. `🛵 REPARTIDOR / OBRA`: Despacho a choferes para reparto en ruta con geolocalización y firma.
+- **Pizarras Públicas por Rol & Reclamo Exclusivo (Lock-Claim):** Los pedidos se publican en las colas de trabajo correspondientes (Caja, Patio, Chofer, Almacén). Quien toma un pedido lo bloquea para evitar duplicidades (*claim*), permitiendo liberación en 1-click.
+- **Trazabilidad Inmutable & Auditoría Forense (`OrderEvent`):** Cada estado y micro-operación del pedido (creación, toma, surtido, carga, despacho, foto de validación, firma del cliente y pase de entrega) queda registrado como un evento inmutable con fecha, hora, actor y rol.
+- **Timeout Fusible en Mostrador (1,500 ms):** Reserva de stock con protección de tiempo de espera (`Promise.race`) para evitar congelamiento de interfaz ante latencias de red Wi-Fi local.
+- **Asistente Oficial LION 🦁:** Gerente inteligente integrado en todo el sistema. Opera con motor local de inventario y pedidos en vivo sin exigir API keys de internet ni mostrar avisos molestos de pago.
 - **Acceso Multi-Dispositivo LAN (Wi-Fi Local):** Protocolo dinámico HTTP/HTTPS para que cualquier celular (iOS/Android), tablet o laptop en la red local (`http://192.168.x.x:3000`) ingrese por PIN sin rechazo de cookies.
-- **Cola de Trabajo por Rol & Pizarrón Público (Kanban):** Sistema de colas por rol (Cajero, Almacén, Chofer, Patio) con reclamo exclusivo (*Lock-Claim*) y liberación/delegación instantánea en 1-click (*release_order*).
-- **Reserva de Inventario con TTL de 30 Minutos:** Los productos en el carrito reservan stock en vivo con temporizador de expiración automática de 30 minutos.
-- **Punto de Venta (POS):** Cobro en efectivo, tarjeta (Stripe/MercadoPago), corte de caja e inspección opcional de transferencias.
+- **Punto de Venta (POS):** Cobro en efectivo, tarjeta (Stripe/MercadoPago), corte ciego de caja e inspección de transferencias.
 - **Licenciamiento 1 PC Maestro = 1 Tienda:** Licencia atada al HWID físico de la máquina con gateways QR dedicados por rol.
-- **Asistente Oficial:** Mascota **Lion - Tu Gerente de Sucursal** en login, onboarding y barra de aplicación.
-- **Inventario:** Ubicación física por estante/fila y drag & drop.
-- **Sincronización P2P:** Entre cajas por red WiFi/LAN sin servidor externo.
-- **Funciona offline:** Cada terminal tiene su base de datos SQLite local persistente.
-- **Auditoría cifrada:** Registro de operaciones cifrado en AES-256.
+- **Inventario:** Ubicación física por estante/fila, control de existencias con mutex de patio y drag & drop.
+- **Sincronización P2P:** Entre terminales por red WiFi/LAN sin servidor externo.
+- **Auditoría Cifrada:** Registro de operaciones cifrado en AES-256.
 
 ## Qué hace la red local y multi-dispositivo
 
