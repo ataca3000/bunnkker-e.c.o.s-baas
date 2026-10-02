@@ -7,7 +7,7 @@ import { useCart, type Product } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { 
     Clock, Bell, History, User, Store, ShieldAlert, Wifi, Globe, TerminalSquare, AlertCircle, XCircle, CheckCircle2, Phone, Lock, Unlock,
-    LayoutDashboard, LogOut, ShoppingCart, Trash2, Zap, UserCheck
+    LayoutDashboard, LogOut, ShoppingCart, Trash2, Archive, Printer, Zap, UserCheck
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
@@ -353,6 +353,29 @@ export default function SalesDashboard() {
         }
     };
 
+    const handleArchiveOrder = async (orderId: string) => {
+        try {
+            const res = await fetch('/api/orders', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: orderId, action: 'archive' })
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast(`Venta ${orderId} archivada.`);
+                broadcastSync();
+            } else {
+                toast.error(data.error || 'No se pudo archivar la venta.');
+            }
+        } catch {
+            toast.error('Error de red al archivar la venta.');
+        }
+    };
+
+    const handlePrintOrders = () => {
+        window.print();
+    };
+
     const handleClaimOrder = async (orderId: string) => {
         try {
             setClaimingOrderId(orderId);
@@ -578,9 +601,19 @@ export default function SalesDashboard() {
                                     Repartos ({pendingOrders.filter(o => o.status === 'pending_delivery').length})
                                 </button>
                             </div>
-                            <span className="text-[11px] text-zinc-500 font-mono">
-                                Actualización en tiempo real
-                            </span>
+                                    <div className="flex items-center gap-2">
+                                <button
+                                    onClick={handlePrintOrders}
+                                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-bold uppercase bg-zinc-900/60 text-zinc-300 hover:text-white border border-white/10 transition-colors"
+                                    title="Imprimir la lista visible de ventas"
+                                >
+                                    <Printer className="w-3.5 h-3.5" /> Imprimir lista
+                                </button>
+                                <span className="text-[11px] text-zinc-500 font-mono">
+                                    Actualización en tiempo real
+                                </span>
+                            </div>
+
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
@@ -611,13 +644,22 @@ export default function SalesDashboard() {
                                                         }`}>
                                                             {isAwaitingPayment ? 'POR COBRAR' : isReady ? 'LISTO ENTREGA' : 'REPARTO'}
                                                         </span>
-                                                        <button
-                                                            onClick={() => handleDeleteOrder(order.id)}
-                                                            title="Eliminar este pedido permanentemente"
-                                                            className="p-1 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 transition-all hover:scale-105"
-                                                        >
-                                                            <Trash2 size={13} />
-                                                        </button>
+                                                        <div className="flex items-center gap-1">
+                                                            <button
+                                                                onClick={() => handleArchiveOrder(order.id)}
+                                                                title="Archivar venta y retirarla de la cola"
+                                                                className="p-1 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/20 transition-all hover:scale-105"
+                                                            >
+                                                                <Archive size={13} />
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleDeleteOrder(order.id)}
+                                                                title="Eliminar este pedido permanentemente"
+                                                                className="p-1 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 transition-all hover:scale-105"
+                                                            >
+                                                                <Trash2 size={13} />
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 </div>
 

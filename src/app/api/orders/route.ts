@@ -378,6 +378,28 @@ export async function PATCH(request: NextRequest) {
         const deliveryRoles = ['driver', 'carga_descarga', 'admin', 'superadmin'];
         const cashierReadyStatuses = ['READY_TO_SHIP', 'READY_FOR_PICKUP', 'pending_payment', 'pending_confirmation', 'pending', 'NIGHT_QUEUE'];
 
+        if (action === 'archive') {
+            if (!['sales', 'billing', 'admin', 'superadmin'].includes(actorRole)) {
+                return NextResponse.json({ success: false, error: 'Rol sin permiso para archivar ventas.' }, { status: 403 });
+            }
+            const current = await prisma.order.findUnique({ where: { id } });
+            if (!current) return NextResponse.json({ success: false, error: 'Pedido no encontrado.' }, { status: 404 });
+            if (!['cancelled', 'COMPLETED', 'DELIVERED', 'paid', 'READY_FOR_PICKUP_PAID'].includes(current.status)) {
+                return NextResponse.json({ success: false, error: 'Solo se pueden archivar ventas cerradas o canceladas.' }, { status: 409 });
+            }
+            const archived = await prisma.order.update({ where: { id }, data: { status: 'archived' } });
+            await writeOrderEvent(prisma, {
+                orderId: id,
+                eventType: 'ORDER_ARCHIVED',
+                fromStatus: current.status,
+                toStatus: 'archived',
+                actorId: auth.uid,
+                actorName,
+                actorRole
+            });
+            return NextResponse.json({ success: true, data: archived });
+        }
+
         if (action === 'claim_cashier') {
             if (!cashierRoles.includes(actorRole)) return NextResponse.json({ success: false, error: 'Rol sin permiso para tomar cobros.' }, { status: 403 });
             const result = await prisma.$transaction(async (tx) => {
