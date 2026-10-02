@@ -251,6 +251,97 @@ button:disabled {
   }
 }
 
+/* Dashboard operativo: prioriza lectura y acciones táctiles en móvil. */
+.admin-dashboard-shell {
+  width: 100%;
+  max-width: 1600px;
+  margin-inline: auto;
+  overflow-x: clip;
+}
+
+.admin-sales-chart {
+  min-width: 0;
+}
+
+@media (max-width: 768px) {
+  .admin-dashboard-shell {
+    padding: 1rem !important;
+  }
+
+  .admin-dashboard-header {
+    margin-bottom: 1.25rem !important;
+    align-items: stretch !important;
+  }
+
+  .admin-dashboard-header h1 {
+    font-size: 1.35rem !important;
+    line-height: 1.15;
+  }
+
+  .admin-dashboard-header > div:last-child {
+    width: 100%;
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.6rem !important;
+  }
+
+  .admin-dashboard-header > div:last-child > * {
+    min-width: 0;
+  }
+
+  .admin-dashboard-header > div:last-child .card-sanjose {
+    grid-column: 1 / -1;
+  }
+
+  .admin-dashboard-header > div:last-child button,
+  .admin-dashboard-header > div:last-child label {
+    justify-content: center;
+    min-height: 44px;
+    padding: 0.65rem 0.5rem !important;
+    font-size: 0.68rem !important;
+    text-align: center;
+  }
+
+  .admin-dashboard-header > div:last-child > div:last-child {
+    grid-column: 1 / -1;
+    margin-left: 0 !important;
+  }
+
+  .admin-sales-chart {
+    padding: 1rem !important;
+    margin-bottom: 1.25rem !important;
+  }
+
+  .admin-sales-chart > div:first-child {
+    margin-bottom: 0.75rem !important;
+  }
+
+  .admin-sales-chart > div:nth-child(2) {
+    height: 220px !important;
+  }
+
+  .admin-dashboard-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.65rem !important;
+    margin-bottom: 1.5rem !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .admin-dashboard-kpis {
+    grid-template-columns: 1fr !important;
+  }
+
+  .admin-dashboard-header > div:last-child {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-dashboard-header > div:last-child .card-sanjose,
+  .admin-dashboard-header > div:last-child > div:last-child {
+    grid-column: auto;
+  }
+}
+
 /* Navbar Responsive Tweaks */
 @media (max-width: 1024px) {
   .search-desktop { display: none !important; }

@@ -168,9 +168,9 @@ export default function SuperAdminDashboard({
     ];
 
     return (
-        <main className="bunkker-industrial" style={{ padding: '2.5rem' }}>
+        <main className="bunkker-industrial admin-dashboard-shell" style={{ padding: '2.5rem' }}>
             {/* ── Header ────────────────────────────────────────── */}
-            <header style={{ marginBottom: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+            <header className="admin-dashboard-header" style={{ marginBottom: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
                 <div>
                     <h1 className="tornasol-text" style={{ fontSize: '2.2rem', margin: 0, letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '10px' }}>
                         CENTRO DE CONTROL BUNKKER ERP
@@ -308,7 +308,7 @@ export default function SuperAdminDashboard({
             )}
 
             {/* ── Gráfico de Ventas ─────────────────────────────────────── */}
-            <div className="card-sanjose" style={{ marginBottom: '2.5rem' }}>
+            <div className="card-sanjose admin-sales-chart" style={{ marginBottom: '2.5rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
                     <BarChart3 size={20} color="#06B6D4" />
                     <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '800', color: '#fff' }}>Evolución de Ventas (7 Días)</h3>
@@ -337,7 +337,7 @@ export default function SuperAdminDashboard({
             </div>
 
             {/* ── KPI Cards ─────────────────────────────────────── */}
-            <div style={{
+            <div className="admin-dashboard-kpis" style={{
  display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem', marginBottom: '3rem' }}>
                 {kpis.map((kpi, i) => (
                     <KPICard
