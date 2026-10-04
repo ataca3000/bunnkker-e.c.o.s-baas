@@ -110,6 +110,7 @@ import ParticlesBackground from "@/components/ParticlesBackground";
 import ToastContainer from "@/components/ToastContainer";
 import FreemiumLockModal from "@/components/FreemiumLockModal";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
+import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 import CookieConsent from "@/components/CookieConsent";
 import ClientBootGuard from "@/components/ClientBootGuard";
 
@@ -144,6 +145,7 @@ export default async function RootLayout({
                 <Footer />
                 <ToastContainer />
                 <PWAInstallPrompt />
+                <ServiceWorkerRegister />
               </CartProvider>
             </DeviceLockScreen>
           </AuthProvider>

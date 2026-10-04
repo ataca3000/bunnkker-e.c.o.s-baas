@@ -2,12 +2,10 @@
 
 export const dynamic = 'force-dynamic';
 
-import React, { useState, useRef, useEffect } from 'react';
-import { db } from '@/lib/firebase';
-import { collection, query, where, onSnapshot, doc, setDoc, updateDoc, serverTimestamp, addDoc } from 'firebase/firestore';
-import { handleFirestoreError, OperationType } from '@/lib/errorMonitor';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from '@/lib/toast';
+import { useDeliveryStore } from '@/store/useDeliveryStore';
 
 import type { DeliveryOrder, ViewState } from './components/types';
 import Navigation from './components/Navigation';
@@ -51,40 +49,86 @@ export default function DeliveryDashboard() {
     const lastGpsUpdate = useRef<number>(0);
     const GPS_THROTTLE_MS = 15000;
     
-    // MONITOREO EN VIVO (GPS Tracking)
+    // Sincronización automática de entregas guardadas offline
+    const syncPendingOrders = useCallback(async () => {
+        const pending = useDeliveryStore.getState().getPendingSyncOrders();
+        if (!pending || pending.length === 0) return;
+
+        let syncedCount = 0;
+        for (const ord of pending) {
+            try {
+                const res = await fetch('/api/orders', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id: ord.id,
+                        status: ord.status,
+                        signatureData: ord.signatureData,
+                        photoData: ord.photoData,
+                        completedAt: ord.completedAt,
+                        rejectionReason: (ord as any).rejectReason
+                    })
+                });
+                if (res.ok) {
+                    useDeliveryStore.getState().markOrderSynced(ord.id);
+                    syncedCount++;
+                    if (typeof window !== 'undefined' && (window as any).__inventorySocket) {
+                        (window as any).__inventorySocket.emit('sync_db_event', { action: 'DELIVERY_ORDER_UPDATED', id: ord.id });
+                    }
+                }
+            } catch (e) {
+                // Sigue offline o sin señal, no bloquear
+                break;
+            }
+        }
+        if (syncedCount > 0) {
+            toast.success(`🎉 ${syncedCount} entrega(s) en ruta sincronizada(s) con la PC Maestra.`);
+        }
+    }, []);
+
+    useEffect(() => {
+        syncPendingOrders();
+        window.addEventListener('online', syncPendingOrders);
+        const interval = setInterval(syncPendingOrders, 25000);
+        return () => {
+            window.removeEventListener('online', syncPendingOrders);
+            clearInterval(interval);
+        };
+    }, [syncPendingOrders]);
+
+    // MONITOREO EN VIVO (GPS Tracking por Radio Server / LAN)
     useEffect(() => {
         if (typeof window === 'undefined' || !navigator.geolocation || !profile?.uid) return;
 
         const watchId = navigator.geolocation.watchPosition(
-            async (pos) => {
+            (pos) => {
                 const now = Date.now();
                 if (now - lastGpsUpdate.current < GPS_THROTTLE_MS) return;
 
-                try {
-                    const { latitude, longitude } = pos.coords;
-                    lastGpsUpdate.current = now;
-                    setDriverLocation({ lat: latitude, lng: longitude });
+                const { latitude, longitude } = pos.coords;
+                lastGpsUpdate.current = now;
+                setDriverLocation({ lat: latitude, lng: longitude });
 
-                    await setDoc(doc(db, 'tracking_fleet', profile?.uid), {
-                        driverId: profile?.uid,
-                        driverName: profile?.displayName || 'Repartidor',
-                        latitude: latitude,
-                        longitude: longitude,
-                        lastUpdate: serverTimestamp(),
+                // Emitir a través del Radio Server local si está en rango
+                if (typeof window !== 'undefined' && (window as any).__inventorySocket) {
+                    (window as any).__inventorySocket.emit('driver_gps', {
+                        driverId: profile.uid,
+                        driverName: profile.displayName || 'Repartidor',
+                        latitude,
+                        longitude,
+                        timestamp: Date.now(),
                         status: 'en_ruta'
-                    }, { merge: true });
-                } catch (err) {
-                    try { handleFirestoreError(err, OperationType.UPDATE, 'settings/live_tracking') } catch (e) {}
+                    });
                 }
             },
-            (err) => console.error("Error GPS:", err),
+            (err) => console.warn("GPS pasivo:", err?.message || err),
             { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
         );
 
         return () => navigator.geolocation.clearWatch(watchId);
-    }, [profile?.uid]);
+    }, [profile?.uid, profile?.displayName]);
 
-    // Botón de Pánico
+    // Botón de Pánico (Local y notificación)
     const handlePanic = async () => {
         const confirmPanic = confirm("⚠️ ¿ACTIVAR BOTÓN DE PÁNICO?\nEsto enviará tu ubicación y una alerta roja al administrador de inmediato.");
         if (!confirmPanic) return;
@@ -99,13 +143,13 @@ export default function DeliveryDashboard() {
                 location = `${pos.coords.latitude},${pos.coords.longitude}`;
             }
 
-            await addDoc(collection(db, 'panic_alerts'), {
-                driver: profile?.displayName || 'Repartidor',
-                location: location,
-                mapsUrl: location !== "Ubicación no disponible" ? `https://www.google.com/maps?q=${location}` : null,
-                timestamp: serverTimestamp(),
-                status: 'critical'
-            });
+            if (typeof window !== 'undefined' && (window as any).__inventorySocket) {
+                (window as any).__inventorySocket.emit('panic_alert', {
+                    driver: profile?.displayName || 'Repartidor',
+                    location,
+                    timestamp: Date.now()
+                });
+            }
 
             fetch('/api/notify', {
                 method: 'POST',
@@ -117,42 +161,56 @@ export default function DeliveryDashboard() {
                         mapsUrl: location !== "Ubicación no disponible" ? `https://www.google.com/maps?q=${location}` : null
                     }
                 })
-            }).catch(e => console.error("Fallo envío correo pánico:", e));
+            }).catch(e => console.warn("Fallo envío notificación pánico:", e));
 
             toast.warning('¡Alerta enviada! Manténte a salvo, el administrador ha sido notificado.', '🚨 Alerta de Pánico', 8000);
         } catch (err) {
             console.error(err);
-            handleFirestoreError(err, OperationType.CREATE, 'panic_alerts');
-            toast.error('Fallo al enviar alerta. Llama directamente al 911.', '❌ Error');
+            toast.error('Fallo al emitir alerta. Llama directamente al 911.', '❌ Error');
         } finally {
             setPanicLoading(false);
         }
     };
 
-    const updateOrderInFirebase = async (id: string, updates: Partial<DeliveryOrder>) => {
-        try {
-            const mappedStatus = updates.status === 'completed' ? 'DELIVERED' : updates.status;
-            const dataToUpdate: any = { id };
-            if (mappedStatus) dataToUpdate.status = mappedStatus;
-            if (updates.driverId) dataToUpdate.driverId = updates.driverId;
-            if (updates.signatureData !== undefined) dataToUpdate.signatureData = updates.signatureData;
-            if (updates.photoData !== undefined) dataToUpdate.photoData = updates.photoData;
-            if (updates.completedAt) dataToUpdate.completedAt = updates.completedAt;
-            if (updates.rejectionReason) dataToUpdate.rejectionReason = updates.rejectionReason;
+    // Actualización de orden: Prioriza persistencia local y sincroniza en segundo plano
+    const updateOrder = async (id: string, updates: Partial<DeliveryOrder>) => {
+        const mappedStatus = updates.status === 'completed' ? 'DELIVERED' : updates.status;
+        const dataToUpdate: any = { id };
+        if (mappedStatus) dataToUpdate.status = mappedStatus;
+        if (updates.driverId) dataToUpdate.driverId = updates.driverId;
+        if (updates.signatureData !== undefined) dataToUpdate.signatureData = updates.signatureData;
+        if (updates.photoData !== undefined) dataToUpdate.photoData = updates.photoData;
+        if (updates.completedAt) dataToUpdate.completedAt = updates.completedAt;
+        if (updates.rejectionReason) dataToUpdate.rejectionReason = updates.rejectionReason;
 
+        // 1. Guardar siempre en almacenamiento persistente local del teléfono
+        if (mappedStatus === 'DELIVERED') {
+            useDeliveryStore.getState().completeDelivery(id, updates.signatureData, updates.photoData);
+        } else if (mappedStatus === 'rejected' || mappedStatus === 'no_answer') {
+            useDeliveryStore.getState().rejectDelivery(id, updates.rejectionReason || 'Rechazado en ruta');
+        }
+
+        // 2. Intentar enviar a la PC Maestra
+        try {
             const response = await fetch('/api/orders', {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(dataToUpdate)
             });
-            if (!response.ok) throw new Error('Order update failed');
-            if (typeof window !== 'undefined' && (window as any).__inventorySocket) {
-                (window as any).__inventorySocket.emit('sync_db_event', { action: 'DELIVERY_ORDER_UPDATED', id });
+            if (response.ok) {
+                useDeliveryStore.getState().markOrderSynced(id);
+                toast.success('✅ Entrega confirmada y sincronizada con el sistema.');
+                if (typeof window !== 'undefined' && (window as any).__inventorySocket) {
+                    (window as any).__inventorySocket.emit('sync_db_event', { action: 'DELIVERY_ORDER_UPDATED', id });
+                }
+                return;
             }
         } catch (error) {
-            console.error("Error updating order", error);
-            toast.error('No se pudo actualizar la orden. Verifica tu conexión.');
+            console.warn('[BUNKKER RUTA] Sin conexión a la PC Maestra. Operando en modo offline autónomo.');
         }
+
+        // 3. Si no hay red, la entrega queda sellada en el teléfono
+        toast.info('📦 Entrega sellada en tu teléfono. Se sincronizará automáticamente al regresar a la tienda.', 'Modo Desconexión Activo', 6000);
     };
 
     const handleClaim = async (orderId: string) => {
@@ -161,6 +219,25 @@ export default function DeliveryDashboard() {
              toast.warning('Esta orden ya fue tomada por otro repartidor.');
              return;
         }
+
+        // Guardar copia local en el teléfono para que viaje en ruta sin depender de Wi-Fi
+        if (order) {
+            useDeliveryStore.getState().startRoute([
+                ...useDeliveryStore.getState().activeOrders.filter(o => o.id !== orderId),
+                {
+                    id: order.id,
+                    customerName: order.customerName,
+                    address: order.address,
+                    lat: order.lat,
+                    lng: order.lng,
+                    status: 'OUT_FOR_DELIVERY',
+                    deliveryPin: order.deliveryPin,
+                    items: order.items,
+                    total: order.total
+                }
+            ], []);
+        }
+
         try {
             const response = await fetch('/api/orders', {
                 method: 'PATCH',
@@ -173,12 +250,12 @@ export default function DeliveryDashboard() {
                 (window as any).__inventorySocket.emit('sync_db_event', { action: 'DELIVERY_ORDER_CLAIMED', id: orderId });
             }
         } catch (error) {
-            toast.warning(error instanceof Error ? error.message : 'No se pudo tomar el pedido.');
+            toast.warning(error instanceof Error ? error.message : 'Tomado localmente en tu ruta.');
         }
     };
 
     const handleUpdateOrder = async (orderId: string, updates: Partial<DeliveryOrder>) => {
-         await updateOrderInFirebase(orderId, updates);
+         await updateOrder(orderId, updates);
     };
 
     const currentDriverId = profile?.uid || 'UNKNOWN';
