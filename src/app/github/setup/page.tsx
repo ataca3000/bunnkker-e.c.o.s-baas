@@ -127,7 +127,7 @@ function GitHubSetupContent() {
               className="inline-block mt-4 text-blue-400 hover:text-blue-300 text-sm font-medium"
             >
               Volver al inicio
-            </Link>
+            </a>
           </div>
         )}
       </motion.div>
