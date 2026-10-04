@@ -18,19 +18,38 @@ export async function GET() {
             results.columnsError = e.message;
         }
 
-        // 2. Intentar ALTER TABLE directamente y capturar error exacto
-        try {
-            await prisma.$executeRawUnsafe(`ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "tenantId" TEXT DEFAULT 'default'`);
-            results.alterTableOrder = 'SUCCESS';
-        } catch (e: any) {
-            results.alterTableOrderError = e.message;
+        // 2. Intentar ALTER TABLE en todas las tablas con tenantId
+        const tablesToPatch = [
+            'Order',
+            'OrderItem',
+            'OrderEvent',
+            'Customer',
+            'Product',
+            'SyncQueue',
+            'AuditLog',
+            'SupportTicket',
+            'Purchase',
+            'User',
+            'ShrinkageLog',
+            'SwarmTransaction'
+        ];
+        results.patches = {};
+        for (const tbl of tablesToPatch) {
+            try {
+                await prisma.$executeRawUnsafe(`ALTER TABLE "${tbl}" ADD COLUMN IF NOT EXISTS "tenantId" TEXT DEFAULT 'default'`);
+                results.patches[tbl] = 'OK';
+            } catch (e: any) {
+                results.patches[tbl] = e.message;
+            }
         }
 
+        // 2b. Ver columnas de OrderItem
         try {
-            await prisma.$executeRawUnsafe(`ALTER TABLE "OrderEvent" ADD COLUMN IF NOT EXISTS "tenantId" TEXT DEFAULT 'default'`);
-            results.alterTableEvent = 'SUCCESS';
+            results.orderItemColumns = await prisma.$queryRawUnsafe(`
+                SELECT column_name FROM information_schema.columns WHERE table_name = 'OrderItem';
+            `);
         } catch (e: any) {
-            results.alterTableEventError = e.message;
+            results.orderItemColumnsError = e.message;
         }
 
         // 3. Ver tablas que existen en la BD

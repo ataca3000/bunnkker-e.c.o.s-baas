@@ -97,6 +97,7 @@ async function ensureDbColumns() {
     if (isDbSchemaSynced) return;
     const queries = [
         `ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "tenantId" TEXT DEFAULT 'default'`,
+        `ALTER TABLE "OrderItem" ADD COLUMN IF NOT EXISTS "tenantId" TEXT DEFAULT 'default'`,
         `ALTER TABLE "OrderEvent" ADD COLUMN IF NOT EXISTS "tenantId" TEXT DEFAULT 'default'`,
         `ALTER TABLE "Customer" ADD COLUMN IF NOT EXISTS "tenantId" TEXT DEFAULT 'default'`,
         `ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "tenantId" TEXT DEFAULT 'default'`
