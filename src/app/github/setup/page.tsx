@@ -1,4 +1,3 @@
-import Link from 'next/link';
 "use client";
 
 import React, { useEffect, useState, Suspense } from 'react';
@@ -110,7 +109,7 @@ function GitHubSetupContent() {
             >
               <span>Entrar a mi ERP</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </Link>
+            </a>
           </motion.div>
         )}
 
