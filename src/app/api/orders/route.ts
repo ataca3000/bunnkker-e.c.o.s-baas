@@ -28,6 +28,7 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
     try {
+        await ensureDbColumns();
         const now = new Date();
         const expiredOrders = await prisma.order.findMany({
             where: {
@@ -94,17 +95,20 @@ export async function GET() {
 let isDbSchemaSynced = false;
 async function ensureDbColumns() {
     if (isDbSchemaSynced) return;
-    try {
-        await prisma.$executeRawUnsafe(`ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "tenantId" TEXT DEFAULT 'default'`);
-        await prisma.$executeRawUnsafe(`ALTER TABLE "OrderItem" ADD COLUMN IF NOT EXISTS "tenantId" TEXT DEFAULT 'default'`);
-        await prisma.$executeRawUnsafe(`ALTER TABLE "OrderEvent" ADD COLUMN IF NOT EXISTS "tenantId" TEXT DEFAULT 'default'`);
-        await prisma.$executeRawUnsafe(`ALTER TABLE "Customer" ADD COLUMN IF NOT EXISTS "tenantId" TEXT DEFAULT 'default'`);
-        await prisma.$executeRawUnsafe(`ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "tenantId" TEXT DEFAULT 'default'`);
-    } catch {
-        // Ignorar si SQLite o si las columnas ya existen
-    } finally {
-        isDbSchemaSynced = true;
+    const queries = [
+        `ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "tenantId" TEXT DEFAULT 'default'`,
+        `ALTER TABLE "OrderEvent" ADD COLUMN IF NOT EXISTS "tenantId" TEXT DEFAULT 'default'`,
+        `ALTER TABLE "Customer" ADD COLUMN IF NOT EXISTS "tenantId" TEXT DEFAULT 'default'`,
+        `ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "tenantId" TEXT DEFAULT 'default'`
+    ];
+    for (const q of queries) {
+        try {
+            await prisma.$executeRawUnsafe(q);
+        } catch {
+            // Ignorar si la columna ya existe o dialecto diferente
+        }
     }
+    isDbSchemaSynced = true;
 }
 
 export async function POST(request: NextRequest) {
