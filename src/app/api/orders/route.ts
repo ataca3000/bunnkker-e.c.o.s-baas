@@ -91,10 +91,27 @@ export async function GET() {
     }
 }
 
+let isDbSchemaSynced = false;
+async function ensureDbColumns() {
+    if (isDbSchemaSynced) return;
+    try {
+        await prisma.$executeRawUnsafe(`ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "tenantId" TEXT DEFAULT 'default'`);
+        await prisma.$executeRawUnsafe(`ALTER TABLE "OrderItem" ADD COLUMN IF NOT EXISTS "tenantId" TEXT DEFAULT 'default'`);
+        await prisma.$executeRawUnsafe(`ALTER TABLE "OrderEvent" ADD COLUMN IF NOT EXISTS "tenantId" TEXT DEFAULT 'default'`);
+        await prisma.$executeRawUnsafe(`ALTER TABLE "Customer" ADD COLUMN IF NOT EXISTS "tenantId" TEXT DEFAULT 'default'`);
+        await prisma.$executeRawUnsafe(`ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "tenantId" TEXT DEFAULT 'default'`);
+    } catch {
+        // Ignorar si SQLite o si las columnas ya existen
+    } finally {
+        isDbSchemaSynced = true;
+    }
+}
+
 export async function POST(request: NextRequest) {
     let body: any = {};
     let orderId: string | undefined = undefined;
     try {
+        await ensureDbColumns();
         body = await request.json().catch(() => ({}));
         orderId = body.orderId || body.id;
         const total = body.total;
