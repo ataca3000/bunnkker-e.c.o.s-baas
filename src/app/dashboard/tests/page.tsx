@@ -37,9 +37,9 @@ export default function TestsDashboard() {
                 <Link href="/dashboard" className="text-slate-500 hover:text-white flex items-center gap-2 mb-4 transition-colors w-fit font-bold text-sm">
                     <ChevronLeft size={16} /> Volver al Panel Maestro
                 </Link>
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                        <div className="bg-red-500/20 text-red-500 p-4 rounded-2xl border border-red-500/30">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-[8px]">
+                    <div className="flex items-center gap-[8px]">
+                        <div className="bg-red-500/20 text-red-500 p-4 rounded-[5px] border border-red-500/30">
                             <ServerCrash size={32} />
                         </div>
                         <div>
@@ -70,7 +70,7 @@ export default function TestsDashboard() {
             </header>
 
             {/* Pestañas (Tabs) */}
-            <div className="flex bg-slate-900/50 p-1 rounded-2xl gap-2 mb-8 border border-slate-800 w-fit">
+            <div className="flex bg-slate-900/50 p-1 rounded-[5px] gap-2 mb-8 border border-slate-800 w-fit">
                 <button
                     onClick={() => setActiveTab('concurrency')}
                     className={`flex items-center gap-2 py-3 px-6 rounded-xl text-sm font-bold uppercase tracking-wide transition-all ${
@@ -108,3 +108,4 @@ export default function TestsDashboard() {
         </main>
     );
 }
+

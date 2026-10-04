@@ -402,7 +402,7 @@ export default function PurchasesDashboard() {
                             whileHover={{ scale: 1.03 }}
                             whileTap={{ scale: 0.97 }}
                             onClick={() => setShowForm(f => !f)}
-                            className="btn-sanjose"
+                            className="bunkker-btn"
                             style={{
                                 display: 'flex',
                                 alignItems: 'center',
@@ -428,7 +428,7 @@ export default function PurchasesDashboard() {
                             style={{ overflow: 'hidden' }}
                         >
                             <div
-                                className="card-sanjose"
+                                className="bunkker-card"
                                 style={{
                                     padding: '2rem',
                                     borderTop: '4px solid #0ea5e9',
@@ -618,7 +618,7 @@ export default function PurchasesDashboard() {
                                 >
                                     <button
                                         onClick={resetForm}
-                                        className="btn-sanjose-secondary"
+                                        className="bunkker-btn-secondary"
                                         style={{ padding: '10px 20px', fontSize: '0.82rem' }}
                                     >
                                         CANCELAR
@@ -628,7 +628,7 @@ export default function PurchasesDashboard() {
                                         whileTap={{ scale: 0.97 }}
                                         onClick={handleSaveOrder}
                                         disabled={saving}
-                                        className="btn-sanjose"
+                                        className="bunkker-btn"
                                         style={{
                                             padding: '10px 24px',
                                             fontSize: '0.82rem',
@@ -667,7 +667,7 @@ export default function PurchasesDashboard() {
                     }}
                 >
                     {/* Cuentas por pagar */}
-                    <motion.div variants={statVariants} className="card-sanjose" style={{ borderLeft: '5px solid #F39C12', padding: '1.5rem' }}>
+                    <motion.div variants={statVariants} className="bunkker-card" style={{ borderLeft: '5px solid #F39C12', padding: '1.5rem' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                             <div>
                                 <p style={{ color: '#666', fontSize: '0.72rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>
@@ -688,7 +688,7 @@ export default function PurchasesDashboard() {
                     </motion.div>
 
                     {/* Órdenes del mes */}
-                    <motion.div variants={statVariants} className="card-sanjose" style={{ borderLeft: '5px solid #0ea5e9', padding: '1.5rem' }}>
+                    <motion.div variants={statVariants} className="bunkker-card" style={{ borderLeft: '5px solid #0ea5e9', padding: '1.5rem' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                             <div>
                                 <p style={{ color: '#666', fontSize: '0.72rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>
@@ -708,7 +708,7 @@ export default function PurchasesDashboard() {
                     </motion.div>
 
                     {/* Proveedores activos */}
-                    <motion.div variants={statVariants} className="card-sanjose" style={{ borderLeft: '5px solid #27AE60', padding: '1.5rem' }}>
+                    <motion.div variants={statVariants} className="bunkker-card" style={{ borderLeft: '5px solid #27AE60', padding: '1.5rem' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                             <div>
                                 <p style={{ color: '#666', fontSize: '0.72rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>
@@ -1014,3 +1014,4 @@ export default function PurchasesDashboard() {
         </div>
     );
 }
+

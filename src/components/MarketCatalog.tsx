@@ -109,13 +109,13 @@ export default function MarketCatalog({ initialCategory, hideHeader }: { initial
                     <div className="flex gap-3 items-center flex-wrap">
                         <button
                             onClick={() => window.location.href = '/login'}
-                            className="btn-sanjose px-5 py-3 flex items-center gap-2 rounded-xl text-sm shadow-lg shadow-blue-900/10 bg-blue-600/20 text-blue-300 border border-blue-500/30 hover:bg-blue-600/40 transition-colors"
+                            className="bunkker-btn px-5 py-3 flex items-center gap-2 rounded-xl text-sm shadow-lg shadow-blue-900/10 bg-blue-600/20 text-blue-300 border border-blue-500/30 hover:bg-blue-600/40 transition-colors"
                         >
                             🔑 INICIAR SESIÓN
                         </button>
                         <button
                             onClick={() => setShowScanner(true)}
-                            className="btn-sanjose px-5 py-3 flex items-center gap-2 rounded-xl text-sm shadow-lg shadow-blue-900/10"
+                            className="bunkker-btn px-5 py-3 flex items-center gap-2 rounded-xl text-sm shadow-lg shadow-blue-900/10"
                         >
                             <QrCode size={18} /> ESCANEAR
                         </button>
@@ -135,7 +135,7 @@ export default function MarketCatalog({ initialCategory, hideHeader }: { initial
                 <div className="flex justify-end items-center mb-6 gap-3">
                     <button
                         onClick={() => setShowScanner(true)}
-                        className="btn-sanjose px-4 py-2 flex items-center gap-2 rounded-xl text-sm bg-slate-800 border border-white/10 text-white hover:bg-slate-700"
+                        className="bunkker-btn px-4 py-2 flex items-center gap-2 rounded-xl text-sm bg-slate-800 border border-white/10 text-white hover:bg-slate-700"
                     >
                         <QrCode size={16} /> Escanear
                     </button>

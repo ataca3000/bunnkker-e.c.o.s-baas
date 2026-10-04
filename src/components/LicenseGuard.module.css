@@ -26,7 +26,7 @@
     left: 0;
     width: 100%;
     height: 4px;
-    background: var(--sanjose-red);
+    background: var(--bunkker-red);
 }
 
 .iconWrapper {
@@ -36,7 +36,7 @@
 }
 
 .iconCircle {
-    border: 2px solid var(--sanjose-red);
+    border: 2px solid var(--bunkker-red);
     padding: 15px;
     border-radius: 50%;
 }
@@ -70,14 +70,14 @@
 }
 
 .error {
-    color: var(--sanjose-red);
+    color: var(--bunkker-red);
     font-size: 0.7rem;
     margin-bottom: 1rem;
 }
 
 .validateBtn {
     width: 100%;
-    background-color: var(--sanjose-red);
+    background-color: var(--bunkker-red);
     color: white;
     padding: 15px;
     border: none;

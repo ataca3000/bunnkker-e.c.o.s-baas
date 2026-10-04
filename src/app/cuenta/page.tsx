@@ -419,8 +419,8 @@ export default function UserAccount() {
                 {/* Header Superior del Portal */}
                 <div className="bg-slate-900/70 backdrop-blur-xl border border-slate-700/60 rounded-3xl p-6 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
-                        <div className="w-16 h-16 bg-gradient-to-tr from-sky-500 to-blue-600 rounded-2xl flex items-center justify-center text-white text-2xl font-black shadow-lg shadow-sky-500/30 border border-sky-400/30">
-                            {customer.name?.charAt(0).toUpperCase() || 'C'}
+                        <div className="w-16 h-16 bg-gradient-to-tr from-sky-500 to-blue-600 rounded-2xl flex items-center justify-center text-white text-2xl font-black shadow-lg shadow-sky-500/30 border border-sky-400/30 overflow-hidden">
+                            <img src={`https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIComponent(customer.name || 'Cliente')}&backgroundColor=b6e3f4`} alt="Avatar de Perfil" className="w-full h-full object-cover" />
                         </div>
                         <div>
                             <div className="flex items-center gap-2">

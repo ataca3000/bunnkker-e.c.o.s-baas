@@ -95,7 +95,7 @@ export default function ImportCSVButton({ onSuccess }: { onSuccess?: () => void 
 
             {preview && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-slate-900 border border-slate-800 rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6 text-white">
+                    <div className="bg-slate-900 border border-slate-800 rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-[8px] text-white">
                         <h2 className="text-xl font-bold mb-4">Vista Previa de Importación</h2>
                         
                         {!result ? (
@@ -183,3 +183,4 @@ export default function ImportCSVButton({ onSuccess }: { onSuccess?: () => void 
         </>
     );
 }
+

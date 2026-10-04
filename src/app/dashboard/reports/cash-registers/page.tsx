@@ -40,7 +40,7 @@ export default function CashRegistersAuditPage() {
             <div className="max-w-6xl mx-auto space-y-6">
                 
                 {/* Header */}
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/10 pb-6">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-[8px] border-b border-white/10 pb-6">
                     <div>
                         <Link href="/dashboard/reports" className="flex items-center gap-2 text-sky-400 hover:text-sky-300 font-bold mb-2 text-sm transition-colors">
                             <ChevronLeft size={16} /> Volver a Reportes
@@ -68,18 +68,18 @@ export default function CashRegistersAuditPage() {
 
                 {/* Content */}
                 {loading ? (
-                    <div className="py-20 flex flex-col items-center justify-center gap-4 text-slate-400">
+                    <div className="py-20 flex flex-col items-center justify-center gap-[8px] text-slate-400">
                         <div className="w-10 h-10 border-4 border-rose-500/20 border-t-rose-500 rounded-full animate-spin" />
                         <p className="font-bold">Cargando bitácora de auditoría...</p>
                     </div>
                 ) : filteredLogs.length === 0 ? (
-                    <div className="py-20 text-center bg-white/5 rounded-3xl border border-white/5">
+                    <div className="py-20 text-center bg-white/5 rounded-[5px] border border-white/5">
                         <Calculator size={48} className="mx-auto text-slate-600 mb-4" />
                         <h3 className="text-xl font-bold text-white mb-2">Sin Registros</h3>
                         <p className="text-slate-400">No hay cortes de caja registrados que coincidan con la búsqueda.</p>
                     </div>
                 ) : (
-                    <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl">
+                    <div className="bg-slate-900 border border-slate-800 rounded-[5px] overflow-hidden shadow-2xl">
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse">
                                 <thead>
@@ -155,3 +155,4 @@ export default function CashRegistersAuditPage() {
         </div>
     );
 }
+

@@ -174,7 +174,7 @@ export default function SetupWizard() {
                     </div>
                 </div>
 
-                <div className="flex items-center gap-4 text-xs font-bold text-slate-400">
+                <div className="flex items-center gap-[8px] text-xs font-bold text-slate-400">
                     <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/60 border border-slate-800">
                         <div className="w-2 h-2 rounded-full bg-green-500 animate-ping" />
                         <span>NODO EDGE: {config.businessName || 'LOCAL'}</span>
@@ -185,7 +185,7 @@ export default function SetupWizard() {
             <div className="flex-1 grid grid-cols-1 lg:grid-cols-[280px_1fr] z-10 relative">
                 
                 {/* Barra Lateral Izquierda - Fondo Negro Puro */}
-                <nav className="bg-black border-r border-slate-800/80 p-6 flex flex-col justify-between" aria-label="Menú de configuración">
+                <nav className="bg-black border-r border-slate-800/80 p-[8px] flex flex-col justify-between" aria-label="Menú de configuración">
                     <div className="space-y-2">
                         <div className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-4 pl-2">Asistente de Arranque</div>
                         {[
@@ -222,10 +222,10 @@ export default function SetupWizard() {
                 </nav>
 
                 {/* Área Principal de Contenido */}
-                <main className="p-6 md:p-8 grid grid-cols-1 xl:grid-cols-[1.5fr_1fr] gap-8 overflow-y-auto">
+                <main className="p-[8px] md:p-8 grid grid-cols-1 xl:grid-cols-[1.5fr_1fr] gap-8 overflow-y-auto">
                     
                     {/* Panel del Asistente Guiado */}
-                    <div className="bg-slate-950/40 backdrop-blur-md rounded-2xl border border-slate-800/60 p-6 md:p-8 flex flex-col justify-between shadow-2xl relative">
+                    <div className="bg-slate-950/40 backdrop-blur-md rounded-[5px] border border-slate-800/60 p-[8px] md:p-8 flex flex-col justify-between shadow-2xl relative">
                         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-t-2xl" />
                         
                         <AnimatePresence mode="wait">
@@ -245,7 +245,7 @@ export default function SetupWizard() {
                                             Conecta tu cuenta de Facturapi para timbrar facturas de forma automática al cerrar ventas en tu POS. Las facturas se enviarán solas al WhatsApp de tus clientes.
                                         </p>
 
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-[8px] pt-2">
                                             <div>
                                                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Nombre comercial del negocio</label>
                                                 <input 
@@ -270,7 +270,7 @@ export default function SetupWizard() {
 
                                         <div className="pt-4 border-t border-slate-800/80">
                                             {!isPremium ? (
-                                                <div className="p-6 rounded-xl bg-slate-900/30 border border-slate-800 text-center">
+                                                <div className="p-[8px] rounded-xl bg-slate-900/30 border border-slate-800 text-center">
                                                     <Lock size={32} className="mx-auto text-slate-600 mb-2" />
                                                     <h4 className="text-sm font-bold text-white mb-1">Módulo de Facturación Bloqueado</h4>
                                                     <p className="text-xs text-slate-500 max-w-sm mx-auto mb-4">Requiere tener una licencia activa de BUNKKER ERP.</p>
@@ -290,7 +290,7 @@ export default function SetupWizard() {
                                         <p className="text-sm text-slate-400">
                                             Especifica los datos del banco donde recibirás las transferencias de cobro electrónico y los cortes de caja.
                                         </p>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-[8px]">
                                             <div>
                                                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Banco emisor</label>
                                                 <input
@@ -324,7 +324,7 @@ export default function SetupWizard() {
                                             El sistema opera en modo Local-First. Puedes otorgar o revocar el acceso a pagos web públicos e inspección obligatoria en caja.
                                         </p>
                                         
-                                        <div className="p-5 rounded-2xl bg-cyan-950/20 border border-cyan-500/30 text-cyan-400 text-sm">
+                                        <div className="p-[8px] rounded-[5px] bg-cyan-950/20 border border-cyan-500/30 text-cyan-400 text-sm">
                                             <span className="font-bold block mb-1">🛒 Flujo de Reservas WiFi LAN & Ficha de Pago:</span>
                                             Todos los pedidos desde la fila o web entran en reserva con temporizador de 30 minutos. Los clientes obtienen un Serial único (BNK-XXXX) para validar y pagar directamente en la caja (Efectivo/Tarjeta/SPEI).
                                         </div>
@@ -364,7 +364,7 @@ export default function SetupWizard() {
                                         <h3 className="flex items-center gap-2.5 text-cyan-400 font-bold text-xl uppercase tracking-wider">
                                             <MapPin /> Contacto y Cobertura
                                         </h3>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-[8px]">
                                             <div>
                                                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">WhatsApp de ventas</label>
                                                 <input
@@ -484,7 +484,7 @@ export default function SetupWizard() {
                     </div>
 
                     {/* Centro de Innovación / Actualizaciones (Derecha) */}
-                    <div className="bg-slate-950/20 backdrop-blur-md rounded-2xl border border-slate-800/40 p-6 flex flex-col shadow-xl">
+                    <div className="bg-slate-950/20 backdrop-blur-md rounded-[5px] border border-slate-800/40 p-[8px] flex flex-col shadow-xl">
                         <div className="flex items-center justify-between mb-6 border-b border-slate-800/80 pb-4">
                             <h3 className="flex items-center gap-2 text-cyan-400 font-bold text-sm uppercase tracking-wider">
                                 <Sparkles size={16} /> Centro de Innovación
@@ -539,3 +539,4 @@ export default function SetupWizard() {
         </div>
     );
 }
+

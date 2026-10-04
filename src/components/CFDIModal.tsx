@@ -76,7 +76,7 @@ export default function CFDIModal({ product, onClose }: { product: Product, onCl
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="card-sanjose bg-white w-full max-w-[500px] p-8 relative rounded-2xl"
+                className="bunkker-card bg-white w-full max-w-[500px] p-8 relative rounded-2xl"
             >
                 <button 
                     onClick={onClose} 
@@ -99,7 +99,7 @@ export default function CFDIModal({ product, onClose }: { product: Product, onCl
                         <p className="text-gray-600 mb-8">
                             La factura electrónica para <strong>{product.name}</strong> ha sido enviada a tu correo registrado o está lista para descargar.
                         </p>
-                        <button onClick={onClose} className="btn-sanjose w-full py-3 font-bold">
+                        <button onClick={onClose} className="bunkker-btn w-full py-3 font-bold">
                             CERRAR
                         </button>
                     </div>
@@ -214,7 +214,7 @@ export default function CFDIModal({ product, onClose }: { product: Product, onCl
                             <button
                                 type="submit"
                                 disabled={loading || !rfc || !isValidRfc || !paymentMethod}
-                                className={`btn-sanjose w-full p-4 font-bold text-base flex justify-center items-center transition-all ${(loading || !rfc || !isValidRfc || !paymentMethod) ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+                                className={`bunkker-btn w-full p-4 font-bold text-base flex justify-center items-center transition-all ${(loading || !rfc || !isValidRfc || !paymentMethod) ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
                             >
                                 {loading ? 'GENERANDO CFDI...' : 'EMITIR FACTURA AHORA'}
                             </button>

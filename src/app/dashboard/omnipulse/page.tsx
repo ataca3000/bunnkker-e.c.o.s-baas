@@ -191,10 +191,10 @@ export default function OmniPulseDashboard() {
     const charCount = postBody.length + (hashtags ? hashtags.length + 2 : 0);
 
     return (
-        <main className="min-h-screen p-6 lg:p-10 max-w-[1400px] mx-auto">
+        <main className="min-h-screen p-[8px] lg:p-10 max-w-[1400px] mx-auto">
 
             {/* ── HEADER ── */}
-            <header className="mb-8 flex flex-col lg:flex-row lg:items-end gap-4 justify-between">
+            <header className="mb-8 flex flex-col lg:flex-row lg:items-end gap-[8px] justify-between">
                 <div>
                     <div className="flex items-center gap-3 mb-1">
                         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 flex items-center justify-center text-lg font-black shadow-lg shadow-purple-500/30">
@@ -244,7 +244,7 @@ export default function OmniPulseDashboard() {
             </header>
 
             {/* ── TABS ── */}
-            <div className="flex gap-1 mb-8 p-1 bg-slate-900/60 backdrop-blur rounded-2xl border border-slate-800/50 w-fit">
+            <div className="flex gap-1 mb-8 p-1 bg-slate-900/60 backdrop-blur rounded-[5px] border border-slate-800/50 w-fit">
                 {([
                     { id: 'accounts', label: 'Mis Cuentas',  icon: '🔑', badge: accounts.length || undefined },
                     { id: 'composer', label: 'Compositor',   icon: '✏️', badge: undefined },
@@ -320,7 +320,7 @@ export default function OmniPulseDashboard() {
                                         return (
                                             <div
                                                 key={networkId}
-                                                className={`relative rounded-2xl border transition-all duration-200 overflow-hidden ${
+                                                className={`relative rounded-[5px] border transition-all duration-200 overflow-hidden ${
                                                     hasAccount
                                                         ? isSelected
                                                             ? 'border-purple-500/60 bg-purple-500/10 shadow-lg shadow-purple-500/10'
@@ -386,7 +386,7 @@ export default function OmniPulseDashboard() {
                         ))}
 
                         {/* TIP Grupo B */}
-                        <div className="rounded-2xl border border-green-500/20 bg-green-500/5 p-5">
+                        <div className="rounded-[5px] border border-green-500/20 bg-green-500/5 p-[8px]">
                             <p className="text-green-400 font-bold text-sm mb-1">💡 Empieza ahora mismo sin configuración compleja</p>
                             <p className="text-slate-400 text-xs leading-relaxed">
                                 <strong className="text-white">Telegram:</strong> Crea un bot en @BotFather → copia el token → ponlo en "Token" · ID Canal = @tunombre_canal<br />
@@ -406,7 +406,7 @@ export default function OmniPulseDashboard() {
 
                             {/* ── Editor Izquierdo ── */}
                             <div className="space-y-5">
-                                <div className="card-sanjose p-6">
+                                <div className="bunkker-card p-[8px]">
                                     <div className="flex items-center justify-between mb-4">
                                         <h3 className="font-black text-white uppercase tracking-tight text-sm">
                                             ✏️ Contenido de la Publicación
@@ -466,7 +466,7 @@ export default function OmniPulseDashboard() {
                                 </div>
 
                                 {/* Cuentas seleccionadas */}
-                                <div className="card-sanjose p-6">
+                                <div className="bunkker-card p-[8px]">
                                     <div className="flex items-center justify-between mb-4">
                                         <h3 className="font-black text-white uppercase tracking-tight text-sm">
                                             🎯 Destinos ({selectedAccounts.size}/{accounts.length})
@@ -535,7 +535,7 @@ export default function OmniPulseDashboard() {
                             {/* ── Preview Derecho ── */}
                             <div className="space-y-5">
                                 {useSpintax && spintaxPreviews.length > 0 ? (
-                                    <div className="card-sanjose p-6">
+                                    <div className="bunkker-card p-[8px]">
                                         <h3 className="font-black text-white uppercase tracking-tight text-sm mb-4">
                                             🎲 Variaciones Spintax (Vista Previa)
                                         </h3>
@@ -557,7 +557,7 @@ export default function OmniPulseDashboard() {
                                             const net = NETWORKS[acc.network];
                                             const previewText = (postBody + (hashtags ? `\n\n${hashtags}` : '')).slice(0, net.charLimit);
                                             return (
-                                                <div key={acc.id} className="rounded-2xl border border-slate-700/30 bg-slate-800/30 p-4">
+                                                <div key={acc.id} className="rounded-[5px] border border-slate-700/30 bg-slate-800/30 p-4">
                                                     <div className="flex items-center gap-2 mb-3">
                                                         <span className="text-lg">{net.icon}</span>
                                                         <span className="font-bold text-sm text-white">{net.name}</span>
@@ -579,7 +579,7 @@ export default function OmniPulseDashboard() {
                                 )}
 
                                 {!postBody && (
-                                    <div className="card-sanjose p-8 text-center">
+                                    <div className="bunkker-card p-8 text-center">
                                         <p className="text-4xl mb-4">✏️</p>
                                         <p className="text-slate-400 text-sm">
                                             Escribe tu publicación a la izquierda para ver la vista previa aquí
@@ -599,7 +599,7 @@ export default function OmniPulseDashboard() {
                 {/* ═══════════════════════════════════════════════════════════ */}
                 {activeTab === 'monitor' && (
                     <motion.div key="monitor" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-                        <div className="card-sanjose p-8">
+                        <div className="bunkker-card p-8">
                             <div className="flex items-center justify-between mb-8">
                                 <div>
                                     <h2 className="text-2xl font-black text-white uppercase tracking-tight">
@@ -655,14 +655,14 @@ export default function OmniPulseDashboard() {
                                     )}
 
                                     {/* Grid de resultados */}
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-[8px]">
                                         {dispatchResults.map(result => {
                                             const net = NETWORKS[result.network];
                                             return (
                                                 <motion.div
                                                     key={result.accountId}
                                                     layout
-                                                    className={`rounded-2xl p-4 border transition-all duration-500 ${
+                                                    className={`rounded-[5px] p-4 border transition-all duration-500 ${
                                                         result.status === 'success'  ? 'border-green-500/40 bg-green-500/5' :
                                                         result.status === 'failed'   ? 'border-red-500/40 bg-red-500/5' :
                                                         result.status === 'publishing' ? 'border-purple-500/60 bg-purple-500/10 shadow-lg shadow-purple-500/20' :
@@ -725,7 +725,7 @@ export default function OmniPulseDashboard() {
                 {/* ═══════════════════════════════════════════════════════════ */}
                 {activeTab === 'logs' && (
                     <motion.div key="logs" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-                        <div className="card-sanjose p-8">
+                        <div className="bunkker-card p-8">
                             <h2 className="text-2xl font-black text-white uppercase tracking-tight mb-8">
                                 📋 Historial de Publicaciones
                             </h2>
@@ -738,7 +738,7 @@ export default function OmniPulseDashboard() {
                             ) : (
                                 <div className="space-y-4">
                                     {logs.map(log => (
-                                        <div key={log.postId} className="rounded-2xl border border-slate-700/30 bg-slate-800/30 p-5">
+                                        <div key={log.postId} className="rounded-[5px] border border-slate-700/30 bg-slate-800/30 p-[8px]">
                                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                                                 <div>
                                                     <p className="font-black text-white text-sm truncate max-w-[400px]">
@@ -804,7 +804,7 @@ export default function OmniPulseDashboard() {
                             initial={{ scale: 0.95, y: 20 }}
                             animate={{ scale: 1, y: 0 }}
                             exit={{ scale: 0.95, y: 20 }}
-                            className="w-full max-w-lg card-sanjose p-8"
+                            className="w-full max-w-lg bunkker-card p-8"
                         >
                             {(() => {
                                 const net = NETWORKS[connectingNetwork];
@@ -920,3 +920,4 @@ export default function OmniPulseDashboard() {
         </main>
     );
 }
+

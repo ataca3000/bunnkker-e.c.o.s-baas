@@ -94,7 +94,7 @@ export default function UserProfile() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
 
                     {/* Foto de Perfil */}
-                    <div className="bg-slate-900/60 backdrop-blur-md border border-cyan-500/20 shadow-[0_0_20px_rgba(0,242,255,0.1)] rounded-sm p-6 text-center">
+                    <div className="bg-slate-900/60 backdrop-blur-md border border-cyan-500/20 shadow-[0_0_20px_rgba(0,242,255,0.1)] rounded-sm p-[8px] text-center">
                         <div className="relative w-32 h-32 mx-auto rounded-full overflow-hidden border-2 border-cyan-500 shadow-[0_0_15px_rgba(0,242,255,0.3)]">
                             <img src={userData.photo} alt="Perfil" className="w-full h-full object-cover" />
                             {isEditing && (
@@ -115,7 +115,7 @@ export default function UserProfile() {
                     </div>
 
                     {/* Datos del Usuario */}
-                    <div className="md:col-span-2 bg-slate-900/60 backdrop-blur-md border border-cyan-500/20 shadow-[0_0_20px_rgba(0,242,255,0.1)] rounded-sm p-6 md:p-8">
+                    <div className="md:col-span-2 bg-slate-900/60 backdrop-blur-md border border-cyan-500/20 shadow-[0_0_20px_rgba(0,242,255,0.1)] rounded-sm p-[8px] md:p-8">
                         <div className="flex justify-between items-center mb-6 border-b border-cyan-500/20 pb-4">
                             <h3 className="text-lg font-bold text-white flex items-center gap-2"><User size={20} className="text-cyan-400" /> Información Personal</h3>
                             <button
@@ -269,4 +269,5 @@ export default function UserProfile() {
         </div>
     );
 }
+
 

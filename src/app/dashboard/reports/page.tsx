@@ -218,14 +218,14 @@ export default function ReportsAndBackups() {
                 {/* Header */}
                 <header style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
                     <div>
-                        <h1 className="heading-sanjose" style={{ margin: '0 0 0.5rem 0' }}>REPORTES & RESPALDO LOCAL</h1>
+                        <h1 className="bunkker-heading" style={{ margin: '0 0 0.5rem 0' }}>REPORTES & RESPALDO LOCAL</h1>
                         <p style={{ color: '#666', margin: 0 }}>Datos de <b>{siteConfig.businessName}</b> procesados por el Motor Local SQLite P2P.</p>
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <button
                             onClick={handlePrintPDFReport}
-                            className="btn-sanjose-secondary"
+                            className="bunkker-btn-secondary"
                             style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '0.6rem 1.2rem', fontSize: '0.85rem', fontWeight: 'bold' }}
                         >
                             <Printer size={18} /> Imprimir / PDF
@@ -244,7 +244,7 @@ export default function ReportsAndBackups() {
                         { label: 'Pedidos Completados', value: totalOrders.toString(), icon: <CheckCircle size={22} />, color: '#27ae60' },
                         { label: 'Productos en Catálogo', value: products.length.toString(), icon: <Package size={22} />, color: '#F39C12' },
                     ].map((kpi, i) => (
-                        <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }} className="card-sanjose" style={{ padding: '1.5rem', borderLeft: `5px solid ${kpi.color}` }}>
+                        <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }} className="bunkker-card" style={{ padding: '1.5rem', borderLeft: `5px solid ${kpi.color}` }}>
                             <div style={{ color: kpi.color, marginBottom: '8px' }}>{kpi.icon}</div>
                             <p style={{ color: '#666', fontSize: '0.75rem', fontWeight: 'bold', textTransform: 'uppercase', margin: '0 0 4px' }}>{kpi.label}</p>
                             <h3 style={{ fontSize: '1.6rem', fontWeight: '900', color: '#1a1a1a', margin: 0 }}>{kpi.value}</h3>
@@ -258,7 +258,7 @@ export default function ReportsAndBackups() {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
 
                         {/* Export buttons */}
-                        <div className="card-sanjose">
+                        <div className="bunkker-card">
                             <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#0ea5e9', marginBottom: '1rem' }}>
                                 <FileSpreadsheet size={24} /> DESCARGAR REPORTES (EXCEL / CSV)
                             </h3>
@@ -272,7 +272,7 @@ export default function ReportsAndBackups() {
                                         onClick={() => handleExport(type)}
                                         whileHover={{ scale: 1.02 }}
                                         whileTap={{ scale: 0.97 }}
-                                        className="btn-sanjose-secondary"
+                                        className="bunkker-btn-secondary"
                                         disabled={isExporting}
                                         style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '1rem', opacity: isExporting && exportType !== type ? 0.5 : 1 }}
                                     >
@@ -287,7 +287,7 @@ export default function ReportsAndBackups() {
 
                         {/* Sales chart (bar) */}
                         {metrics.length > 0 && (
-                            <div className="card-sanjose">
+                            <div className="bunkker-card">
                                 <h3 style={{ color: '#0ea5e9', marginBottom: '1.5rem', fontSize: '1rem', fontWeight: '900' }}>VENTAS POR MES</h3>
                                 <div style={{ display: 'flex', alignItems: 'flex-end', gap: '12px', height: '120px' }}>
                                     {metrics.map((m, i) => (
@@ -306,7 +306,7 @@ export default function ReportsAndBackups() {
                         )}
 
                         {/* Local SQLite Backup Card */}
-                        <div className="card-sanjose" style={{ background: '#111827', color: 'white', borderColor: '#374151' }}>
+                        <div className="bunkker-card" style={{ background: '#111827', color: 'white', borderColor: '#374151' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                                 <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: 0 }}>
                                     <HardDrive size={24} color="#38BDF8" /> RESPALDO LOCAL BASE DE DATOS
@@ -364,7 +364,7 @@ export default function ReportsAndBackups() {
                     <aside style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
 
                         {/* System status */}
-                        <div className="card-sanjose" style={{ borderLeft: '6px solid #27ae60' }}>
+                        <div className="bunkker-card" style={{ borderLeft: '6px solid #27ae60' }}>
                             <h4 style={{ fontWeight: '900', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <Server size={18} /> ESTADO MOTOR LOCAL
                             </h4>
@@ -389,7 +389,7 @@ export default function ReportsAndBackups() {
                         </div>
 
                         {/* Auditoría de Cortes de Caja */}
-                        <div className="card-sanjose" style={{ borderLeft: '6px solid #e11d48' }}>
+                        <div className="bunkker-card" style={{ borderLeft: '6px solid #e11d48' }}>
                             <h4 style={{ fontWeight: '900', color: '#e11d48', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <Calculator size={20} /> AUDITORÍA DE CAJAS
                             </h4>
@@ -406,7 +406,7 @@ export default function ReportsAndBackups() {
 
                         {/* Top products */}
                         {topProducts.length > 0 && (
-                            <div className="card-sanjose">
+                            <div className="bunkker-card">
                                 <h4 style={{ fontWeight: '900', color: '#0ea5e9', marginBottom: '1rem' }}>TOP PRODUCTOS</h4>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                     {topProducts.map((p, i) => (
@@ -428,10 +428,11 @@ export default function ReportsAndBackups() {
             <style>{`
                 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
                 @media print {
-                    header, button, nav, aside, .heading-sanjose { display: none !important; }
-                    .card-sanjose { border: none !important; box-shadow: none !important; color: black !important; background: white !important; }
+                    header, button, nav, aside, .bunkker-heading { display: none !important; }
+                    .bunkker-card { border: none !important; box-shadow: none !important; color: black !important; background: white !important; }
                 }
             `}</style>
         </div>
     );
 }
+

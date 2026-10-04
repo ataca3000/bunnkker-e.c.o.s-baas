@@ -86,7 +86,7 @@ export default function UserManagement() {
                         placeholder="Buscar empleados por nombre o correo..."
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
-                        className="w-full py-4 pl-12 pr-4 rounded-2xl border border-slate-700 bg-slate-800 text-white text-base outline-none shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                        className="w-full py-4 pl-12 pr-4 rounded-[5px] border border-slate-700 bg-slate-800 text-white text-base outline-none shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
                     />
                 </div>
 
@@ -98,13 +98,13 @@ export default function UserManagement() {
                         const badge = getRoleBadge(role);
 
                         return (
-                            <div key={role} className="bg-[#0f172a]/50 backdrop-blur-md border border-slate-700/50 rounded-3xl p-6 shadow-xl">
+                            <div key={role} className="bg-[#0f172a]/50 backdrop-blur-md border border-slate-700/50 rounded-[5px] p-[8px] shadow-xl">
                                 <h3 className="flex items-center gap-2 m-0 mb-5 text-white text-lg uppercase font-bold">
                                     <Shield size={20} color={badge.bg} /> {badge.text} <span className="bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full text-sm ml-2">{roleUsers.length}</span>
                                 </h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[8px]">
                                     {roleUsers.map((user: any) => (
-                                        <div key={user.uid} className="flex items-center gap-4 p-4 border border-slate-700/50 rounded-2xl bg-slate-900/40">
+                                        <div key={user.uid} className="flex items-center gap-[8px] p-4 border border-slate-700/50 rounded-[5px] bg-slate-900/40">
                                             <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg" style={{ background: badge.bg }}>
                                                 {user.displayName?.charAt(0).toUpperCase() || <User size={24} />}
                                             </div>
@@ -129,3 +129,4 @@ export default function UserManagement() {
         </div>
     );
 }
+

@@ -331,12 +331,17 @@ export default function StoreBuilderCanvas() {
                 }, 
                 async () => {
                     const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-                    addLayer({ 
-                        type, 
-                        content: downloadURL, 
-                        width: type === 'image' ? 200 : 260, 
-                        height: type === 'image' ? 150 : 160 
-                    });
+                    
+                    if (selectedBlockId) {
+                        updateBlockSettings(selectedBlockId, { imageUrl: downloadURL });
+                    } else {
+                        addLayer({ 
+                            type, 
+                            content: downloadURL, 
+                            width: type === 'image' ? 200 : 260, 
+                            height: type === 'image' ? 150 : 160 
+                        });
+                    }
                     setIsUploading(false);
                 }
             );
@@ -346,7 +351,12 @@ export default function StoreBuilderCanvas() {
             if (file.size < 800 * 1024) {
                 const reader = new FileReader();
                 reader.onload = e => {
-                    addLayer({ type, content: e.target?.result as string, width: type === 'image' ? 200 : 260, height: type === 'image' ? 150 : 160 });
+                    const content = e.target?.result as string;
+                    if (selectedBlockId) {
+                        updateBlockSettings(selectedBlockId, { imageUrl: content });
+                    } else {
+                        addLayer({ type, content, width: type === 'image' ? 200 : 260, height: type === 'image' ? 150 : 160 });
+                    }
                     setIsUploading(false);
                 };
                 reader.readAsDataURL(file);
@@ -364,9 +374,17 @@ export default function StoreBuilderCanvas() {
 
         switch (block.type) {
             case 'hero':
+                const bgImage = settings.imageUrl || siteConfig.heroImage;
+                const isVideo = bgImage && (bgImage.match(/\.(mp4|webm)/i) || bgImage.includes('video'));
                 return (
                     <div key={block.id} onClick={(e) => handleBlockClick(e, block.id)} className={`base-block ${isSelected ? 'selected' : ''}`} style={{ background: settings.backgroundColor || '#0f172a', position: 'relative', overflow: 'hidden', padding: device === 'mobile' ? '40px 20px' : '80px 48px', textAlign: settings.alignment || 'center' }}>
-                        {(settings.imageUrl || siteConfig.heroImage) && <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${settings.imageUrl || siteConfig.heroImage})`, backgroundSize: 'cover', backgroundPosition: 'center', opacity: 0.2 }} />}
+                        {bgImage && (
+                            isVideo ? (
+                                <video src={bgImage} autoPlay loop muted playsInline style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.2, pointerEvents: 'none' }} />
+                            ) : (
+                                <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${bgImage})`, backgroundSize: 'cover', backgroundPosition: 'center', opacity: 0.2 }} />
+                            )
+                        )}
                         <div style={{ position: 'relative', zIndex: 1 }}>
                             <div style={{ fontSize: `${settings.fontSize || (device === 'mobile' ? 32 : 48)}px`, fontWeight: '900', color: 'white', lineHeight: 1.1, marginBottom: '16px' }}>{settings.titleText || siteConfig.marketTitle || 'MI TIENDA'}</div>
                             <div style={{ color: '#94a3b8', fontSize: '18px' }}>{settings.subtitleText || siteConfig.marketSubtitle || 'Tu mejor opción'}</div>

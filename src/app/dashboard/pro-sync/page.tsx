@@ -139,7 +139,7 @@ export default function ProSyncPage() {
 
   return (
     <div className="p-8 max-w-5xl mx-auto space-y-8 animate-in fade-in zoom-in duration-500">
-      <div className="flex items-center gap-4 border-b border-slate-800 pb-4">
+      <div className="flex items-center gap-[8px] border-b border-slate-800 pb-4">
         <CloudLightning className={`w-10 h-10 ${isPro ? 'text-sky-400' : 'text-yellow-400'}`} />
         <div>
           <h1 className="text-3xl font-black uppercase tracking-widest text-white">
@@ -160,21 +160,21 @@ export default function ProSyncPage() {
               {isPro ? 'Servicios Activos' : 'Desbloquea el Potencial'}
             </h2>
             <div className="space-y-4">
-              <div className="flex gap-4 items-start">
+              <div className="flex gap-[8px] items-start">
                 <div className="p-2 bg-blue-500/10 rounded-lg text-blue-400"><Sparkles className="w-5 h-5"/></div>
                 <div>
                   <h3 className="text-white font-bold">Inteligencia Artificial Gemini</h3>
                   <p className="text-slate-400 text-sm">Clasificación automática de productos, redacción de descripciones y agente de chat experto.</p>
                 </div>
               </div>
-              <div className="flex gap-4 items-start">
+              <div className="flex gap-[8px] items-start">
                 <div className="p-2 bg-green-500/10 rounded-lg text-green-400"><Map className="w-5 h-5"/></div>
                 <div>
                   <h3 className="text-white font-bold">Logística Inteligente y Mapas</h3>
                   <p className="text-slate-400 text-sm">Geolocalización avanzada para rutas de entrega con la API de Google Maps.</p>
                 </div>
               </div>
-              <div className="flex gap-4 items-start">
+              <div className="flex gap-[8px] items-start">
                 <div className="p-2 bg-yellow-500/10 rounded-lg text-yellow-400"><DatabaseZap className="w-5 h-5"/></div>
                 <div>
                   <h3 className="text-white font-bold">Arquitectura Edge Computing</h3>
@@ -248,7 +248,7 @@ export default function ProSyncPage() {
                 Esta computadora está enviando respaldos militares encriptados a Google Cloud cada 2 horas automáticamente.
               </p>
 
-              <div className="relative z-10 p-6 bg-slate-950 border border-sky-900/50 rounded-xl mb-6">
+              <div className="relative z-10 p-[8px] bg-slate-950 border border-sky-900/50 rounded-xl mb-6">
                 <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Estado del Respaldo</h3>
                 
                 {backupStatus && (
@@ -312,3 +312,4 @@ export default function ProSyncPage() {
     </div>
   );
 }
+

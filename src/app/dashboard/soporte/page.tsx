@@ -86,7 +86,7 @@ function StatCard({ label, count, icon, color, delay }: StatCardProps) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay, duration: 0.4 }}
-            className="card-sanjose"
+            className="bunkker-card"
             style={{ padding: '1.25rem 1.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}
         >
             <div style={{
@@ -128,7 +128,7 @@ function TicketRow({ ticket, index, isExpanded, onToggle, onStatusChange, updati
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: index * 0.07, duration: 0.35 }}
-            className="card-sanjose"
+            className="bunkker-card"
             style={{ overflow: 'hidden', marginBottom: '1rem' }}
         >
             {/* Main row */}
@@ -219,7 +219,7 @@ function TicketRow({ ticket, index, isExpanded, onToggle, onStatusChange, updati
                                     Creado por: <strong style={{ color: '#666' }}>{ticket.createdBy}</strong>
                                 </div>
                                 <button
-                                    className="btn-sanjose-secondary"
+                                    className="bunkker-btn-secondary"
                                     disabled={isOffline || isUpdating || ticket.status === 'Resuelto' && false}
                                     onClick={(e) => { e.stopPropagation(); onStatusChange(ticket); }}
                                     style={{
@@ -304,7 +304,7 @@ function NewTicketForm({ onClose, onSave, saving }: NewTicketFormProps) {
                 animate={{ scale: 1, opacity: 1, y: 0 }}
                 exit={{ scale: 0.95, opacity: 0, y: 20 }}
                 transition={{ duration: 0.3 }}
-                className="card-sanjose"
+                className="bunkker-card"
                 style={{ width: '100%', maxWidth: 560, padding: '2rem', position: 'relative' }}
                 onClick={(e: any) => e.stopPropagation()}
             >
@@ -382,7 +382,7 @@ function NewTicketForm({ onClose, onSave, saving }: NewTicketFormProps) {
                     <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
                         <button
                             type="button"
-                            className="btn-sanjose-secondary"
+                            className="bunkker-btn-secondary"
                             onClick={onClose}
                             disabled={saving}
                             style={{ padding: '10px 20px' }}
@@ -391,7 +391,7 @@ function NewTicketForm({ onClose, onSave, saving }: NewTicketFormProps) {
                         </button>
                         <button
                             type="submit"
-                            className="btn-sanjose"
+                            className="bunkker-btn"
                             disabled={saving}
                             style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 24px' }}
                         >
@@ -567,7 +567,7 @@ export default function SoportePage() {
                         </p>
                     </div>
                     <button
-                        className="btn-sanjose"
+                        className="bunkker-btn"
                         onClick={() => setShowForm(true)}
                         style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '12px 24px', fontSize: '0.9rem', fontWeight: 800, alignSelf: 'flex-start' }}
                     >
@@ -643,7 +643,7 @@ export default function SoportePage() {
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        className="card-sanjose"
+                        className="bunkker-card"
                         style={{ padding: '3rem', textAlign: 'center', color: '#aaa' }}
                     >
                         <LifeBuoy size={48} style={{ opacity: 0.3, marginBottom: '1rem' }} />
@@ -651,7 +651,7 @@ export default function SoportePage() {
                             {filterStatus === 'Todos' ? 'No hay tickets registrados.' : `No hay tickets con estado "${filterStatus}".`}
                         </p>
                         <button
-                            className="btn-sanjose"
+                            className="bunkker-btn"
                             onClick={() => setShowForm(true)}
                             style={{ marginTop: '1rem', display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 22px' }}
                         >
@@ -695,3 +695,4 @@ export default function SoportePage() {
         </div>
     );
 }
+

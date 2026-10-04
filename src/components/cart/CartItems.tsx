@@ -50,7 +50,7 @@ export function CartEmptyState({ onClose }: CartEmptyStateProps) {
         <div className={styles.emptyState}>
             <ShoppingBag size={48} className={styles.emptyIcon} />
             <p>Tu carrito está vacío.</p>
-            <button onClick={onClose} className={`btn-sanjose ${styles.continueBtn}`}>
+            <button onClick={onClose} className={`bunkker-btn ${styles.continueBtn}`}>
                 Seguir Comprando
             </button>
         </div>

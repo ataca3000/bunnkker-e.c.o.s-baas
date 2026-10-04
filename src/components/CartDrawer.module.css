@@ -105,7 +105,7 @@
 
 .cartItemTotal {
   font-weight: bold;
-  color: var(--sanjose-red);
+  color: var(--bunkker-red);
 }
 
 .removeBtn {
@@ -170,7 +170,7 @@
 .fiscalInput {
   padding: 12px;
   border-radius: 4px;
-  border: 1px solid var(--sanjose-blue);
+  border: 1px solid var(--bunkker-primary);
   background: #f0f4ff;
   color: #111;
   text-transform: uppercase;
@@ -179,7 +179,7 @@
 .fiscalSelect {
   padding: 12px;
   border-radius: 4px;
-  border: 1px solid var(--sanjose-blue);
+  border: 1px solid var(--bunkker-primary);
   background: #f0f4ff;
   color: #111;
 }

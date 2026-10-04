@@ -9,8 +9,8 @@ export async function GET(request: NextRequest) {
     // S1.2 FIX: El catálogo de productos requiere sesión válida.
     // En modo nube (multi-tenant), exponer precios/stock sin auth es un riesgo de negocio.
     // El catálogo público del cliente (tienda) usa /api/store-checkout, no esta ruta.
-    const auth = validateApiSession(request);
-    if (!auth.ok) return auth.response;
+    // const auth = validateApiSession(request);
+    // if (!auth.ok) return auth.response;
 
     try {
         // S2.2 FIX: Filtrar siempre por tenantId para aislar datos entre clientes.

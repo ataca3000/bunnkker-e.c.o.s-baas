@@ -38,7 +38,7 @@ export default function RestockAlertWidget({ products, formatCurrency }: { produ
     };
 
     return (
-        <div className="bg-[#1a1d2d] border border-red-500/20 rounded-2xl p-6 shadow-[0_0_20px_rgba(239,68,68,0.05)] relative overflow-hidden transition-all hover:shadow-[0_0_30px_rgba(239,68,68,0.1)]">
+        <div className="bg-[#1a1d2d] border border-red-500/20 rounded-[5px] p-[8px] shadow-[0_0_20px_rgba(239,68,68,0.05)] relative overflow-hidden transition-all hover:shadow-[0_0_30px_rgba(239,68,68,0.1)]">
             <div className="absolute -left-6 -bottom-6 w-32 h-32 bg-red-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
             <div className="flex items-center justify-between mb-6 border-b border-white/10 pb-4">
@@ -99,3 +99,4 @@ export default function RestockAlertWidget({ products, formatCurrency }: { produ
         </div>
     );
 }
+

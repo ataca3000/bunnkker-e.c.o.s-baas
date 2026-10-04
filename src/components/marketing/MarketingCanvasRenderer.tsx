@@ -273,21 +273,40 @@ export default function MarketingCanvasRenderer({ pageId }: { pageId: string }) 
 
     const heroImage = siteConfig.heroImage || 'https://images.unsplash.com/photo-1542013936693-884638332954?w=1920&auto=format&fit=crop&q=75';
 
+    const canvasLayers = siteConfig.pagesData?.inicio?.canvasLayers || [];
+
     return (
         <div className="w-full min-h-screen bg-black font-sans selection:bg-orange-500 selection:text-white">
             
             {/* 1. HERO SECTION (GLASSMORPHISM) */}
             <section className="relative w-full h-[90vh] flex items-center justify-center overflow-hidden">
-                {/* Image optimized for LCP discovery */}
-                <img 
-                    src={heroImage}
-                    alt="Hero Background"
-                    className="absolute inset-0 z-0 w-full h-full object-cover scale-105 transform"
-                    style={{
-                        filter: 'brightness(0.4) contrast(1.1)'
-                    }}
-                    fetchPriority="high"
-                />
+                {/* Image or Video optimized for LCP discovery */}
+                {heroImage.match(/\.(mp4|webm)/i) || heroImage.includes('video') ? (
+                    <video
+                        src={heroImage}
+                        autoPlay loop muted playsInline
+                        className="absolute inset-0 z-0 w-full h-full object-cover scale-105 transform"
+                        style={{ filter: 'brightness(0.4) contrast(1.1)' }}
+                    />
+                ) : (
+                    <img 
+                        src={heroImage}
+                        alt="Hero Background"
+                        className="absolute inset-0 z-0 w-full h-full object-cover scale-105 transform"
+                        style={{ filter: 'brightness(0.4) contrast(1.1)' }}
+                        fetchPriority="high"
+                    />
+                )}
+
+                {/* FLOATING LAYERS FROM STOREBUILDER */}
+                {canvasLayers.map((layer: any) => (
+                    <div key={layer.id} className="absolute" style={{ left: `${layer.x}%`, top: `${layer.y}%`, zIndex: layer.zIndex || 10, width: layer.width, height: layer.height }}>
+                        {layer.type === 'text' && <div style={{ color: layer.color || 'white', fontSize: `${layer.fontSize}px`, fontWeight: layer.bold ? 'bold' : 'normal', textAlign: 'center' }}>{layer.content}</div>}
+                        {layer.type === 'image' && <img src={layer.content} style={{ width: '100%', height: '100%', objectFit: 'contain', pointerEvents: 'none' }} alt="" />}
+                        {layer.type === 'video' && <video src={layer.content} style={{ width: '100%', height: '100%', borderRadius: '8px', pointerEvents: 'none' }} autoPlay loop muted playsInline />}
+                        {layer.type === 'sticker' && <div style={{ fontSize: `${layer.fontSize || 64}px`, lineHeight: 1, filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.5))' }}>{layer.content}</div>}
+                    </div>
+                ))}
                 
                 {/* Glowing Orbs */}
                 <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-orange-500/20 rounded-full blur-[120px] pointer-events-none" />

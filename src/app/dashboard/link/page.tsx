@@ -43,8 +43,8 @@ export default function DeviceLinkPage() {
     };
 
     return (
-        <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-6 font-sans">
-            <div className="w-full max-w-md bg-slate-800 rounded-3xl shadow-2xl p-8 border border-slate-700">
+        <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-[8px] font-sans">
+            <div className="w-full max-w-md bg-slate-800 rounded-[5px] shadow-2xl p-8 border border-slate-700">
                 
                 {step === 1 && (
                     <div className="flex flex-col items-center text-center">
@@ -121,3 +121,4 @@ export default function DeviceLinkPage() {
         </div>
     );
 }
+

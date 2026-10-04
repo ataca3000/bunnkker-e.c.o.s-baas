@@ -107,7 +107,7 @@ export default function APIKeyManager() {
     };
 
     return (
-        <div className={`card-sanjose ${styles.container}`}>
+        <div className={`bunkker-card ${styles.container}`}>
             <div className={styles.headerRow}>
                 <div className={styles.headerIcon}>
                     <ShieldCheck color="#0ea5e9" size={24} />
@@ -175,7 +175,7 @@ export default function APIKeyManager() {
                     <button
                         onClick={handleSaveKey}
                         disabled={isSaving}
-                        className={`btn-sanjose ${styles.saveBtn}`}
+                        className={`bunkker-btn ${styles.saveBtn}`}
                     >
                         {isSaving ? <RefreshCw size={18} className={styles.spin} /> : <Lock size={18} />}
                         {isSaving ? 'VALIDANDO...' : 'VINCULAR TIENDA'}
@@ -215,3 +215,4 @@ export default function APIKeyManager() {
         </div>
     );
 }
+

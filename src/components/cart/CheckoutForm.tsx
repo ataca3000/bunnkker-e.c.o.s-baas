@@ -294,7 +294,7 @@ export function CartFooter({
             {step === 'cart' ? (
                 <button
                     onClick={onProceed}
-                    className={`btn-sanjose ${styles.payBtn}`}
+                    className={`bunkker-btn ${styles.payBtn}`}
                 >
                     CONTINUAR PEDIDO <Truck size={20} />
                 </button>
@@ -304,7 +304,7 @@ export function CartFooter({
                     <button
                         disabled={isProcessing}
                         onClick={onConfirm}
-                        className={`btn-sanjose ${styles.confirmBtn}`}
+                        className={`bunkker-btn ${styles.confirmBtn}`}
                     >
                         {isProcessing ? 'PROCESANDO...' : 'GENERAR PEDIDO EN ESPERA'} <Truck size={20} />
                     </button>

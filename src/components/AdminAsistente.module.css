@@ -3,7 +3,7 @@
     position: fixed;
     bottom: 24px;
     right: 24px;
-    background: linear-gradient(135deg, var(--sanjose-blue, #0ea5e9) 0%, #002244 100%);
+    background: linear-gradient(135deg, var(--bunkker-primary, #0ea5e9) 0%, #002244 100%);
     color: white;
     padding: 16px;
     border-radius: 50%;
@@ -46,7 +46,7 @@
 }
 
 .chatHeader {
-    background: linear-gradient(135deg, var(--sanjose-blue, #0ea5e9) 0%, #002b5c 100%);
+    background: linear-gradient(135deg, var(--bunkker-primary, #0ea5e9) 0%, #002b5c 100%);
     color: white;
     padding: 1.2rem;
     display: flex;
@@ -100,7 +100,7 @@
 
 .msgUser {
     align-self: flex-end;
-    background: linear-gradient(135deg, var(--sanjose-blue, #0ea5e9) 0%, #003366 100%);
+    background: linear-gradient(135deg, var(--bunkker-primary, #0ea5e9) 0%, #003366 100%);
     color: white;
     padding: 10px 16px;
     border-radius: 16px 16px 4px 16px;
@@ -153,11 +153,11 @@
 }
 
 .chatInput:focus {
-    border-color: var(--sanjose-blue, #0ea5e9);
+    border-color: var(--bunkker-primary, #0ea5e9);
 }
 
 .chatSendBtn {
-    background: linear-gradient(135deg, var(--sanjose-red, #E30613) 0%, #b8050e 100%);
+    background: linear-gradient(135deg, var(--bunkker-red, #E30613) 0%, #b8050e 100%);
     color: white;
     border: none;
     padding: 12px;

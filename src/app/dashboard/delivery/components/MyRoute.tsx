@@ -77,7 +77,7 @@ export default function MyRoute({
   return (
     <div className="space-y-4">
       {/* Route Preview Map */}
-      <div className="bg-slate-900/40 backdrop-blur-lg rounded-2xl shadow-[0_4px_30px_rgba(0,0,0,0.1)] border border-white/10 overflow-hidden relative mb-2">
+      <div className="bg-slate-900/40 backdrop-blur-lg rounded-[5px] shadow-[0_4px_30px_rgba(0,0,0,0.1)] border border-white/10 overflow-hidden relative mb-2">
         <div className="h-64 w-full bg-slate-800 relative z-0 flex items-center justify-center">
           <AdvancedMap 
             mode="route" 
@@ -120,7 +120,7 @@ export default function MyRoute({
       </div>
 
       <div className="relative pt-2">
-        <div className="absolute left-[23px] top-6 bottom-12 w-[2px] z-0">
+        <div className="absolute left-[23px] top-[8px] bottom-12 w-[2px] z-0">
           <svg className="w-full h-full overflow-visible" preserveAspectRatio="none">
             <line x1="1" y1="0" x2="1" y2="100%" stroke="rgba(255,255,255,0.1)" strokeWidth="2" />
             <motion.line 
@@ -151,7 +151,7 @@ export default function MyRoute({
             key={order.id}
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
-            className="bg-slate-900/60 backdrop-blur-lg rounded-2xl p-4 shadow-[0_4px_30px_rgba(0,0,0,0.1)] border border-white/10 mb-4 ml-12 relative z-10"
+            className="bg-slate-900/60 backdrop-blur-lg rounded-[5px] p-4 shadow-[0_4px_30px_rgba(0,0,0,0.1)] border border-white/10 mb-4 ml-12 relative z-10"
           >
             <div className="absolute -left-[38px] top-1/2 -translate-y-1/2 w-7 h-7 bg-slate-900 border-2 border-sky-500 rounded-full flex items-center justify-center text-xs font-bold text-sky-400 z-10 shadow-[0_0_10px_rgba(14,165,233,0.3)]">
               {index + 1}
@@ -181,3 +181,4 @@ export default function MyRoute({
     </div>
   );
 }
+

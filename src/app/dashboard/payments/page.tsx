@@ -19,7 +19,7 @@ export default function PaymentsNode() {
         <div style={{ backgroundColor: '#f5f5f5', minHeight: '100vh', padding: '2rem' }}>
             <div style={{ maxWidth: '900px', margin: '0 auto' }}>
                 <header style={{ marginBottom: '2.5rem' }}>
-                    <h1 className="heading-sanjose">CONFIGURACIÓN DE PAGOS</h1>
+                    <h1 className="bunkker-heading">CONFIGURACIÓN DE PAGOS</h1>
                     <p style={{ color: '#666' }}>Define los métodos aceptados en el marketplace y establece tu favorito.</p>
                 </header>
 
@@ -31,7 +31,7 @@ export default function PaymentsNode() {
                             <div
                                 key={m.id}
                                 onClick={() => setSelected(m.id)}
-                                className="card-sanjose"
+                                className="bunkker-card"
                                 style={{
                                     cursor: 'pointer',
                                     borderColor: selected === m.id ? '#0ea5e9' : '#ddd',
@@ -64,7 +64,7 @@ export default function PaymentsNode() {
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: -20 }}
-                            className="card-sanjose"
+                            className="bunkker-card"
                             style={{ height: 'fit-content', background: '#0ea5e9', color: 'white', borderColor: '#0ea5e9' }}
                         >
                             <h3 style={{ marginBottom: '1rem', color: '#FFCB05' }}>AJUSTES: {selected.toUpperCase()}</h3>
@@ -84,7 +84,7 @@ export default function PaymentsNode() {
                                 </div>
 
                                 <button
-                                    className="btn-sanjose-secondary"
+                                    className="bunkker-btn-secondary"
                                     style={{ marginTop: '1rem', width: '100%' }}
                                     onClick={() => {
                                         setIsConfiguring(true);
@@ -106,3 +106,4 @@ export default function PaymentsNode() {
         </div>
     );
 }
+

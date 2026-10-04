@@ -449,7 +449,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
 
     const isMasterAdmin = profile?.role === 'superadmin';
-    const sidebarWidth  = isCollapsed ? '90px' : '280px';
+    const sidebarWidth  = isCollapsed ? '90px' : '142px';
 
     /* ── Breadcrumbs helper ───────────────────────────────────── */
     const labelsMap: Record<string, string> = {
@@ -468,7 +468,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     };
 
     return (
-        <div className="terraform-shell" style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--terraform-surface)', color: 'var(--terraform-ink)' }}>
+        <div className="bunkker-shell" style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bunkker-surface)', color: 'var(--bunkker-ink)' }}>
 
             {/* ── Sidebar (Layer 3) ─────────────────────────────────────────── */}
             {isMasterAdmin && (
@@ -807,3 +807,4 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
     );
 }
+

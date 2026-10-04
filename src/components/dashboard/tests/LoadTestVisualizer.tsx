@@ -94,7 +94,7 @@ export default function LoadTestVisualizer() {
     return (
         <div className="flex flex-col gap-8 h-full">
             {/* Panel Superior: Controles */}
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex justify-between items-center">
+            <div className="bg-slate-900 border border-slate-800 rounded-[5px] p-[8px] shadow-xl flex justify-between items-center">
                 <div>
                     <h2 className="text-xl font-black text-white mb-2">Avalancha de Carga Visual</h2>
                     <p className="text-slate-400 text-sm">Dispara 20 peticiones simultáneas y observa el flujo en el mapa mental.</p>
@@ -109,7 +109,7 @@ export default function LoadTestVisualizer() {
             </div>
 
             {/* Panel Central: Mapa Mental (Visualizador) */}
-            <div className="flex-1 bg-black rounded-2xl border border-slate-800 p-8 flex items-center justify-center relative overflow-hidden shadow-[inset_0_0_100px_rgba(0,0,0,0.8)]">
+            <div className="flex-1 bg-black rounded-[5px] border border-slate-800 p-8 flex items-center justify-center relative overflow-hidden shadow-[inset_0_0_100px_rgba(0,0,0,0.8)]">
                 
                 {/* Fondo Ciberpunk Grid */}
                 <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:30px_30px] opacity-20"></div>
@@ -153,7 +153,7 @@ export default function LoadTestVisualizer() {
                                 boxShadow: nodes.api.active ? "0 0 50px rgba(168, 85, 247, 0.6)" : "0 0 0px rgba(0,0,0,0)"
                             }}
                             transition={{ repeat: nodes.api.active ? Infinity : 0, duration: 0.3 }}
-                            className={`w-32 h-32 rounded-3xl border-4 flex flex-col items-center justify-center bg-slate-900 ${nodes.api.color}`}
+                            className={`w-32 h-32 rounded-[5px] border-4 flex flex-col items-center justify-center bg-slate-900 ${nodes.api.color}`}
                         >
                             <Server size={48} className="mb-2" />
                             <span className="text-xs font-black">{activeRequests} REQ</span>
@@ -228,7 +228,7 @@ export default function LoadTestVisualizer() {
             </div>
 
             {/* Panel Inferior: Estadísticas en vivo */}
-            <div className="grid grid-cols-3 gap-6">
+            <div className="grid grid-cols-3 gap-[8px]">
                 <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl flex items-center justify-between">
                     <span className="text-slate-400 text-sm font-bold uppercase tracking-widest">En Proceso</span>
                     <span className="text-3xl font-black text-purple-400">{activeRequests}</span>
@@ -245,3 +245,4 @@ export default function LoadTestVisualizer() {
         </div>
     );
 }
+

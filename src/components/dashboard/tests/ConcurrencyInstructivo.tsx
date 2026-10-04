@@ -85,7 +85,7 @@ export default function ConcurrencyInstructivo() {
         <div className="flex flex-col lg:flex-row gap-8">
             {/* Panel Izquierdo: Instructivo y Explicación */}
             <div className="flex-1 space-y-6">
-                <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                <div className="bg-slate-900 border border-slate-800 rounded-[5px] p-[8px] shadow-xl">
                     <h2 className="text-xl font-black text-white flex items-center gap-2 mb-4">
                         <Zap className="text-yellow-500" />
                         ¿Qué es la Prueba de Concurrencia?
@@ -118,7 +118,7 @@ export default function ConcurrencyInstructivo() {
                     {/* Diagrama Visual Estático */}
                     <div className="relative h-40 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between px-8 overflow-hidden mb-6">
                         {/* Cajeros */}
-                        <div className="flex flex-col gap-4 z-10">
+                        <div className="flex flex-col gap-[8px] z-10">
                             <div className={`flex items-center gap-2 transition-all ${activeStep >= 2 ? 'text-white' : 'text-slate-500'}`}>
                                 <Users size={20} />
                                 <span className="text-xs font-bold font-mono">Cajero A</span>
@@ -165,7 +165,7 @@ export default function ConcurrencyInstructivo() {
 
             {/* Panel Derecho: Log Consola */}
             <div className="flex-1">
-                <div className="bg-[#0c0c0c] border border-slate-800 rounded-2xl flex flex-col h-[550px] shadow-xl">
+                <div className="bg-[#0c0c0c] border border-slate-800 rounded-[5px] flex flex-col h-[550px] shadow-xl">
                     <div className="bg-slate-900 border-b border-slate-800 p-3 flex justify-between items-center rounded-t-2xl">
                         <div className="flex gap-2">
                             <div className="w-3 h-3 rounded-full bg-red-500"></div>
@@ -201,3 +201,4 @@ export default function ConcurrencyInstructivo() {
         </div>
     );
 }
+

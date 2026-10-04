@@ -533,7 +533,7 @@ export default function SalesDashboard() {
                     </>
                 ) : (
                     /* COLA ONLINE */
-                    <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-transparent custom-scrollbar space-y-6">
+                    <div className="flex-1 overflow-y-auto p-4 sm:p-[8px] bg-transparent custom-scrollbar space-y-6">
                         {/* Selector de Filtros de Cola */}
                         <div className="flex flex-wrap gap-2 max-w-7xl mx-auto items-center justify-between">
                             <div className="flex flex-wrap gap-2">
@@ -583,7 +583,7 @@ export default function SalesDashboard() {
                             </span>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[8px] max-w-7xl mx-auto">
                             {displayedOrders.length === 0 ? (
                                 <div className="col-span-full py-20 text-center bg-zinc-900/40 backdrop-blur-md rounded-[32px] border border-white/10 shadow-lg">
                                     <Globe size={50} className="mx-auto text-blue-500/50 mb-3" />
@@ -596,7 +596,7 @@ export default function SalesDashboard() {
                                     const isReady = ['READY_TO_SHIP', 'READY_FOR_PICKUP'].includes(order.status);
                                     
                                     return (
-                                        <div key={order.id} className="bg-zinc-900/60 backdrop-blur-md rounded-3xl p-5 sm:p-6 border border-white/10 shadow-lg flex flex-col justify-between">
+                                        <div key={order.id} className="bg-zinc-900/60 backdrop-blur-md rounded-[5px] p-[8px] sm:p-[8px] border border-white/10 shadow-lg flex flex-col justify-between">
                                             <div>
                                                 <div className="flex justify-between items-start mb-3 border-b border-white/10 pb-3">
                                                     <div>
@@ -873,7 +873,7 @@ export default function SalesDashboard() {
             {/* Resultado del Corte */}
             {corteResult && (
                 <div className="fixed inset-0 z-[5000] bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
-                    <div className="bg-slate-900 border border-slate-700 rounded-3xl p-8 max-w-md w-full text-center shadow-2xl">
+                    <div className="bg-slate-900 border border-slate-700 rounded-[5px] p-8 max-w-md w-full text-center shadow-2xl">
                         {corteResult.type === 'success' ? (
                             <>
                                 <CheckCircle2 size={80} className="text-emerald-500 mx-auto mb-6" />
@@ -895,7 +895,7 @@ export default function SalesDashboard() {
                                 <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 mb-8">
                                     <span className="text-red-400 font-black text-2xl uppercase">Faltante: ${Math.abs(corteResult.data.discrepancy).toFixed(2)}</span>
                                 </div>
-                                <div className="flex gap-4">
+                                <div className="flex gap-[8px]">
                                     <button onClick={() => window.open(`/dashboard/sales/my-day`, '_blank')} className="flex-1 py-4 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl transition-all border border-slate-600">
                                         Ver Historial
                                     </button>
@@ -912,7 +912,7 @@ export default function SalesDashboard() {
             {/* Modal PIN Cancelación */}
             {orderToCancel && (
                 <div className="fixed inset-0 z-[4000] bg-black/80 flex items-center justify-center p-4">
-                    <div className="bg-zinc-900 border border-white/10 p-6 rounded-2xl w-full max-w-sm">
+                    <div className="bg-zinc-900 border border-white/10 p-[8px] rounded-[5px] w-full max-w-sm">
                         <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2"><AlertCircle className="text-red-500"/> Autorización Requerida</h3>
                         <p className="text-sm text-zinc-400 mb-6">Ingresa tu PIN de 6 dígitos para autorizar la cancelación de esta orden.</p>
                         
@@ -961,3 +961,4 @@ export default function SalesDashboard() {
         </div>
     );
 }
+

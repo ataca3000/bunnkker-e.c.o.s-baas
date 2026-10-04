@@ -133,7 +133,7 @@ export default function AtomicDemoPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Panel de Control */}
-                <div className="bg-slate-800/50 backdrop-blur-md rounded-3xl p-6 border border-slate-700/50 h-fit">
+                <div className="bg-slate-800/50 backdrop-blur-md rounded-[5px] p-[8px] border border-slate-700/50 h-fit">
                     <h2 className="text-xl font-bold text-white mb-6">Panel de Simulación</h2>
                     
                     <div className="space-y-4 mb-8">
@@ -165,7 +165,7 @@ export default function AtomicDemoPage() {
                             <p className="text-slate-400 text-sm mb-1 uppercase tracking-wider font-bold">Stock Físico Teórico</p>
                             <p className="text-3xl font-black text-white relative z-10">{inventory.stock}</p>
                         </div>
-                        <div className="flex gap-4">
+                        <div className="flex gap-[8px]">
                             <div className="flex-1 bg-amber-900/20 p-4 rounded-xl border border-amber-500/30 relative overflow-hidden group">
                                 <div className="absolute inset-0 bg-amber-500/5 translate-y-full group-hover:translate-y-0 transition-transform duration-500"/>
                                 <p className="text-amber-500 text-xs mb-1 uppercase font-bold relative z-10">Bloqueado</p>
@@ -190,7 +190,7 @@ export default function AtomicDemoPage() {
                 </div>
 
                 {/* Consola ISO */}
-                <div className="lg:col-span-2 bg-[#0d1117] rounded-3xl border border-slate-800 overflow-hidden flex flex-col h-[600px]">
+                <div className="lg:col-span-2 bg-[#0d1117] rounded-[5px] border border-slate-800 overflow-hidden flex flex-col h-[600px]">
                     <div className="bg-slate-900 px-4 py-3 border-b border-slate-800 flex items-center gap-2">
                         <Terminal size={18} className="text-slate-400" />
                         <span className="text-slate-400 font-mono text-sm">terminal-iso-validator.exe</span>
@@ -227,3 +227,4 @@ export default function AtomicDemoPage() {
         </div>
     );
 }
+

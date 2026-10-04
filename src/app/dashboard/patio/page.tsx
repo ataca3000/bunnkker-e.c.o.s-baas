@@ -73,11 +73,11 @@ export default function PatioDashboard() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 p-6 font-sans">
+        <div className="min-h-screen bg-gray-50 p-[8px] font-sans">
             <Link href="/dashboard" className="inline-flex items-center gap-2 text-slate-400 hover:text-[#0ea5e9] font-bold uppercase text-xs tracking-wider mb-4 transition-colors">
                 <ArrowLeft size={16} /> Volver al Tablero
             </Link>
-            <header className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <header className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-[8px]">
                 <div>
                     <h1 className="text-3xl font-black text-gray-800 uppercase italic flex items-center gap-3">
                         <Truck size={36} className="text-[#0ea5e9]" /> Patio de Logística
@@ -90,7 +90,7 @@ export default function PatioDashboard() {
                     <input 
                         type="text"
                         placeholder="Buscar Orden o Cliente..."
-                        className="w-full pl-12 pr-4 py-3 bg-slate-800/80 border border-gray-200 rounded-2xl outline-none focus:border-[#0ea5e9] shadow-lg transition-all"
+                        className="w-full pl-12 pr-4 py-3 bg-slate-800/80 border border-gray-200 rounded-[5px] outline-none focus:border-[#0ea5e9] shadow-lg transition-all"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
@@ -120,9 +120,9 @@ export default function PatioDashboard() {
                 />
             )}
 
-            <div className="grid gap-6">
+            <div className="grid gap-[8px]">
                 {pendingLoads.length === 0 ? (
-                    <div className="bg-slate-800/80 border-2 border-dashed border-gray-200 rounded-3xl p-16 text-center">
+                    <div className="bg-slate-800/80 border-2 border-dashed border-gray-200 rounded-[5px] p-16 text-center">
                         <Package size={64} className="mx-auto text-gray-200 mb-4" />
                         <p className="text-gray-400 font-black uppercase italic text-xl">No hay cargas pendientes</p>
                     </div>
@@ -137,7 +137,7 @@ export default function PatioDashboard() {
                             key={order.id}
                             initial={{ opacity: 0, x: -20 }}
                             animate={{ opacity: 1, x: 0 }}
-                            className={`bg-slate-800/80 rounded-3xl p-6 border-l-8 shadow-lg flex flex-col md:flex-row justify-between items-center gap-6 ${isNight ? 'border-purple-500 bg-purple-50' : isPending ? 'border-amber-500 bg-amber-50' : order.loadedBy ? 'border-orange-500' : 'border-[#0ea5e9]'}`}
+                            className={`bg-slate-800/80 rounded-[5px] p-[8px] border-l-8 shadow-lg flex flex-col md:flex-row justify-between items-center gap-[8px] ${isNight ? 'border-purple-500 bg-purple-50' : isPending ? 'border-amber-500 bg-amber-50' : order.loadedBy ? 'border-orange-500' : 'border-[#0ea5e9]'}`}
                         >
                             <div className="flex-1">
                                 <div className="flex flex-wrap items-center gap-2 mb-3">
@@ -227,7 +227,7 @@ export default function PatioDashboard() {
                                     <button 
                                         onClick={() => handleAction(order.id, 'complete')}
                                         disabled={!!processingId || (order.loadedByUid !== profile?.uid && profile?.role !== 'superadmin')}
-                                        className="bg-green-600 text-white px-8 py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 hover:bg-green-700 transition-all shadow-lg shadow-green-900/10 disabled:opacity-50"
+                                        className="bg-green-600 text-white px-8 py-4 rounded-[5px] font-black text-sm flex items-center justify-center gap-2 hover:bg-green-700 transition-all shadow-lg shadow-green-900/10 disabled:opacity-50"
                                     >
                                         {processingId === order.id ? <Loader2 className="animate-spin" /> : <CheckCircle2 size={18} />} FINALIZAR
                                     </button>
@@ -241,3 +241,4 @@ export default function PatioDashboard() {
         </div>
     );
 }
+

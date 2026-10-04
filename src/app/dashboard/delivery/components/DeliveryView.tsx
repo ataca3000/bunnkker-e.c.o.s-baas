@@ -171,7 +171,7 @@ export default function DeliveryView({
         <h2 className="text-xl font-bold text-white tracking-wide">Entrega Exitosa</h2>
         
         {/* Photo Evidence */}
-        <div className="bg-slate-900/60 backdrop-blur-lg p-4 rounded-2xl shadow-[0_4px_30px_rgba(0,0,0,0.1)] border border-white/10">
+        <div className="bg-slate-900/60 backdrop-blur-lg p-4 rounded-[5px] shadow-[0_4px_30px_rgba(0,0,0,0.1)] border border-white/10">
           <h3 className="font-bold text-sm text-sky-400 mb-3 uppercase tracking-wider">Evidencia Fotográfica</h3>
           {photoMode ? (
             <div className="space-y-3">
@@ -214,7 +214,7 @@ export default function DeliveryView({
         </div>
 
         {/* OTP Input */}
-        <div className="bg-slate-900/60 backdrop-blur-lg p-4 rounded-2xl shadow-[0_4px_30px_rgba(0,0,0,0.1)] border border-white/10">
+        <div className="bg-slate-900/60 backdrop-blur-lg p-4 rounded-[5px] shadow-[0_4px_30px_rgba(0,0,0,0.1)] border border-white/10">
            <div className="mb-3 text-center">
              <h3 className="font-bold text-sm text-sky-400 uppercase tracking-wider mb-1">PIN de Confirmación</h3>
              <p className="text-xs text-slate-400">Pide al cliente su OTP de 4 dígitos</p>
@@ -237,7 +237,7 @@ export default function DeliveryView({
         </div>
 
         {/* Signature Canvas */}
-        <div className="bg-slate-900/60 backdrop-blur-lg p-4 rounded-2xl shadow-[0_4px_30px_rgba(0,0,0,0.1)] border border-white/10">
+        <div className="bg-slate-900/60 backdrop-blur-lg p-4 rounded-[5px] shadow-[0_4px_30px_rgba(0,0,0,0.1)] border border-white/10">
            <h3 className="font-bold text-sm text-sky-400 uppercase tracking-wider mb-2">Firma del Cliente</h3>
            <div className="bg-white rounded-xl overflow-hidden border-2 border-white/20 touch-none">
              <SignatureCanvas 
@@ -258,7 +258,7 @@ export default function DeliveryView({
         <button 
             onClick={handleComplete}
             disabled={isVerifyingGPS || (order.deliveryPin ? pinInput.length !== 4 : false)}
-            className="w-full bg-emerald-500 hover:bg-emerald-400 border border-emerald-400/50 text-white font-black p-5 rounded-full flex items-center justify-center gap-3 shadow-[0_10px_30px_rgba(16,185,129,0.4)] active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-emerald-500 hover:bg-emerald-400 border border-emerald-400/50 text-white font-black p-[8px] rounded-full flex items-center justify-center gap-3 shadow-[0_10px_30px_rgba(16,185,129,0.4)] active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
             {isVerifyingGPS ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <CheckCircle size={24} />}
             {isVerifyingGPS ? 'Verificando GPS...' : 'CONFIRMAR ENTREGA'}
@@ -307,7 +307,7 @@ export default function DeliveryView({
           </div>
 
           {/* Bottom Action Panel */}
-          <div className="bg-slate-900/80 backdrop-blur-xl rounded-sm p-5 border border-cyan-500/30 shadow-[0_0_20px_rgba(0,242,255,0.2)] max-w-md w-full pointer-events-auto mt-auto self-end md:self-start">
+          <div className="bg-slate-900/80 backdrop-blur-xl rounded-sm p-[8px] border border-cyan-500/30 shadow-[0_0_20px_rgba(0,242,255,0.2)] max-w-md w-full pointer-events-auto mt-auto self-end md:self-start">
             <div>
               <span className="text-xs font-bold text-cyan-400 uppercase tracking-wider block mb-2 drop-shadow-[0_0_5px_rgba(0,242,255,0.5)]">Recibe</span>
               <div className="flex items-center gap-3">
@@ -342,3 +342,4 @@ export default function DeliveryView({
     </div>
   );
 }
+

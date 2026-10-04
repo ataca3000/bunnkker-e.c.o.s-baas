@@ -215,7 +215,7 @@ export default function CheckoutPage() {
                 <motion.div
                     initial={{ scale: 0.95, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    className="card-sanjose"
+                    className="bunkker-card"
                     style={{ maxWidth: '650px', width: '100%', padding: '3.5rem 2rem', border: '1px solid #e5e7eb', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)' }}
                 >
                     <CheckCircle2 size={70} color="#27ae60" style={{ margin: '0 auto 1.5rem' }} />
@@ -306,7 +306,7 @@ export default function CheckoutPage() {
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center' }}>
-                        <Link href="/" className="btn-sanjose" style={{ width: '100%', justifyContent: 'center' }}>VOLVER AL CATÁLOGO</Link>
+                        <Link href="/" className="bunkker-btn" style={{ width: '100%', justifyContent: 'center' }}>VOLVER AL CATÁLOGO</Link>
                         {lastPollTime && (
                             <div style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '4px' }}>
                                 <RefreshCw size={10} /> Sincronizado: {lastPollTime}
@@ -323,29 +323,24 @@ export default function CheckoutPage() {
     }
 
     if (!customerAccount) {
-        return (
-            <div className="min-h-[70vh] flex items-center justify-center p-6">
-                <div className="max-w-md border border-slate-700 bg-slate-900 p-8 text-center text-white">
-                    <h1 className="text-2xl font-black">Regístrate para pedir</h1>
-                    <p className="my-4 text-sm text-slate-300">Necesitas una cuenta de cliente para generar pedidos, enviarlos a caja y consultar su estado.</p>
-                    <Link href="/cuenta" className="btn-sanjose w-full justify-center">Registrarme o iniciar sesión</Link>
-                </div>
-            </div>
-        );
+        if (typeof window !== 'undefined') {
+            window.location.href = '/cuenta?redirect=/carrito/checkout';
+        }
+        return <div className="min-h-[70vh] flex items-center justify-center"><Loader2 className="animate-spin text-sky-500" size={32} /></div>;
     }
 
     return (
         <div style={{ minHeight: '100vh', padding: '3rem 1rem' }}>
             <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
 
-                <h1 className="heading-sanjose">FINALIZAR TU PEDIDO</h1>
+                <h1 className="bunkker-heading">FINALIZAR TU PEDIDO</h1>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '3rem' }}>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
 
                         {/* Step 1: Delivery Method */}
-                        <div className="card-sanjose">
+                        <div className="bunkker-card">
                             <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.2rem', marginBottom: '1.5rem', color: '#0ea5e9' }}>
                                 <Truck size={20} /> 1. MÉTODO DE ENTREGA
                             </h3>
@@ -387,7 +382,7 @@ export default function CheckoutPage() {
                         </div>
 
                         {/* Step 2: Form */}
-                        <div className="card-sanjose">
+                        <div className="bunkker-card">
                             <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.2rem', marginBottom: '1.5rem', color: '#0ea5e9' }}>
                                 <MapPin size={20} /> 2. DATOS DEL CLIENTE Y FACTURACIÓN
                             </h3>
@@ -478,7 +473,7 @@ export default function CheckoutPage() {
 
                     {/* Order Summary */}
                     <div>
-                        <div className="card-sanjose" style={{ position: 'sticky', top: '20px' }}>
+                        <div className="bunkker-card" style={{ position: 'sticky', top: '20px' }}>
                             <h3 style={{ marginBottom: '1.5rem', fontWeight: '900' }}>RESUMEN DE COTIZACIÓN</h3>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', borderBottom: '1px solid #eee', paddingBottom: '1.5rem', marginBottom: '1.5rem' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
@@ -514,7 +509,7 @@ export default function CheckoutPage() {
                             )}
 
                             <button
-                                className="btn-sanjose"
+                                className="bunkker-btn"
                                 onClick={handleCheckout}
                                 disabled={isProcessing || cart.length === 0}
                                 style={{ width: '100%', justifyContent: 'center', padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '8px' }}

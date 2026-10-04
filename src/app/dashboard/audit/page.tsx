@@ -33,7 +33,7 @@ const Row = memo(({ index, style, data }: ListChildComponentProps<AuditRowData>)
     
     return (
         // hint-disable-next-line no-inline-styles
-        <div style={style} className="border-b border-white/5 px-4 flex items-center gap-4 text-xs">
+        <div style={style} className="border-b border-white/5 px-4 flex items-center gap-[8px] text-xs">
             <span className={`font-mono ${log.isLocal ? 'text-amber-400' : 'text-blue-400'}`}>
                 [{log.isLocal ? 'LOCAL' : log.type}]
             </span>
@@ -140,8 +140,8 @@ export default function RadarAuditPage() {
         <div className="bg-[#0a0a0c] min-h-screen p-8 text-white">
             <header className="flex justify-between items-center mb-10">
                 <h1 className="text-2xl font-black italic tracking-tighter">RADAR DE AUDITORÍA</h1>
-                <div className="flex flex-wrap items-center gap-4">
-                    <div className="flex bg-slate-800/80/5 border border-white/10 rounded-lg px-3 py-1 items-center gap-4">
+                <div className="flex flex-wrap items-center gap-[8px]">
+                    <div className="flex bg-slate-800/80/5 border border-white/10 rounded-lg px-3 py-1 items-center gap-[8px]">
                         <div className="flex items-center gap-2">
                             <span className="text-[0.6rem] text-white/40 font-bold uppercase">Desde:</span>
                             <input 
@@ -201,21 +201,21 @@ export default function RadarAuditPage() {
                 </div>
             </header>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div className="bg-emerald-500/10 border border-emerald-500/20 p-6 rounded-2xl">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-[8px] mb-8">
+                <div className="bg-emerald-500/10 border border-emerald-500/20 p-[8px] rounded-[5px]">
                     <h3 className="text-emerald-400 font-bold text-xs uppercase tracking-widest mb-2">Ventas de Hoy</h3>
                     <p className="text-3xl font-black text-white">
                         {/* Mock calculation for the demo based on logs */}
                         ${filteredLogs.filter(l => l.type === 'ORDER_CREATE').reduce((acc, l) => acc + (l.metadata?.total || 0), 0).toFixed(2)}
                     </p>
                 </div>
-                <div className="bg-red-500/10 border border-red-500/20 p-6 rounded-2xl">
+                <div className="bg-red-500/10 border border-red-500/20 p-[8px] rounded-[5px]">
                     <h3 className="text-red-400 font-bold text-xs uppercase tracking-widest mb-2">Cancelaciones</h3>
                     <p className="text-3xl font-black text-white">
                         {filteredLogs.filter(l => l.type === 'ORDER_CANCEL').length}
                     </p>
                 </div>
-                <div className="bg-blue-500/10 border border-blue-500/20 p-6 rounded-2xl">
+                <div className="bg-blue-500/10 border border-blue-500/20 p-[8px] rounded-[5px]">
                     <h3 className="text-blue-400 font-bold text-xs uppercase tracking-widest mb-2">Total Operaciones</h3>
                     <p className="text-3xl font-black text-white">
                         {filteredLogs.length}
@@ -248,3 +248,4 @@ export default function RadarAuditPage() {
         </div>
     );
 }
+

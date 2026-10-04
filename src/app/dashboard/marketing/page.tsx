@@ -171,7 +171,7 @@ export default function MarketingPage() {
                     <motion.div key="qr" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
                         className="grid grid-cols-1 md:grid-cols-2 gap-12">
 
-                        <div className="card-sanjose p-10 text-center bg-slate-800/80">
+                        <div className="bunkker-card p-10 text-center bg-slate-800/80">
                             <div className="mb-8">
                                 <h3 className="font-[1000] text-gray-800 italic uppercase">CÓDIGO DE ACCESO DIRECTO</h3>
                                 <p className="text-xs text-gray-500 font-bold uppercase tracking-tight mt-1">Este QR conecta a tus clientes instantáneamente con tu catálogo local.</p>
@@ -212,8 +212,8 @@ export default function MarketingPage() {
                                 </div>
                             </div>
 
-                            <div className="flex gap-4 justify-center flex-wrap">
-                                <motion.button onClick={handlePrint} whileHover={{ scale: 1.05 }} className="btn-sanjose flex items-center gap-2.5 py-3 px-5">
+                            <div className="flex gap-[8px] justify-center flex-wrap">
+                                <motion.button onClick={handlePrint} whileHover={{ scale: 1.05 }} className="bunkker-btn flex items-center gap-2.5 py-3 px-5">
                                     <Printer size={18} /> IMPRIMIR PÓSTER
                                 </motion.button>
                                 <motion.button onClick={handleCopy} whileHover={{ scale: 1.05 }}
@@ -227,7 +227,7 @@ export default function MarketingPage() {
                         </div>
 
                         <div className="flex flex-col gap-8">
-                            <div className="card-sanjose border-l-5 border-[#0ea5e9] p-6">
+                            <div className="bunkker-card border-l-5 border-[#0ea5e9] p-[8px]">
                                 <h4 className="font-[900] text-gray-800 mb-4">APP MÓVIL SIN DESCARGA</h4>
                                 <p className="text-sm text-gray-600 leading-relaxed">
                                     Tu tienda funciona como una App móvil (PWA). Cuando tus clientes escaneen el código, su teléfono les ofrecerá:
@@ -238,7 +238,7 @@ export default function MarketingPage() {
                                 </p>
                             </div>
 
-                            <div className="card-sanjose border-l-5 border-[#FFCB05] p-6">
+                            <div className="bunkker-card border-l-5 border-[#FFCB05] p-[8px]">
                                 <h4 className="font-[900] text-gray-800 mb-4">CONSEJOS DE MARKETING</h4>
                                 <ul className="text-sm text-gray-600 pl-5 leading-relaxed list-disc">
                                     <li>Coloca el QR en el área de espera o mostrador.</li>
@@ -248,7 +248,7 @@ export default function MarketingPage() {
                                 </ul>
                             </div>
 
-                            <div className="bg-[#0ea5e9] text-white p-8 rounded-2xl text-center">
+                            <div className="bg-[#0ea5e9] text-white p-8 rounded-[5px] text-center">
                                 <Globe size={32} className="mx-auto mb-4 opacity-80" />
                                 <h4 className="m-0">PRESENCIA DIGITAL</h4>
                                 <p className="text-xs opacity-70 mt-2">
@@ -263,7 +263,7 @@ export default function MarketingPage() {
                     <motion.div key="config" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
                         className="grid grid-cols-1 md:grid-cols-2 gap-8">
 
-                        <div className="card-sanjose p-8">
+                        <div className="bunkker-card p-8">
                             <h3 className="flex items-center gap-2.5 text-[#0ea5e9] mb-8 uppercase font-black italic tracking-tighter">
                                 <Type size={22} /> IDENTIDAD VISUAL
                             </h3>
@@ -290,7 +290,7 @@ export default function MarketingPage() {
                                 </div>
                             ))}
 
-                            <div className="grid grid-cols-2 gap-4 mb-6">
+                            <div className="grid grid-cols-2 gap-[8px] mb-6">
                                 <div>
                                     <label className="block text-[0.75rem] font-bold text-gray-500 mb-1.5 tracking-wider">COLOR PRIMARIO</label>
                                     <div className="flex gap-2 items-center">
@@ -309,7 +309,7 @@ export default function MarketingPage() {
 
                             <div className="mb-6 p-4 bg-slate-50 border border-slate-700/50 rounded-xl">
                                 <h4 className="text-[0.8rem] font-bold text-slate-200 mb-4 uppercase tracking-wider flex items-center gap-2"><Clock size={16} /> Horarios Físicos (Cola Nocturna)</h4>
-                                <div className="grid grid-cols-2 gap-4 mb-4">
+                                <div className="grid grid-cols-2 gap-[8px] mb-4">
                                     <div>
                                         <label className="block text-[0.7rem] font-bold text-gray-500 mb-1.5 tracking-wider">HORA DE APERTURA</label>
                                         <input
@@ -348,7 +348,7 @@ export default function MarketingPage() {
                         </div>
 
                         <div className="flex flex-col gap-8">
-                            <div className="card-sanjose p-8">
+                            <div className="bunkker-card p-8">
                                 <h3 className="flex items-center gap-2.5 text-[#0ea5e9] mb-8 uppercase font-black italic tracking-tighter">
                                     <Palette size={22} /> AJUSTES REGIONALES
                                 </h3>
@@ -384,7 +384,7 @@ export default function MarketingPage() {
                                 disabled={isSaving}
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.97 }}
-                                className="btn-sanjose p-5 flex items-center justify-center gap-2.5 text-lg"
+                                className="bunkker-btn p-[8px] flex items-center justify-center gap-2.5 text-lg"
                             >
                                 {isSaving ? <RefreshCw size={20} className="animate-spin" /> :
                                     savedOk ? <CheckCircle size={20} /> : <Save size={20} />}
@@ -420,3 +420,4 @@ export default function MarketingPage() {
         </main>
     );
 }
+

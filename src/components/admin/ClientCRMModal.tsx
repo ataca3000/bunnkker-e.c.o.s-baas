@@ -164,7 +164,7 @@ export default function ClientCRMModal({ client, onClose }: ClientCRMModalProps)
                                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#334155' }}>Notas Internas (Solo Staff)</label>
                                 <textarea value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none', minHeight: '80px', background: '#fef3c7' }} placeholder="Cliente VIP, suele comprar cemento cruz azul..." />
                             </div>
-                            <button onClick={handleSaveInfo} disabled={saving} className="btn-sanjose" style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 24px', borderRadius: '12px' }}>
+                            <button onClick={handleSaveInfo} disabled={saving} className="bunkker-btn" style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 24px', borderRadius: '12px' }}>
                                 <Save size={18} /> {saving ? 'GUARDANDO...' : 'GUARDAR CAMBIOS'}
                             </button>
                         </div>
@@ -188,7 +188,7 @@ export default function ClientCRMModal({ client, onClose }: ClientCRMModalProps)
                                         placeholder={`Escribe la ${newNoteType}...`} 
                                         style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1px solid #cbd5e1', outline: 'none' }} 
                                     />
-                                    <button onClick={handleAddNote} className="btn-sanjose" style={{ padding: '0 24px', borderRadius: '12px', fontWeight: 'bold' }}>REGISTRAR</button>
+                                    <button onClick={handleAddNote} className="bunkker-btn" style={{ padding: '0 24px', borderRadius: '12px', fontWeight: 'bold' }}>REGISTRAR</button>
                                 </div>
                             </div>
 
@@ -240,3 +240,4 @@ export default function ClientCRMModal({ client, onClose }: ClientCRMModalProps)
         </div>
     );
 }
+

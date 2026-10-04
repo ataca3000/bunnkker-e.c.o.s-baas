@@ -11,7 +11,7 @@ function timingSafeEqualHex(a: string, b: string): boolean {
   return result === 0;
 }
 
-// ─── Permisos por rol y ruta ───────────────────────────────────────────────────
+// 🛡️ Permisos por rol y ruta
 const ROLE_PERMISSIONS: Record<string, string[]> = {
   '/dashboard/inventory':       ['superadmin', 'admin', 'inventory', 'almacen'],
   '/dashboard/sales':           ['superadmin', 'admin', 'sales', 'caja'],
@@ -57,6 +57,27 @@ const PUBLIC_DOMAINS = [
   'camaliontopics.com',
 ];
 
+// --- Helper HMAC Verification ---
+async function verifyHmac(session: string, role: string, sig: string): Promise<boolean> {
+  const secret = process.env.INTERNAL_API_SECRET;
+  if (process.env.NODE_ENV === 'production' && !secret) {
+    throw new Error('CRITICAL: Missing INTERNAL_API_SECRET in production');
+  }
+  const activeSecret = secret || 'bunkker-ecos-default-local-dev-secret-key-2026';
+  
+  const encoder = new TextEncoder();
+  try {
+    const key = await crypto.subtle.importKey(
+      'raw', encoder.encode(activeSecret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+    );
+    const expectedBuffer = await crypto.subtle.sign('HMAC', key, encoder.encode(`${role}:${session}`));
+    const expectedHex = Array.from(new Uint8Array(expectedBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+    return timingSafeEqualHex(expectedHex, sig);
+  } catch {
+    return false;
+  }
+}
+
 export default async function middleware(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
   const hostname = request.headers.get('host') || '';
@@ -72,50 +93,35 @@ export default async function middleware(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set('x-tenant-id', tenantId);
 
-  // --- 2. RBAC — protección del dashboard ---
+  // --- 2. RBAC - protección del dashboard ---
   if (pathname.startsWith('/dashboard')) {
     const session = request.cookies.get('msj-session')?.value;
     const role    = request.cookies.get('msj-role')?.value;
     const sig     = request.cookies.get('msj-role-sig')?.value;
 
-    // Sin sesión → login
+    // Sin sesión -> login
     if (!session) {
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('redirect', pathname);
       return NextResponse.redirect(loginUrl);
     }
 
-    // ── Verificación HMAC de firma de rol (aplica a TODOS los roles, incluyendo superadmin) ──
-    // Previene que alguien edite manualmente la cookie msj-role a 'superadmin'.
+    // ✨ Verificación HMAC de firma de rol ✨
     if (role && sig) {
-      const secret = process.env.INTERNAL_API_SECRET || 'bunkker-ecos-default-local-dev-secret-key-2026';
-      const encoder = new TextEncoder();
-      let signatureValid = false;
       try {
-        const key = await crypto.subtle.importKey(
-          'raw', encoder.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
-        );
-        const expectedBuffer = await crypto.subtle.sign('HMAC', key, encoder.encode(`${role}:${session}`));
-        const expectedHex = Array.from(new Uint8Array(expectedBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
-        if (timingSafeEqualHex(expectedHex, sig)) {
-          signatureValid = true;
+        const signatureValid = await verifyHmac(session, role, sig);
+        if (!signatureValid) {
+          if (process.env.NODE_ENV !== 'production') console.warn(`[RBAC] Firma HMAC inválida para rol '${role}'.`);
+          return NextResponse.redirect(new URL('/login?error=tampered', request.url));
         }
-      } catch {
-        signatureValid = false;
-      }
-
-      if (!signatureValid) {
-        if (process.env.NODE_ENV !== 'production') {
-          console.warn(`[RBAC] Firma HMAC inválida para rol '${role}' en ${pathname}. Posible cookie tampering.`);
-        }
-        return NextResponse.redirect(new URL('/login?error=tampered', request.url));
+      } catch (e: any) {
+        return new NextResponse(e.message, { status: 500 });
       }
     } else if (!sig) {
-      // Sin firma → cookie vieja o manipulada, redirigir a login
       return NextResponse.redirect(new URL('/login?error=unauthorized', request.url));
     }
 
-    // Superadmin/admin tienen acceso total (ya verificamos su firma arriba)
+    // Superadmin/admin tienen acceso total
     if (role === 'superadmin' || role === 'admin') {
       const res = NextResponse.next({ request: { headers: requestHeaders } });
       res.headers.set('x-tenant-id', tenantId);
@@ -130,7 +136,6 @@ export default async function middleware(request: NextRequest) {
     if (matchedEntry) {
       const requiredRoles = matchedEntry[1];
       if (!role || !requiredRoles.includes(role)) {
-        if (process.env.NODE_ENV !== 'production') console.warn(`[RBAC] Bloqueado: ${role} intentó acceder a ${pathname} en tenant ${tenantId}`);
         return NextResponse.redirect(new URL('/login?error=unauthorized', request.url));
       }
     } else if (pathname === '/dashboard') {
@@ -138,31 +143,46 @@ export default async function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL(WORKER_DASHBOARD_REDIRECTS[role], request.url));
       }
     } else if (role !== 'superadmin' && role !== 'admin') {
-      if (process.env.NODE_ENV !== 'production') console.warn(`[RBAC] Ruta no permitida: ${role} en ${pathname}`);
       return NextResponse.redirect(new URL('/login?error=unauthorized', request.url));
     }
   }
 
   // --- 3. API Protection ---
   if (pathname.startsWith('/api')) {
-    // Rutas públicas que no requieren sesión de empleado
-    const publicApiRoutes = ['/api/auth', '/api/customer', '/api/public', '/api/omnipulse'];
+    const publicApiRoutes = ['/api/auth', '/api/customer', '/api/public', '/api/omnipulse', '/api/settings'];
     const isPublicApi = publicApiRoutes.some(r => pathname.startsWith(r));
 
     if (!isPublicApi) {
-      // S1.3 FIX: Se eliminó el bypass isPublicMethod que dejaba GET /api/products
-      // y POST /api/orders sin autenticación. Cada route handler maneja su propia auth.
       const session = request.cookies.get('msj-session')?.value;
+      const role    = request.cookies.get('msj-role')?.value;
+      const sig     = request.cookies.get('msj-role-sig')?.value;
+
       if (!session) {
-        if (process.env.NODE_ENV !== 'production') console.warn(`[RBAC] Acceso a API denegado sin sesión: ${pathname}`);
-        return new NextResponse(JSON.stringify({ error: 'Unauthorized', message: 'Acceso denegado (RNI)' }), {
+        return new NextResponse(JSON.stringify({ error: 'Unauthorized', message: 'Acceso denegado (No session)' }), {
           status: 401,
           headers: { 'Content-Type': 'application/json', 'x-tenant-id': tenantId }
         });
       }
+
+      // ✨ Verificación HMAC en API ✨
+      if (role && sig) {
+        try {
+          const signatureValid = await verifyHmac(session, role, sig);
+          if (!signatureValid) {
+            return new NextResponse(JSON.stringify({ error: 'Unauthorized', message: 'Firma manipulada' }), { 
+              status: 401, 
+              headers: { 'Content-Type': 'application/json', 'x-tenant-id': tenantId } 
+            });
+          }
+        } catch (e: any) {
+          return new NextResponse(JSON.stringify({ error: 'Internal Error', message: e.message }), { 
+            status: 500, 
+            headers: { 'Content-Type': 'application/json', 'x-tenant-id': tenantId } 
+          });
+        }
+      }
     }
   }
-
 
   // Continuar inyectando siempre el tenant en headers
   const response = NextResponse.next({ request: { headers: requestHeaders } });

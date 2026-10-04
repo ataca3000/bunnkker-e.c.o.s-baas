@@ -109,9 +109,9 @@ export default function MigracionPage() {
     };
 
     return (
-        <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto space-y-8">
+        <div className="p-4 sm:p-[8px] lg:p-8 max-w-6xl mx-auto space-y-8">
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-200 dark:border-slate-800 pb-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-[8px] border-b border-gray-200 dark:border-slate-800 pb-6">
                 <div>
                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-50 dark:bg-cyan-950/60 border border-cyan-200 dark:border-cyan-800 text-cyan-600 dark:text-cyan-400 text-xs font-bold uppercase tracking-wider mb-2">
                         <Sparkles className="w-3.5 h-3.5" /> Google Play & Zero-Tap Standard
@@ -172,11 +172,11 @@ export default function MigracionPage() {
             {activeTab === 'export' && bundle && (
                 <div className="grid md:grid-cols-2 gap-8 items-start">
                     {/* QR Code Presentation */}
-                    <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl p-6 flex flex-col items-center text-center space-y-4 shadow-sm">
+                    <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-[5px] p-[8px] flex flex-col items-center text-center space-y-4 shadow-sm">
                         <span className="text-xs font-bold uppercase tracking-widest text-cyan-600 dark:text-cyan-400">
                             Escaneo Rápido de Dispositivo a Dispositivo
                         </span>
-                        <div className="p-4 bg-white rounded-2xl shadow-inner border border-gray-200 inline-block">
+                        <div className="p-4 bg-white rounded-[5px] shadow-inner border border-gray-200 inline-block">
                             <QRCodeSVG
                                 value={typeof window !== 'undefined' ? `${window.location.origin}/dashboard/migracion?zeroTap=true&migData=${encodeURIComponent(qrPayload)}` : qrPayload}
                                 size={220}
@@ -206,7 +206,7 @@ export default function MigracionPage() {
 
                     {/* Resumen del Respaldo */}
                     <div className="space-y-4">
-                        <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl p-6 space-y-4 shadow-sm">
+                        <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-[5px] p-[8px] space-y-4 shadow-sm">
                             <h2 className="text-sm font-bold uppercase tracking-wider text-gray-900 dark:text-white flex items-center gap-2">
                                 <ShieldCheck className="w-4 h-4 text-emerald-500" /> Datos del Respaldo del Dispositivo
                             </h2>
@@ -253,9 +253,9 @@ export default function MigracionPage() {
             {/* TAB 2: IMPORT / RESTAURAR */}
             {activeTab === 'import' && (
                 <div className="max-w-2xl mx-auto space-y-6">
-                    <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl p-6 space-y-5 shadow-sm">
+                    <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-[5px] p-[8px] space-y-5 shadow-sm">
                         <div className="text-center space-y-2">
-                            <div className="inline-flex p-3 rounded-2xl bg-cyan-500/10 text-cyan-500 border border-cyan-500/20 mb-1">
+                            <div className="inline-flex p-3 rounded-[5px] bg-cyan-500/10 text-cyan-500 border border-cyan-500/20 mb-1">
                                 <Upload className="w-6 h-6" />
                             </div>
                             <h2 className="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tight">
@@ -267,7 +267,7 @@ export default function MigracionPage() {
                         </div>
 
                         {/* File Upload Box */}
-                        <div className="border-2 border-dashed border-gray-300 dark:border-slate-700 hover:border-cyan-500 rounded-2xl p-6 text-center transition-all bg-gray-50/50 dark:bg-slate-950/50 cursor-pointer relative">
+                        <div className="border-2 border-dashed border-gray-300 dark:border-slate-700 hover:border-cyan-500 rounded-[5px] p-[8px] text-center transition-all bg-gray-50/50 dark:bg-slate-950/50 cursor-pointer relative">
                             <input
                                 type="file"
                                 accept=".json"
@@ -322,8 +322,8 @@ export default function MigracionPage() {
             {/* TAB 3: MEMORIA Y OPTIMIZACION (GOOGLE PLAY STANDARD) */}
             {activeTab === 'memory' && (
                 <div className="space-y-6">
-                    <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-1">
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-[8px]">
+                        <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-[5px] p-[8px] shadow-sm space-y-1">
                             <span className="text-[10px] font-bold uppercase text-gray-400">Heap JS en Uso</span>
                             <div className="text-2xl font-black text-gray-900 dark:text-white">
                                 {memoryReport?.heapUsedMB !== null ? `${memoryReport?.heapUsedMB} MB` : 'N/A (Browser)'}
@@ -333,7 +333,7 @@ export default function MigracionPage() {
                             </span>
                         </div>
 
-                        <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-1">
+                        <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-[5px] p-[8px] shadow-sm space-y-1">
                             <span className="text-[10px] font-bold uppercase text-gray-400">Almacenamiento Local</span>
                             <div className="text-2xl font-black text-cyan-600 dark:text-cyan-400">
                                 {memoryReport?.storageUsedKB} KB
@@ -343,7 +343,7 @@ export default function MigracionPage() {
                             </span>
                         </div>
 
-                        <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-1">
+                        <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-[5px] p-[8px] shadow-sm space-y-1">
                             <span className="text-[10px] font-bold uppercase text-gray-400">Cola Offline</span>
                             <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
                                 {memoryReport?.offlineQueueSize} tickets
@@ -351,7 +351,7 @@ export default function MigracionPage() {
                             <span className="text-[10px] text-gray-400">Ventas en espera de red</span>
                         </div>
 
-                        <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-1">
+                        <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-[5px] p-[8px] shadow-sm space-y-1">
                             <span className="text-[10px] font-bold uppercase text-gray-400">Estado de Memoria</span>
                             <div className="text-lg font-black uppercase text-emerald-500 flex items-center gap-1.5 pt-1">
                                 <CheckCircle2 className="w-5 h-5" /> {memoryReport?.status === 'optimal' ? 'ÓPTIMO' : memoryReport?.status}
@@ -360,8 +360,8 @@ export default function MigracionPage() {
                         </div>
                     </div>
 
-                    <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl p-6 space-y-4 shadow-sm">
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-[5px] p-[8px] space-y-4 shadow-sm">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-[8px]">
                             <div>
                                 <h2 className="text-sm font-bold uppercase tracking-wider text-gray-900 dark:text-white flex items-center gap-2">
                                     <RefreshCw className="w-4 h-4 text-cyan-500" /> Purgar Caché y Reducir Consumo de RAM
@@ -385,3 +385,4 @@ export default function MigracionPage() {
         </div>
     );
 }
+

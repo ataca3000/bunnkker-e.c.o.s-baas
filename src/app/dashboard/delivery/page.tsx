@@ -215,12 +215,12 @@ export default function DeliveryDashboard() {
                 </div>
             </header>
 
-            <main className="flex-1 w-full h-full mx-auto p-4 md:p-6 overflow-hidden relative z-10 flex">
+            <main className="flex-1 w-full h-full mx-auto p-4 md:p-[8px] overflow-hidden relative z-10 flex">
                 <div className="flex-1 overflow-y-auto w-full h-full flex flex-col">
                     {currentView === 'pool' && <OrderPool orders={availableOrders} onClaim={handleClaim} loading={false} driverLocation={driverLocation} />}
                     {currentView === 'route' && <MyRoute orders={currentRoute} onStartDelivery={startDelivery} onBackToPool={() => setCurrentView('pool')} />}
                     {currentView === 'map' && (
-                        <div className="w-full h-full min-h-[450px] rounded-3xl overflow-hidden border border-cyan-500/20 shadow-2xl relative">
+                        <div className="w-full h-full min-h-[450px] rounded-[5px] overflow-hidden border border-cyan-500/20 shadow-2xl relative">
                             {typeof window !== 'undefined' && (
                                 <React.Suspense fallback={<div className="p-8 text-center text-slate-400">Cargando Mapa GPS...</div>}>
                                     {(() => {
@@ -301,3 +301,4 @@ export default function DeliveryDashboard() {
         </div>
     );
 }
+

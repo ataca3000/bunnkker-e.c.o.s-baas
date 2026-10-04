@@ -76,7 +76,7 @@ export default function CargaDescargaDashboardWorker({ userName, greeting, order
                     }}
                 />
             )}
-            <header className="mb-10 flex flex-col sm:flex-row justify-between items-center gap-6 bg-[#1a1d2d] p-6 rounded-3xl border border-white/5 shadow-[0_0_15px_rgba(14,165,233,0.1)]">
+            <header className="mb-10 flex flex-col sm:flex-row justify-between items-center gap-[8px] bg-[#1a1d2d] p-[8px] rounded-[5px] border border-white/5 shadow-[0_0_15px_rgba(14,165,233,0.1)]">
                 <div className="text-center sm:text-left">
                     <h1 className="text-3xl font-[900] text-[#0ea5e9] uppercase tracking-tighter flex items-center gap-2 justify-center sm:justify-start">
                         <Truck size={32} /> CONTROL DE PATIO Y CARGA
@@ -87,35 +87,35 @@ export default function CargaDescargaDashboardWorker({ userName, greeting, order
                     <motion.button
                         whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                         onClick={() => setShowScanner(true)}
-                        className="bg-sky-600 hover:bg-sky-700 text-white px-5 py-2.5 rounded-2xl font-bold uppercase text-xs tracking-wider flex items-center gap-2 transition-all shadow-md"
+                        className="bg-sky-600 hover:bg-sky-700 text-white px-5 py-2.5 rounded-[5px] font-bold uppercase text-xs tracking-wider flex items-center gap-2 transition-all shadow-md"
                     >
                         <QrCode size={14} /> Escanear QR Ticket
                     </motion.button>
                     <motion.button
                         whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                         onClick={signOut}
-                        className="bg-rose-600 hover:bg-rose-700 text-white px-5 py-2.5 rounded-2xl font-bold uppercase text-xs tracking-wider flex items-center gap-2 transition-all shadow-md"
+                        className="bg-rose-600 hover:bg-rose-700 text-white px-5 py-2.5 rounded-[5px] font-bold uppercase text-xs tracking-wider flex items-center gap-2 transition-all shadow-md"
                     >
                         <LogOut size={14} /> Cerrar Sesión
                     </motion.button>
                 </div>
             </header>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-                <div className="bg-[#1a1d2d] border border-white/5 rounded-3xl p-6 flex flex-col justify-center">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-[8px] mb-10">
+                <div className="bg-[#1a1d2d] border border-white/5 rounded-[5px] p-[8px] flex flex-col justify-center">
                     <h4 className="text-gray-400 font-black uppercase tracking-widest text-[10px] mb-1">Cargas Pendientes</h4>
                     <p className="text-4xl font-black text-white">{pendingLoads.length}</p>
                     <p className="text-gray-500 text-[11px] mt-1">Órdenes en cola para despacho.</p>
                 </div>
-                <div className="bg-[#1a1d2d] border border-white/5 rounded-3xl p-6 flex flex-col justify-center">
+                <div className="bg-[#1a1d2d] border border-white/5 rounded-[5px] p-[8px] flex flex-col justify-center">
                     <h4 className="text-gray-400 font-black uppercase tracking-widest text-[10px] mb-1">Cargador Activo</h4>
                     <p className="text-2xl font-black text-[#0ea5e9] uppercase truncate">{userName}</p>
                     <p className="text-gray-500 text-[11px] mt-1">Operando canal de patio en tiempo real.</p>
                 </div>
             </div>
 
-            <div className="bg-[#1a1d2d] border border-white/5 rounded-3xl p-6">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 pb-6 border-b border-white/5">
+            <div className="bg-[#1a1d2d] border border-white/5 rounded-[5px] p-[8px]">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-[8px] mb-6 pb-6 border-b border-white/5">
                     <div>
                         <h3 className="text-lg font-black text-white uppercase tracking-tight">COLA DE ENTREGAS EN LOCAL</h3>
                         <p className="text-xs text-gray-400">Coordinación de patio sincronizada en tiempo real. Toma una orden para iniciar.</p>
@@ -123,13 +123,13 @@ export default function CargaDescargaDashboardWorker({ userName, greeting, order
                     <input
                         type="text"
                         placeholder="Buscar Orden o Cliente..."
-                        className="px-4 py-2 bg-[#0f111a] border border-white/5 rounded-2xl outline-none focus:border-[#0ea5e9] text-xs font-semibold w-full sm:w-64"
+                        className="px-4 py-2 bg-[#0f111a] border border-white/5 rounded-[5px] outline-none focus:border-[#0ea5e9] text-xs font-semibold w-full sm:w-64"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
 
-                <div className="grid gap-4">
+                <div className="grid gap-[8px]">
                     {pendingLoads.length === 0 ? (
                         <div className="text-center py-12 text-gray-500">
                             <CheckCircle size={48} className="mx-auto text-emerald-500 mb-3" />
@@ -148,7 +148,7 @@ export default function CargaDescargaDashboardWorker({ userName, greeting, order
                                 <motion.div
                                     key={order.id}
                                     layout
-                                    className={`bg-[#0f111a] rounded-2xl p-5 border-l-8 shadow-lg flex flex-col md:flex-row justify-between items-center gap-4 transition-all border ${
+                                    className={`bg-[#0f111a] rounded-[5px] p-[8px] border-l-8 shadow-lg flex flex-col md:flex-row justify-between items-center gap-[8px] transition-all border ${
                                         isTakenByOther
                                             ? 'opacity-50 border-gray-600 bg-gray-900/40 pointer-events-none'
                                             : isTakenByMe
@@ -198,7 +198,7 @@ export default function CargaDescargaDashboardWorker({ userName, greeting, order
                                                 whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                                                 onClick={() => handleAction(order.id, 'resume')}
                                                 disabled={!!processingId}
-                                                className="bg-indigo-600 text-white px-5 py-2.5 rounded-2xl font-bold text-xs uppercase flex items-center gap-2 justify-center hover:bg-indigo-700 transition-all shadow-md"
+                                                className="bg-indigo-600 text-white px-5 py-2.5 rounded-[5px] font-bold text-xs uppercase flex items-center gap-2 justify-center hover:bg-indigo-700 transition-all shadow-md"
                                             >
                                                 {processingId === order.id ? <Loader2 size={12} className="animate-spin" /> : <Play size={12} />}
                                                 Retomar
@@ -209,7 +209,7 @@ export default function CargaDescargaDashboardWorker({ userName, greeting, order
                                                     whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                                                     onClick={() => handleAction(order.id, 'start')}
                                                     disabled={!!processingId}
-                                                    className="bg-blue-600 text-white px-5 py-2.5 rounded-2xl font-bold text-xs uppercase flex items-center gap-2 justify-center hover:bg-blue-700 transition-all shadow-md w-full"
+                                                    className="bg-blue-600 text-white px-5 py-2.5 rounded-[5px] font-bold text-xs uppercase flex items-center gap-2 justify-center hover:bg-blue-700 transition-all shadow-md w-full"
                                                 >
                                                     {processingId === order.id ? <Loader2 size={12} className="animate-spin" /> : <Play size={12} />} INICIAR CARGA
                                                 </motion.button>
@@ -217,7 +217,7 @@ export default function CargaDescargaDashboardWorker({ userName, greeting, order
                                                     whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                                                     onClick={() => handleAction(order.id, 'postpone')}
                                                     disabled={!!processingId}
-                                                    className="bg-amber-500 text-white px-5 py-1.5 rounded-2xl font-bold text-[10px] uppercase hover:bg-amber-600 transition-all"
+                                                    className="bg-amber-500 text-white px-5 py-1.5 rounded-[5px] font-bold text-[10px] uppercase hover:bg-amber-600 transition-all"
                                                 >
                                                     Posponer
                                                 </motion.button>
@@ -227,7 +227,7 @@ export default function CargaDescargaDashboardWorker({ userName, greeting, order
                                                 whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                                                 onClick={() => handleAction(order.id, 'complete')}
                                                 disabled={!!processingId || (order.loadedByUid !== profile?.uid && profile?.role !== 'superadmin')}
-                                                className="bg-emerald-600 text-white px-6 py-3 rounded-2xl font-bold text-xs uppercase flex items-center justify-center gap-2 hover:bg-emerald-700 transition-all shadow-md disabled:opacity-40"
+                                                className="bg-emerald-600 text-white px-6 py-3 rounded-[5px] font-bold text-xs uppercase flex items-center justify-center gap-2 hover:bg-emerald-700 transition-all shadow-md disabled:opacity-40"
                                             >
                                                 {processingId === order.id ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle size={12} />} FINALIZAR
                                             </motion.button>
@@ -259,5 +259,6 @@ export default function CargaDescargaDashboardWorker({ userName, greeting, order
         </main>
     );
 };
+
 
 

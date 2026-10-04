@@ -100,10 +100,10 @@ export default function CustomersCRM() {
             <div className="max-w-7xl mx-auto space-y-8">
                 
                 {/* Header */}
-                <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 border-b border-slate-800 pb-6">
+                <div className="flex flex-col md:flex-row justify-between md:items-center gap-[8px] border-b border-slate-800 pb-6">
                     <div>
                         <div className="flex items-center gap-3">
-                            <div className="p-2.5 bg-blue-500/20 text-blue-400 rounded-2xl border border-blue-500/30">
+                            <div className="p-2.5 bg-blue-500/20 text-blue-400 rounded-[5px] border border-blue-500/30">
                                 <Users size={28} />
                             </div>
                             <div>
@@ -122,8 +122,8 @@ export default function CustomersCRM() {
                 </div>
 
                 {/* Métricas Rápidas */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 backdrop-blur-md">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[8px]">
+                    <div className="bg-slate-900/80 border border-slate-800 rounded-[5px] p-[8px] backdrop-blur-md">
                         <div className="flex items-center justify-between text-slate-400 mb-2">
                             <span className="text-xs uppercase font-bold tracking-wider">Total Clientes</span>
                             <Users size={18} className="text-blue-400" />
@@ -131,7 +131,7 @@ export default function CustomersCRM() {
                         <p className="text-3xl font-black text-white">{clients.length}</p>
                     </div>
 
-                    <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 backdrop-blur-md">
+                    <div className="bg-slate-900/80 border border-slate-800 rounded-[5px] p-[8px] backdrop-blur-md">
                         <div className="flex items-center justify-between text-slate-400 mb-2">
                             <span className="text-xs uppercase font-bold tracking-wider">Clientes VIP</span>
                             <Star size={18} className="text-amber-400" />
@@ -139,7 +139,7 @@ export default function CustomersCRM() {
                         <p className="text-3xl font-black text-amber-400">{vipCount}</p>
                     </div>
 
-                    <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 backdrop-blur-md">
+                    <div className="bg-slate-900/80 border border-slate-800 rounded-[5px] p-[8px] backdrop-blur-md">
                         <div className="flex items-center justify-between text-slate-400 mb-2">
                             <span className="text-xs uppercase font-bold tracking-wider">Frecuentes</span>
                             <ShoppingBag size={18} className="text-emerald-400" />
@@ -147,7 +147,7 @@ export default function CustomersCRM() {
                         <p className="text-3xl font-black text-emerald-400">{frequentCount}</p>
                     </div>
 
-                    <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 backdrop-blur-md">
+                    <div className="bg-slate-900/80 border border-slate-800 rounded-[5px] p-[8px] backdrop-blur-md">
                         <div className="flex items-center justify-between text-slate-400 mb-2">
                             <span className="text-xs uppercase font-bold tracking-wider">Ventas Acumuladas</span>
                             <DollarSign size={18} className="text-sky-400" />
@@ -157,7 +157,7 @@ export default function CustomersCRM() {
                 </div>
 
                 {/* Filtros y Buscador */}
-                <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-slate-900/60 border border-slate-800/80 p-4 rounded-2xl">
+                <div className="flex flex-col md:flex-row gap-[8px] justify-between items-center bg-slate-900/60 border border-slate-800/80 p-4 rounded-[5px]">
                     <div className="relative w-full md:w-96">
                         <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                         <input 
@@ -187,7 +187,7 @@ export default function CustomersCRM() {
                 </div>
 
                 {/* Tabla de Base de Datos de Clientes */}
-                <div className="bg-slate-900/60 border border-slate-800 rounded-3xl overflow-hidden shadow-xl">
+                <div className="bg-slate-900/60 border border-slate-800 rounded-[5px] overflow-hidden shadow-xl">
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm text-slate-300">
                             <thead className="bg-slate-950/80 text-[11px] uppercase font-bold text-slate-400 tracking-wider border-b border-slate-800">
@@ -271,10 +271,10 @@ export default function CustomersCRM() {
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.95 }}
-                                className="bg-slate-900 border border-slate-800 rounded-3xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl"
+                                className="bg-slate-900 border border-slate-800 rounded-[5px] max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl"
                             >
                                 {/* Modal Header */}
-                                <div className="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-950/60">
+                                <div className="p-[8px] border-b border-slate-800 flex justify-between items-center bg-slate-950/60">
                                     <div>
                                         <div className="flex items-center gap-3">
                                             <h2 className="text-2xl font-black text-white">{selectedClient.name}</h2>
@@ -295,13 +295,13 @@ export default function CustomersCRM() {
                                 </div>
 
                                 {/* Modal Body: Lista de Compras y Tickets */}
-                                <div className="p-6 overflow-y-auto space-y-4 flex-1 custom-scrollbar">
+                                <div className="p-[8px] overflow-y-auto space-y-4 flex-1 custom-scrollbar">
                                     <h3 className="text-xs uppercase font-extrabold tracking-wider text-slate-400">
                                         Historial de Compras Registradas ({selectedClient.orders?.length || 0})
                                     </h3>
 
                                     {(!selectedClient.orders || selectedClient.orders.length === 0) ? (
-                                        <div className="py-12 text-center text-slate-500 border border-slate-800 rounded-2xl bg-slate-950/40">
+                                        <div className="py-12 text-center text-slate-500 border border-slate-800 rounded-[5px] bg-slate-950/40">
                                             <ShoppingBag size={40} className="mx-auto mb-2 text-slate-600" />
                                             <p className="text-sm font-semibold">Este cliente aún no tiene órdenes finalizadas en el sistema.</p>
                                         </div>
@@ -310,7 +310,7 @@ export default function CustomersCRM() {
                                             {selectedClient.orders.map(order => (
                                                 <div 
                                                     key={order.id}
-                                                    className="bg-slate-950/60 border border-slate-800 rounded-2xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:border-slate-700 transition-colors"
+                                                    className="bg-slate-950/60 border border-slate-800 rounded-[5px] p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-[8px] hover:border-slate-700 transition-colors"
                                                 >
                                                     <div className="space-y-1">
                                                         <div className="flex items-center gap-2">
@@ -323,7 +323,7 @@ export default function CustomersCRM() {
                                                                 {order.status}
                                                             </span>
                                                         </div>
-                                                        <div className="text-xs text-slate-400 flex items-center gap-4">
+                                                        <div className="text-xs text-slate-400 flex items-center gap-[8px]">
                                                             <span className="flex items-center gap-1">
                                                                 <Calendar size={13} className="text-slate-500" />
                                                                 {new Date(order.date).toLocaleString('es-MX')}
@@ -335,7 +335,7 @@ export default function CustomersCRM() {
                                                         </div>
                                                     </div>
 
-                                                    <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
+                                                    <div className="flex items-center gap-[8px] w-full md:w-auto justify-between md:justify-end">
                                                         <span className="text-xl font-black text-emerald-400 font-mono">
                                                             ${Number(order.total).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                                                         </span>
@@ -364,7 +364,7 @@ export default function CustomersCRM() {
                                 initial={{ opacity: 0, scale: 0.9 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.9 }}
-                                className="bg-white text-zinc-900 rounded-3xl max-w-sm w-full p-6 shadow-2xl relative font-mono text-xs flex flex-col"
+                                className="bg-white text-zinc-900 rounded-[5px] max-w-sm w-full p-[8px] shadow-2xl relative font-mono text-xs flex flex-col"
                             >
                                 <button 
                                     onClick={() => setActiveTicket(null)}
@@ -458,3 +458,4 @@ export default function CustomersCRM() {
         </div>
     );
 }
+

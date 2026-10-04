@@ -840,8 +840,8 @@ export default function InventoryDashboard() {
                 <Link href="/dashboard" className="inline-flex items-center gap-2 text-cyan-400 hover:text-cyan-300 font-bold uppercase text-xs tracking-wider mb-4 transition-colors drop-shadow-[0_0_5px_rgba(0,242,255,0.5)]">
                     <ArrowLeft size={16} /> Volver al Tablero
                 </Link>
-                <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 bg-slate-900/60 backdrop-blur-md p-6 rounded-sm shadow-[0_0_20px_rgba(0,242,255,0.1)] border border-cyan-500/30">
-                    <div className="flex items-center gap-4">
+                <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-[8px] bg-slate-900/60 backdrop-blur-md p-[8px] rounded-sm shadow-[0_0_20px_rgba(0,242,255,0.1)] border border-cyan-500/30">
+                    <div className="flex items-center gap-[8px]">
                         <div className="bg-cyan-900/40 p-4 rounded-sm text-cyan-400 border border-cyan-500/50 shadow-[0_0_15px_rgba(0,242,255,0.3)]">
                             <Package size={32} />
                         </div>
@@ -964,14 +964,14 @@ export default function InventoryDashboard() {
                             {/* STEP 2: IDENTIDAD Y FOTO */}
                             {step === 2 && (
                                 <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
-                                    <div className="bg-blue-900/20 border border-blue-500/20 p-6 rounded-2xl flex flex-col md:flex-row gap-6 items-center">
+                                    <div className="bg-blue-900/20 border border-blue-500/20 p-[8px] rounded-[5px] flex flex-col md:flex-row gap-[8px] items-center">
                                         <div className="bg-slate-800/80 p-4 rounded-xl shadow-lg text-blue-500"><Barcode size={40}/></div>
                                         <div className="flex-1 w-full">
                                             <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Código de Barras / Serial</label>
                                             <input type="text" value={formData.barcode} onChange={e => setFormData({...formData, barcode: e.target.value})} className="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl font-medium text-white placeholder-slate-500 focus:border-[#0ea5e9] outline-none transition-all" placeholder="Escanee o teclee el código" />
                                         </div>
                                     </div>
-                                    <div className="bg-slate-900/50 border border-slate-700/50 p-6 rounded-2xl flex flex-col md:flex-row gap-6 items-center">
+                                    <div className="bg-slate-900/50 border border-slate-700/50 p-[8px] rounded-[5px] flex flex-col md:flex-row gap-[8px] items-center">
                                         <div className="bg-slate-800/80 p-4 rounded-xl shadow-lg text-slate-400"><Camera size={40}/></div>
                                         <div className="flex-1 w-full">
                                             <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">Cámara / Archivo</label>
@@ -1027,12 +1027,12 @@ export default function InventoryDashboard() {
                             {/* STEP 3: STOCK Y UBICACIÓN */}
                             {step === 3 && (
                                 <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8">
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                        <div className="bg-emerald-900/20 border border-emerald-500/20 p-6 rounded-2xl">
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-[8px]">
+                                        <div className="bg-emerald-900/20 border border-emerald-500/20 p-[8px] rounded-[5px]">
                                             <label className="text-xs font-black text-emerald-400 uppercase tracking-widest mb-2 block">Precio (MXN) *</label>
                                             <input type="number" step="0.01" disabled={profile?.role === 'inventory' && !!editingProductId} value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} className="w-full bg-slate-900 border border-emerald-500/30 p-4 rounded-xl font-black text-2xl text-emerald-400 placeholder-emerald-900/50 outline-none transition-all disabled:opacity-50" placeholder="0.00" />
                                         </div>
-                                        <div className="bg-blue-900/20 border border-blue-500/20 p-6 rounded-2xl">
+                                        <div className="bg-blue-900/20 border border-blue-500/20 p-[8px] rounded-[5px]">
                                             <label className="text-xs font-black text-blue-400 uppercase tracking-widest mb-2 block">Unidad de Medida *</label>
                                             <select disabled={profile?.role === 'marketing'} value={formData.unitType || 'PZA'} onChange={e => setFormData({...formData, unitType: e.target.value as any})} className="w-full bg-slate-900 border border-blue-500/30 p-4 rounded-xl font-black text-xl text-blue-400 outline-none transition-all disabled:opacity-50">
                                                 <option value="PZA">Pieza (PZA)</option>
@@ -1056,17 +1056,17 @@ export default function InventoryDashboard() {
                                                 </label>
                                             </div>
                                         </div>
-                                        <div className="bg-amber-900/20 border border-amber-500/20 p-6 rounded-2xl">
+                                        <div className="bg-amber-900/20 border border-amber-500/20 p-[8px] rounded-[5px]">
                                             <label className="text-xs font-black text-amber-400 uppercase tracking-widest mb-2 block">Stock Físico *</label>
                                             <input type="number" step="any" disabled={profile?.role === 'marketing'} value={formData.stock} onChange={e => setFormData({...formData, stock: e.target.value})} className="w-full bg-slate-900 border border-amber-500/30 p-4 rounded-xl font-black text-2xl text-amber-400 placeholder-amber-900/50 outline-none transition-all disabled:opacity-50" placeholder="0" />
                                         </div>
                                     </div>
-                                    <div className="bg-indigo-900/20 border border-indigo-500/20 p-6 rounded-2xl">
+                                    <div className="bg-indigo-900/20 border border-indigo-500/20 p-[8px] rounded-[5px]">
                                         <div className="flex items-center gap-3 mb-4">
                                             <MapPin className="text-indigo-400" />
                                             <h3 className="font-black text-indigo-400 uppercase tracking-widest text-sm">Ubicación Física en Almacén</h3>
                                         </div>
-                                        <div className="grid grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-2 gap-[8px]">
                                             <div>
                                                 <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-2 block">Estante / Pasillo</label>
                                                 <div className="flex items-center gap-2">
@@ -1173,7 +1173,7 @@ export default function InventoryDashboard() {
 
                             {activeTab === 'catalog' && (
                                 <section className="overflow-hidden border border-slate-700/70 bg-slate-900/70 shadow-xl">
-                                    <div className="flex flex-col gap-4 border-b border-slate-700/70 p-5 md:flex-row md:items-center md:justify-between">
+                                    <div className="flex flex-col gap-[8px] border-b border-slate-700/70 p-[8px] md:flex-row md:items-center md:justify-between">
                                         <div>
                                             <h2 className="text-lg font-black uppercase text-white">Inventario de productos</h2>
                                             <p className="mt-1 text-xs text-slate-400">{filteredProducts.length} productos encontrados</p>
@@ -1260,7 +1260,7 @@ export default function InventoryDashboard() {
                             {activeTab === 'shelves' && (
                                 <>
                                     {/* BÚSQUEDA Y CREACIÓN DE SECCIONES */}
-                                    <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 mb-8">
+                                    <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-[8px] mb-8">
                                         <div className="relative flex-1 max-w-md">
                                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                                             <input 
@@ -1268,7 +1268,7 @@ export default function InventoryDashboard() {
                                                 placeholder="Buscar por código, nombre, estante..."
                                                 value={searchTerm}
                                                 onChange={e => setSearchTerm(e.target.value)}
-                                                className="w-full bg-slate-800/80 border border-slate-700/50 pl-12 pr-14 py-4 rounded-2xl font-medium outline-none focus:border-[#0ea5e9] shadow-lg transition-all"
+                                                className="w-full bg-slate-800/80 border border-slate-700/50 pl-12 pr-14 py-4 rounded-[5px] font-medium outline-none focus:border-[#0ea5e9] shadow-lg transition-all"
                                             />
                                             <button
                                                 type="button"
@@ -1282,14 +1282,14 @@ export default function InventoryDashboard() {
                                         </div>
                                         <button 
                                             onClick={() => setShowNewEstanteModal(true)}
-                                            className="bg-slate-800/80 border border-slate-700/50 text-slate-200 px-6 py-4 rounded-2xl font-bold uppercase text-xs tracking-wider flex items-center gap-2 hover:bg-slate-50 transition-all shadow-lg active:scale-95 justify-center"
+                                            className="bg-slate-800/80 border border-slate-700/50 text-slate-200 px-6 py-4 rounded-[5px] font-bold uppercase text-xs tracking-wider flex items-center gap-2 hover:bg-slate-50 transition-all shadow-lg active:scale-95 justify-center"
                                         >
                                             <Folder size={16} className="text-[#0ea5e9]" /> Nueva Sección
                                         </button>
                                     </div>
 
                                     {/* NUEVO DISEÑO KANBAN: COLUMNAS POR ESTANTE CON SCROLL INFINITO */}
-                                    <div className="flex overflow-x-auto gap-6 pb-8 snap-x hide-scrollbar items-start h-[calc(100vh-300px)]">
+                                    <div className="flex overflow-x-auto gap-[8px] pb-8 snap-x hide-scrollbar items-start h-[calc(100vh-300px)]">
                                         <DndContext
                                             sensors={sensors}
                                             collisionDetection={closestCorners}
@@ -1315,7 +1315,7 @@ export default function InventoryDashboard() {
                                             })}
                                             <button 
                                                 onClick={() => setShowNewEstanteModal(true)} 
-                                                className="w-[340px] flex-shrink-0 flex flex-col items-center justify-center bg-slate-900/40 border-2 border-dashed border-slate-700/50 hover:border-[#0ea5e9] hover:bg-[#0ea5e9]/10 rounded-2xl h-full transition-all group"
+                                                className="w-[340px] flex-shrink-0 flex flex-col items-center justify-center bg-slate-900/40 border-2 border-dashed border-slate-700/50 hover:border-[#0ea5e9] hover:bg-[#0ea5e9]/10 rounded-[5px] h-full transition-all group"
                                             >
                                                 <Plus size={48} className="text-slate-600 group-hover:text-[#0ea5e9] mb-4 transition-colors" />
                                                 <span className="text-sm font-bold text-slate-500 group-hover:text-[#0ea5e9] uppercase tracking-widest transition-colors">Añadir Estante</span>
@@ -1336,7 +1336,7 @@ export default function InventoryDashboard() {
                                         {/* Export Panel */}
                                         <div className="bg-slate-800/80 p-8 rounded-sm border border-slate-700/50 shadow-lg flex flex-col justify-between">
                                             <div>
-                                                <div className="bg-blue-50 text-blue-600 p-4 rounded-2xl w-fit mb-6">
+                                                <div className="bg-blue-50 text-blue-600 p-4 rounded-[5px] w-fit mb-6">
                                                     <Download size={28} />
                                                 </div>
                                                 <h3 className="text-xl font-black text-white uppercase tracking-tight mb-2">Exportar Inventario</h3>
@@ -1346,7 +1346,7 @@ export default function InventoryDashboard() {
                                             </div>
                                             <button 
                                                 onClick={handleExportJSON}
-                                                className="w-full py-4 bg-[#0ea5e9] text-white font-bold uppercase text-xs tracking-widest rounded-2xl hover:bg-blue-600 transition-colors shadow-md flex items-center justify-center gap-2"
+                                                className="w-full py-4 bg-[#0ea5e9] text-white font-bold uppercase text-xs tracking-widest rounded-[5px] hover:bg-blue-600 transition-colors shadow-md flex items-center justify-center gap-2"
                                             >
                                                 <Download size={16} /> Descargar archivo JSON
                                             </button>
@@ -1354,14 +1354,14 @@ export default function InventoryDashboard() {
 
                                         {/* Import Panel */}
                                         <div className="bg-slate-800/80 p-8 rounded-sm border border-slate-700/50 shadow-lg">
-                                            <div className="bg-emerald-50 text-emerald-600 p-4 rounded-2xl w-fit mb-6">
+                                            <div className="bg-emerald-50 text-emerald-600 p-4 rounded-[5px] w-fit mb-6">
                                                 <Upload size={28} />
                                             </div>
                                             <h3 className="text-xl font-black text-white uppercase tracking-tight mb-2">Importar Inventario Massivo</h3>
                                             <p className="text-sm text-slate-400 font-medium leading-relaxed mb-6">
                                                 Sube un archivo <strong>CSV o JSON</strong> para cargar tus productos masivamente. Columnas recomendadas: Nombre, Precio, Stock, Categoria.
                                             </p>
-                                            <label className="border-2 border-dashed border-slate-700/50 hover:border-[#0ea5e9] rounded-2xl p-8 flex flex-col items-center justify-center cursor-pointer transition-colors text-center group">
+                                            <label className="border-2 border-dashed border-slate-700/50 hover:border-[#0ea5e9] rounded-[5px] p-8 flex flex-col items-center justify-center cursor-pointer transition-colors text-center group">
                                                 <Database size={32} className="text-slate-400 group-hover:text-[#0ea5e9] mb-2 transition-colors" />
                                                 <span className="text-xs font-bold text-slate-400 uppercase tracking-wider group-hover:text-slate-200">Seleccionar CSV o JSON</span>
                                                 <input 
@@ -1386,7 +1386,7 @@ export default function InventoryDashboard() {
 
                                     {!isAnalyzing && importDiscrepancies.length > 0 && (
                                         <div className="bg-slate-800/80 p-8 rounded-sm border border-slate-700/50 shadow-lg space-y-6">
-                                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-6 border-b border-slate-700/50">
+                                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-[8px] pb-6 border-b border-slate-700/50">
                                                 <div className="flex items-center gap-3">
                                                     <div className="bg-amber-50 text-amber-600 p-3 rounded-xl">
                                                         <Sparkles size={24} />
@@ -1471,7 +1471,7 @@ export default function InventoryDashboard() {
                             )}
 
                             {activeTab === 'trash' && (
-                                <section className="border border-red-500/20 bg-slate-900/70 p-5 shadow-xl">
+                                <section className="border border-red-500/20 bg-slate-900/70 p-[8px] shadow-xl">
                                     <div className="mb-5 flex items-center gap-3 border-b border-slate-700 pb-4">
                                         <div className="bg-red-500/10 p-3 text-red-300"><Trash2 size={21} /></div>
                                         <div>
@@ -1523,7 +1523,7 @@ export default function InventoryDashboard() {
                                 <div className="space-y-8">
                                     {/* AI Sentinel Panel & Header */}
                                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                                        <div className="lg:col-span-2 bg-gradient-to-r from-red-500 to-red-600 p-8 rounded-2xl text-white shadow-xl flex flex-col justify-between relative overflow-hidden">
+                                        <div className="lg:col-span-2 bg-gradient-to-r from-red-500 to-red-600 p-8 rounded-[5px] text-white shadow-xl flex flex-col justify-between relative overflow-hidden">
                                             <div className="absolute right-0 bottom-0 opacity-10 pointer-events-none">
                                                 <TrendingDown size={300} />
                                             </div>
@@ -1537,7 +1537,7 @@ export default function InventoryDashboard() {
                                                     AI Sentinel monitorea las discrepancias físicas registradas por el personal y calcula la pérdida financiera total basada en costos de reposición y precios de venta.
                                                 </p>
                                             </div>
-                                            <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 relative z-10 mt-4">
+                                            <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-[8px] relative z-10 mt-4">
                                                 <div>
                                                     <span className="text-[10px] font-bold text-red-100 uppercase tracking-wider">Pérdida Total Acumulada</span>
                                                     <h4 className="text-4xl font-[900] tracking-tighter text-white">
@@ -1569,7 +1569,7 @@ export default function InventoryDashboard() {
                                                     )}
                                                 </p>
                                             </div>
-                                            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-700/50 flex items-center gap-3">
+                                            <div className="bg-slate-50 p-4 rounded-[5px] border border-slate-700/50 flex items-center gap-3">
                                                 <History className="text-slate-400" size={20} />
                                                 <div>
                                                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Último Recuento</span>
@@ -1594,7 +1594,7 @@ export default function InventoryDashboard() {
                                         </div>
 
                                         {shrinkageLogs.length === 0 ? (
-                                            <div className="text-center py-12 border-2 border-dashed border-slate-700/50 rounded-2xl">
+                                            <div className="text-center py-12 border-2 border-dashed border-slate-700/50 rounded-[5px]">
                                                 <Package size={48} className="text-slate-200 mx-auto mb-3" />
                                                 <p className="text-slate-400 font-bold uppercase tracking-wider text-xs">Sin incidencias reportadas en el baúl</p>
                                             </div>
@@ -1678,7 +1678,7 @@ export default function InventoryDashboard() {
                             {/* Decorative Background Blob */}
                             <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#0ea5e9]/20 blur-3xl rounded-full pointer-events-none" />
 
-                            <button onClick={() => setShowNewEstanteModal(false)} className="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors z-10 bg-black/20 p-2 rounded-full">
+                            <button onClick={() => setShowNewEstanteModal(false)} className="absolute top-[8px] right-6 text-gray-500 hover:text-white transition-colors z-10 bg-black/20 p-2 rounded-full">
                                 <X size={20} />
                             </button>
                             
@@ -1698,23 +1698,23 @@ export default function InventoryDashboard() {
                                     type="text"
                                     value={newEstanteName}
                                     onChange={e => setNewEstanteName(e.target.value)}
-                                    className="w-full bg-black/50 border border-white/10 p-4 rounded-2xl font-bold text-white outline-none focus:border-[#0ea5e9] focus:ring-2 focus:ring-[#0ea5e9]/20 transition-all uppercase placeholder-gray-600"
+                                    className="w-full bg-black/50 border border-white/10 p-4 rounded-[5px] font-bold text-white outline-none focus:border-[#0ea5e9] focus:ring-2 focus:ring-[#0ea5e9]/20 transition-all uppercase placeholder-gray-600"
                                     placeholder="EJ. PASILLO B"
                                     onKeyDown={(e) => { if (e.key === 'Enter') handleCreateEstante(); }}
                                     autoFocus
                                 />
                             </div>
                             
-                            <div className="flex gap-4 relative z-10">
+                            <div className="flex gap-[8px] relative z-10">
                                 <button 
                                     onClick={() => setShowNewEstanteModal(false)}
-                                    className="flex-1 py-4 border border-white/10 text-gray-400 font-bold uppercase text-sm tracking-wider rounded-2xl hover:bg-slate-800/80/5 hover:text-white transition-all"
+                                    className="flex-1 py-4 border border-white/10 text-gray-400 font-bold uppercase text-sm tracking-wider rounded-[5px] hover:bg-slate-800/80/5 hover:text-white transition-all"
                                 >
                                     Cancelar
                                 </button>
                                 <button 
                                     onClick={handleCreateEstante}
-                                    className="flex-1 py-4 bg-gradient-to-r from-[#0ea5e9] to-[#0284c7] text-white font-black uppercase text-sm tracking-wider rounded-2xl hover:scale-105 transition-transform shadow-[0_0_20px_rgba(14,165,233,0.3)]"
+                                    className="flex-1 py-4 bg-gradient-to-r from-[#0ea5e9] to-[#0284c7] text-white font-black uppercase text-sm tracking-wider rounded-[5px] hover:scale-105 transition-transform shadow-[0_0_20px_rgba(14,165,233,0.3)]"
                                 >
                                     Crear Estante
                                 </button>
@@ -1739,7 +1739,7 @@ export default function InventoryDashboard() {
                             exit={{ scale: 0.95 }}
                             className="bg-slate-800/80 rounded-sm p-8 w-full max-w-[500px] shadow-2xl relative border border-slate-700/50"
                         >
-                            <button onClick={() => setIsReportModalOpen(false)} className="absolute top-6 right-6 text-slate-400 hover:text-slate-200 transition-colors">
+                            <button onClick={() => setIsReportModalOpen(false)} className="absolute top-[8px] right-6 text-slate-400 hover:text-slate-200 transition-colors">
                                 <X size={24} />
                             </button>
                             <h3 className="text-2xl font-black text-white uppercase tracking-tight mb-2 flex items-center gap-2">
@@ -1769,7 +1769,7 @@ export default function InventoryDashboard() {
 
                                 <div>
                                     <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Tipo de Incidencia *</label>
-                                    <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-2 gap-[8px]">
                                         <button
                                             type="button"
                                             onClick={() => setReportType('missing')}
@@ -1809,7 +1809,7 @@ export default function InventoryDashboard() {
                                     />
                                 </div>
 
-                                <div className="flex gap-4 pt-4">
+                                <div className="flex gap-[8px] pt-4">
                                     <button 
                                         type="button"
                                         onClick={() => setIsReportModalOpen(false)}
@@ -1843,7 +1843,7 @@ export default function InventoryDashboard() {
                             initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
                             className="bg-slate-800/80 rounded-sm p-8 w-full max-w-[400px] shadow-2xl relative border border-slate-700/50 text-center"
                         >
-                            <button onClick={() => setQrPrintData(null)} className="absolute top-6 right-6 text-slate-400 hover:text-slate-200 transition-colors">
+                            <button onClick={() => setQrPrintData(null)} className="absolute top-[8px] right-6 text-slate-400 hover:text-slate-200 transition-colors">
                                 <X size={24} />
                             </button>
                             <h3 className="text-xl font-black text-white uppercase tracking-tight mb-2">
@@ -1887,3 +1887,4 @@ export default function InventoryDashboard() {
         </div>
     );
 }
+

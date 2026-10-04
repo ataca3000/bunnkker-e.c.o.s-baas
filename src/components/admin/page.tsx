@@ -50,7 +50,7 @@ export default function SuscripcionPage() {
                     <motion.div 
                         key={plan.id}
                         whileHover={{ y: -5 }}
-                        className="card-sanjose" 
+                        className="bunkker-card" 
                         style={{ 
                             padding: '3rem', 
                             position: 'relative',
@@ -100,7 +100,7 @@ export default function SuscripcionPage() {
                                 </div>
                             ) : (
                                 <button 
-                                    className="btn-sanjose"
+                                    className="bunkker-btn"
                                     onClick={() => window.open(`https://wa.me/522411354984?text=Hola, me interesa activar el ${plan.name} en Admin.com`, '_blank')}
                                     style={{ width: '100%', padding: '18px', fontSize: '1.1rem', backgroundColor: plan.color }}
                                 >
@@ -114,3 +114,4 @@ export default function SuscripcionPage() {
         </div>
     );
 }
+

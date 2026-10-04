@@ -102,3 +102,4 @@ export default function ProductCard({ product, onClick }: ProductCardProps) {
     </div>
   );
 }
+

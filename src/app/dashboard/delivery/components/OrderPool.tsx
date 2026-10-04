@@ -32,7 +32,7 @@ export default function OrderPool({ orders, onClaim, loading, driverLocation }: 
   const mapCenter = driverLocation ? `${driverLocation.lat},${driverLocation.lng}` : 'Ciudad+de+Mexico';
 
   const emptyState = (
-      <div className="text-center py-12 relative overflow-hidden bg-slate-900/40 rounded-3xl border border-white/5 backdrop-blur-md">
+      <div className="text-center py-12 relative overflow-hidden bg-slate-900/40 rounded-[5px] border border-white/5 backdrop-blur-md">
         <Radar size={48} className={`mx-auto mb-4 text-sky-400 ${loading ? 'animate-spin' : 'animate-pulse'}`} />
         <p className="text-sky-300 font-bold uppercase tracking-widest text-sm relative z-10">
             {loading ? 'Sincronizando satélite...' : 'Radar Limpio'}
@@ -70,7 +70,7 @@ export default function OrderPool({ orders, onClaim, loading, driverLocation }: 
       </div>
       
       {(loading || orders.length === 0) ? emptyState : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[8px]">
           {orders.map(order => (
             <motion.div 
               key={order.id} 
@@ -106,3 +106,4 @@ export default function OrderPool({ orders, onClaim, loading, driverLocation }: 
     </div>
   );
 }
+

@@ -215,7 +215,7 @@ export function ProductDetailDrawer({ product, onClose }: ProductDetailDrawerPro
                                     <button
                                         onClick={() => { addToCart(product, 1); toast.success(`${product.name} agregado al carrito.`, '🛒 Carrito'); }}
                                         disabled={product.stock === 0}
-                                        className={`btn-sanjose w-full py-4 flex justify-center items-center gap-2 rounded-xl text-sm font-bold shadow-lg ${product.stock === 0 ? 'grayscale opacity-50 cursor-not-allowed' : 'active:scale-95 transition-all'}`}
+                                        className={`bunkker-btn w-full py-4 flex justify-center items-center gap-2 rounded-xl text-sm font-bold shadow-lg ${product.stock === 0 ? 'grayscale opacity-50 cursor-not-allowed' : 'active:scale-95 transition-all'}`}
                                     >
                                         <ShoppingCart size={18} /> {product.stock === 0 ? 'PRODUCTO AGOTADO' : 'AÑADIR AL CARRITO'}
                                     </button>

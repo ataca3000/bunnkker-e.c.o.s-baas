@@ -3,23 +3,26 @@
 @import "leaflet/dist/leaflet.css";
 
 :root {
-  --terraform-ink: #111111;
-  --terraform-surface: #f5f5f2;
-  --terraform-paper: #ffffff;
-  --terraform-teal: #c8f000;
-  --terraform-line: #d8d8d2;
-  --terraform-muted: #5e625f;
+  /* Bunnkker Core Theme - Industrial Dark */
+  --bunkker-ink: #0f172a;
+  --bunkker-paper: #1e293b;
+  --bunkker-surface: #0f172a;
+  --bunkker-line: #334155;
+  --bunkker-muted: #94a3b8;
+  
+  /* Brand Colors */
+  --bunkker-primary: #087f8c;       /* Cyber Teal */
+  --bunkker-primary-dark: #055e68;
+  --bunkker-accent: #36a3a3;        /* Lighter Cyan Accent */
+  
+  /* Tactical Highlights */
   --bunkker-yellow: #f4c400;
   --bunkker-red: #d9413a;
   --bunkker-neon: #c8f000;
-  --foreground-rgb: 19, 35, 43;
-  --background-rgb: 244, 247, 246;
-  --sanjose-blue: #087f8c;
-  --sanjose-blue-dark: #13232b;
-  --sanjose-gray-dark: #13232b;
-  --sanjose-gray-light: #f4f7f6;
-  --saas-primary: #087f8c;
-  --saas-accent: #36a3a3;
+
+  /* Global Base */
+  --foreground-rgb: 248, 250, 252;
+  --background-rgb: 15, 23, 42;
 }
 
 @media (prefers-color-scheme: light) {
@@ -51,7 +54,7 @@ body {
 }
 
 /* Frosted Glassmorphic Cards (Thickness & Subtle Neon Glow) */
-.card-sanjose {
+.bunkker-card {
   background: rgba(15, 23, 42, 0.65);
   backdrop-filter: blur(24px) saturate(120%);
   -webkit-backdrop-filter: blur(24px) saturate(120%);
@@ -68,7 +71,7 @@ body {
   overflow: hidden;
 }
 
-.card-sanjose::after {
+.bunkker-card::after {
   content: "";
   position: absolute;
   top: 0;
@@ -85,17 +88,17 @@ body {
   transition: all 0.7s ease;
 }
 
-.card-sanjose:hover::after {
+.bunkker-card:hover::after {
   left: 200%;
 }
 
-.card-sanjose:hover {
+.bunkker-card:hover {
   /* No hover effects for data cards */
 }
 
 /* Premium Dynamic Buttons */
-.btn-sanjose {
-  background: linear-gradient(135deg, var(--saas-primary) 0%, var(--saas-accent) 100%);
+.bunkker-btn {
+  background: linear-gradient(135deg, var(--bunkker-primary) 0%, var(--bunkker-accent) 100%);
   color: white;
   padding: 14px 28px;
   border: none;
@@ -104,20 +107,20 @@ body {
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   border-radius: 12px;
-  box-shadow: 0 4px 14px 0 rgba(99, 102, 241, 0.39);
+  box-shadow: 0 4px 14px 0 rgba(8, 127, 140, 0.39);
 }
 
-.btn-sanjose:hover {
+.bunkker-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+  box-shadow: 0 6px 20px rgba(8, 127, 140, 0.5);
   filter: brightness(1.1);
 }
 
-.btn-sanjose:active {
+.bunkker-btn:active {
   transform: translateY(1px);
 }
 
-.btn-sanjose-secondary {
+.bunkker-btn-secondary {
   background: rgba(30, 41, 59, 0.8);
   color: white;
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -129,17 +132,17 @@ body {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
 }
 
-.btn-sanjose-secondary:hover {
+.bunkker-btn-secondary:hover {
   background: rgba(51, 65, 85, 0.9);
   border-color: rgba(255, 255, 255, 0.2);
   transform: translateY(-2px);
   box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
 }
 
-.heading-sanjose {
+.bunkker-heading {
   font-weight: 800;
   margin-bottom: 1.5rem;
-  background: linear-gradient(135deg, #FFFFFF 0%, var(--saas-primary) 100%);
+  background: linear-gradient(135deg, #FFFFFF 0%, var(--bunkker-primary) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -169,13 +172,13 @@ body {
 input:focus,
 select:focus,
 textarea:focus {
-  outline: 2px solid var(--saas-primary);
+  outline: 2px solid var(--bunkker-primary);
   outline-offset: 2px;
   border-color: transparent;
 }
 
 button:focus-visible {
-  outline: 2px solid var(--saas-primary);
+  outline: 2px solid var(--bunkker-primary);
   outline-offset: 2px;
 }
 
@@ -189,8 +192,8 @@ a[role="button"],
 button:not(:disabled):hover,
 a[role="button"]:hover,
 [role="button"]:hover {
-  box-shadow: 0 0 15px rgba(124, 58, 237, 0.4);
-  border-color: rgba(124, 58, 237, 0.5);
+  box-shadow: 0 0 15px rgba(8, 127, 140, 0.4);
+  border-color: rgba(8, 127, 140, 0.5);
   transform: translateY(-2px);
   filter: brightness(1.1);
 }
@@ -202,50 +205,50 @@ button:disabled {
 }
 
 /* TERRAFORM ERP visual system */
-.terraform-shell .liquid-glass {
-  background: var(--terraform-paper) !important;
+.bunkker-shell .liquid-glass {
+  background: var(--bunkker-paper) !important;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
-  border-color: var(--terraform-line) !important;
+  border-color: var(--bunkker-line) !important;
   box-shadow: 0 10px 30px rgba(19, 35, 43, 0.06) !important;
 }
-.terraform-shell aside.liquid-glass {
-  background: var(--terraform-ink) !important;
-  color: var(--terraform-paper) !important;
-  border-right-color: var(--terraform-teal) !important;
+.bunkker-shell aside.liquid-glass {
+  background: var(--bunkker-ink) !important;
+  color: var(--bunkker-paper) !important;
+  border-right-color: var(--bunkker-teal) !important;
   box-shadow: 8px 0 24px rgba(19, 35, 43, 0.12) !important;
 }
-.terraform-shell aside a { color: rgba(255,255,255,0.78) !important; }
-.terraform-shell aside a:hover { background: rgba(255,255,255,0.08) !important; color: var(--terraform-paper) !important; }
-.terraform-shell aside a[style*="rgba(0,242,255"] { background: rgba(8,127,140,0.28) !important; color: var(--terraform-paper) !important; border-left-color: var(--terraform-teal) !important; text-shadow: none !important; }
-.terraform-shell main, .terraform-shell section { color: var(--terraform-ink); }
-.terraform-shell h1, .terraform-shell h2, .terraform-shell h3 { letter-spacing: -0.025em; }
+.bunkker-shell aside a { color: rgba(255,255,255,0.78) !important; }
+.bunkker-shell aside a:hover { background: rgba(255,255,255,0.08) !important; color: var(--bunkker-paper) !important; }
+.bunkker-shell aside a[style*="rgba(0,242,255"] { background: rgba(8,127,140,0.28) !important; color: var(--bunkker-paper) !important; border-left-color: var(--bunkker-teal) !important; text-shadow: none !important; }
+.bunkker-shell main, .bunkker-shell section { color: var(--bunkker-ink); }
+.bunkker-shell h1, .bunkker-shell h2, .bunkker-shell h3 { letter-spacing: -0.025em; }
 
 /* BUNKKER ERP industrial marketplace */
 .bunkker-industrial,
-.terraform-shell main { background: var(--terraform-surface); }
-.bunkker-industrial .card-sanjose,
-.terraform-shell main .card-sanjose { background: var(--terraform-paper); border: 1px solid var(--terraform-line); box-shadow: 0 8px 24px rgba(17,17,17,.07); }
+.bunkker-shell main { background: var(--bunkker-surface); }
+.bunkker-industrial .bunkker-card,
+.bunkker-shell main .bunkker-card { background: var(--bunkker-paper); border: 1px solid var(--bunkker-line); box-shadow: 0 8px 24px rgba(17,17,17,.07); }
 .bunkker-industrial .text-cyan-400,
-.terraform-shell main .text-cyan-400 { color: var(--bunkker-yellow) !important; }
+.bunkker-shell main .text-cyan-400 { color: var(--bunkker-yellow) !important; }
 .bunkker-industrial .text-emerald-500 { color: #6d8700 !important; }
 .bunkker-industrial .text-rose-500 { color: var(--bunkker-red) !important; }
 .bunkker-industrial button:hover, .bunkker-industrial a:hover { box-shadow: 0 0 0 2px rgba(200,240,0,.28); }
-.bunkker-help { border-left: 3px solid var(--bunkker-yellow); background: #fffbe8; color: var(--terraform-ink); }
+.bunkker-help { border-left: 3px solid var(--bunkker-yellow); background: #fffbe8; color: var(--bunkker-ink); }
 
 /* Responsive Utilities */
 @media (max-width: 768px) {
-  .btn-sanjose,
-  .btn-sanjose-secondary {
+  .bunkker-btn,
+  .bunkker-btn-secondary {
     font-size: 0.9rem;
     padding: 10px 20px;
   }
-  .card-sanjose { padding: 20px; }
+  .bunkker-card { padding: 20px; }
 }
 
 @media (max-width: 480px) {
-  .btn-sanjose,
-  .btn-sanjose-secondary {
+  .bunkker-btn,
+  .bunkker-btn-secondary {
     width: 100%;
     text-align: center;
   }

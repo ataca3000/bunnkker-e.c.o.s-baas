@@ -77,7 +77,7 @@ export default function InteractiveTerraMap({ value, onChange }: InteractiveTerr
   };
 
   return (
-    <div className="bg-slate-900/60 backdrop-blur-md border border-slate-800/80 rounded-2xl p-6 text-slate-200">
+    <div className="bg-slate-900/60 backdrop-blur-md border border-slate-800/80 rounded-[5px] p-[8px] text-slate-200">
       <div className="mb-6">
         <h3 className="text-xl font-bold text-white flex items-center gap-2">
           <Globe className="text-cyan-400 animate-pulse" />
@@ -232,3 +232,4 @@ export default function InteractiveTerraMap({ value, onChange }: InteractiveTerr
     </div>
   );
 }
+

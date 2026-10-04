@@ -210,14 +210,14 @@ function FacturacionContent() {
             <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
                 <header style={{ marginBottom: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
-                        <h1 className="heading-sanjose text-2xl font-black text-white">Facturación y Créditos</h1>
+                        <h1 className="bunkker-heading text-2xl font-black text-white">Facturación y Créditos</h1>
                         <p style={{ color: '#666' }}>Timbrado de facturas SAT 4.0 y gestión de saldo.</p>
                         <div style={{ background: 'rgba(39, 174, 96, 0.1)', padding: '10px 15px', borderRadius: '8px', marginTop: '10px', borderLeft: '4px solid #27ae60', fontSize: '0.85rem', color: '#4ade80' }}>
                             💡 <b>Modelo de Negocio:</b> Genera <b>$5.00 MXN</b> de ganancia neta por cada factura emitida cobrando $10 al cliente final.
                         </div>
                     </div>
 
-                    <div className="card-sanjose bg-slate-800/80 shadow-lg rounded-xl" style={{ padding: '0.8rem 1.5rem', borderLeft: '4px solid #FFCB05', display: 'flex', alignItems: 'center', gap: '15px' }}>
+                    <div className="bunkker-card bg-slate-800/80 shadow-lg rounded-xl" style={{ padding: '0.8rem 1.5rem', borderLeft: '4px solid #FFCB05', display: 'flex', alignItems: 'center', gap: '15px' }}>
                         <div style={{ backgroundColor: 'rgba(245, 127, 23, 0.2)', padding: '8px', borderRadius: '50%' }}>
                             <Coins color="#Fcd34d" size={24} />
                         </div>
@@ -227,7 +227,7 @@ function FacturacionContent() {
                         </div>
                         <button
                             onClick={() => setShowCreditModal(true)}
-                            className="btn-sanjose bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-lg transition-colors"
+                            className="bunkker-btn bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-lg transition-colors"
                             style={{ padding: '8px 12px', fontSize: '0.8rem' }}
                         >
                             RECARGAR
@@ -236,7 +236,7 @@ function FacturacionContent() {
                 </header>
 
                 <div className="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-8">
-                    <div className="card-sanjose bg-slate-800/80 p-6 rounded-2xl shadow-lg border border-slate-700/50">
+                    <div className="bunkker-card bg-slate-800/80 p-[8px] rounded-[5px] shadow-lg border border-slate-700/50">
                         <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
                             <FileText color="#0ea5e9" size={20} /> Generador de CFDI
                         </h3>
@@ -290,7 +290,7 @@ function FacturacionContent() {
                                             </div>
                                         </div>
 
-                                        <div className="grid grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-2 gap-[8px]">
                                             <div>
                                                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Razón Social *</label>
                                                 <input required type="text" placeholder="Ej. PUBLICO EN GENERAL" value={legalName} onChange={e => setLegalName(e.target.value.toUpperCase())} className="w-full p-3 bg-slate-800/80 text-white border border-slate-600/50 rounded-lg outline-none focus:border-sky-500 uppercase" />
@@ -301,7 +301,7 @@ function FacturacionContent() {
                                             </div>
                                         </div>
 
-                                        <div className="grid grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-2 gap-[8px]">
                                             <div>
                                                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">C.P. Fiscal *</label>
                                                 <input required type="text" maxLength={5} placeholder="00000" value={zipCode} onChange={e => setZipCode(e.target.value.replace(/\D/g, ''))} className="w-full p-3 bg-slate-800/80 text-white border border-slate-600/50 rounded-lg outline-none focus:border-sky-500" />
@@ -318,7 +318,7 @@ function FacturacionContent() {
                                             </div>
                                         </div>
 
-                                        <div className="grid grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-2 gap-[8px]">
                                             <div>
                                                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Uso de CFDI *</label>
                                                 <select required value={usoCfdi} onChange={e => setUsoCfdi(e.target.value)} className="w-full p-3 border border-slate-600/50 rounded-lg outline-none focus:border-sky-500 bg-slate-800/80">
@@ -359,8 +359,8 @@ function FacturacionContent() {
                         )}
                     </div>
 
-                    <div className="flex flex-col gap-6">
-                        <div className="card-sanjose bg-slate-800/80 p-6 rounded-2xl shadow-lg border border-slate-700/50">
+                    <div className="flex flex-col gap-[8px]">
+                        <div className="bunkker-card bg-slate-800/80 p-[8px] rounded-[5px] shadow-lg border border-slate-700/50">
                             <h4 className="text-sm font-black text-white uppercase tracking-widest mb-4">Estadísticas</h4>
                             <div className="space-y-3">
                                 <div className="flex justify-between items-center p-3 bg-slate-900/50 rounded-lg border border-slate-700/50">
@@ -385,7 +385,7 @@ function FacturacionContent() {
                         </div>
 
                         {success && (
-                            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="card-sanjose bg-emerald-50 p-6 rounded-2xl border-2 border-emerald-500 shadow-lg">
+                            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bunkker-card bg-emerald-50 p-[8px] rounded-[5px] border-2 border-emerald-500 shadow-lg">
                                 <div className="flex items-center gap-2 text-emerald-700 mb-4 font-bold">
                                     <CheckCircle2 size={20} /> Factura Lista
                                 </div>
@@ -457,3 +457,4 @@ export default function FacturacionNode() {
         </Suspense>
     );
 }
+

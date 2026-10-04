@@ -168,7 +168,7 @@ export default function TeamManagement() {
     );
 
     return (
-        <div className="relative min-h-[100dvh] bg-slate-950 text-white p-6 md:p-10 font-sans">
+        <div className="relative min-h-[100dvh] bg-slate-950 text-white p-[8px] md:p-10 font-sans">
             <div className="fixed inset-0 z-0 pointer-events-none">
                 <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-purple-900/40 blur-[120px] rounded-full"></div>
                 <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-sky-900/30 blur-[120px] rounded-full"></div>
@@ -177,8 +177,8 @@ export default function TeamManagement() {
             <div className="relative z-10 max-w-6xl mx-auto">
 
                 {/* Header */}
-                <header className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-10 bg-slate-900/60 backdrop-blur-md p-6 rounded-sm shadow-[0_0_20px_rgba(168,85,247,0.1)] border border-purple-500/30">
-                    <div className="flex items-center gap-5">
+                <header className="flex flex-col md:flex-row md:justify-between md:items-center gap-[8px] mb-10 bg-slate-900/60 backdrop-blur-md p-[8px] rounded-sm shadow-[0_0_20px_rgba(168,85,247,0.1)] border border-purple-500/30">
+                    <div className="flex items-center gap-[8px]">
                         <div className="bg-purple-900/40 p-4 rounded-sm text-purple-400 border border-purple-500/50 shadow-[0_0_15px_rgba(168,85,247,0.3)]">
                             <ShieldCheck size={36} />
                         </div>
@@ -195,7 +195,7 @@ export default function TeamManagement() {
                     </div>
                 </header>
 
-                <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6 items-start">
+                <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-[8px] items-start">
 
                     {/* --- TABLA DE MIEMBROS --- */}
                     <div className="bg-[#1a1d2d] border border-white/5 rounded-[28px] overflow-hidden shadow-xl">
@@ -205,7 +205,7 @@ export default function TeamManagement() {
                             </div>
                             <h2 className="font-black text-white uppercase tracking-tight text-lg">Miembros Activos</h2>
                         </div>
-                        <div className="p-6 space-y-8 h-[700px] overflow-y-auto hide-scrollbar">
+                        <div className="p-[8px] space-y-8 h-[700px] overflow-y-auto hide-scrollbar">
                             {['superadmin', ...roles.map(r => r.id)].map(roleId => {
                                 const roleUsers = users.filter(u => u.role === roleId);
                                 if (roleUsers.length === 0) return null;
@@ -218,7 +218,7 @@ export default function TeamManagement() {
                                             <div className="w-2 h-2 rounded-full bg-sky-400"></div>
                                             {roleLabel} <span className="text-gray-500">({roleUsers.length})</span>
                                         </h3>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[8px]">
                                             {roleUsers.map((user) => (
                                                 <div key={user.id} className="bg-slate-800/80 border border-slate-700 rounded-xl p-4 flex flex-col justify-between">
                                                     <div>
@@ -279,11 +279,11 @@ export default function TeamManagement() {
                     </div>
 
                     {/* --- COLUMNA DERECHA --- */}
-                    <div className="flex flex-col gap-6">
+                    <div className="flex flex-col gap-[8px]">
 
                         {/* Alta Rápida */}
                         {isSuperAdmin && (
-                            <div className="bg-[#1a1d2d] border border-yellow-500/20 rounded-[28px] p-6 shadow-xl shadow-yellow-500/5 relative overflow-hidden">
+                            <div className="bg-[#1a1d2d] border border-yellow-500/20 rounded-[28px] p-[8px] shadow-xl shadow-yellow-500/5 relative overflow-hidden">
                                 <div className="absolute -top-16 -right-16 w-40 h-40 bg-yellow-500/5 blur-3xl rounded-full pointer-events-none" />
                                 <div className="flex items-center gap-3 mb-5">
                                     <div className="bg-yellow-500/15 text-yellow-300 p-2.5 rounded-xl border border-yellow-500/20">
@@ -350,7 +350,7 @@ export default function TeamManagement() {
                         )}
 
                         {/* Leyenda de Roles */}
-                        <div className="bg-[#1a1d2d] border border-white/5 rounded-[28px] p-6 shadow-xl">
+                        <div className="bg-[#1a1d2d] border border-white/5 rounded-[28px] p-[8px] shadow-xl">
                             <h3 className="font-black text-gray-400 uppercase tracking-widest text-[10px] mb-4">Paleta de Roles</h3>
                             <div className="flex flex-wrap gap-2">
                                 {Object.entries(ROLE_COLORS).map(([roleId, cfg]) => {
@@ -370,20 +370,20 @@ export default function TeamManagement() {
             {/* Modal de Llave QR Mágica */}
             {qrUser && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-                    <div className="bg-slate-900 border border-slate-700 rounded-3xl p-8 max-w-sm w-full relative flex flex-col items-center">
+                    <div className="bg-slate-900 border border-slate-700 rounded-[5px] p-8 max-w-sm w-full relative flex flex-col items-center">
                         <button 
                             onClick={() => setQrUser(null)}
                             className="absolute top-4 right-4 text-slate-400 hover:text-white bg-slate-800 p-2 rounded-full"
                         >
                             <X size={20} />
                         </button>
-                        <div className="bg-purple-500/20 text-purple-400 p-3 rounded-2xl mb-4">
+                        <div className="bg-purple-500/20 text-purple-400 p-3 rounded-[5px] mb-4">
                             <Key size={32} />
                         </div>
                         <h2 className="text-2xl font-black text-white text-center mb-1">Llave de Acceso</h2>
                         <p className="text-slate-400 text-sm text-center mb-6">Para: <b>{qrUser.name}</b></p>
                         
-                        <div className="bg-white p-4 rounded-2xl mb-6 min-h-[232px] flex items-center justify-center">
+                        <div className="bg-white p-4 rounded-[5px] mb-6 min-h-[232px] flex items-center justify-center">
                             {magicUrl ? (
                                 <QRCode 
                                     value={magicUrl} 
@@ -415,3 +415,4 @@ export default function TeamManagement() {
         </div>
     );
 }
+

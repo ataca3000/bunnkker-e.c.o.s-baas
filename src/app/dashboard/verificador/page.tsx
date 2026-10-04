@@ -165,11 +165,11 @@ export default function PriceScannerPage() {
             </form>
 
             {/* Contenedor Principal con más espaciado vertical */}
-            <div className="flex-1 flex flex-col items-center justify-center p-6 py-16 w-full max-w-2xl mx-auto relative z-10">
+            <div className="flex-1 flex flex-col items-center justify-center p-[8px] py-16 w-full max-w-2xl mx-auto relative z-10">
                 
                 {/* BARRA DE BÚSQUEDA UNIFICADA */}
                 <form onSubmit={handleSearch} className="w-full mb-10 relative z-20">
-                    <div className="relative flex items-center shadow-2xl rounded-2xl overflow-hidden bg-slate-800/80 transition-all focus-within:ring-4 focus-within:ring-white/20">
+                    <div className="relative flex items-center shadow-2xl rounded-[5px] overflow-hidden bg-slate-800/80 transition-all focus-within:ring-4 focus-within:ring-white/20">
                         <Search className="absolute left-6 text-[#004A99]" size={24} />
                         <input 
                             type="text"
@@ -220,7 +220,7 @@ export default function PriceScannerPage() {
                             <button
                                 onClick={handleAddToCart}
                                 disabled={scannedProduct.stock <= 0 || showToast}
-                                className={`mt-10 w-full py-5 text-white font-bold uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl active:scale-[0.98] ${
+                                className={`mt-10 w-full py-5 text-white font-bold uppercase tracking-widest rounded-[5px] flex items-center justify-center gap-3 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl active:scale-[0.98] ${
                                     showToast ? 'bg-green-500 shadow-green-500/40' : 'bg-[#004A99] hover:bg-blue-800 hover:-translate-y-1 shadow-blue-900/40'
                                 }`}
                             >
@@ -247,11 +247,11 @@ export default function PriceScannerPage() {
                             <XCircle size={80} className="text-red-500 mx-auto mb-6" />
                             <h1 className="text-3xl font-extrabold text-gray-800 uppercase tracking-tight">Producto No Encontrado</h1>
                             <p className="text-gray-500 font-medium mt-4">Verifique el código o consulte a un asesor en mostrador.</p>
-                            <button onClick={() => setNotFound(false)} className="w-full mt-10 px-8 py-5 bg-[#004A99] hover:bg-blue-800 transition-all hover:-translate-y-1 active:scale-[0.98] shadow-lg shadow-blue-900/20 text-white font-bold rounded-2xl uppercase tracking-widest">ESCANEAR DE NUEVO</button>
+                            <button onClick={() => setNotFound(false)} className="w-full mt-10 px-8 py-5 bg-[#004A99] hover:bg-blue-800 transition-all hover:-translate-y-1 active:scale-[0.98] shadow-lg shadow-blue-900/20 text-white font-bold rounded-[5px] uppercase tracking-widest">ESCANEAR DE NUEVO</button>
                             <button onClick={() => {
                                 setNotFound(false);
                                 setSearchQuery('');
-                            }} className="w-full mt-4 px-8 py-5 bg-slate-800/80 border-2 border-gray-100 hover:bg-gray-50 text-gray-700 transition-all hover:-translate-y-1 active:scale-[0.98] font-bold rounded-2xl uppercase tracking-widest">NUEVA BÚSQUEDA</button>
+                            }} className="w-full mt-4 px-8 py-5 bg-slate-800/80 border-2 border-gray-100 hover:bg-gray-50 text-gray-700 transition-all hover:-translate-y-1 active:scale-[0.98] font-bold rounded-[5px] uppercase tracking-widest">NUEVA BÚSQUEDA</button>
                         </motion.div>
                     ) : (
                         /* VISTA DE ESPERA */
@@ -274,14 +274,14 @@ export default function PriceScannerPage() {
                             </p>
 
                             {showCamera ? (
-                                <div className="bg-slate-800/80 p-4 rounded-3xl max-w-sm mx-auto shadow-2xl overflow-hidden">
-                                    <div id="reader" className="rounded-2xl overflow-hidden w-full"></div>
+                                <div className="bg-slate-800/80 p-4 rounded-[5px] max-w-sm mx-auto shadow-2xl overflow-hidden">
+                                    <div id="reader" className="rounded-[5px] overflow-hidden w-full"></div>
                                     <button onClick={() => setShowCamera(false)} className="mt-4 w-full bg-red-50 text-red-600 font-bold py-3 rounded-xl uppercase text-xs">Cancelar Cámara</button>
                                 </div>
                             ) : (
                                 <button 
                                     onClick={() => setShowCamera(true)}
-                                    className="bg-slate-800/80 hover:bg-gray-50 text-[#004A99] py-4 px-8 rounded-2xl font-bold uppercase tracking-widest text-sm transition-all active:scale-[0.98] hover:-translate-y-1 flex items-center gap-3 mx-auto shadow-xl"
+                                    className="bg-slate-800/80 hover:bg-gray-50 text-[#004A99] py-4 px-8 rounded-[5px] font-bold uppercase tracking-widest text-sm transition-all active:scale-[0.98] hover:-translate-y-1 flex items-center gap-3 mx-auto shadow-xl"
                                 >
                                     <Camera size={20} /> Usar Cámara del Dispositivo
                                 </button>
@@ -293,3 +293,4 @@ export default function PriceScannerPage() {
         </div>
     );
 }
+

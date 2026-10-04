@@ -187,7 +187,7 @@ export default function SuperAdminDashboard({
 
                 <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
                     {rniUrl && (
-                        <div className="card-sanjose flex items-center gap-4 px-4 py-2" style={{ padding: '8px 16px' }}>
+                        <div className="bunkker-card flex items-center gap-[8px] px-4 py-2" style={{ padding: '8px 16px' }}>
                             <div className="bg-white p-1 rounded-lg shadow-[0_0_15px_rgba(6,182,212,0.6)] cursor-pointer hover:scale-105 transition-transform" 
                                  title="Imprimir Poster Cero Filas"
                                  onClick={() => {
@@ -286,7 +286,7 @@ export default function SuperAdminDashboard({
 
             {/* ── Banner de Descarga (Demo a Local) ──────────────────── */}
             {isDemo() && (
-                <div className="bg-gradient-to-r from-sky-900 to-indigo-900 border border-sky-500/30 rounded-xl p-8 mb-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl shadow-sky-900/20 relative overflow-hidden">
+                <div className="bg-gradient-to-r from-sky-900 to-indigo-900 border border-sky-500/30 rounded-xl p-8 mb-8 flex flex-col md:flex-row items-center justify-between gap-[8px] shadow-2xl shadow-sky-900/20 relative overflow-hidden">
                     <div className="absolute top-0 right-0 p-32 bg-sky-500/10 blur-[100px] rounded-full pointer-events-none" />
                     <div className="relative z-10">
                         <h2 className="text-2xl font-black text-white uppercase tracking-widest mb-2">
@@ -308,7 +308,7 @@ export default function SuperAdminDashboard({
             )}
 
             {/* ── Gráfico de Ventas ─────────────────────────────────────── */}
-            <div className="card-sanjose" style={{ marginBottom: '2.5rem' }}>
+            <div className="bunkker-card" style={{ marginBottom: '2.5rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
                     <BarChart3 size={20} color="#06B6D4" />
                     <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '800', color: '#fff' }}>Evolución de Ventas (7 Días)</h3>
@@ -359,7 +359,7 @@ export default function SuperAdminDashboard({
             </div>
 
             {/* ── Dashboard Widgets (Ranking & Restock) ──────────────────── */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-[8px] mb-10">
                 <StaffRankingWidget tenantId={profile?.tenantId} />
                 <RestockAlertWidget products={products} formatCurrency={formatCurrency} />
             </div>
@@ -397,5 +397,6 @@ export default function SuperAdminDashboard({
         </main>
     );
 };
+
 
 

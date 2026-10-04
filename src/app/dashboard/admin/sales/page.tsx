@@ -46,7 +46,7 @@ export default function SalesAdmin() {
                 </div>
             </div>
 
-            <div className="card-sanjose" style={{ padding: 0 }}>
+            <div className="bunkker-card" style={{ padding: 0 }}>
                 <div style={{ padding: '1.2rem', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between' }}>
                     <h3 style={{ fontSize: '1.1rem', fontWeight: '900', color: '#0ea5e9' }}>HISTORIAL DE ÓRDENES</h3>
                     <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
@@ -158,3 +158,4 @@ export default function SalesAdmin() {
         </div>
     );
 }
+

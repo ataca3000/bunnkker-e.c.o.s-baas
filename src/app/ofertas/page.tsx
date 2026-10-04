@@ -65,7 +65,7 @@ export default function OffersPage() {
                                     </span>
                                     <button
                                         onClick={() => handleAddOffer(offer)}
-                                        className="btn-sanjose"
+                                        className="bunkker-btn"
                                         style={{ fontSize: '0.8rem', padding: '8px 15px', display: 'flex', alignItems: 'center', gap: '5px' }}
                                     >
                                         <ShoppingCart size={14} /> AGREGAR

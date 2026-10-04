@@ -100,7 +100,7 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
 
     const handleCheckout = async () => {
         if (!isStaff && !customerAccount) {
-            setShowAuthRequiredModal(true);
+            window.location.href = '/cuenta?redirect=/carrito';
             return;
         }
 
@@ -220,7 +220,7 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
                                             return;
                                         }
                                         if (!canPlaceOrder) {
-                                            setShowAuthRequiredModal(true);
+                                            window.location.href = '/cuenta?redirect=/carrito';
                                             return;
                                         }
                                         setStep('checkout');

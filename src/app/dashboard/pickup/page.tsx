@@ -55,9 +55,9 @@ export default function PickupDashboard() {
     const readyToDeliverOrders = orders.filter(o => o.status === 'READY_FOR_PICKUP_PAID' || (o.status === 'paid' && o.isLoaded));
 
     return (
-        <div className="bg-[#0f111a] min-h-screen text-white p-6 pb-24">
+        <div className="bg-[#0f111a] min-h-screen text-white p-[8px] pb-24">
             <div className="max-w-7xl mx-auto">
-                <header className="mb-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <header className="mb-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-[8px]">
                     <div>
                         <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 flex items-center gap-3">
                             <Store className="text-cyan-400" />
@@ -65,7 +65,7 @@ export default function PickupDashboard() {
                         </h1>
                         <p className="text-gray-400 mt-2 text-sm">Gestiona la entrega de pedidos físicos a clientes locales.</p>
                     </div>
-                    <div className="bg-slate-800/80/5 border border-white/10 rounded-xl p-4 flex gap-6 items-center backdrop-blur-md">
+                    <div className="bg-slate-800/80/5 border border-white/10 rounded-xl p-4 flex gap-[8px] items-center backdrop-blur-md">
                         <div className="text-center">
                             <div className="text-sm text-gray-400 uppercase tracking-widest font-bold">Por Cobrar</div>
                             <div className="text-2xl font-black text-yellow-400">{pendingPaymentOrders.length}</div>
@@ -80,7 +80,7 @@ export default function PickupDashboard() {
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     {/* COLUMNA 1: PENDIENTES DE PAGO EN CAJA */}
-                    <div className="bg-slate-800/80/5 border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
+                    <div className="bg-slate-800/80/5 border border-white/10 rounded-[5px] p-[8px] backdrop-blur-sm">
                         <div className="flex items-center gap-3 mb-6 border-b border-white/10 pb-4">
                             <div className="bg-yellow-400/20 p-3 rounded-lg text-yellow-400">
                                 <Banknote size={24} />
@@ -100,7 +100,7 @@ export default function PickupDashboard() {
                                         key={order.id}
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}
-                                        className="bg-[#1a1d2d] border border-white/5 rounded-xl p-5 hover:border-yellow-400/30 transition-colors"
+                                        className="bg-[#1a1d2d] border border-white/5 rounded-xl p-[8px] hover:border-yellow-400/30 transition-colors"
                                     >
                                         <div className="flex justify-between items-start mb-3">
                                             <h3 className="font-bold text-lg">{order.customer?.name || 'Cliente Mostrador'}</h3>
@@ -146,7 +146,7 @@ export default function PickupDashboard() {
                     </div>
 
                     {/* COLUMNA 2: PAGADOS, LISTOS PARA ENTREGAR */}
-                    <div className="bg-slate-800/80/5 border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
+                    <div className="bg-slate-800/80/5 border border-white/10 rounded-[5px] p-[8px] backdrop-blur-sm">
                         <div className="flex items-center gap-3 mb-6 border-b border-white/10 pb-4">
                             <div className="bg-cyan-400/20 p-3 rounded-lg text-cyan-400">
                                 <Package size={24} />
@@ -166,7 +166,7 @@ export default function PickupDashboard() {
                                         key={order.id}
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}
-                                        className="bg-[#1a1d2d] border border-cyan-500/20 rounded-xl p-5 shadow-[0_0_15px_rgba(34,211,238,0.1)] hover:shadow-[0_0_20px_rgba(34,211,238,0.2)] transition-shadow relative overflow-hidden"
+                                        className="bg-[#1a1d2d] border border-cyan-500/20 rounded-xl p-[8px] shadow-[0_0_15px_rgba(34,211,238,0.1)] hover:shadow-[0_0_20px_rgba(34,211,238,0.2)] transition-shadow relative overflow-hidden"
                                     >
                                         <div className="absolute top-0 left-0 w-1 h-full bg-cyan-400"></div>
                                         <div className="flex justify-between items-start mb-3 pl-3">
@@ -213,3 +213,4 @@ export default function PickupDashboard() {
         </div>
     );
 }
+

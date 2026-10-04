@@ -258,23 +258,23 @@ export default function SysAdmin() {
                 {/* ── TAB: MAIN ── */}
                 {tab === 'main' && (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
-                        <div className="card-sanjose" style={{ borderLeft: '5px solid #27ae60' }}>
+                        <div className="bunkker-card" style={{ borderLeft: '5px solid #27ae60' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1rem' }}>
                                 <DollarSign size={24} color="#27ae60" />
                                 <h3 style={{ fontWeight: 'bold' }}>Suscripción &amp; Licencia</h3>
                             </div>
                             <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '1rem' }}>Controla el estado de pago. Activa o desactiva el sistema remotamente.</p>
-                            <button onClick={() => setTab('licenses')} className="btn-sanjose-secondary" style={{ width: '100%', fontSize: '0.85rem' }}>GESTIONAR LICENCIAS</button>
+                            <button onClick={() => setTab('licenses')} className="bunkker-btn-secondary" style={{ width: '100%', fontSize: '0.85rem' }}>GESTIONAR LICENCIAS</button>
                         </div>
-                        <div className="card-sanjose" style={{ borderLeft: '5px solid #0ea5e9' }}>
+                        <div className="bunkker-card" style={{ borderLeft: '5px solid #0ea5e9' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1rem' }}>
                                 <Store size={24} color="#0ea5e9" />
                                 <h3 style={{ fontWeight: 'bold' }}>Multi-Sucursal</h3>
                             </div>
                             <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '1rem' }}>Despliega nuevas instancias para sucursales adicionales.</p>
-                            <button className="btn-sanjose" style={{ width: '100%', fontSize: '0.85rem' }}>+ AGREGAR NUEVA TIENDA</button>
+                            <button className="bunkker-btn" style={{ width: '100%', fontSize: '0.85rem' }}>+ AGREGAR NUEVA TIENDA</button>
                         </div>
-                        <div className="card-sanjose" style={{ borderLeft: '5px solid #8e44ad' }}>
+                        <div className="bunkker-card" style={{ borderLeft: '5px solid #8e44ad' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1rem' }}>
                                 <Database size={24} color="#8e44ad" />
                                 <h3 style={{ fontWeight: 'bold' }}>Base de Datos Local (SQLite)</h3>
@@ -283,8 +283,8 @@ export default function SysAdmin() {
                                 Todo el sistema reside localmente. Puedes descargar la base completa o restaurarla.
                             </p>
                             <div style={{ display: 'flex', gap: '8px' }}>
-                                <button onClick={handleDownloadBackup} className="btn-sanjose" style={{ width: '100%', fontSize: '0.85rem' }}>DESCARGAR (JSON)</button>
-                                <label className="btn-sanjose-secondary" style={{ width: '100%', fontSize: '0.85rem', textAlign: 'center', cursor: 'pointer', margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <button onClick={handleDownloadBackup} className="bunkker-btn" style={{ width: '100%', fontSize: '0.85rem' }}>DESCARGAR (JSON)</button>
+                                <label className="bunkker-btn-secondary" style={{ width: '100%', fontSize: '0.85rem', textAlign: 'center', cursor: 'pointer', margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                     <input type="file" accept=".json" style={{ display: 'none' }} onChange={handleRestoreBackup} />
                                     RESTAURAR
                                 </label>
@@ -309,7 +309,7 @@ export default function SysAdmin() {
                 {tab === 'licenses' && (
                     <div>
                         {/* Create form */}
-                        <div className="card-sanjose" style={{ marginBottom: '2rem', borderLeft: '5px solid #27ae60' }}>
+                        <div className="bunkker-card" style={{ marginBottom: '2rem', borderLeft: '5px solid #27ae60' }}>
                             <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1.5rem', fontWeight: '900' }}>
                                 <Plus size={20} color="#27ae60" /> CREAR NUEVA LICENCIA
                             </h3>
@@ -368,7 +368,7 @@ export default function SysAdmin() {
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                             {licenses.map(lic => (
-                                <div key={lic.key} className="card-sanjose" style={{ padding: '1rem 1.5rem', borderLeft: `5px solid ${lic.isActive ? '#27ae60' : '#E30613'}`, display: 'grid', gridTemplateColumns: '1fr auto', gap: '1rem', alignItems: 'center' }}>
+                                <div key={lic.key} className="bunkker-card" style={{ padding: '1rem 1.5rem', borderLeft: `5px solid ${lic.isActive ? '#27ae60' : '#E30613'}`, display: 'grid', gridTemplateColumns: '1fr auto', gap: '1rem', alignItems: 'center' }}>
                                     <div>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
                                             {lic.isActive ? <CheckCircle size={16} color="#27ae60" /> : <XCircle size={16} color="#E30613" />}

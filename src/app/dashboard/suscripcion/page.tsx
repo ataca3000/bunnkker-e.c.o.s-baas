@@ -121,7 +121,7 @@ export default function PricingPage() {
     };
 
     return (
-        <div className="min-h-full p-6 md:p-12 relative overflow-hidden flex flex-col items-center">
+        <div className="min-h-full p-[8px] md:p-12 relative overflow-hidden flex flex-col items-center">
 
             {/* Background elements */}
             <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-cyan-900/30 blur-[120px] rounded-full pointer-events-none"></div>
@@ -148,7 +148,7 @@ export default function PricingPage() {
                         transition={{ delay: 0.1 * index, type: "spring", stiffness: 100 }}
                         whileHover={{ y: -5, scale: 1.02 }}
                         onClick={() => setSelectedPlan(plan.id)}
-                        className={`relative rounded-3xl p-8 cursor-pointer transition-all duration-300 ${plan.popular ? 'border-2' : 'border border-white/5'} card-sanjose`}
+                        className={`relative rounded-[5px] p-8 cursor-pointer transition-all duration-300 ${plan.popular ? 'border-2' : 'border border-white/5'} bunkker-card`}
                         style={{
                             borderColor: plan.popular ? plan.color : selectedPlan === plan.id ? plan.color : 'rgba(255,255,255,0.05)',
                             boxShadow: plan.popular
@@ -164,7 +164,7 @@ export default function PricingPage() {
                         )}
 
                         <div className="mb-6 flex justify-between items-center">
-                            <div className="p-3 rounded-2xl bg-slate-900/50 border border-white/5 shadow-inner">
+                            <div className="p-3 rounded-[5px] bg-slate-900/50 border border-white/5 shadow-inner">
                                 {plan.icon}
                             </div>
                             {selectedPlan === plan.id && (
@@ -223,7 +223,7 @@ export default function PricingPage() {
             {/* Nota para el admin si hay placeholders */}
             {profile?.role === 'superadmin' && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }}
-                    className="mt-8 p-4 rounded-2xl bg-amber-900/20 border border-amber-500/30 text-amber-300 text-xs max-w-2xl text-center z-10">
+                    className="mt-8 p-4 rounded-[5px] bg-amber-900/20 border border-amber-500/30 text-amber-300 text-xs max-w-2xl text-center z-10">
                     <strong>⚙️ Admin:</strong> Para activar cobros reales, agrega en <code>.env.local</code>:
                     <br />
                     <code>NEXT_PUBLIC_STRIPE_PRICE_LOCAL=price_xxx</code> |{' '}
@@ -236,3 +236,4 @@ export default function PricingPage() {
         </div>
     );
 }
+

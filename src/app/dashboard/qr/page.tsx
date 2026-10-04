@@ -133,7 +133,7 @@ export default function QRGeneratorPage() {
         </p>
 
         {/* Selector de Pestañas */}
-        <div className="flex gap-2 mt-6 p-1 bg-slate-900 border border-slate-800 rounded-2xl w-fit">
+        <div className="flex gap-2 mt-6 p-1 bg-slate-900 border border-slate-800 rounded-[5px] w-fit">
           <button
             onClick={() => setActiveTab('clients')}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${
@@ -165,7 +165,7 @@ export default function QRGeneratorPage() {
       {activeTab === 'clients' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 print:block">
           {/* Tarjeta del Código QR para Imprimir */}
-          <div className="bg-slate-900/80 backdrop-blur-md rounded-3xl p-8 border border-slate-800 flex flex-col items-center justify-center relative overflow-hidden print:p-0 print:border-none print:bg-white print:text-black">
+          <div className="bg-slate-900/80 backdrop-blur-md rounded-[5px] p-8 border border-slate-800 flex flex-col items-center justify-center relative overflow-hidden print:p-0 print:border-none print:bg-white print:text-black">
             <div className="absolute top-0 w-full h-1 bg-gradient-to-r from-sky-500 to-blue-500 print:hidden" />
             
             <div className="text-center mb-4">
@@ -180,7 +180,7 @@ export default function QRGeneratorPage() {
               </p>
             </div>
 
-            <div className="bg-white p-6 rounded-3xl shadow-2xl my-4 print:shadow-none print:p-0 flex items-center justify-center">
+            <div className="bg-white p-[8px] rounded-[5px] shadow-2xl my-4 print:shadow-none print:p-0 flex items-center justify-center">
               {clientUrl ? (
                 <QRCodeSVG 
                   value={clientUrl} 
@@ -197,7 +197,7 @@ export default function QRGeneratorPage() {
                   }}
                 />
               ) : (
-                <div className="w-60 h-60 bg-slate-200 animate-pulse rounded-2xl"></div>
+                <div className="w-60 h-60 bg-slate-200 animate-pulse rounded-[5px]"></div>
               )}
             </div>
             
@@ -218,7 +218,7 @@ export default function QRGeneratorPage() {
           </div>
 
           {/* Configuración y Enlace Directo */}
-          <div className="bg-slate-900/60 backdrop-blur-md rounded-3xl p-8 border border-slate-800 flex flex-col justify-between print:hidden">
+          <div className="bg-slate-900/60 backdrop-blur-md rounded-[5px] p-8 border border-slate-800 flex flex-col justify-between print:hidden">
             <div>
               <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
                 <LinkIcon className="text-sky-400" />
@@ -228,7 +228,7 @@ export default function QRGeneratorPage() {
                 Este enlace puede compartirse en redes sociales, WhatsApp o tarjetas de presentación. Los clientes entran al modo tienda con seguridad total (cero acceso a paneles internos).
               </p>
               
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 bg-slate-950 p-3 rounded-2xl border border-slate-800">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 bg-slate-950 p-3 rounded-[5px] border border-slate-800">
                 <input 
                   type="text" 
                   value={clientUrl}
@@ -266,7 +266,7 @@ export default function QRGeneratorPage() {
                 </div>
               </div>
 
-              <div className="mt-8 p-5 bg-sky-950/30 border border-sky-500/20 rounded-2xl">
+              <div className="mt-8 p-[8px] bg-sky-950/30 border border-sky-500/20 rounded-[5px]">
                 <h4 className="text-sky-400 font-bold mb-2 text-sm uppercase tracking-wider flex items-center gap-2">
                   <Sparkles size={16} />
                   Beneficio Operativo
@@ -291,7 +291,7 @@ export default function QRGeneratorPage() {
       {activeTab === 'staff' && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 print:block">
           {/* Selector de Roles y Datos (Lado Izquierdo) */}
-          <div className="lg:col-span-6 bg-slate-900/60 backdrop-blur-md rounded-3xl p-6 md:p-8 border border-slate-800 print:hidden space-y-6">
+          <div className="lg:col-span-6 bg-slate-900/60 backdrop-blur-md rounded-[5px] p-[8px] md:p-8 border border-slate-800 print:hidden space-y-6">
             <div>
               <h3 className="text-lg font-bold text-white mb-1">1. Selecciona el Rol de Trabajo</h3>
               <p className="text-slate-400 text-xs mb-4">El QR configurará el dispositivo con los permisos correspondientes.</p>
@@ -301,7 +301,7 @@ export default function QRGeneratorPage() {
                   <button
                     key={role.id}
                     onClick={() => handleRoleChange(role)}
-                    className={`p-3 rounded-2xl border text-left transition-all flex flex-col justify-between ${
+                    className={`p-3 rounded-[5px] border text-left transition-all flex flex-col justify-between ${
                       selectedRole.id === role.id
                         ? 'bg-purple-900/25 border-purple-500 text-white shadow-lg shadow-purple-950/50'
                         : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200'
@@ -323,7 +323,7 @@ export default function QRGeneratorPage() {
             {/* Configuración de PIN y Nombre */}
             <div className="pt-4 border-t border-slate-800/80 space-y-4">
               <h3 className="text-lg font-bold text-white mb-1">2. Credenciales del Pase</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-[8px]">
                 <div>
                   <label className="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">
                     Nombre del Operador (Opcional)
@@ -377,11 +377,11 @@ export default function QRGeneratorPage() {
           </div>
 
           {/* Gafete / Pase Imprimible (Lado Derecho) */}
-          <div className="lg:col-span-6 bg-slate-900/80 backdrop-blur-md rounded-3xl p-8 border border-slate-800 flex flex-col items-center justify-center relative overflow-hidden print:p-0 print:border-none print:bg-white print:text-black">
+          <div className="lg:col-span-6 bg-slate-900/80 backdrop-blur-md rounded-[5px] p-8 border border-slate-800 flex flex-col items-center justify-center relative overflow-hidden print:p-0 print:border-none print:bg-white print:text-black">
             <div className="absolute top-0 w-full h-1 bg-gradient-to-r from-purple-500 to-indigo-500 print:hidden" />
 
             {/* Contenedor tipo Credencial */}
-            <div className="w-full max-w-sm bg-gradient-to-b from-slate-900 to-slate-950 border border-purple-500/30 rounded-3xl p-6 shadow-2xl flex flex-col items-center print:border-2 print:border-black print:bg-white print:shadow-none">
+            <div className="w-full max-w-sm bg-gradient-to-b from-slate-900 to-slate-950 border border-purple-500/30 rounded-[5px] p-[8px] shadow-2xl flex flex-col items-center print:border-2 print:border-black print:bg-white print:shadow-none">
               <div className="w-full flex items-center justify-between border-b border-slate-800 pb-3 mb-4 print:border-black">
                 <div className="flex items-center gap-2">
                   <div className="w-7 h-7 rounded-lg bg-sky-500 flex items-center justify-center font-black text-white text-xs">
@@ -402,7 +402,7 @@ export default function QRGeneratorPage() {
               </div>
 
               {/* QR del Pase */}
-              <div className="bg-white p-4 rounded-2xl shadow-xl my-2 flex items-center justify-center print:shadow-none print:p-0">
+              <div className="bg-white p-4 rounded-[5px] shadow-xl my-2 flex items-center justify-center print:shadow-none print:p-0">
                 {staffUrl ? (
                   <QRCodeSVG 
                     value={staffUrl} 
@@ -472,3 +472,4 @@ export default function QRGeneratorPage() {
     </div>
   );
 }
+
