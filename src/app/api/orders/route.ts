@@ -93,9 +93,11 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+    let body: any = {};
+    let orderId: string | null = null;
     try {
-        const body = await request.json();
-        const orderId = body.orderId || body.id;
+        body = await request.json().catch(() => ({}));
+        orderId = body.orderId || body.id;
         const total = body.total;
         const clientData = body.clientData || body.customer || {};
         const items = body.items || [];
@@ -351,13 +353,12 @@ export async function POST(request: NextRequest) {
                 }
             });
             return order;
-        }, { isolationLevel: 'Serializable' });
+        });
 
         return NextResponse.json({ success: true, data: orderResult });
 
     } catch (error: any) {
-        const bodyJson = await request.clone().json().catch(() => ({}));
-        const collisionId = bodyJson.orderId || bodyJson.id;
+        const collisionId = orderId || body?.orderId || body?.id;
 
         // 1. COLISIÓN DE PRIMARY KEY (P2002 / Unique constraint):
         // Verificar estrictamente si la colisión ocurrió sobre el identificador de la orden (Order.id).
@@ -518,7 +519,7 @@ export async function PATCH(request: NextRequest) {
                         details: { paymentMethod: updates.paymentMethod || 'cash', total: current.total }
                     });
                     return tx.order.findUnique({ where: { id }, include: { customer: true, items: true } });
-                }, { isolationLevel: 'Serializable' });
+                });
                 return NextResponse.json({ success: true, data: order });
             } catch (error: any) {
                 if (String(error.message).startsWith('ORDER_CONFLICT:')) {
@@ -609,7 +610,7 @@ export async function PATCH(request: NextRequest) {
 
                 await writeOrderEvent(tx, { orderId: id, eventType: 'PICKUP_RECEIVED', fromStatus: current.status, toStatus: 'DELIVERED', actorId: auth.uid, actorName, actorRole });
                 return tx.order.findUnique({ where: { id } });
-            }, { isolationLevel: 'Serializable' });
+            });
 
             return NextResponse.json({ success: true, data: order });
         }
@@ -692,7 +693,7 @@ export async function PATCH(request: NextRequest) {
                     details: { stockRestored: Boolean(current.confirmedAt) }
                 });
                 return updated;
-            }, { isolationLevel: 'Serializable' });
+            });
         } else {
             order = await prisma.$transaction(async (tx) => {
                 const changed = await tx.order.updateMany({
@@ -732,7 +733,7 @@ export async function PATCH(request: NextRequest) {
                     });
                 }
                 return updated;
-            }, { isolationLevel: 'Serializable' });
+            });
         }
 
         return NextResponse.json({ success: true, data: order });
