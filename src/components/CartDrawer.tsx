@@ -109,18 +109,16 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
             ...formData,
             paymentMethod: 'pago_caja',
             ...(isStaff ? {} : {
-                name: customerAccount.name,
-                phone: customerAccount.phone
+                name: customerAccount?.name || formData.name || 'Cliente',
+                phone: customerAccount?.phone || formData.phone || '0000000000'
             })
         };
-        if (!data.name || !data.phone) {
-            if (isStaff) {
-                if (!data.name) data.name = 'Cliente Mostrador';
-                if (!data.phone) data.phone = '0000000000';
-            } else if (data.deliveryMethod === 'repartidor' && !data.address) {
-                toast.warning('Completa los datos obligatorios de entrega.');
-                return;
-            }
+        if (!data.name) data.name = isStaff ? 'Cliente Mostrador' : (customerAccount?.name || 'Cliente');
+        if (!data.phone) data.phone = customerAccount?.phone || formData.phone || '0000000000';
+
+        if (!isStaff && data.deliveryMethod === 'repartidor' && !data.address) {
+            toast.warning('Completa los datos obligatorios de entrega (dirección).');
+            return;
         }
 
         setIsProcessing(true);
