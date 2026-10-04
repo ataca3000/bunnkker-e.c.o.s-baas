@@ -14,7 +14,7 @@ model Customer {
   id            String   @id @default(uuid())
   tenantId      String   @default("default")
   name          String
-  phone         String   @unique
+  phone         String
   email         String?
   address       String?
   references    String?
@@ -27,6 +27,8 @@ model Customer {
   codigoPostal  String?
   createdAt     DateTime @default(now())
   orders        Order[]
+
+  @@unique([tenantId, phone])
 }
 
 model Product {
@@ -89,6 +91,7 @@ model Order {
 
 model OrderItem {
   id        String  @id @default(uuid())
+  tenantId  String  @default("default")
   orderId   String
   productId String
   cantidad  Int
@@ -99,6 +102,7 @@ model OrderItem {
 
 model OrderEvent {
   id         String   @id @default(uuid())
+  tenantId   String   @default("default")
   orderId    String
   eventType  String
   fromStatus String?
@@ -117,6 +121,7 @@ model OrderEvent {
 
 model SyncQueue {
   id           String    @id @default(uuid())
+  tenantId     String    @default("default")
   collection   String
   documentId   String?
   action       String
@@ -132,6 +137,7 @@ model SyncQueue {
 
 model AuditLog {
   id        String   @id @default(uuid())
+  tenantId  String   @default("default")
   action    String
   details   String?
   userId    String
@@ -141,17 +147,21 @@ model AuditLog {
 
 model SupportTicket {
   id            String   @id @default(uuid())
-  folio         String   @unique
+  folio         String
+  tenantId      String   @default("default")
   customerEmail String
   customerName  String
   message       String
   status        String   @default("Pendiente")
   createdAt     DateTime @default(now())
   synced        Boolean  @default(false)
+
+  @@unique([tenantId, folio])
 }
 
 model Purchase {
   id        String   @id @default(uuid())
+  tenantId  String   @default("default")
   supplier  String
   concept   String
   amount    Float
@@ -174,8 +184,9 @@ model CashRegisterLog {
 
 model User {
   id        String   @id @default(uuid())
+  tenantId  String   @default("default")
   name      String
-  email     String?  @unique
+  email     String?
   pin       String?
   pinHash   String?
   deviceId  String?
@@ -183,10 +194,13 @@ model User {
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
   synced    Boolean  @default(false)
+
+  @@unique([tenantId, email])
 }
 
 model ShrinkageLog {
   id              String   @id @default(uuid())
+  tenantId        String   @default("default")
   productId       String
   productName     String
   productCategory String
@@ -212,6 +226,7 @@ model AppConfig {
 
 model SwarmTransaction {
   id               String   @id @default(uuid())
+  tenantId         String   @default("default")
   requestingNode   String
   providingNode    String
   productId        String
@@ -221,3 +236,5 @@ model SwarmTransaction {
   status           String   @default("RESERVED")
   commissionEarned Float    @default(0)
 }
+
+
