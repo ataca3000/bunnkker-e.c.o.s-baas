@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
         let customer = null;
 
         if (searchPhone) {
-            customer = await prisma.customer.findUnique({
+            customer = await prisma.customer.findFirst({
                 where: { phone: searchPhone }
             });
         }

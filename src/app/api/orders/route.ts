@@ -184,7 +184,7 @@ export async function POST(request: NextRequest) {
                     });
                 }
             } else if (clientData && clientData.phone) {
-                let customer = await tx.customer.findUnique({
+                let customer = await tx.customer.findFirst({
                     where: { phone: clientData.phone }
                 });
 

@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
         if (action === 'register') {
             if (!name) return NextResponse.json({ error: 'El nombre es requerido para registrarse' }, { status: 400 });
             
-            const existing = await prisma.customer.findUnique({ where: { phone } });
+            const existing = await prisma.customer.findFirst({ where: { phone } });
             if (existing) {
                 return NextResponse.json({ error: 'El teléfono ya está registrado' }, { status: 400 });
             }
@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
         // ------------------------------------------------------
 
         // Login de Clientes Normal
-        const customer = await prisma.customer.findUnique({ where: { phone } });
+        const customer = await prisma.customer.findFirst({ where: { phone } });
         if (!customer) {
             return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 });
         }
