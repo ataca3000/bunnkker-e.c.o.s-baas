@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 import path from "path";
 
 const nextConfig: NextConfig = {
-  output: 'standalone',
+  output: process.env.VERCEL ? undefined : 'standalone',
   // TODO (S3.2): Reactivar reactStrictMode: true una vez identificado el componente
   // que causa doble-render problemático. StrictMode detecta efectos secundarios
   // inesperados y refs obsoletas — su desactivación oculta bugs reales.

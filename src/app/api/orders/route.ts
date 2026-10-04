@@ -3,7 +3,6 @@ import { prisma } from '@/lib/prisma';
 import { jwtVerify } from 'jose';
 
 import { validateApiSession, validateActiveDbUser } from '@/lib/apiAuth';
-import bunkkerConfig from '../../../../bunkker.config.json';
 const CUSTOMER_JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'super_secret_local_key');
 
 async function writeOrderEvent(tx: any, event: {
@@ -94,7 +93,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
     let body: any = {};
-    let orderId: string | null = null;
+    let orderId: string | undefined = undefined;
     try {
         body = await request.json().catch(() => ({}));
         orderId = body.orderId || body.id;
@@ -156,8 +155,9 @@ export async function POST(request: NextRequest) {
         const deliveryLat = body.deliveryLat ?? body.lat ?? clientData.lat ?? location.lat;
         const deliveryLng = body.deliveryLng ?? body.lng ?? clientData.lng ?? location.lng;
 
-        if (!orderId || typeof total !== 'number' || !Array.isArray(items) || items.length === 0) {
-            throw new Error('Order ID, total y productos son obligatorios.');
+        const numTotal = Number(total);
+        if (!orderId || Number.isNaN(numTotal) || !Array.isArray(items) || items.length === 0) {
+            return NextResponse.json({ success: false, error: 'Order ID, total numérico válido y productos son obligatorios.' }, { status: 400 });
         }
 
         // IDEMPOTENCIA EN BASE DE DATOS: Si la orden ya existe en SQLite (por reintento de red o reinicio del nodo),
@@ -317,14 +317,14 @@ export async function POST(request: NextRequest) {
                         data: {
                             id: orderId,
                             tenantId,
-                            total,
+                            total: numTotal,
                             deliveryType: deliveryType || (deliveryMethod === 'repartidor' ? 'DELIVERY' : (deliveryMethod === 'pickup' ? 'PICKUP' : 'LOCAL')),
                             paymentMethod: isCashierRequest ? 'pago_caja' : paymentMethod || 'CASH',
                             status: initialStatus,
                             vendedorId: isCashierRequest ? null : body.vendedorId || null,
                             vendedorName: isCashierRequest ? null : body.vendedorName || null,
                             confirmedAt: isCashierRequest ? null : body.confirmedAt ? new Date(body.confirmedAt) : new Date(),
-                            expiresAt: body.expiresAt ? new Date(body.expiresAt) : isPending ? new Date(Date.now() + bunkkerConfig.reservation.timeoutMs) : null,
+                            expiresAt: body.expiresAt ? new Date(body.expiresAt) : isPending ? new Date(Date.now() + 30 * 60 * 1000) : null,
                     deliveryPin: body.deliveryPin || null,
                     deliveryLat: typeof deliveryLat === 'number' ? deliveryLat : null,
                     deliveryLng: typeof deliveryLng === 'number' ? deliveryLng : null,
@@ -343,13 +343,13 @@ export async function POST(request: NextRequest) {
 
             await tx.orderEvent.create({
                 data: {
-                    orderId,
+                    orderId: order.id,
                     eventType: 'ORDER_CREATED',
                     toStatus: order.status,
                     actorId,
                     actorName,
                     actorRole,
-                    details: JSON.stringify({ deliveryType, itemCount: items.length, total })
+                    details: JSON.stringify({ deliveryType, itemCount: items.length, total: numTotal })
                 }
             });
             return order;
