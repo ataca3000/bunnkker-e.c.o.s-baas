@@ -149,7 +149,7 @@ export default async function middleware(request: NextRequest) {
 
   // --- 3. API Protection ---
   if (pathname.startsWith('/api')) {
-    const publicApiRoutes = ['/api/auth', '/api/customer', '/api/public', '/api/omnipulse', '/api/settings'];
+    const publicApiRoutes = ['/api/auth', '/api/customer', '/api/public', '/api/omnipulse', '/api/settings', '/api/db-check'];
     // Permitir lectura pública de productos para el catálogo de clientes sin requerir login
     const isPublicGet = request.method === 'GET' && (pathname === '/api/products' || pathname.startsWith('/api/products/'));
     // Permitir creación de pedidos (la seguridad, RBAC y validación de roles/invitados se gestiona de forma segura en /api/orders)
