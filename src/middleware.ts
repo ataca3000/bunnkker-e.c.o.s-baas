@@ -152,7 +152,9 @@ export default async function middleware(request: NextRequest) {
     const publicApiRoutes = ['/api/auth', '/api/customer', '/api/public', '/api/omnipulse', '/api/settings'];
     // Permitir lectura pública de productos para el catálogo de clientes sin requerir login
     const isPublicGet = request.method === 'GET' && (pathname === '/api/products' || pathname.startsWith('/api/products/'));
-    const isPublicApi = isPublicGet || publicApiRoutes.some(r => pathname.startsWith(r));
+    // Permitir creación de pedidos (la seguridad, RBAC y validación de roles/invitados se gestiona de forma segura en /api/orders)
+    const isPublicOrderCreate = request.method === 'POST' && pathname === '/api/orders';
+    const isPublicApi = isPublicGet || isPublicOrderCreate || publicApiRoutes.some(r => pathname.startsWith(r));
 
     if (!isPublicApi) {
       const session = request.cookies.get('msj-session')?.value;

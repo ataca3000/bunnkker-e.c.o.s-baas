@@ -220,9 +220,11 @@ export default function SalesDashboard() {
                     const product = products.find(current => current.id === item.id);
                     return [item.id, Math.max(0, (product?.stock || 0) - (product?.reservedStock || 0))];
                 }));
-                const reservation: any = await new Promise(resolve => {
+                const reservationPromise = new Promise(resolve => {
                     socket.emit('reserve_stock', { reservationId: orderId, items: reservationItems, dbStockMap }, resolve);
                 });
+                const timeoutPromise = new Promise(resolve => setTimeout(() => resolve({ success: true, timedOut: true }), 1500));
+                const reservation: any = await Promise.race([reservationPromise, timeoutPromise]);
                 if (!reservation?.success) {
                     throw new Error(`Inventario reservado en otra caja: ${(reservation?.failedItems || []).join(', ')}`);
                 }
@@ -243,7 +245,7 @@ export default function SalesDashboard() {
                     vendedorId: profile?.uid || 'LOCAL',
                     vendedorName: profile?.displayName || 'Cajero',
                     confirmedAt: orderDate,
-                    items: posCart.map(i => ({ id: i.id, quantity: i.quantity, price: i.price })),
+                    items: posCart.map(i => ({ id: i.id, productId: i.id, quantity: i.quantity, price: i.price })),
                     customer: orderPayload.customer,
                     evidencePhoto: evidencePhoto || null
                 })

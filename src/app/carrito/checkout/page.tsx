@@ -178,8 +178,8 @@ export default function CheckoutPage() {
 
             const res = await (createOrder as any)({
                 orderId,
-                name: customerAccount.name,
-                phone: customerAccount.phone,
+                name: customerAccount?.name || clientName || 'Cliente',
+                phone: customerAccount?.phone || clientPhone || '',
                 address: defaultAddress,
                 rfc: clientRfc || undefined,
                 regimenFiscal: clientRazonSocial || undefined,

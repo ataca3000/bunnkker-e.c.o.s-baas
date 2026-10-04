@@ -94,6 +94,21 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
     try {
+        const body = await request.json();
+        const orderId = body.orderId || body.id;
+        const total = body.total;
+        const clientData = body.clientData || body.customer || {};
+        const items = body.items || [];
+        const deliveryMethod = body.deliveryMethod || clientData.deliveryMethod;
+        const deliveryType = body.deliveryType || (deliveryMethod === 'repartidor'
+            ? 'DELIVERY'
+            : deliveryMethod === 'patio' || deliveryMethod === 'PATIO'
+                ? 'PATIO'
+                : ['pickup', 'PICKUP', 'tienda'].includes(deliveryMethod)
+                    ? 'PICKUP'
+                    : 'LOCAL');
+        const paymentMethod = body.paymentMethod;
+
         // SEGURIDAD FAIL-CLOSED: Validar sesión activa directamente en SQLite (no solo la firma HMAC)
         const staffSession = await validateActiveDbUser(request);
         let authenticatedCustomerId: string | null = null;
@@ -109,37 +124,32 @@ export async function POST(request: NextRequest) {
             });
         } else {
             const customerToken = request.cookies.get('msj-session')?.value || request.cookies.get('admincom_session')?.value;
-            if (!customerToken) return staffSession.response;
-
-            try {
-                const { payload } = await jwtVerify(customerToken, CUSTOMER_JWT_SECRET);
-                if (payload.role !== 'customer' || typeof payload.uid !== 'string') {
-                    return NextResponse.json({ success: false, error: 'Debes iniciar sesión con una cuenta de cliente.' }, { status: 401 });
+            if (customerToken) {
+                try {
+                    const { payload } = await jwtVerify(customerToken, CUSTOMER_JWT_SECRET);
+                    if (payload.role === 'customer' && typeof payload.uid === 'string') {
+                        authenticatedCustomerId = payload.uid;
+                    }
+                } catch {
+                    // Token inválido o vencido
                 }
-                authenticatedCustomerId = payload.uid;
-            } catch {
-                return NextResponse.json({ success: false, error: 'La sesión de cliente venció. Inicia sesión nuevamente.' }, { status: 401 });
+            }
+
+            // Si no hay cuenta autenticada de cliente ni sesión de empleado:
+            if (!authenticatedCustomerId) {
+                const isGuestRequest = Boolean(body.asRequest || paymentMethod === 'pago_caja' || body.status === 'pending_payment');
+                const hasContact = Boolean(clientData?.phone || clientData?.name || body.customerEmail);
+
+                if (!isGuestRequest || !hasContact) {
+                    return staffSession.response || NextResponse.json({ success: false, error: 'Debes iniciar sesión para realizar ventas directas.' }, { status: 401 });
+                }
             }
         }
 
         // AISLAMIENTO DE TENANT: Se deriva de la configuración soberana en base de datos, no de headers arbitrarios
         const appConfig = await prisma.appConfig.findUnique({ where: { id: 'global' } }).catch(() => null);
         const tenantId = appConfig?.tenantId || 'default';
-        const body = await request.json();
-        const orderId = body.orderId || body.id;
-        const total = body.total;
-        const clientData = body.clientData || body.customer || {};
-        const items = body.items || [];
-        const deliveryMethod = body.deliveryMethod || clientData.deliveryMethod;
-        const deliveryType = body.deliveryType || (deliveryMethod === 'repartidor'
-            ? 'DELIVERY'
-            : deliveryMethod === 'patio' || deliveryMethod === 'PATIO'
-                ? 'PATIO'
-                : ['pickup', 'PICKUP', 'tienda'].includes(deliveryMethod)
-                    ? 'PICKUP'
-                    : 'LOCAL');
-        const paymentMethod = body.paymentMethod;
-        const isCashierRequest = Boolean(authenticatedCustomerId || body.asRequest);
+        const isCashierRequest = Boolean(authenticatedCustomerId || body.asRequest || !staffSession.ok);
         const location = clientData.gpsCoords || body.gpsCoords || {};
         const deliveryLat = body.deliveryLat ?? body.lat ?? clientData.lat ?? location.lat;
         const deliveryLng = body.deliveryLng ?? body.lng ?? clientData.lng ?? location.lng;
@@ -223,32 +233,38 @@ export async function POST(request: NextRequest) {
             // pero no bloquea el registro entre la lectura y la escritura a nivel SQL.
             // La solución correcta es: leer → validar → decrementar condicionalmente.
             for (const item of items) {
+                const prodId = item.productId || item.id;
+                if (!prodId) {
+                    throw new Error('Identificador de producto inválido en el pedido.');
+                }
+                const qty = item.quantity ?? item.cantidad ?? 1;
+
                 // Paso A: Verificar stock actual antes de modificar
                 const current = await tx.product.findUnique({
-                    where: { id: item.productId },
+                    where: { id: prodId },
                     select: { stock: true, reservedStock: true, id: true }
                 });
 
                 if (!current) {
-                    throw new Error(`Producto no encontrado: (ID: ${item.productId}).`);
+                    throw new Error(`Producto no encontrado: (ID: ${prodId}).`);
                 }
 
                 const availableStock = current.stock - current.reservedStock;
-                if (availableStock < item.quantity) {
-                    throw new Error(`Inventario insuficiente para el producto (ID: ${item.productId}). Disponible: ${availableStock}, solicitado: ${item.quantity}.`);
+                if (availableStock < qty) {
+                    throw new Error(`Inventario insuficiente para el producto (ID: ${prodId}). Disponible: ${availableStock}, solicitado: ${qty}.`);
                 }
 
                 if (!isCashierRequest) {
                     await tx.product.update({
-                        where: { id: item.productId },
-                        data: { stock: { decrement: item.quantity } }
+                        where: { id: prodId },
+                        data: { stock: { decrement: qty } }
                     });
                 }
             }
 
-                    const initialStatus = isCashierRequest
-                        ? authenticatedCustomerId ? 'pending_payment' : body.status || 'pending_payment'
-                        : body.status || 'paid';
+            const initialStatus = staffSession.ok
+                ? (isCashierRequest ? (authenticatedCustomerId ? 'pending_payment' : body.status || 'pending_payment') : body.status || 'paid')
+                : 'pending_payment';
 
                     const isPending = ['pending_payment', 'pending_confirmation'].includes(initialStatus);
 
@@ -356,7 +372,7 @@ export async function POST(request: NextRequest) {
         }
 
         console.error(`[ACID Transaction Error]: ${error.message}`);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
 }
 
