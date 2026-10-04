@@ -138,8 +138,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
     // ─── Local API Sync for Operational Data (Products & Orders) ──────────────
     useEffect(() => {
-        if (authLoading) return;
-        
         let isFetching = false;
         const fetchLocalData = async () => {
             if (isFetching || localMutationInFlight.current > 0) return;
@@ -184,7 +182,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         const pollInterval = setInterval(fetchLocalData, 2000);
 
         return () => clearInterval(pollInterval);
-    }, [authLoading, setProducts, setOrders, setFirebaseStatus, setLoading]);
+    }, [setProducts, setOrders, setFirebaseStatus, setLoading]);
 
     // ─── Socket.IO Sync for Floating Stock ─────────────────────────────────────
     useEffect(() => {

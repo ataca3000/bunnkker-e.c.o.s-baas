@@ -449,7 +449,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
 
     const isMasterAdmin = profile?.role === 'superadmin';
-    const sidebarWidth  = isCollapsed ? '90px' : '142px';
+    const sidebarWidth  = isCollapsed ? '90px' : '280px';
 
     /* ── Breadcrumbs helper ───────────────────────────────────── */
     const labelsMap: Record<string, string> = {
