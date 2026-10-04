@@ -226,14 +226,14 @@ export default function DeliveryDashboard() {
                 ...useDeliveryStore.getState().activeOrders.filter(o => o.id !== orderId),
                 {
                     id: order.id,
-                    customerName: order.customerName,
-                    address: order.address,
-                    lat: order.lat,
-                    lng: order.lng,
+                    customerName: order.customerName || 'Cliente',
+                    address: order.address || 'Domicilio',
+                    lat: order.lat ?? 0,
+                    lng: order.lng ?? 0,
                     status: 'OUT_FOR_DELIVERY',
-                    deliveryPin: order.deliveryPin,
-                    items: order.items,
-                    total: order.total
+                    deliveryPin: order.deliveryPin || undefined,
+                    items: order.items || [],
+                    total: order.total ?? 0
                 }
             ], []);
         }

@@ -12,7 +12,7 @@ interface BarcodeScannerProps {
 }
 
 export default function BarcodeScanner({ onScanSuccess, onClose, isOpen = true, mode }: BarcodeScannerProps) {
-    const scannerRef = useRef<Html5Qrcode | null>(null);
+    const scannerRef = useRef<any>(null);
     const [isStarting, setIsStarting] = useState(true);
 
     const handleScanSuccess = useCallback((decodedText: string) => {
@@ -35,19 +35,19 @@ export default function BarcodeScanner({ onScanSuccess, onClose, isOpen = true, 
                 qrbox: { width: 250, height: 250 },
                 aspectRatio: 1.0
             },
-            (decodedText) => {
+            (decodedText: string) => {
                 if (isMounted) {
                     html5QrCode.stop().then(() => {
                         handleScanSuccess(decodedText);
-                    }).catch(err => console.error(err));
+                    }).catch((err: any) => console.error(err));
                 }
             },
-            (errorMessage) => {
+            (errorMessage: string) => {
                 // Ignore "not found"
             }
         ).then(() => {
             if (isMounted) setIsStarting(false);
-        }).catch(err => {
+        }).catch((err: any) => {
             console.error("No se pudo iniciar la cámara automáticamente:", err);
             if (isMounted) setIsStarting(false);
         });
