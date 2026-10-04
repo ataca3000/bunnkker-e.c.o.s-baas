@@ -408,7 +408,8 @@ export const useCart = () => {
 
             if (!res.ok) {
                 const errData = await res.json().catch(() => ({}));
-                throw new Error(errData.error || 'Error al guardar en el servidor local');
+                const detail = errData.error || errData.message || (res.status === 401 ? 'Acceso denegado (Inicia sesión como cliente o personal)' : `Error en servidor local (HTTP ${res.status})`);
+                throw new Error(detail);
             }
 
             state.clearCart();
