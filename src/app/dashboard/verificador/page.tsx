@@ -79,7 +79,7 @@ export default function PriceScannerPage() {
         };
     }, [showCamera]);
 
-    const handleScan = (code: string) => {
+    function handleScan(code: string) {
         if (!code.trim()) return;
         
         const query = code.trim().toLowerCase();
@@ -293,4 +293,5 @@ export default function PriceScannerPage() {
         </div>
     );
 }
+
 

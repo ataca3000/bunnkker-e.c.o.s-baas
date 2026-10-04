@@ -154,7 +154,7 @@ export default function LocalRadio() {
     }, [isStaff, socket]);
 
 
-    const playBeep = (freq: number, dur: number) => {
+    function playBeep(freq: number, dur: number) {
         try {
             if (!audioContext.current) audioContext.current = new (window.AudioContext || (window as any).webkitAudioContext)();
             const ctx = audioContext.current;
@@ -169,7 +169,7 @@ export default function LocalRadio() {
         } catch (e) {}
     };
 
-    const startRecording = async () => {
+    async function startRecording() {
         if (!socket) return;
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
@@ -210,7 +210,7 @@ export default function LocalRadio() {
         }
     };
 
-    const stopRecording = () => {
+    function stopRecording() {
         if (mediaRecorder.current && mediaRecorder.current.state === 'recording') {
             mediaRecorder.current.stop();
             setIsRecording(false);
@@ -255,3 +255,4 @@ export default function LocalRadio() {
         </div>
     );
 }
+

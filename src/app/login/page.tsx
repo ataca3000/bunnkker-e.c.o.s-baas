@@ -116,7 +116,7 @@ export default function LoginPage() {
   };
 
   // Función centralizada de autenticación por PIN (usada manual y por escaneo QR)
-  const performStaffLogin = async (pinCandidate: string) => {
+  async function performStaffLogin(pinCandidate: string) {
     setLoading(true);
     setError('');
 
@@ -402,3 +402,4 @@ export default function LoginPage() {
     </div>
   );
 }
+
