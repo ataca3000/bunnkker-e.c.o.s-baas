@@ -60,7 +60,7 @@ export default function CookieConsent() {
                             </button>
                         </div>
                         <p className="text-slate-300 leading-relaxed text-[11.5px]">
-                            BUNKKER utiliza almacenamiento local y caché técnico en tu dispositivo para garantizar funcionamiento 100% offline, control de caja y sincronización segura de pedidos.
+                            BUNKKER utiliza almacenamiento local y caché técnico en tu dispositivo para garantizar funcionamiento 100% 
                         </p>
                         <div className="flex flex-wrap gap-2 text-[10px] text-cyan-400 underline">
                             <Link href="/privacidad" className="hover:text-cyan-300">Política de Privacidad</Link>

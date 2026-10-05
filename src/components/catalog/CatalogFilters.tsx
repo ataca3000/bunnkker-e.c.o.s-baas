@@ -22,18 +22,18 @@ export function CategoryFilter({ categories, selected, onSelect }: CategoryFilte
         }`;
 
     const labelClass = (active: boolean) =>
-        `text-[10px] font-black uppercase tracking-widest text-center transition-colors max-w-[80px] break-words leading-tight ${
-            active ? 'text-amber-400 font-extrabold' : 'text-slate-400 group-hover:text-slate-200'
+        `text-lg font-black uppercase tracking-widest text-center transition-colors max-w-[80px] break-words leading-tight ${
+            active ? 'text-[#ffe900] font-extrabold' : 'text-slate-400 group-hover:text-slate-200'
         }`;
 
     return (
-        <div className="flex gap-6 justify-start md:justify-center items-start w-full mb-14 overflow-x-auto py-4 no-scrollbar select-none px-4">
+        <div className="flex gap-6 justify-start md:justify-center items-start w-full mb-14 overflow-x-auto py-4 no-scrollbar select-none px-4 text-[36px]">
             {/* Todos */}
             <button
                 onClick={() => onSelect('Todos')}
                 className="flex flex-col items-center gap-3 group cursor-pointer focus:outline-none shrink-0 transition-transform active:scale-95"
             >
-                <div className={pillClass(selected === 'Todos')}>📦</div>
+                <div className={`${pillClass(selected === 'Todos')} !w-5 !h-5 text-xl`}>📦</div>
                 <span className={labelClass(selected === 'Todos')}>TODOS</span>
             </button>
 
