@@ -95,18 +95,18 @@ export async function GET() {
 let isDbSchemaSynced = false;
 async function ensureDbColumns() {
     if (isDbSchemaSynced) return;
-    const queries = [
-        `ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "tenantId" TEXT DEFAULT 'default'`,
-        `ALTER TABLE "OrderItem" ADD COLUMN IF NOT EXISTS "tenantId" TEXT DEFAULT 'default'`,
-        `ALTER TABLE "OrderEvent" ADD COLUMN IF NOT EXISTS "tenantId" TEXT DEFAULT 'default'`,
-        `ALTER TABLE "Customer" ADD COLUMN IF NOT EXISTS "tenantId" TEXT DEFAULT 'default'`,
-        `ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "tenantId" TEXT DEFAULT 'default'`
-    ];
-    for (const q of queries) {
+    const tables = ['Order', 'OrderItem', 'OrderEvent', 'Customer', 'Product'];
+    for (const tbl of tables) {
+        // 1. Probar sintaxis estándar PostgreSQL ("ADD COLUMN IF NOT EXISTS")
         try {
-            await prisma.$executeRawUnsafe(q);
+            await prisma.$executeRawUnsafe(`ALTER TABLE "${tbl}" ADD COLUMN IF NOT EXISTS "tenantId" TEXT DEFAULT 'default'`);
         } catch {
-            // Ignorar si la columna ya existe o dialecto diferente
+            // 2. Si falla (en SQLite "IF NOT EXISTS" no es válido), intentar sintaxis SQLite ("ADD COLUMN")
+            try {
+                await prisma.$executeRawUnsafe(`ALTER TABLE "${tbl}" ADD COLUMN "tenantId" TEXT DEFAULT 'default'`);
+            } catch {
+                // Columna ya existe o dialecto/tabla no aplicable
+            }
         }
     }
     isDbSchemaSynced = true;

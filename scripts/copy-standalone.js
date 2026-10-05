@@ -23,6 +23,12 @@ const prismaSrc = path.join(projectRoot, 'prisma');
 const prismaDest = path.join(standaloneDir, 'prisma');
 if (fs.existsSync(prismaSrc)) {
     fs.cpSync(prismaSrc, prismaDest, { recursive: true });
+    // Garantizar que en el standalone el schema sea SQLite para modo 100% offline
+    const sqliteSchema = path.join(prismaSrc, 'schema.sqlite.prisma');
+    if (fs.existsSync(sqliteSchema)) {
+        fs.copyFileSync(sqliteSchema, path.join(prismaDest, 'schema.prisma'));
+        console.log("✅ Schema SQLite fijado en standalone/prisma/schema.prisma.");
+    }
     console.log("✅ Prisma (SQLite) copiado al standalone.");
 }
 
