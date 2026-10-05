@@ -135,20 +135,10 @@ export default function MarketCatalog({ initialCategory, hideHeader }: { initial
                 <div className="flex justify-end items-center mb-6 gap-3">
                     <button
                         onClick={() => setShowScanner(true)}
-                        className="bunkker-btn px-4 py-2 flex items-center gap-2 rounded-xl text-sm bg-slate-800 border border-white/10 text-white hover:bg-slate-700"
+                        className="bunkker-btn px-4 py-2 flex items-center gap-2 rounded-[27px] text-lg bg-slate-800 border border-white/10 text-white hover:bg-slate-700"
                     >
                         <QrCode size={16} /> Escanear
                     </button>
-                    <div className="relative group">
-                        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-400 transition-colors" />
-                        <input
-                            type="text"
-                            placeholder="Buscar código o nombre..."
-                            value={search}
-                            onChange={e => setSearch(e.target.value)}
-                            className="pl-9 pr-3 py-2 rounded-xl border border-white/10 w-full sm:w-[240px] outline-none text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all bg-slate-800/50 backdrop-blur-md placeholder-slate-400 text-sm"
-                        />
-                    </div>
                 </div>
             )}
 
@@ -166,7 +156,7 @@ export default function MarketCatalog({ initialCategory, hideHeader }: { initial
             <div className="bg-black -mx-4 sm:-mx-8 px-4 sm:px-8 py-16 mt-8 border-t border-b border-white/10">
                 <div className="flex items-center gap-4 mb-10 border-l-8 border-blue-500 pl-4">
                     <h2 className="text-4xl md:text-5xl font-black text-white italic uppercase tracking-tighter">
-                        NUESTRO <span className="text-blue-400">CATÁLOGO</span>
+                        <span className="text-blue-400 italic">CATÁLOGO</span>
                     </h2>
                 </div>
 

@@ -360,7 +360,7 @@ export default function MarketingCanvasRenderer({ pageId }: { pageId: string }) 
                     <div className="text-center mb-16">
                         <h2 className="text-4xl font-extrabold text-white mb-4">Nuestro Catálogo</h2>
                         <div className="w-24 h-1 bg-orange-500 mx-auto rounded-full mb-6" />
-                        <p className="text-slate-400 text-lg">Explora nuestra selección premium de productos.</p>
+                        <p className="text-slate-400 text-lg"></p>
                     </div>
                     
                     {/* The Catalog Component */}
@@ -383,9 +383,7 @@ export default function MarketingCanvasRenderer({ pageId }: { pageId: string }) 
                             <h2 className="text-4xl md:text-5xl font-extrabold text-white mb-6">
                                 ¿Buscas Volumen o Materiales Especiales?
                             </h2>
-                            <p className="text-slate-400 text-lg mb-10 leading-relaxed">
-                                Contamos con atención personalizada para constructoras, arquitectos y proyectos a gran escala. Déjanos tus datos y un ingeniero se pondrá en contacto contigo hoy mismo.
-                            </p>
+<p className="text-slate-400 text-lg mb-10 leading-relaxed"></p>
                             
                             <div className="space-y-6">
                                 <div className="flex items-center gap-4 text-slate-300 bg-white/5 p-4 rounded-2xl border border-white/10 backdrop-blur-sm">
