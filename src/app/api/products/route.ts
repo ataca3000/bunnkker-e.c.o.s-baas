@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
 
         const existing = await prisma.product.findFirst({ where: { id, tenantId } });
         if (existing) {
-            const product = await prisma.product.update({ where: { id }, data });
+            const product = await prisma.product.update({ where: { id: existing.id }, data });
             return NextResponse.json({ success: true, data: product });
         }
 
@@ -103,9 +103,13 @@ export async function PATCH(request: NextRequest) {
         if (typeof body.orderIndex === 'number') dataToUpdate.orderIndex = body.orderIndex;
         if (body.restore === true) dataToUpdate.deletedAt = null;
 
-        // S2.2 FIX: Solo actualizar si el producto pertenece a este tenant
+        // Prisma solo acepta la clave única `id` en `where`; validar tenant antes de escribir.
+        const existing = await prisma.product.findFirst({ where: { id, tenantId } });
+        if (!existing) {
+            return NextResponse.json({ success: false, error: 'Producto no encontrado' }, { status: 404 });
+        }
         const product = await prisma.product.update({
-            where: { id, tenantId },
+            where: { id: existing.id },
             data: dataToUpdate
         });
         return NextResponse.json({ success: true, data: product });
@@ -138,10 +142,17 @@ export async function DELETE(request: NextRequest) {
                 }, { status: 409 });
             }
 
-            // S2.2 FIX: Solo borrar si pertenece a este tenant
-            await prisma.product.delete({ where: { id, tenantId } });
+            const existing = await prisma.product.findFirst({ where: { id, tenantId } });
+            if (!existing) {
+                return NextResponse.json({ success: false, error: 'Producto no encontrado' }, { status: 404 });
+            }
+            await prisma.product.delete({ where: { id: existing.id } });
         } else {
-            await prisma.product.update({ where: { id, tenantId }, data: { deletedAt: new Date() } });
+            const existing = await prisma.product.findFirst({ where: { id, tenantId } });
+            if (!existing) {
+                return NextResponse.json({ success: false, error: 'Producto no encontrado' }, { status: 404 });
+            }
+            await prisma.product.update({ where: { id: existing.id }, data: { deletedAt: new Date() } });
         }
 
         return NextResponse.json({ success: true, permanent });
