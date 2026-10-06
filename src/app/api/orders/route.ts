@@ -26,13 +26,15 @@ async function writeOrderEvent(tx: any, event: {
 export const dynamic = 'force-dynamic';
 
 
-export async function GET() {
+export async function GET(request: NextRequest) {
     try {
+        const tenantId = request.headers.get('x-tenant-id') || 'default';
         await ensureDbColumns();
         const now = new Date();
         const expiredOrders = await prisma.order.findMany({
-            where: {
-                expiresAt: { lte: now },
+                where: {
+                    tenantId,
+                    expiresAt: { lte: now },
                 confirmedAt: null,
                 status: { in: ['pending_payment', 'pending_confirmation', 'NIGHT_QUEUE', 'PENDIENTE_LLEGADA', 'PREPARANDO', 'READY_TO_SHIP', 'READY_FOR_PICKUP'] }
             },
@@ -60,6 +62,7 @@ export async function GET() {
         }
 
         const orders = await prisma.order.findMany({
+            where: { tenantId },
             include: { 
                 items: { include: { product: true } }, 
                 customer: true, 
@@ -184,8 +187,8 @@ export async function POST(request: NextRequest) {
 
         // IDEMPOTENCIA EN BASE DE DATOS: Si la orden ya existe en SQLite (por reintento de red o reinicio del nodo),
         // responder inmediatamente con la orden existente para evitar descontar inventario doble.
-        const existingOrder = await prisma.order.findUnique({
-            where: { id: orderId },
+        const existingOrder = await prisma.order.findFirst({
+            where: { id: orderId, tenantId },
             include: { items: true, customer: true }
         });
         if (existingOrder) {
@@ -282,15 +285,15 @@ export async function POST(request: NextRequest) {
                 const qty = Math.max(1, Math.round(Number(item.quantity ?? item.cantidad ?? 1)));
 
                 // Paso A: Verificar existencia de producto en la base de datos
-                let current = await tx.product.findUnique({
-                    where: { id: prodId },
+                let current = await tx.product.findFirst({
+                    where: { id: prodId, tenantId },
                     select: { stock: true, reservedStock: true, id: true, name: true }
                 });
 
                 // Si no existe por ID, buscar por nombre
                 if (!current && item.name) {
                     current = await tx.product.findFirst({
-                        where: { name: item.name },
+                        where: { name: item.name, tenantId },
                         select: { stock: true, reservedStock: true, id: true, name: true }
                     });
                 }

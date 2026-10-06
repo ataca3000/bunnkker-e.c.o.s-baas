@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'node:crypto';
 import { prisma } from '@/lib/prisma';
 import { requireRole } from '@/lib/apiAuth';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
-    const auth = requireRole(request, ['superadmin', 'admin']);
+    const auth = requireRole(request, ['superadmin', 'admin', 'inventory']);
     if (!auth.ok) return auth.response;
 
     try {
