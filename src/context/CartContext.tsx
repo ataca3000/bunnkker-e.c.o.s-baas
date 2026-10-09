@@ -138,6 +138,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
     // ─── Local API Sync for Operational Data (Products & Orders) ──────────────
     useEffect(() => {
+        // No consultar la tienda mientras la sesión todavía se está resolviendo.
+        // Evita marcar el dashboard como desconectado durante el primer render.
+        if (authLoading) return;
+
         let isFetching = false;
         const fetchLocalData = async () => {
             if (isFetching || localMutationInFlight.current > 0) return;
@@ -182,7 +186,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         const pollInterval = setInterval(fetchLocalData, 2000);
 
         return () => clearInterval(pollInterval);
-    }, [setProducts, setOrders, setFirebaseStatus, setLoading]);
+    }, [authLoading, setProducts, setOrders, setFirebaseStatus, setLoading]);
 
     // ─── Socket.IO Sync for Floating Stock ─────────────────────────────────────
     useEffect(() => {
