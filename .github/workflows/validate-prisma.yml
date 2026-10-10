@@ -1,0 +1,52 @@
+name: Validate Prisma schemas
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "prisma/**"
+      - "scripts/validate-schemas.js"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/validate-prisma.yml"
+  pull_request:
+    paths:
+      - "prisma/**"
+      - "scripts/validate-schemas.js"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/validate-prisma.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate PostgreSQL Prisma schema
+        run: npx prisma validate --schema prisma/schema.prisma
+        env:
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/bunkker_ci
+          DIRECT_URL: postgresql://ci:ci@localhost:5432/bunkker_ci
+
+      - name: Validate SQLite Prisma schema
+        run: npx prisma validate --schema prisma/schema.sqlite.prisma
+        env:
+          DATABASE_URL: file:./ci.db
+
+      - name: Check model fields match across schemas
+        run: npm run validate:schemas
