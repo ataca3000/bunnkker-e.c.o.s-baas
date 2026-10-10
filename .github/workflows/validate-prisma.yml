@@ -24,6 +24,23 @@ permissions:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: bunkker_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci -d bunkker_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/bunkker_ci
+      DIRECT_URL: postgresql://ci:ci@localhost:5432/bunkker_ci
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -39,14 +56,17 @@ jobs:
 
       - name: Validate PostgreSQL Prisma schema
         run: npx prisma validate --schema prisma/schema.prisma
-        env:
-          DATABASE_URL: postgresql://ci:ci@localhost:5432/bunkker_ci
-          DIRECT_URL: postgresql://ci:ci@localhost:5432/bunkker_ci
 
       - name: Validate SQLite Prisma schema
         run: npx prisma validate --schema prisma/schema.sqlite.prisma
         env:
           DATABASE_URL: file:./ci.db
+
+      - name: Apply all PostgreSQL migrations to a clean disposable database
+        run: npx prisma migrate deploy
+
+      - name: Confirm migration history
+        run: npx prisma migrate status
 
       - name: Check model fields match across schemas
         run: npm run validate:schemas
