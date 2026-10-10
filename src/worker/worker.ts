@@ -261,6 +261,12 @@ async function processQueue() {
 
                 console.log(`[Worker] ✅ Tarea ${task.id} completada y eliminada.`);
             } catch (err: any) {
+                // Si Firestore falla, detener temporalmente el worker y reconectar con backoff.
+                // La tarea permanece en la cola con processAfter; no se pierde la operación.
+                if (isNetworkError(err)) {
+                    void reconnectFirestore();
+                }
+
                 // P2025 = Record to update/delete not found (ya lo procesó otro hilo)
                 if (err.code === 'P2025') {
                     console.log(`[Worker] ⚠️ Tarea ${task.id} ya no existe (procesada por otro hilo).`);
