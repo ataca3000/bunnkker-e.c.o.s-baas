@@ -128,25 +128,39 @@ async function processQueue() {
                         quantity: Number(item.quantity ?? item.cantidad)
                     }));
 
-                    if (normalizedItems.some((item: any) =>
+                    if (normalizedItems.length === 0 || normalizedItems.some((item: any) =>
                         !item.id || !Number.isSafeInteger(item.quantity) || item.quantity <= 0
                     )) {
                         throw new Error('La venta contiene productos o cantidades inválidas; no se sincronizó.');
+                    }
+
+                    // Consolidar líneas repetidas del mismo producto para no calcular
+                    // varias veces el stock usando la misma lectura inicial.
+                    const inventoryItems = Array.from(
+                        normalizedItems.reduce((totals: Map<string, number>, item: any) => {
+                            totals.set(item.id, (totals.get(item.id) || 0) + item.quantity);
+                            return totals;
+                        }, new Map<string, number>()),
+                        ([id, quantity]) => ({ id, quantity })
+                    );
+
+                    if (inventoryItems.some(item => !Number.isSafeInteger(item.quantity))) {
+                        throw new Error('La cantidad acumulada de un producto excede el límite permitido.');
                     }
 
                     await runTransaction(db, async (transaction) => {
                         const receipt = await transaction.get(receiptRef);
                         if (receipt.exists()) return; // Venta ya aplicada: operación idempotente.
 
-                        const productRefs = normalizedItems.map((item: any) => doc(db, 'products', item.id));
+                        const productRefs = inventoryItems.map((item: any) => doc(db, 'products', item.id));
                         const productSnapshots = [];
                         for (const productRef of productRefs) {
                             productSnapshots.push(await transaction.get(productRef));
                         }
 
-                        for (let i = 0; i < normalizedItems.length; i++) {
+                        for (let i = 0; i < inventoryItems.length; i++) {
                             const productSnapshot: any = productSnapshots[i];
-                            const item: any = normalizedItems[i];
+                            const item: any = inventoryItems[i];
                             if (!productSnapshot.exists()) {
                                 throw new Error(`No existe el producto ${item.id}; se conserva la tarea para revisión/reintento.`);
                             }
@@ -161,8 +175,8 @@ async function processQueue() {
                             syncedAt: new Date().toISOString()
                         });
 
-                        for (let i = 0; i < normalizedItems.length; i++) {
-                            const item: any = normalizedItems[i];
+                        for (let i = 0; i < inventoryItems.length; i++) {
+                            const item: any = inventoryItems[i];
                             const productSnapshot: any = productSnapshots[i];
                             transaction.update(productRefs[i], {
                                 stock: Number(productSnapshot.data()?.stock) - item.quantity,
