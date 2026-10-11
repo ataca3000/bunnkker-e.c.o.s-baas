@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion';
 import { useMemo, useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { AreaChart, Area, BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Users, FileText, ShieldCheck, CheckCircle, Maximize2, Share2, Map, TrendingUp, Zap, Package, ShoppingCart, Truck, Settings, ReceiptText, BookOpen, Cloud, BarChart3, Headphones, Terminal } from 'lucide-react';
 import Link from 'next/link';
 import StaffRankingWidget from '@/components/admin/StaffRankingWidget';
@@ -65,21 +65,38 @@ export default function SuperAdminDashboard({
         ['paid', 'COMPLETED', 'READY_TO_SHIP', 'OUT_FOR_DELIVERY', 'DELIVERED'].includes(o.status) && new Date(o.date).toDateString() === new Date().toDateString()
     ).length;
 
+    const [chartMode, setChartMode] = useState<'bar' | 'area'>('bar');
+
     const chartData = useMemo(() => {
         const data = [];
         for (let i = 6; i >= 0; i--) {
             const d = new Date();
             d.setDate(d.getDate() - i);
             const dateStr = d.toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric' });
+            const dayOrders = orders.filter((o: any) =>
+                ['paid', 'COMPLETED', 'READY_TO_SHIP', 'OUT_FOR_DELIVERY', 'DELIVERED'].includes(o.status) &&
+                new Date(o.date).toDateString() === d.toDateString()
+            );
+            const salesOnDate = dayOrders.reduce((sum: number, o: any) => sum + (Number(o.total) || 0), 0);
             
-            const salesOnDate = orders
-                .filter((o: any) => ['paid', 'COMPLETED', 'READY_TO_SHIP', 'OUT_FOR_DELIVERY', 'DELIVERED'].includes(o.status) && new Date(o.date).toDateString() === d.toDateString())
-                .reduce((sum: number, o: any) => sum + o.total, 0);
-            
-            data.push({ name: dateStr, ventas: salesOnDate });
+            data.push({
+                name: dateStr,
+                ventas: salesOnDate,
+                pedidos: dayOrders.length,
+                isToday: i === 0,
+            });
         }
         return data;
     }, [orders]);
+
+    const weeklyTotalSales = useMemo(
+        () => chartData.reduce((acc, item) => acc + item.ventas, 0),
+        [chartData]
+    );
+    const weeklyTotalOrders = useMemo(
+        () => chartData.reduce((acc, item) => acc + item.pedidos, 0),
+        [chartData]
+    );
 
     const avgTicket = todayOrders > 0 ? todaySales / todayOrders : 0;
     const lowStockCount = products.filter((p: any) => p.stock < 10).length;
@@ -307,31 +324,115 @@ export default function SuperAdminDashboard({
                 </div>
             )}
 
-            {/* ── Gráfico de Ventas ─────────────────────────────────────── */}
+            {/* ── Gráfico de Ventas (7 Días - Recharts BarChart) ─────────────────────────────────────── */}
             <div className="bunkker-card" style={{ marginBottom: '2.5rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
-                    <BarChart3 size={20} color="#06B6D4" />
-                    <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '800', color: '#fff' }}>Evolución de Ventas (7 Días)</h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '20px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div style={{ background: 'rgba(6, 182, 212, 0.12)', padding: '8px', borderRadius: '10px', border: '1px solid rgba(6, 182, 212, 0.25)' }}>
+                            <BarChart3 size={20} color="#06B6D4" />
+                        </div>
+                        <div>
+                            <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '800', color: '#fff' }}>
+                                Ventas de los Últimos 7 Días
+                            </h3>
+                            <span style={{ fontSize: '0.76rem', color: '#94a3b8' }}>
+                                Acumulado 7 días: <b style={{ color: '#22D3EE' }}>{formatCurrency(weeklyTotalSales)}</b> ({weeklyTotalOrders} órdenes procesadas)
+                            </span>
+                        </div>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(15, 23, 42, 0.6)', padding: '4px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                        <button
+                            type="button"
+                            onClick={() => setChartMode('bar')}
+                            style={{
+                                padding: '6px 12px',
+                                borderRadius: '7px',
+                                fontSize: '0.75rem',
+                                fontWeight: '800',
+                                border: 'none',
+                                cursor: 'pointer',
+                                backgroundColor: chartMode === 'bar' ? '#06B6D4' : 'transparent',
+                                color: chartMode === 'bar' ? '#0f172a' : '#94a3b8',
+                                transition: 'all 0.15s ease'
+                            }}
+                        >
+                            BARRAS (7D)
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setChartMode('area')}
+                            style={{
+                                padding: '6px 12px',
+                                borderRadius: '7px',
+                                fontSize: '0.75rem',
+                                fontWeight: '800',
+                                border: 'none',
+                                cursor: 'pointer',
+                                backgroundColor: chartMode === 'area' ? '#06B6D4' : 'transparent',
+                                color: chartMode === 'area' ? '#0f172a' : '#94a3b8',
+                                transition: 'all 0.15s ease'
+                            }}
+                        >
+                            CURVA TENDENCIA
+                        </button>
+                    </div>
                 </div>
+
                 <div style={{ width: '100%', height: '300px' }}>
                     <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                            <defs>
-                                <linearGradient id="colorVentas" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#06B6D4" stopOpacity={0.5}/>
-                                    <stop offset="95%" stopColor="#06B6D4" stopOpacity={0}/>
-                                </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(6, 182, 212, 0.1)" />
-                            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} dy={10} />
-                            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} tickFormatter={(val) => `$${val}`} />
-                            <Tooltip 
-                                contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(12px)', borderRadius: '12px', border: '1px solid rgba(6, 182, 212, 0.3)', boxShadow: '0 4px 20px rgba(0,0,0,0.5)', color: '#fff' }}
-                                itemStyle={{ color: '#22D3EE', fontWeight: 'bold' }}
-                                formatter={(value: any) => [formatCurrency(Number(value)), 'Ventas']}
-                            />
-                            <Area type="monotone" dataKey="ventas" stroke="#22D3EE" strokeWidth={4} fillOpacity={1} fill="url(#colorVentas)" activeDot={{ r: 6, fill: '#06B6D4', stroke: '#fff', strokeWidth: 2, style: { filter: 'drop-shadow(0px 0px 8px rgba(34,211,238,0.8))' } }} />
-                        </AreaChart>
+                        {chartMode === 'bar' ? (
+                            <BarChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+                                <defs>
+                                    <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="0%" stopColor="#22D3EE" stopOpacity={0.95} />
+                                        <stop offset="100%" stopColor="#0284C7" stopOpacity={0.65} />
+                                    </linearGradient>
+                                    <linearGradient id="barTodayGradient" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="0%" stopColor="#10B981" stopOpacity={1} />
+                                        <stop offset="100%" stopColor="#059669" stopOpacity={0.75} />
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(6, 182, 212, 0.1)" />
+                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8', fontWeight: 600 }} dy={10} />
+                                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} tickFormatter={(val) => `$${val}`} />
+                                <Tooltip
+                                    cursor={{ fill: 'rgba(6, 182, 212, 0.08)' }}
+                                    contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.92)', backdropFilter: 'blur(12px)', borderRadius: '12px', border: '1px solid rgba(6, 182, 212, 0.35)', boxShadow: '0 4px 20px rgba(0,0,0,0.5)', color: '#fff' }}
+                                    itemStyle={{ color: '#22D3EE', fontWeight: 'bold' }}
+                                    formatter={(value: any, _name: any, props: any) => [
+                                        `${formatCurrency(Number(value))} (${props?.payload?.pedidos || 0} pedidos)`,
+                                        'Ventas del Día'
+                                    ]}
+                                />
+                                <Bar dataKey="ventas" radius={[8, 8, 2, 2]} maxBarSize={54}>
+                                    {chartData.map((entry, index) => (
+                                        <Cell
+                                            key={`cell-${index}`}
+                                            fill={entry.isToday ? 'url(#barTodayGradient)' : 'url(#barGradient)'}
+                                        />
+                                    ))}
+                                </Bar>
+                            </BarChart>
+                        ) : (
+                            <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                                <defs>
+                                    <linearGradient id="colorVentas" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#06B6D4" stopOpacity={0.5}/>
+                                        <stop offset="95%" stopColor="#06B6D4" stopOpacity={0}/>
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(6, 182, 212, 0.1)" />
+                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} dy={10} />
+                                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} tickFormatter={(val) => `$${val}`} />
+                                <Tooltip 
+                                    contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(12px)', borderRadius: '12px', border: '1px solid rgba(6, 182, 212, 0.3)', boxShadow: '0 4px 20px rgba(0,0,0,0.5)', color: '#fff' }}
+                                    itemStyle={{ color: '#22D3EE', fontWeight: 'bold' }}
+                                    formatter={(value: any) => [formatCurrency(Number(value)), 'Ventas']}
+                                />
+                                <Area type="monotone" dataKey="ventas" stroke="#22D3EE" strokeWidth={4} fillOpacity={1} fill="url(#colorVentas)" activeDot={{ r: 6, fill: '#06B6D4', stroke: '#fff', strokeWidth: 2, style: { filter: 'drop-shadow(0px 0px 8px rgba(34,211,238,0.8))' } }} />
+                            </AreaChart>
+                        )}
                     </ResponsiveContainer>
                 </div>
             </div>

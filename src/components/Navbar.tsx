@@ -9,6 +9,7 @@ import { useState } from "react";
 import { usePathname } from "next/navigation";
 import CartDrawer from "./CartDrawer";
 import BarcodeScanner from "./BarcodeScanner";
+import ThemeToggle from "./ThemeToggle";
 import styles from "./Navbar.module.css";
 import { toast } from "@/lib/toast";
 
@@ -151,6 +152,8 @@ export default function Navbar() {
 
                     {/* Actions Area */}
                     <div className={styles.actionsArea}>
+                        {/* Selector de Tema */}
+                        <ThemeToggle className="mr-1" />
 
                         {/* Cart Toggle */}
                         <div className={styles.cartWrapper} onClick={() => setIsCartOpen(true)}>
@@ -223,6 +226,11 @@ export default function Navbar() {
                             <Link href="/servicios" onClick={() => setIsMenuOpen(false)} className={isActive('/servicios') ? styles.mobileLinkActive : styles.mobileLink} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Wrench size={18} /> SERVICIOS</Link>
                             <Link href="/nosotros" onClick={() => setIsMenuOpen(false)} className={isActive('/nosotros') ? styles.mobileLinkActive : styles.mobileLink} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Building size={18} /> EMPRESA</Link>
                             <Link href="/contacto" onClick={() => setIsMenuOpen(false)} className={isActive('/contacto') ? styles.mobileLinkActive : styles.mobileLink} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Phone size={18} /> CONTACTO</Link>
+
+                            <div className="pt-3 mt-3 border-t border-white/10 flex items-center justify-between px-2">
+                                <span className="text-xs font-bold text-zinc-400">Tema Visual</span>
+                                <ThemeToggle variant="segmented" />
+                            </div>
                         </div>
                     </div>
                 )}

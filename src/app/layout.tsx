@@ -103,6 +103,8 @@ export const viewport: Viewport = {
 
 import { CartProvider } from "@/context/CartContext";
 import { AuthProvider } from "@/context/AuthContext";
+import { ThemeProvider } from "@/context/ThemeContext";
+import { ThemeScript } from "@/components/ThemeScript";
 import ClickSoundProvider from "@/components/ClickSoundProvider";
 import AntiDevTools from "@/components/AntiDevTools";
 import DeviceLockScreen from "@/components/DeviceLockScreen";
@@ -123,32 +125,37 @@ export default async function RootLayout({
   const tenantId = headersList.get('x-tenant-id') || 'default';
 
   return (
-    <html lang="es" className="bg-[var(--bunkker-surface)]">
+    <html lang="es" suppressHydrationWarning className="dark bg-[var(--bunkker-surface)]">
+      <head>
+        <ThemeScript />
+      </head>
       <body className={`${inter.className} bg-[var(--bunkker-surface)] text-[var(--bunkker-ink)] antialiased font-sans`}>
         <SchemaMarkup />
         <UsbLockScreen />
         <div className="flex flex-col min-h-screen">
-          <AuthProvider>
-            <DeviceLockScreen>
-              <CartProvider>
-                <ConnectionStatus />
-                <Navbar />
-                <AdminLayout>
-                  <ClientBootGuard>
-                    {children}
-                  </ClientBootGuard>
-                </AdminLayout>
-                <AdminAsistente />
-                <ClickSoundProvider />
-                <UpdateNotification />
-                <FreemiumLockModal />
-                <Footer />
-                <ToastContainer />
-                <PWAInstallPrompt />
-                <ServiceWorkerRegister />
-              </CartProvider>
-            </DeviceLockScreen>
-          </AuthProvider>
+          <ThemeProvider>
+            <AuthProvider>
+              <DeviceLockScreen>
+                <CartProvider>
+                  <ConnectionStatus />
+                  <Navbar />
+                  <AdminLayout>
+                    <ClientBootGuard>
+                      {children}
+                    </ClientBootGuard>
+                  </AdminLayout>
+                  <AdminAsistente />
+                  <ClickSoundProvider />
+                  <UpdateNotification />
+                  <FreemiumLockModal />
+                  <Footer />
+                  <ToastContainer />
+                  <PWAInstallPrompt />
+                  <ServiceWorkerRegister />
+                </CartProvider>
+              </DeviceLockScreen>
+            </AuthProvider>
+          </ThemeProvider>
         </div>
         <CookieConsent />
       </body>

@@ -43,6 +43,7 @@ import { useCart } from '@/context/CartContext';
 import { db } from '@/lib/firebase';
 import { doc, updateDoc, onSnapshot, getDoc } from 'firebase/firestore';
 import { toast } from '@/lib/toast';
+import ThemeToggle from '@/components/ThemeToggle';
 
 
 const rolePaths: Record<string, string[]> = {
@@ -421,6 +422,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             const hasSeenPrompt = sessionStorage.getItem('terraform_update_prompt');
             if (!hasSeenPrompt) {
                 setTimeout(() => {
+                    toast.info(
+                        'Hay actualizaciones críticas disponibles. Contacta a brechaopensource para renovar tu licencia.',
+                        '📡 BUNKKER E.C.O.S. Online',
+                        10000
+                    );
                     sessionStorage.setItem('bunkker_update_prompt', 'true');
                 }, 5000);
             }
@@ -673,6 +679,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
                     {/* Status Indicators & Profile */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                        {/* Selector de Tema */}
+                        <ThemeToggle />
+
                         {/* Premium badge */}
                         <div style={{
                             display: 'flex', alignItems: 'center', gap: '6px',

@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 // Security token for Swarm P2P (In a real app, this would be validated against a central Hive registry)
 const SWARM_SECRET = process.env.INTERNAL_API_SECRET;

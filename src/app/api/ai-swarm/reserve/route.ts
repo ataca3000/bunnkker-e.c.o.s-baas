@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 const SWARM_SECRET = process.env.INTERNAL_API_SECRET;
 
 export async function POST(req: Request) {

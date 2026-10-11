@@ -7,8 +7,8 @@ import path from 'path';
 
 const COOKIE_OPTS = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === 'production' && !process.env.MACHINE_HWID,
-  sameSite: 'lax' as const,
+  secure: true,
+  sameSite: 'none' as const,
   path: '/',
   maxAge: 60 * 60 * 24, // 24 horas por sesión activa
 };

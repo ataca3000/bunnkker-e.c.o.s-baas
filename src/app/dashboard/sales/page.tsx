@@ -7,27 +7,38 @@ import { useCart, type Product } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { 
     Clock, Bell, History, User, Store, ShieldAlert, Wifi, Globe, TerminalSquare, AlertCircle, XCircle, CheckCircle2, Phone, Lock, Unlock,
-    LayoutDashboard, LogOut, ShoppingCart, Trash2, Zap, UserCheck
+    LayoutDashboard, LogOut, ShoppingCart, Trash2, Zap, UserCheck, Scale, Settings
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
+import { useBluetoothScale } from '@/hooks/useBluetoothScale';
 import { printReceiptWithWebSerial } from '@/lib/thermalPrinter';
 import { logAudit } from '@/lib/audit';
 import { toast } from '@/lib/toast';
 import { useERPStore } from '@/store/useERPStore';
 import { broadcastSync } from '@/lib/syncNotifier';
+import { playSupermarketBeep, playIncrementBeep, playErrorBeep, initAudioContextOnFirstGesture } from '@/lib/scannerAudio';
+import { saveDigitalTicket, type DigitalTicket } from '@/lib/digitalTicket';
 
 // Lazy loading de componentes pesados (cero bloqueo en el arranque del POS)
 const CorteCajaCiego = dynamic(() => import('@/components/sales/CorteCajaCiego'), { ssr: false });
 const BarcodeScanner = dynamic(() => import('@/components/BarcodeScanner'), { ssr: false });
 const PaymentModal = dynamic(() => import('@/components/sales/caja-movil/PaymentModal').then(m => m.PaymentModal), { ssr: false });
 const DeliveryModal = dynamic(() => import('@/components/sales/caja-movil/DeliveryModal').then(m => m.DeliveryModal), { ssr: false });
+const ScaleModal = dynamic(() => import('@/components/sales/caja-movil/ScaleModal').then(m => m.ScaleModal), { ssr: false });
+const TicketReceiptModal = dynamic(() => import('@/components/sales/caja-movil/TicketReceiptModal').then(m => m.TicketReceiptModal), { ssr: false });
+const TicketHistoryModal = dynamic(() => import('@/components/sales/caja-movil/TicketHistoryModal').then(m => m.TicketHistoryModal), { ssr: false });
+const PosSettingsModal = dynamic(() => import('@/components/sales/caja-movil/PosSettingsModal').then(m => m.PosSettingsModal), { ssr: false });
 
 // Componentes de Caja Móvil
 import { Catalog } from '@/components/sales/caja-movil/Catalog';
 import { Cart } from '@/components/sales/caja-movil/Cart';
+import { TactileShortcutsBar } from '@/components/sales/caja-movil/TactileShortcutsBar';
+import { DEFAULT_POS_CONFIG, type PosConfig } from '@/components/sales/caja-movil/PosSettingsModal';
 import type { OrderType } from '@/components/sales/caja-movil/Cart';
 import type { DeliveryInfo } from '@/components/sales/caja-movil/DeliveryModal';
+import { StockAlertModal, type StockIssue } from '@/components/sales/caja-movil/StockAlertModal';
+import ThemeToggle from '@/components/ThemeToggle';
 import { AnimatePresence, motion } from 'framer-motion';
 
 export default function SalesDashboard() {
@@ -51,9 +62,20 @@ export default function SalesDashboard() {
     const [orderType, setOrderType] = useState<OrderType>('local');
     const [isPaymentOpen, setIsPaymentOpen] = useState(false);
     const [isDeliveryOpen, setIsDeliveryOpen] = useState(false);
+    const [isStockAlertOpen, setIsStockAlertOpen] = useState(false);
     const [deliveryInfo, setDeliveryInfo] = useState<DeliveryInfo | undefined>();
     const [processingId, setProcessingId] = useState<string | null>(null);
     const [lastOrderData, setLastOrderData] = useState<any>(null);
+
+    // Nuevos estados para Báscula Bluetooth, Configuración de Caja, Tickets y Atajos
+    const [posConfig, setPosConfig] = useState<PosConfig>(DEFAULT_POS_CONFIG);
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [isScaleOpen, setIsScaleOpen] = useState(false);
+    const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
+    const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+    const [currentTicket, setCurrentTicket] = useState<DigitalTicket | null>(null);
+    const searchInputRef = useRef<HTMLInputElement>(null);
+    const scale = useBluetoothScale();
 
     // Assignments for pickup location (ventanilla/cajon)
     const [assignments, setAssignments] = useState<Record<string, { type: 'ventanilla' | 'cajon'; number: string }>>({});
@@ -71,6 +93,17 @@ export default function SalesDashboard() {
         return () => clearInterval(timer);
     }, []);
 
+    // Cargar configuración de POS e inicializar audio en primer gesto
+    useEffect(() => {
+        initAudioContextOnFirstGesture();
+        try {
+            const saved = localStorage.getItem('_bunkker_pos_config');
+            if (saved) {
+                setPosConfig(prev => ({ ...prev, ...JSON.parse(saved) }));
+            }
+        } catch {}
+    }, []);
+
     useEffect(() => {
         const handleBeforeUnload = (e: BeforeUnloadEvent) => {
             if (isKioskMode) {
@@ -82,77 +115,235 @@ export default function SalesDashboard() {
         return () => window.removeEventListener('beforeunload', handleBeforeUnload);
     }, [isKioskMode]);
 
-    const playBeep = () => {
-        try {
-            const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-            const oscillator = audioCtx.createOscillator();
-            const gainNode = audioCtx.createGain();
-            oscillator.type = 'sine';
-            oscillator.frequency.setValueAtTime(800, audioCtx.currentTime);
-            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
-            oscillator.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
-            oscillator.start();
-            oscillator.stop(audioCtx.currentTime + 0.1);
-        } catch (e) {
-            // Ignore audio context errors
-        }
-    };
-
-    // Escáner láser nativo (Hook global)
-    useBarcodeScanner((barcode) => {
-        if (activeTab !== 'pos') return;
-        const code = barcode.trim().toLowerCase();
-        const product = products.find(p => p.barcode?.toLowerCase() === code || p.id.toLowerCase() === code || p.name.toLowerCase() === code);
-        
-        if (product) {
-            handleAddProduct(product);
-        } else {
-            showToast('❌ Producto no encontrado: ' + barcode);
-        }
-    });
-
     const showToast = (msg: string) => {
         setBannerMessage(msg);
         setTimeout(() => setBannerMessage(null), 3000);
     };
 
+    const getAvailableStock = useCallback((prodId: string, fallbackStock?: number) => {
+        const product = products.find(p => p.id === prodId);
+        if (!product) return fallbackStock ?? 0;
+        return Math.max(0, (product.stock ?? 0) - (product.reservedStock ?? 0));
+    }, [products]);
+
+    const getStockIssues = useCallback((): StockIssue[] => {
+        const issues: StockIssue[] = [];
+        for (const item of posCart) {
+            const available = getAvailableStock(item.id, item.stock);
+            if (item.quantity > available) {
+                issues.push({
+                    item,
+                    requested: item.quantity,
+                    available,
+                    diff: item.quantity - available
+                });
+            }
+        }
+        return issues;
+    }, [posCart, getAvailableStock]);
+
+    const stockIssues = getStockIssues();
+    const hasStockIssues = stockIssues.length > 0;
+
     const handleAddProduct = (product: Product) => {
-        if (product.stock <= 0) {
-            showToast('⚠️ Producto agotado.');
+        const availableStock = getAvailableStock(product.id, product.stock);
+        if (availableStock <= 0) {
+            if (posConfig.soundEnabled) playErrorBeep(posConfig.soundVolume);
+            showToast(`⛔ Producto agotado: "${product.name}" no tiene existencias.`);
             return;
         }
-        playBeep();
-        setPosCart(prev => {
-            const existing = prev.find(i => i.id === product.id);
-            if (existing) {
-                if (existing.quantity >= product.stock) {
-                    showToast('⚠️ Stock máximo alcanzado.');
-                    return prev;
-                }
-                return prev.map(i => i.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
-            }
-            return [...prev, { ...product, quantity: 1 }];
-        });
+
+        const existing = posCart.find(i => i.id === product.id);
+        const currentQty = existing ? existing.quantity : 0;
+
+        if (currentQty + 1 > availableStock) {
+            if (posConfig.soundEnabled) playErrorBeep(posConfig.soundVolume);
+            showToast(`⛔ Stock insuficiente: Solo hay ${availableStock} unidad(es) de "${product.name}". Venta bloqueada.`);
+            return;
+        }
+
+        // Comportamiento tipo supermercado: si ya existe, pitido de incremento y +1; si es nuevo, pitido de ingreso
+        if (existing) {
+            if (posConfig.soundEnabled) playIncrementBeep(posConfig.soundVolume);
+            showToast(`⚡ PIT! +1 "${product.name}" (Total: ${existing.quantity + 1}) — $${product.price.toFixed(2)}`);
+            setPosCart(prev => prev.map(i => i.id === product.id ? { ...i, quantity: i.quantity + 1 } : i));
+        } else {
+            if (posConfig.soundEnabled) playSupermarketBeep(posConfig.soundVolume);
+            showToast(`🔔 PIT! 1 "${product.name}" agregado — $${product.price.toFixed(2)}`);
+            setPosCart(prev => [...prev, { ...product, quantity: 1 }]);
+        }
     };
 
-    const handleUpdateQuantity = (id: string, quantity: number) => {
-        const product = products.find(p => p.id === id);
-        if (product && quantity > product.stock) {
-            showToast('⚠️ Stock máximo superado.');
-            return;
+    const handleApplyWeightToItem = (productId: string, weight: number) => {
+        handleUpdateQuantity(productId, weight);
+        if (posConfig.soundEnabled) playSupermarketBeep(posConfig.soundVolume);
+        showToast(`⚖️ Peso de ${weight.toFixed(3)} ${scale.unit} aplicado al producto.`);
+    };
+
+    // Escáner láser nativo (Hook global de teclado rápido)
+    useBarcodeScanner((barcode) => {
+        if (activeTab !== 'pos') return;
+        const code = barcode.trim().toLowerCase();
+        const product = products.find(p => 
+            p.barcode?.toLowerCase() === code || 
+            p.id.toLowerCase() === code || 
+            p.name.toLowerCase() === code
+        );
+        
+        if (product) {
+            handleAddProduct(product);
+        } else {
+            if (posConfig.soundEnabled) playErrorBeep(posConfig.soundVolume);
+            showToast('❌ Código no registrado: ' + barcode);
         }
+    });
+
+    // Atajos de Teclado Globales (Hotkeys de Caja)
+    useEffect(() => {
+        const handleGlobalKeyDown = (e: KeyboardEvent) => {
+            const isTyping = e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement;
+
+            // F1 o "/" (cuando no está dentro de un input): Enfocar buscador / escáner
+            if (e.key === 'F1' || (e.key === '/' && !isTyping)) {
+                e.preventDefault();
+                searchInputRef.current?.focus();
+                return;
+            }
+
+            // F2: Cobrar en Caja
+            if (e.key === 'F2') {
+                e.preventDefault();
+                if (posCart.length > 0) {
+                    handleCheckoutClick();
+                } else {
+                    showToast('El pedido está vacío. Escanea o agrega productos.');
+                }
+                return;
+            }
+
+            // F3: Abrir Báscula Bluetooth / Serial
+            if (e.key === 'F3') {
+                e.preventDefault();
+                setIsScaleOpen(prev => !prev);
+                return;
+            }
+
+            // F4: Vaciar Carrito
+            if (e.key === 'F4') {
+                e.preventDefault();
+                if (posCart.length > 0) {
+                    if (confirm('¿Vaciar todo el pedido actual de caja?')) {
+                        setPosCart([]);
+                        showToast('Pedido vaciado.');
+                    }
+                }
+                return;
+            }
+
+            // F5: Abrir Cámara Escáner (Modo Pasillo)
+            if (e.key === 'F5') {
+                e.preventDefault();
+                setShowCameraScanner(prev => !prev);
+                return;
+            }
+
+            // F8: Abrir Historial de Tickets y Reimpresión
+            if (e.key === 'F8') {
+                e.preventDefault();
+                setIsHistoryOpen(prev => !prev);
+                return;
+            }
+
+            // F10: Abrir Corte de Caja Ciego
+            if (e.key === 'F10') {
+                e.preventDefault();
+                setShowCorteCaja(true);
+                return;
+            }
+
+            // Escape: Cerrar modales abiertos
+            if (e.key === 'Escape') {
+                setIsScaleOpen(false);
+                setShowCameraScanner(false);
+                setIsSettingsOpen(false);
+                setIsTicketModalOpen(false);
+                setIsHistoryOpen(false);
+                setIsPaymentOpen(false);
+                setIsDeliveryOpen(false);
+                setIsStockAlertOpen(false);
+            }
+        };
+
+        window.addEventListener('keydown', handleGlobalKeyDown);
+        return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+    }, [posCart, hasStockIssues]);
+
+    const handleUpdateQuantity = (id: string, quantity: number) => {
+        const availableStock = getAvailableStock(id);
+        const product = products.find(p => p.id === id);
+        const prodName = product?.name || 'Producto';
+
         if (quantity <= 0) {
             setPosCart(prev => prev.filter(i => i.id !== id));
             return;
         }
+
+        if (quantity > availableStock) {
+            showToast(`⚠️ Stock insuficiente: Solicitas ${quantity}, pero solo hay ${availableStock} disponible(s) de "${prodName}". Venta bloqueada.`);
+        }
+
         setPosCart(prev => prev.map(i => i.id === id ? { ...i, quantity } : i));
+    };
+
+    const handleAdjustStockItem = (productId: string, newQuantity: number) => {
+        if (newQuantity <= 0) {
+            setPosCart(prev => prev.filter(i => i.id !== productId));
+        } else {
+            setPosCart(prev => prev.map(i => i.id === productId ? { ...i, quantity: newQuantity } : i));
+        }
+        showToast('Cantidad ajustada al stock disponible.');
+    };
+
+    const handleRemoveStockItem = (productId: string) => {
+        setPosCart(prev => prev.filter(i => i.id !== productId));
+        showToast('Producto eliminado del pedido.');
+    };
+
+    const handleAdjustAllStock = () => {
+        setPosCart(prev => {
+            return prev.map(item => {
+                const available = getAvailableStock(item.id, item.stock);
+                if (item.quantity > available) {
+                    return available > 0 ? { ...item, quantity: available } : null;
+                }
+                return item;
+            }).filter(Boolean) as (Product & { quantity: number })[];
+        });
+        setIsStockAlertOpen(false);
+        showToast('Productos ajustados al stock físico disponible.');
+    };
+
+    const handleRemoveAllDeficits = () => {
+        setPosCart(prev => {
+            return prev.filter(item => {
+                const available = getAvailableStock(item.id, item.stock);
+                return item.quantity <= available;
+            });
+        });
+        setIsStockAlertOpen(false);
+        showToast('Se eliminaron los productos sin existencias suficientes.');
     };
 
     const posTotal = posCart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
     const handleCheckoutClick = () => {
+        const issues = getStockIssues();
+        if (issues.length > 0) {
+            setIsStockAlertOpen(true);
+            showToast(`⛔ Venta bloqueada: ${issues.length} producto(s) no tienen suficiente stock.`);
+            return;
+        }
+
         if (orderType === 'delivery') {
             setIsDeliveryOpen(true);
         } else {
@@ -168,6 +359,16 @@ export default function SalesDashboard() {
 
     const handleConfirmPayment = async (amountReceived: number, change: number, evidencePhoto?: string) => {
         if (posCart.length === 0 || processingId === 'checkout') return;
+
+        // Doble validación de seguridad previa al cobro
+        const issues = getStockIssues();
+        if (issues.length > 0) {
+            setIsPaymentOpen(false);
+            setIsStockAlertOpen(true);
+            showToast(`⛔ Venta bloqueada: Stock insuficiente detectado en ${issues.length} producto(s).`);
+            return;
+        }
+
         setProcessingId('checkout');
 
         const orderId = `TKT-${Date.now().toString().slice(-6)}`;
@@ -266,22 +467,45 @@ export default function SalesDashboard() {
                 metadata: { orderId, total: posTotal, items: posCart.length },
             }).catch(() => {});
 
-            // Print native ticket
-            try {
-                await printReceiptWithWebSerial({
-                    businessName: siteConfig?.businessName || 'Caja Móvil',
-                    orderId: orderId,
-                    items: posCart.map(i => ({ name: i.name, quantity: i.quantity, price: i.price })),
-                    total: posTotal,
-                    date: new Date(),
-                    customerName: cName as string
-                });
-            } catch (e) {
-                console.warn('Fallback print window');
-                window.print();
+            // ─── RESGUARDO DE TICKET (COPIA CLIENTE + COPIA VENDEDOR) ───
+            const savedTicket = saveDigitalTicket(
+                'caja_1',
+                profile?.displayName || 'Cajero de Turno',
+                orderId,
+                posCart,
+                posTotal,
+                {
+                    amountReceived,
+                    change,
+                    paymentMethod: 'EFECTIVO EN CAJA',
+                    customerName: cName as string,
+                    vendedorId: profile?.uid || 'LOCAL',
+                    vendedorName: profile?.displayName || 'Cajero',
+                    evidencePhoto
+                }
+            );
+            setCurrentTicket(savedTicket);
+
+            // Impresión nativa ESC/POS por Web Serial si está configurado
+            if (posConfig.autoPrintReceipt) {
+                try {
+                    await printReceiptWithWebSerial({
+                        businessName: siteConfig?.businessName || posConfig.cajaName || 'BUNKKER POS',
+                        orderId: orderId,
+                        items: posCart.map(i => ({ name: i.name, quantity: i.quantity, price: i.price })),
+                        total: posTotal,
+                        date: new Date(),
+                        customerName: cName as string
+                    });
+                } catch (e) {
+                    console.warn('Impresora serial no conectada, mostrando visor de ticket digital.');
+                }
             }
 
-            showToast('¡Venta completada exitosamente!');
+            // Abrir visor de comprobantes duales (Copia Cliente + Copia Tienda + Factura SAT)
+            setIsTicketModalOpen(true);
+
+            showToast('¡Venta completada! Ticket resguardado en bitácora.');
             setPosCart([]);
             setIsPaymentOpen(false);
             setDeliveryInfo(undefined);
@@ -446,6 +670,53 @@ export default function SalesDashboard() {
                 </div>
 
                 <div className="flex items-center gap-2 sm:gap-3 text-zinc-300">
+                    <ThemeToggle className="text-zinc-300" />
+
+                    {/* Botón Báscula Bluetooth / Serial */}
+                    <button 
+                        onClick={() => setIsScaleOpen(true)}
+                        className={`transition-all flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg border text-xs font-bold ${
+                            scale.isConnected 
+                                ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40 shadow-[0_0_12px_rgba(6,182,212,0.3)]' 
+                                : 'bg-white/5 hover:text-white border-white/10'
+                        }`}
+                        title="Báscula de Pesaje BLE / Serial (F3)"
+                    >
+                        <Scale className="h-4 w-4 text-cyan-400" />
+                        <span className="hidden md:inline font-mono">
+                            {scale.isConnected ? `${scale.weight.toFixed(3)} ${scale.unit}` : 'BÁSCULA'}
+                        </span>
+                    </button>
+
+                    {/* Botón Bitácora / Historial de Tickets */}
+                    <button 
+                        onClick={() => setIsHistoryOpen(true)}
+                        className="hover:text-white transition-colors flex items-center gap-1 bg-white/5 px-2.5 sm:px-3 py-1.5 rounded-lg border border-white/10 text-xs font-bold"
+                        title="Historial de Tickets y Reimpresión (F8)"
+                    >
+                        <History className="h-4 w-4 text-amber-400" />
+                        <span className="hidden sm:inline">TICKETS</span>
+                    </button>
+
+                    {/* Botón Configuración de Caja */}
+                    <button 
+                        onClick={() => setIsSettingsOpen(true)}
+                        className="hover:text-white transition-colors flex items-center gap-1 bg-white/5 px-2 sm:px-2.5 py-1.5 rounded-lg border border-white/10 text-xs font-bold"
+                        title="Configuración de Caja y Panel"
+                    >
+                        <Settings className="h-4 w-4 text-zinc-400 hover:text-cyan-300" />
+                    </button>
+
+                    {hasStockIssues && (
+                        <button
+                            onClick={() => setIsStockAlertOpen(true)}
+                            className="px-3 py-1.5 rounded-lg bg-red-600/30 border-2 border-red-500/80 text-red-300 hover:bg-red-600/40 text-xs font-black tracking-wider flex items-center gap-1.5 shadow-[0_0_15px_rgba(239,68,68,0.5)] animate-pulse"
+                            title="Venta bloqueada: Clic para resolver faltantes de stock"
+                        >
+                            <span className="w-2 h-2 rounded-full bg-red-400 animate-ping"></span>
+                            STOCK INSUFICIENTE ({stockIssues.length})
+                        </button>
+                    )}
                     <div className="hidden lg:flex items-center gap-1.5 text-xs bg-black/40 border border-white/5 py-1.5 px-3 rounded-full">
                         <Clock className="h-3.5 w-3.5 text-zinc-400" />
                         <span className="font-mono">{currentTime}</span>
@@ -504,6 +775,29 @@ export default function SalesDashboard() {
                 </div>
             </header>
 
+            {/* Barra de Atajos Táctiles y Teclado para Pantallas Touch y Mostrador */}
+            {posConfig.showTouchShortcuts && activeTab === 'pos' && (
+                <TactileShortcutsBar
+                    onSearchClick={() => searchInputRef.current?.focus()}
+                    onCobrarClick={handleCheckoutClick}
+                    onScaleClick={() => setIsScaleOpen(true)}
+                    onClearClick={() => {
+                        if (posCart.length > 0 && confirm('¿Vaciar todo el pedido actual de caja?')) {
+                            setPosCart([]);
+                            showToast('Pedido vaciado.');
+                        }
+                    }}
+                    onCameraClick={() => setShowCameraScanner(true)}
+                    onHistoryClick={() => setIsHistoryOpen(true)}
+                    onCorteClick={() => setShowCorteCaja(true)}
+                    onSettingsClick={() => setIsSettingsOpen(true)}
+                    canCobrar={posCart.length > 0 && !hasStockIssues}
+                    scaleWeight={scale.weight}
+                    scaleUnit={scale.unit}
+                    isScaleConnected={scale.isConnected}
+                />
+            )}
+
             {/* Main Content Workspace */}
             <main className="flex-1 flex flex-col md:flex-row overflow-hidden relative w-full h-full z-10">
                 
@@ -513,10 +807,13 @@ export default function SalesDashboard() {
                         <div className="flex-[3] md:flex-[2] lg:flex-[3] h-full overflow-hidden border-r border-white/10 bg-white/[0.02]">
                             <Catalog 
                                 products={products}
+                                cartItems={posCart}
                                 onAddProduct={handleAddProduct}
                                 onOpenScanner={() => setShowCameraScanner(true)}
                                 searchTerm={posSearch}
                                 setSearchTerm={setPosSearch}
+                                searchInputRef={searchInputRef}
+                                showAisleInfo={posConfig.showAisleInfo}
                             />
                         </div>
 
@@ -524,6 +821,7 @@ export default function SalesDashboard() {
                         <div className={`flex-[2] md:flex-1 h-[45vh] md:h-full transition-transform duration-300 ease-in-out border-t border-white/10 md:border-t-0 md:relative absolute bottom-0 left-0 right-0 md:translate-y-0 ${posCart.length > 0 ? 'translate-y-0 z-20 shadow-[0_-10px_30px_rgba(0,0,0,0.5)] md:shadow-none' : 'translate-y-full md:translate-y-0 z-0'}`}>
                             <Cart 
                                 items={posCart}
+                                products={products}
                                 orderType={orderType}
                                 setOrderType={setOrderType}
                                 updateQuantity={handleUpdateQuantity}
@@ -811,26 +1109,79 @@ export default function SalesDashboard() {
                 orderType={orderType}
                 onConfirm={handleConfirmPayment}
                 isProcessing={processingId === 'checkout'}
+                hasStockIssues={hasStockIssues}
+                stockIssuesCount={stockIssues.length}
+            />
+
+            <StockAlertModal
+                isOpen={isStockAlertOpen}
+                onClose={() => setIsStockAlertOpen(false)}
+                issues={stockIssues}
+                onAdjustItem={handleAdjustStockItem}
+                onRemoveItem={handleRemoveStockItem}
+                onAdjustAll={handleAdjustAllStock}
+                onRemoveAllDeficits={handleRemoveAllDeficits}
             />
 
             {showCameraScanner && (
                 <BarcodeScanner 
                     isOpen={showCameraScanner} 
                     onClose={() => setShowCameraScanner(false)} 
+                    continuousModeDefault={true}
                     onScanSuccess={(decodedText) => {
-                        setPosSearch(decodedText);
-                        setShowCameraScanner(false);
-                        // Disparamos evento simulado de búsqueda
-                        setTimeout(() => {
-                            const code = decodedText.trim().toLowerCase();
-                            const product = products.find(p => p.barcode?.toLowerCase() === code || p.id.toLowerCase() === code || p.name.toLowerCase() === code);
-                            if (product) handleAddProduct(product);
-                            else showToast('❌ Producto no encontrado.');
-                            setPosSearch('');
-                        }, 200);
+                        const code = decodedText.trim().toLowerCase();
+                        const product = products.find(p => p.barcode?.toLowerCase() === code || p.id.toLowerCase() === code || p.name.toLowerCase() === code);
+                        if (product) {
+                            handleAddProduct(product);
+                        } else {
+                            if (posConfig.soundEnabled) playErrorBeep(posConfig.soundVolume);
+                            showToast('❌ Producto no encontrado: ' + decodedText);
+                        }
                     }} 
                 />
             )}
+
+            {/* Modal de Báscula Electrónica BLE / Serial */}
+            <ScaleModal
+                isOpen={isScaleOpen}
+                onClose={() => setIsScaleOpen(false)}
+                scale={scale}
+                cartItems={posCart}
+                onApplyWeightToItem={handleApplyWeightToItem}
+            />
+
+            {/* Modal de Comprobante / Ticket Dual (Copia Cliente + Copia Tienda/Vendedor + Factura SAT) */}
+            <TicketReceiptModal
+                isOpen={isTicketModalOpen}
+                onClose={() => setIsTicketModalOpen(false)}
+                ticket={currentTicket}
+                siteConfig={siteConfig}
+                cajaId="caja_1"
+            />
+
+            {/* Modal de Bitácora e Historial de Tickets de Caja */}
+            <TicketHistoryModal
+                isOpen={isHistoryOpen}
+                onClose={() => setIsHistoryOpen(false)}
+                cajaId="caja_1"
+                onSelectTicket={(ticket) => {
+                    setCurrentTicket(ticket);
+                    setIsTicketModalOpen(true);
+                }}
+            />
+
+            {/* Modal de Configuración de Caja y Panel */}
+            <PosSettingsModal
+                isOpen={isSettingsOpen}
+                onClose={() => setIsSettingsOpen(false)}
+                config={posConfig}
+                onSaveConfig={(newConfig) => {
+                    setPosConfig(newConfig);
+                    try {
+                        localStorage.setItem('_bunkker_pos_config', JSON.stringify(newConfig));
+                    } catch {}
+                }}
+            />
 
             {/* Modal Corte de Caja Ciego */}
             <CorteCajaCiego 

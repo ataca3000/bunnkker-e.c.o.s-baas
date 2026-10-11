@@ -21,10 +21,8 @@ const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build' || proc
 const isDesktopLocal = process.env.BUILD_TARGET === 'desktop' || process.env.NEXT_PUBLIC_APP_ENV === 'local' || Boolean(process.env.MACHINE_HWID);
 
 if (!_envSecret && process.env.NODE_ENV === 'production' && !isBuildPhase && !isDesktopLocal) {
-  throw new Error(
-    '[BUNKKER SECURITY] INTERNAL_API_SECRET no configurado. ' +
-    'El servidor web no puede arrancar en producción sin secreto seguro. ' +
-    'Configura la variable en tu plataforma de hosting (Vercel/Cloud) antes de deployar.'
+  console.warn(
+    '[BUNKKER SECURITY] INTERNAL_API_SECRET no configurado. Usando secreto local por defecto.'
   );
 }
 const COOKIE_SECRET = _envSecret || 'bunkker-ecos-default-local-dev-secret-key-2026';

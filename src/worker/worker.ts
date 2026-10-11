@@ -1,11 +1,9 @@
 import { config } from 'dotenv';
 config({ path: '.env.local' });
 
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import { initializeApp } from 'firebase/app';
-import { getFirestore, doc, setDoc, getDoc, runTransaction, disableNetwork, enableNetwork } from 'firebase/firestore';
-
-const prisma = new PrismaClient();
+import { getFirestore, doc, setDoc, updateDoc, increment, getDoc, disableNetwork, enableNetwork } from 'firebase/firestore';
 
 // Configuración leída de .env.local
 const firebaseConfig = {
@@ -24,10 +22,6 @@ const db = getFirestore(app);
 let _networkOk = true;
 let _reconnectBackoffMs = 2_000;
 const MAX_BACKOFF_MS = 120_000; // 2 minutos máximo
-let _reconnectPromise: Promise<void> | null = null;
-const MAX_TASK_RETRIES = 8;
-const BASE_TASK_RETRY_MS = 15_000;
-const MAX_TASK_RETRY_MS = 15 * 60_000;
 
 /** Detecta si un error es de red transitoria (TCP abortado, wsarecv, etc.) */
 function isNetworkError(err: any): boolean {
@@ -46,30 +40,18 @@ function isNetworkError(err: any): boolean {
 
 /** Reconecta Firestore con backoff exponencial */
 async function reconnectFirestore(): Promise<void> {
-  if (_reconnectPromise) return _reconnectPromise;
-
+  console.warn(`⚠️  [Worker] Red cortó. Reconectando en ${_reconnectBackoffMs / 1000}s...`);
   _networkOk = false;
-  _reconnectPromise = (async () => {
-    while (!_networkOk) {
-      const delayMs = _reconnectBackoffMs;
-      console.warn(`⚠️ [Worker] Firestore no disponible; nuevo intento en ${Math.ceil(delayMs / 1000)}s.`);
-      await new Promise(r => setTimeout(r, delayMs));
-      try {
-        await disableNetwork(db);
-        await enableNetwork(db);
-        _networkOk = true;
-        _reconnectBackoffMs = 2_000;
-        console.log('✅ [Worker] Transporte Firestore reactivado; se reanudará la cola.');
-      } catch (err) {
-        console.error('[Worker] Falló la reconexión de Firestore:', err);
-        _reconnectBackoffMs = Math.min(_reconnectBackoffMs * 2, MAX_BACKOFF_MS);
-      }
-    }
-  })().finally(() => {
-    _reconnectPromise = null;
-  });
-
-  return _reconnectPromise;
+  await new Promise(r => setTimeout(r, _reconnectBackoffMs));
+  try {
+    await disableNetwork(db);
+    await enableNetwork(db);
+    _networkOk = true;
+    _reconnectBackoffMs = 2_000; // reset
+    console.log('✅ [Worker] Reconectado a Firebase.');
+  } catch {
+    _reconnectBackoffMs = Math.min(_reconnectBackoffMs * 2, MAX_BACKOFF_MS);
+  }
 }
 
 console.log("🚀 [Worker] Iniciando Background Sync Worker...");
@@ -80,19 +62,13 @@ async function processQueue() {
 
     try {
         // 1. Buscar registros pendientes o que fallaron anteriormente
-        const now = new Date();
         const pendingTasks = await prisma.syncQueue.findMany({
             where: {
-                status: { in: ['PENDING', 'FAILED'] },
-                OR: [
-                    { processAfter: null },
-                    { processAfter: { lte: now } }
-                ]
+                status: { in: ['PENDING', 'FAILED'] }
             },
-            orderBy: [
-                { createdAt: 'asc' },
-                { id: 'asc' }
-            ],
+            orderBy: {
+                createdAt: 'asc'
+            },
             take: 10 // Procesar en lotes de 10
         });
 
@@ -106,91 +82,32 @@ async function processQueue() {
         for (const task of pendingTasks) {
             console.log(`[Worker] Procesando tarea ${task.id} - ${task.action} en ${task.collection}`);
             
-            // Reclamo atómico: evita que dos workers procesen la misma tarea a la vez.
-            const claim = await prisma.syncQueue.updateMany({
-                where: { id: task.id, status: task.status },
+            // Cambiar a PROCESSING para evitar colisiones
+            await prisma.syncQueue.update({
+                where: { id: task.id },
                 data: { status: 'PROCESSING' }
             });
-            if (claim.count === 0) continue;
 
             try {
                 const payload = JSON.parse(task.payload);
 
                 if (task.collection === 'orders' && task.action === 'CREATE') {
-                    const docId = task.documentId || payload.localOrderId || task.id;
-                    const orderRef = doc(db, 'orders', docId);
-                    // El recibo evita descontar inventario dos veces si el worker se cae
-                    // después de confirmar la venta en Firestore y antes de borrar la cola local.
-                    const receiptRef = doc(db, 'sync_receipts', docId);
-                    const items = Array.isArray(payload.items) ? payload.items : [];
-                    const normalizedItems = items.map((item: any) => ({
-                        id: String(item.id || item.productId || ''),
-                        quantity: Number(item.quantity ?? item.cantidad)
-                    }));
-
-                    if (normalizedItems.length === 0 || normalizedItems.some((item: any) =>
-                        !item.id || !Number.isSafeInteger(item.quantity) || item.quantity <= 0
-                    )) {
-                        throw new Error('La venta contiene productos o cantidades inválidas; no se sincronizó.');
-                    }
-
-                    // Consolidar líneas repetidas del mismo producto para no calcular
-                    // varias veces el stock usando la misma lectura inicial.
-                    const inventoryItems = Array.from(
-                        normalizedItems.reduce((totals: Map<string, number>, item: any) => {
-                            totals.set(item.id, (totals.get(item.id) || 0) + item.quantity);
-                            return totals;
-                        }, new Map<string, number>()),
-                        ([id, quantity]) => ({ id, quantity })
-                    );
-
-                    if (inventoryItems.some(item => !Number.isSafeInteger(item.quantity))) {
-                        throw new Error('La cantidad acumulada de un producto excede el límite permitido.');
-                    }
-
-                    await runTransaction(db, async (transaction) => {
-                        const receipt = await transaction.get(receiptRef);
-                        if (receipt.exists()) return; // Venta ya aplicada: operación idempotente.
-
-                        const productRefs = inventoryItems.map((item: any) => doc(db, 'products', item.id));
-                        const productSnapshots = [];
-                        for (const productRef of productRefs) {
-                            productSnapshots.push(await transaction.get(productRef));
-                        }
-
-                        for (let i = 0; i < inventoryItems.length; i++) {
-                            const productSnapshot: any = productSnapshots[i];
-                            const item: any = inventoryItems[i];
-                            if (!productSnapshot.exists()) {
-                                throw new Error(`No existe el producto ${item.id}; se conserva la tarea para revisión/reintento.`);
-                            }
-                            const currentStock = Number(productSnapshot.data()?.stock);
-                            if (!Number.isFinite(currentStock) || currentStock < item.quantity) {
-                                throw new Error(`Stock insuficiente o inválido para el producto ${item.id}; venta ${docId} no aplicada.`);
-                            }
-                        }
-
-                        transaction.set(orderRef, {
-                            ...payload,
-                            syncedAt: new Date().toISOString()
-                        });
-
-                        for (let i = 0; i < inventoryItems.length; i++) {
-                            const item: any = inventoryItems[i];
-                            const productSnapshot: any = productSnapshots[i];
-                            transaction.update(productRefs[i], {
-                                stock: Number(productSnapshot.data()?.stock) - item.quantity,
-                                syncedAt: new Date().toISOString()
-                            });
-                        }
-
-                        transaction.set(receiptRef, {
-                            orderId: docId,
-                            localOrderId: payload.localOrderId || null,
-                            appliedAt: new Date().toISOString(),
-                            itemCount: normalizedItems.length
-                        });
+                    const docId = task.documentId || task.id;
+                    await setDoc(doc(db, 'orders', docId), {
+                        ...payload,
+                        syncedAt: new Date().toISOString()
                     });
+
+                    if (payload.items && Array.isArray(payload.items)) {
+                        for (const item of payload.items) {
+                            try {
+                                await updateDoc(doc(db, 'products', item.id), {
+                                    stock: increment(-item.quantity),
+                                    syncedAt: new Date().toISOString()
+                                });
+                            } catch (err) {}
+                        }
+                    }
 
                     if (payload.localOrderId) {
                         await prisma.order.update({
@@ -261,12 +178,6 @@ async function processQueue() {
 
                 console.log(`[Worker] ✅ Tarea ${task.id} completada y eliminada.`);
             } catch (err: any) {
-                // Si Firestore falla, detener temporalmente el worker y reconectar con backoff.
-                // La tarea permanece en la cola con processAfter; no se pierde la operación.
-                if (isNetworkError(err)) {
-                    void reconnectFirestore();
-                }
-
                 // P2025 = Record to update/delete not found (ya lo procesó otro hilo)
                 if (err.code === 'P2025') {
                     console.log(`[Worker] ⚠️ Tarea ${task.id} ya no existe (procesada por otro hilo).`);
@@ -285,30 +196,14 @@ async function processQueue() {
                         } catch (e) {}
                     }
 
-                    const nextRetryCount = (task.retryCount || 0) + 1;
-                    const permanentlyFailed = nextRetryCount >= MAX_TASK_RETRIES;
-                    const backoffMs = Math.min(
-                        BASE_TASK_RETRY_MS * (2 ** Math.max(0, nextRetryCount - 1)),
-                        MAX_TASK_RETRY_MS
-                    );
-                    const jitterMs = Math.floor(Math.random() * Math.min(backoffMs * 0.2, 5_000));
-
                     await prisma.syncQueue.update({
                         where: { id: task.id },
-                        data: {
-                            status: permanentlyFailed ? 'FAILED_PERMANENT' : 'FAILED',
+                        data: { 
+                            status: 'FAILED',
                             payload: nextPayload,
-                            errorMsg: String(err?.message || err).slice(0, 2_000),
-                            retryCount: nextRetryCount,
-                            processAfter: permanentlyFailed ? null : new Date(Date.now() + backoffMs + jitterMs)
+                            errorMsg: err.message
                         }
                     });
-
-                    if (permanentlyFailed) {
-                        console.error(`[Worker] ⛔ Tarea ${task.id} agotó ${MAX_TASK_RETRIES} intentos y requiere revisión manual.`);
-                    } else {
-                        console.warn(`[Worker] Reintento ${nextRetryCount}/${MAX_TASK_RETRIES} de ${task.id} programado en ${Math.ceil((backoffMs + jitterMs) / 1000)}s.`);
-                    }
                 } catch (updateErr: any) {
                     if (updateErr.code !== 'P2025') {
                         console.error(`[Worker] Error crítico al actualizar tarea a FAILED:`, updateErr.message);

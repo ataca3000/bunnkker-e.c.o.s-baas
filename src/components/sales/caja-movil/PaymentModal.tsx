@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, CheckCircle2, DollarSign, Camera } from 'lucide-react';
+import { X, CheckCircle2, DollarSign, Camera, AlertOctagon } from 'lucide-react';
 import type { OrderType } from './Cart';
 
 interface PaymentModalProps {
@@ -9,9 +9,11 @@ interface PaymentModalProps {
   orderType: OrderType;
   onConfirm: (amountReceived: number, change: number, evidencePhoto?: string) => void;
   isProcessing: boolean;
+  hasStockIssues?: boolean;
+  stockIssuesCount?: number;
 }
 
-export function PaymentModal({ isOpen, onClose, total, orderType, onConfirm, isProcessing }: PaymentModalProps) {
+export function PaymentModal({ isOpen, onClose, total, orderType, onConfirm, isProcessing, hasStockIssues = false, stockIssuesCount = 0 }: PaymentModalProps) {
   const [received, setReceived] = useState<string>('');
   const [evidencePhoto, setEvidencePhoto] = useState<string>('');
 
@@ -151,15 +153,39 @@ export function PaymentModal({ isOpen, onClose, total, orderType, onConfirm, isP
              </div>
           </div>
 
+          {/* Alerta de bloqueo por stock */}
+          {hasStockIssues && (
+            <div className="bg-red-950/80 border-2 border-red-500 rounded-xl p-3.5 flex items-start gap-3 text-red-200 shadow-[0_0_20px_rgba(239,68,68,0.3)] animate-pulse">
+              <AlertOctagon className="h-5 w-5 text-red-400 shrink-0 mt-0.5" />
+              <div className="text-xs">
+                <span className="font-black text-white uppercase tracking-wider block">
+                  Venta Bloqueada: Stock Insuficiente
+                </span>
+                <span className="text-red-200/90 block mt-0.5">
+                  Hay {stockIssuesCount} producto(s) cuya cantidad supera el inventario disponible. Cierra este modal para corregir las cantidades antes de cobrar.
+                </span>
+              </div>
+            </div>
+          )}
+
           <button
             onClick={handleConfirm}
-            disabled={isProcessing}
-            className="w-full py-4 rounded-xl flex items-center justify-center text-lg font-bold transition-all relative overflow-hidden bg-green-600 text-white hover:bg-green-500 shadow-[0_0_20px_rgba(34,197,94,0.4)] border border-green-500/50"
+            disabled={isProcessing || hasStockIssues}
+            className={`w-full py-4 rounded-xl flex items-center justify-center text-lg font-bold transition-all relative overflow-hidden ${
+              hasStockIssues
+                ? 'bg-zinc-800 text-zinc-500 border border-red-500/30 cursor-not-allowed'
+                : 'bg-green-600 text-white hover:bg-green-500 shadow-[0_0_20px_rgba(34,197,94,0.4)] border border-green-500/50'
+            }`}
           >
             {isProcessing ? (
               <span className="flex items-center gap-2">
                 <span className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin"></span>
                 Registrando Pago...
+              </span>
+            ) : hasStockIssues ? (
+              <span className="flex items-center gap-2 text-red-300">
+                <AlertOctagon className="h-5 w-5 text-red-400" />
+                COBRO BLOQUEADO (STOCK INSUFICIENTE)
               </span>
             ) : (
               <span className="flex items-center gap-2">

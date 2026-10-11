@@ -24,7 +24,7 @@ function getCookieOpts(request?: NextRequest) {
   return {
     httpOnly: true,
     secure: isHttps, // Solo exigir cookie segura si la conexión es HTTPS (evita rechazos en HTTP LAN 192.168.x.x)
-    sameSite: 'lax' as const,
+    sameSite: (isHttps ? 'none' : 'lax') as 'none' | 'lax', // En HTTPS / iFrame se requiere 'none' para que la sesión persista
     path: '/',
     maxAge: 60 * 60 * 24, // 24 horas
   };
@@ -158,32 +158,40 @@ export async function POST(request: NextRequest) {
 
     // ── 3. VALIDACIÓN DE CREDENCIALES (PIN / ID_TOKEN) ──────────────────────
     if (pin) {
-      // Validar que el PIN/Código sea de máximo 4 caracteres alfanuméricos
+      // Validar que el PIN/Código sea de 1 a 6 caracteres alfanuméricos
       const rawPin = pin.trim();
       const cleanPin = rawPin.toUpperCase();
-      if (!/^[A-Za-z0-9]{1,4}$/.test(rawPin)) {
+      if (!/^[A-Za-z0-9]{1,6}$/.test(rawPin)) {
         await throttleDelay();
         return NextResponse.json(
-          { success: false, error: 'Formato de PIN/Código inválido. Debe contener como máximo 4 caracteres alfanuméricos.' },
+          { success: false, error: 'Formato de PIN/Código inválido. Debe contener entre 1 y 6 caracteres alfanuméricos.' },
           { status: 400 }
         );
       }
 
       const pinSha = hashPinSha256(cleanPin);
       const rawPinSha = hashPinSha256(rawPin);
+      const strippedPin = cleanPin.startsWith('A') ? cleanPin.slice(1) : cleanPin;
+      const strippedPinSha = hashPinSha256(strippedPin);
+      const prefixedPin = cleanPin.startsWith('A') ? cleanPin : `A${cleanPin}`;
+      const prefixedPinSha = hashPinSha256(prefixedPin);
 
       // Búsqueda del usuario por PIN hasheado (o fallback legacy)
       let user: any = null;
       try {
         user = await prisma.user.findFirst({ 
           where: { 
-            pin: { in: [pinSha, rawPinSha, cleanPin, rawPin] },
+            pin: { in: [pinSha, rawPinSha, cleanPin, rawPin, strippedPinSha, strippedPin, prefixedPinSha, prefixedPin] },
             active: true 
           } 
         });
 
         // Si no existe el usuario en la BD pero es uno de los PINs iniciales predeterminados
-        const defaultRoleInfo = INITIAL_STAFF_PINS[cleanPin] || INITIAL_STAFF_PINS[rawPin] || INITIAL_STAFF_PINS[rawPin.toLowerCase()];
+        const defaultRoleInfo = INITIAL_STAFF_PINS[cleanPin] || 
+                                INITIAL_STAFF_PINS[strippedPin] || 
+                                INITIAL_STAFF_PINS[prefixedPin] || 
+                                INITIAL_STAFF_PINS[rawPin] || 
+                                INITIAL_STAFF_PINS[rawPin.toLowerCase()];
         if (!user && defaultRoleInfo) {
           const initialPinHash = await bcrypt.hash(cleanPin, SALT_ROUNDS);
           
@@ -208,7 +216,11 @@ export async function POST(request: NextRequest) {
         }
       } catch (dbErr) {
         console.warn("[AUTH SESSION] Fallback a PINs predefinidos por error de BD:", dbErr);
-        const defaultRoleInfo = INITIAL_STAFF_PINS[cleanPin] || INITIAL_STAFF_PINS[rawPin] || INITIAL_STAFF_PINS[rawPin.toLowerCase()];
+        const defaultRoleInfo = INITIAL_STAFF_PINS[cleanPin] || 
+                                INITIAL_STAFF_PINS[strippedPin] || 
+                                INITIAL_STAFF_PINS[prefixedPin] || 
+                                INITIAL_STAFF_PINS[rawPin] || 
+                                INITIAL_STAFF_PINS[rawPin.toLowerCase()];
         if (defaultRoleInfo) {
           user = {
             id: `demo-${defaultRoleInfo.role}`,
@@ -224,13 +236,20 @@ export async function POST(request: NextRequest) {
       }
 
       if (user.pinHash) {
-        // Verificación de seguridad con bcrypt (admite limpia o raw)
+        // Verificación de seguridad con bcrypt (admite limpia, stripped, prefixed o raw)
         let match = await bcrypt.compare(cleanPin, user.pinHash);
+        if (!match && strippedPin !== cleanPin) {
+          match = await bcrypt.compare(strippedPin, user.pinHash);
+        }
+        if (!match && prefixedPin !== cleanPin) {
+          match = await bcrypt.compare(prefixedPin, user.pinHash);
+        }
         if (!match && cleanPin !== rawPin) {
           match = await bcrypt.compare(rawPin, user.pinHash);
         }
         // Fallback si el PIN coincide directamente en el campo 'pin' de Prisma
-        if (!match && (user.pin === pinSha || user.pin === rawPinSha || user.pin === cleanPin || user.pin === rawPin)) {
+        const candidateHashes = [pinSha, rawPinSha, cleanPin, rawPin, strippedPinSha, strippedPin, prefixedPinSha, prefixedPin];
+        if (!match && candidateHashes.includes(user.pin)) {
           match = true;
         }
         if (!match) {

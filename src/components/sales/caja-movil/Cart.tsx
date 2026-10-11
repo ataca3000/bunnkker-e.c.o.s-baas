@@ -1,11 +1,12 @@
 import React from 'react';
-import { Minus, Plus, Trash2, Truck, Store, X, Package2 } from 'lucide-react';
+import { Minus, Plus, Trash2, Truck, Store, X, Package2, AlertTriangle, AlertOctagon, CheckCircle2 } from 'lucide-react';
 import type { Product } from '@/context/CartContext';
 
 export type OrderType = 'local' | 'delivery';
 
 interface CartProps {
   items: (Product & { quantity: number })[];
+  products?: Product[];
   orderType: OrderType;
   setOrderType: (type: OrderType) => void;
   updateQuantity: (id: string, qty: number) => void;
@@ -14,9 +15,21 @@ interface CartProps {
   onClear: () => void;
 }
 
-export function Cart({ items, orderType, setOrderType, updateQuantity, removeItem, onCheckout, onClear }: CartProps) {
+export function Cart({ items, products = [], orderType, setOrderType, updateQuantity, removeItem, onCheckout, onClear }: CartProps) {
   const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
+
+  const getAvailableStock = (item: Product) => {
+    const liveProduct = products.find(p => p.id === item.id) || item;
+    return Math.max(0, (liveProduct.stock ?? item.stock ?? 0) - (liveProduct.reservedStock ?? 0));
+  };
+
+  const stockExceededItems = items.filter(item => {
+    const available = getAvailableStock(item);
+    return item.quantity > available;
+  });
+
+  const hasStockBlocked = stockExceededItems.length > 0;
 
   const handleInputChange = (item: any, e: React.ChangeEvent<HTMLInputElement>) => {
     let val = item.isBulk ? parseFloat(e.target.value) : parseInt(e.target.value, 10);
@@ -34,6 +47,12 @@ export function Cart({ items, orderType, setOrderType, updateQuantity, removeIte
           <h2 className="text-lg font-display font-bold text-white">Pedido Actual</h2>
           <p className="text-xs text-zinc-400">{itemCount} artículos en carrito</p>
         </div>
+        {hasStockBlocked && (
+          <span className="px-2.5 py-1 rounded-full bg-red-500/20 border border-red-500/40 text-[11px] font-black text-red-300 uppercase tracking-wider flex items-center gap-1.5 animate-pulse">
+            <AlertOctagon size={13} className="text-red-400" />
+            Stock Insuficiente ({stockExceededItems.length})
+          </span>
+        )}
       </div>
 
       {/* Cart Items */}
@@ -47,65 +66,152 @@ export function Cart({ items, orderType, setOrderType, updateQuantity, removeIte
              <p className="text-xs mt-1 text-zinc-600">Agrega productos por búsqueda o escáner</p>
           </div>
         ) : (
-          items.map(item => (
-            <div key={item.id} className="flex gap-3 bg-white/5 backdrop-blur-sm p-3 rounded-xl border border-white/10 items-center animate-in fade-in slide-in-from-bottom-2">
-              <div className={`w-12 h-12 rounded-lg flex-shrink-0 flex items-center justify-center bg-zinc-800 mix-blend-overlay opacity-60 border border-white/10 overflow-hidden`}>
-                {item.image ? (
-                  <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
-                ) : (
-                  <Package2 className="w-6 h-6 text-zinc-400" />
+          items.map(item => {
+            const availableStock = getAvailableStock(item);
+            const isExceeded = item.quantity > availableStock;
+            const isAtMax = item.quantity >= availableStock;
+
+            return (
+              <div
+                key={item.id}
+                className={`flex flex-col gap-2 p-3 rounded-xl border transition-all animate-in fade-in slide-in-from-bottom-2 ${
+                  isExceeded
+                    ? 'bg-red-950/30 border-red-500/70 shadow-[0_0_20px_rgba(239,68,68,0.2)]'
+                    : 'bg-white/5 backdrop-blur-sm border-white/10'
+                }`}
+              >
+                <div className="flex gap-3 items-center">
+                  <div className={`w-12 h-12 rounded-lg flex-shrink-0 flex items-center justify-center bg-zinc-800 mix-blend-overlay opacity-60 border border-white/10 overflow-hidden`}>
+                    {item.image ? (
+                      <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <Package2 className="w-6 h-6 text-zinc-400" />
+                    )}
+                  </div>
+                  
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-sm font-semibold text-white truncate">{item.name}</h4>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <p className="text-xs text-zinc-400">${item.price.toFixed(2)} c/u</p>
+                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${
+                        availableStock <= 0
+                          ? 'bg-red-500/20 text-red-300 border-red-500/40'
+                          : isExceeded
+                            ? 'bg-red-500/20 text-red-300 border-red-500/40'
+                            : 'bg-white/5 text-zinc-400 border-white/10'
+                      }`}>
+                        Stock Disp: {availableStock}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col items-end gap-2">
+                     <div className={`flex items-center gap-1 rounded-lg shadow-sm p-0.5 border ${
+                       isExceeded
+                         ? 'bg-red-950/60 border-red-500/80 ring-2 ring-red-500/30'
+                         : 'bg-black/40 border-white/10'
+                     }`}>
+                       <button 
+                         onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                         className="w-8 h-8 flex items-center justify-center text-zinc-400 hover:bg-white/10 hover:text-white rounded-md transition-colors"
+                         title="Reducir cantidad"
+                       >
+                         <Minus className="h-4 w-4" />
+                       </button>
+                       <input
+                          type="number"
+                          step={item.isBulk ? "any" : "1"}
+                          value={item.quantity === 0 ? '' : item.quantity}
+                          onChange={(e) => handleInputChange(item, e)}
+                          onBlur={(e) => {
+                             if (!e.target.value) updateQuantity(item.id, 1);
+                             if (item.quantity === 0) removeItem(item.id);
+                          }}
+                          className={`w-12 text-center text-sm font-black focus:outline-none rounded bg-transparent hide-arrows ${
+                            isExceeded ? 'text-red-300' : 'text-white'
+                          }`}
+                       />
+                       <button 
+                         onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                         disabled={isAtMax}
+                         className={`w-8 h-8 flex items-center justify-center rounded-md transition-colors ${
+                           isAtMax
+                             ? 'text-zinc-600 bg-white/5 cursor-not-allowed'
+                             : 'text-zinc-400 hover:bg-white/10 hover:text-white'
+                         }`}
+                         title={isAtMax ? `Stock máximo alcanzado (${availableStock})` : "Incrementar cantidad"}
+                       >
+                         <Plus className="h-4 w-4" />
+                       </button>
+                     </div>
+                     <div className="flex items-center gap-2">
+                       <span className="text-sm font-bold text-white">${(item.price * item.quantity).toFixed(2)}</span>
+                       <button 
+                         onClick={() => removeItem(item.id)}
+                         className="text-zinc-500 hover:text-red-400 transition-colors p-1 rounded-md hover:bg-white/5"
+                         title="Eliminar del pedido"
+                       >
+                         <X className="h-4 w-4" />
+                       </button>
+                     </div>
+                  </div>
+                </div>
+
+                {/* Alerta visual por fila si excede stock disponible */}
+                {isExceeded && (
+                  <div className="flex items-center justify-between gap-2 p-2 rounded-lg bg-red-500/20 border border-red-500/40 text-[11px] text-red-200">
+                    <div className="flex items-center gap-1.5 truncate">
+                      <AlertTriangle size={13} className="text-red-400 shrink-0" />
+                      <span className="truncate">
+                        <strong>Excede stock:</strong> Solicitas {item.quantity}, solo hay {availableStock} disponible(s).
+                      </span>
+                    </div>
+                    {availableStock > 0 ? (
+                      <button
+                        onClick={() => updateQuantity(item.id, availableStock)}
+                        className="px-2 py-0.5 rounded-md bg-amber-500/30 hover:bg-amber-500/40 border border-amber-500/50 text-amber-200 text-[10px] font-black shrink-0 transition-colors"
+                        title="Ajustar cantidad al stock máximo disponible"
+                      >
+                        Ajustar a {availableStock}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => removeItem(item.id)}
+                        className="px-2 py-0.5 rounded-md bg-red-600/40 hover:bg-red-600/60 border border-red-500/50 text-red-200 text-[10px] font-black shrink-0 transition-colors"
+                        title="Quitar producto sin stock del pedido"
+                      >
+                        Quitar
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
-              
-              <div className="flex-1 min-w-0">
-                <h4 className="text-sm font-semibold text-white truncate">{item.name}</h4>
-                <p className="text-xs text-zinc-400">${item.price.toFixed(2)} c/u</p>
-              </div>
-
-              <div className="flex flex-col items-end gap-2">
-                 <div className="flex items-center gap-1 bg-black/40 border border-white/10 rounded-lg shadow-sm p-0.5">
-                   <button 
-                     onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                     className="w-8 h-8 flex items-center justify-center text-zinc-400 hover:bg-white/10 hover:text-white rounded-md transition-colors"
-                   >
-                     <Minus className="h-4 w-4" />
-                   </button>
-                   <input
-                      type="number"
-                      step={item.isBulk ? "any" : "1"}
-                      value={item.quantity === 0 ? '' : item.quantity}
-                      onChange={(e) => handleInputChange(item, e)}
-                      onBlur={(e) => {
-                         if (!e.target.value) updateQuantity(item.id, 1);
-                         if (item.quantity === 0) removeItem(item.id);
-                      }}
-                      className="w-12 text-center text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-blue-500/50 rounded bg-transparent text-white hide-arrows"
-                   />
-                   <button 
-                     onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                     className="w-8 h-8 flex items-center justify-center text-zinc-400 hover:bg-white/10 hover:text-white rounded-md transition-colors"
-                   >
-                     <Plus className="h-4 w-4" />
-                   </button>
-                 </div>
-                 <div className="flex items-center gap-2">
-                   <span className="text-sm font-bold text-white">${(item.price * item.quantity).toFixed(2)}</span>
-                   <button 
-                     onClick={() => removeItem(item.id)}
-                     className="text-zinc-500 hover:text-red-400 transition-colors p-1 rounded-md hover:bg-white/5"
-                   >
-                     <X className="h-4 w-4" />
-                   </button>
-                 </div>
-              </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
 
       {/* Footer / Checkout Area */}
       <div className="p-4 border-t border-white/10 bg-black/60 backdrop-blur-xl shrink-0">
          
+         {/* Banner de bloqueo si hay stock insuficiente */}
+         {hasStockBlocked && (
+           <div className="bg-red-950/80 border-2 border-red-500/80 rounded-xl p-3 mb-3 flex items-start gap-2.5 text-red-200 shadow-[0_0_25px_rgba(239,68,68,0.3)] animate-pulse">
+             <AlertOctagon className="h-5 w-5 text-red-400 shrink-0 mt-0.5" />
+             <div className="flex-1 min-w-0 text-xs">
+               <span className="font-black text-white uppercase tracking-wider block">
+                 Venta Bloqueada: Stock Insuficiente
+               </span>
+               <span className="text-[11px] text-red-200/90 leading-tight block mt-0.5">
+                 {stockExceededItems.length === 1
+                   ? `"${stockExceededItems[0].name}" supera el stock disponible.`
+                   : `${stockExceededItems.length} productos en el pedido superan las existencias físicas.`
+                 }
+               </span>
+             </div>
+           </div>
+         )}
+
          <div className="flex bg-white/5 p-1 rounded-xl mb-4 border border-white/5">
            <button
              onClick={() => setOrderType('local')}
@@ -114,7 +220,7 @@ export function Cart({ items, orderType, setOrderType, updateQuantity, removeIte
              }`}
            >
              <Store className="h-4 w-4 mr-2" />
-             Entrega en Píso
+             Entrega en Piso
            </button>
            <button
              onClick={() => setOrderType('delivery')}
@@ -157,14 +263,25 @@ export function Cart({ items, orderType, setOrderType, updateQuantity, removeIte
              className={`flex-[2] py-5 rounded-2xl flex flex-col items-center justify-center text-xl font-black uppercase tracking-wider transition-all relative overflow-hidden ${
                items.length === 0 
                  ? 'bg-white/5 text-zinc-600 border border-white/5 cursor-not-allowed'
-                 : 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white hover:from-emerald-400 hover:to-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.4)] border border-emerald-400/50 active:scale-95'
+                 : hasStockBlocked
+                   ? 'bg-gradient-to-r from-red-700 via-rose-700 to-red-800 text-white hover:from-red-600 hover:to-rose-600 shadow-[0_0_25px_rgba(239,68,68,0.5)] border-2 border-red-400 active:scale-95'
+                   : 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white hover:from-emerald-400 hover:to-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.4)] border border-emerald-400/50 active:scale-95'
              }`}
            >
              {items.length > 0 ? (
                <>
                  <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] animate-[shimmer_2s_infinite]"></div>
-                 {orderType === 'delivery' ? 'Datos Envío' : 'Cobrar'}
-                 <span className="text-sm font-bold opacity-80">${total.toFixed(2)}</span>
+                 {hasStockBlocked ? (
+                   <span className="flex items-center gap-1.5 text-base sm:text-lg text-white">
+                     <AlertOctagon size={20} className="text-red-300 animate-bounce" />
+                     Venta Bloqueada
+                   </span>
+                 ) : (
+                   orderType === 'delivery' ? 'Datos Envío' : 'Cobrar'
+                 )}
+                 <span className={`text-xs font-bold ${hasStockBlocked ? 'text-red-200' : 'opacity-80'}`}>
+                   {hasStockBlocked ? '⚠️ Clic para resolver faltantes' : `$${total.toFixed(2)}`}
+                 </span>
                </>
              ) : 'Cobrar'}
            </button>
@@ -190,3 +307,4 @@ export function Cart({ items, orderType, setOrderType, updateQuantity, removeIte
     </div>
   );
 }
+

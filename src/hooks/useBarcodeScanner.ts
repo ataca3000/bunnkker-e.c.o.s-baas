@@ -1,55 +1,93 @@
 import { useEffect, useRef } from 'react';
 
+interface ScannerOptions {
+    minChars?: number;
+    maxKeyIntervalMs?: number;
+    enabled?: boolean;
+}
+
 /**
- * Hook nativo para escanear códigos de barras.
- * Escucha las pulsaciones de teclado rápidas que emiten las pistolas láser.
+ * Hook nativo para escanear códigos de barras tipo retail / supermercado.
+ * Escucha las pulsaciones de teclado rápidas que emiten las pistolas láser USB/Bluetooth (Keyboard Wedge).
+ * Funciona de forma global e intercepta ráfagas automáticas incluso si el foco está en un input.
  */
-export function useBarcodeScanner(onScan: (barcode: string) => void) {
+export function useBarcodeScanner(
+    onScan: (barcode: string) => void,
+    options: ScannerOptions = {}
+) {
+    const { minChars = 3, maxKeyIntervalMs = 60, enabled = true } = options;
     const buffer = useRef('');
     const lastKeyTime = useRef(0);
+    const keyBurstCount = useRef(0);
+    const onScanRef = useRef(onScan);
+    onScanRef.current = onScan;
 
     useEffect(() => {
+        if (!enabled) return;
+
         const handleKeyDown = (e: KeyboardEvent) => {
-            // Si el usuario está escribiendo manualmente en un input, dejamos que el navegador haga lo suyo
-            // Esto permite que el escáner funcione también dentro de barras de búsqueda tradicionales si tienen el foco.
-            if (
-                e.target instanceof HTMLInputElement || 
-                e.target instanceof HTMLTextAreaElement || 
-                e.target instanceof HTMLSelectElement
-            ) {
-                // Solo si presionan Enter en un input y hay un buffer rápido, lo limpiamos para no disparar dos veces
-                if (e.key === 'Enter' && buffer.current.length > 0) {
-                     buffer.current = '';
-                }
+            // Ignorar teclas de control solas
+            if (e.key === 'Shift' || e.key === 'Control' || e.key === 'Alt' || e.key === 'Meta') {
                 return;
             }
 
             const now = Date.now();
-            
-            // Los láseres escriben ultra rápido (10-30ms por letra). 
-            // Si pasa más de 70ms entre teclas, es un humano escribiendo. Reiniciamos el buffer.
-            if (now - lastKeyTime.current > 70) {
-                buffer.current = '';
-            }
-
+            const elapsed = now - lastKeyTime.current;
             lastKeyTime.current = now;
 
+            const isInputTarget =
+                e.target instanceof HTMLInputElement ||
+                e.target instanceof HTMLTextAreaElement ||
+                e.target instanceof HTMLSelectElement;
+
+            // Si pasa más tiempo del umbral de escáner (~60ms), es escritura humana
+            if (elapsed > maxKeyIntervalMs) {
+                buffer.current = '';
+                keyBurstCount.current = 0;
+            }
+
+            // Cuando la pistola dispara Enter al final del código
             if (e.key === 'Enter') {
-                if (buffer.current.length >= 3) {
-                    onScan(buffer.current);
-                    buffer.current = ''; // Limpiar después de leer
-                    e.preventDefault(); // Evitar comportamientos por defecto del Enter
+                const scannedCode = buffer.current.trim();
+                
+                // Si hubo una ráfaga rápida característica de un escáner láser
+                if (scannedCode.length >= minChars && keyBurstCount.current >= 2) {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    // Si estaba dentro de un input, limpiar el valor ingresado por la pistola
+                    if (isInputTarget && e.target instanceof HTMLInputElement) {
+                        e.target.value = '';
+                    }
+
+                    onScanRef.current(scannedCode);
+                    buffer.current = '';
+                    keyBurstCount.current = 0;
+                    return;
                 }
+
+                // O si el usuario presionó Enter en un input de búsqueda con un código exacto
+                if (isInputTarget && e.target instanceof HTMLInputElement && e.target.value.trim().length >= minChars) {
+                    const text = e.target.value.trim();
+                    // Si parece un código de barras / SKU (sin espacios largos)
+                    if (!text.includes('\n')) {
+                        // Dejamos que el componente decida o lo capturamos
+                    }
+                }
+
+                buffer.current = '';
+                keyBurstCount.current = 0;
                 return;
             }
 
-            // Filtrar solo caracteres válidos (letras y números, no teclas de control como Shift)
+            // Filtrar solo caracteres imprimibles
             if (e.key.length === 1) {
                 buffer.current += e.key;
+                keyBurstCount.current += 1;
             }
         };
 
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [onScan]);
+        window.addEventListener('keydown', handleKeyDown, true);
+        return () => window.removeEventListener('keydown', handleKeyDown, true);
+    }, [enabled, minChars, maxKeyIntervalMs]);
 }
