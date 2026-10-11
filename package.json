@@ -8,16 +8,16 @@
   "scripts": {
     "dev": "npx concurrently \"next dev -H 0.0.0.0 -p 3000\" \"node radio-server.js\"",
     "dev:https": "next dev --experimental-https -p 3000",
-    "build": "prisma generate && next build",
+    "build": "node scripts/validate-schemas.js && prisma generate && next build",
     "db:migrate": "prisma migrate deploy",
     "db:seed": "node prisma/seed.js",
     "guard:build": "node scripts/build-guard.js",
     "start": "concurrently \"node scripts/restore-node-modules.js && cross-env HOSTNAME=0.0.0.0 PORT=3000 node .next/standalone/server.js\" \"node radio-server.js\"",
     "lint": "eslint .",
     "dev:electron": "electron .",
-    "build:web": "node ./scripts/run-next-build.js web nube",
+    "build:web": "node scripts/validate-schemas.js && node ./scripts/run-next-build.js web nube",
     "build:demo": "node ./scripts/run-next-build.js web demo",
-    "build:standalone": "node ./scripts/run-next-build.js desktop local && node scripts/copy-standalone.js",
+    "build:standalone": "node scripts/validate-schemas.js && node ./scripts/run-next-build.js desktop local && node scripts/copy-standalone.js",
     "build:secure": "npm run build:standalone",
     "dist": "npm run build:secure && electron-builder",
     "dist:win": "npm run build:standalone && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win --x64",
@@ -32,7 +32,8 @@
     "update:file": "node scripts/update-file.js",
     "migrate:pins": "node scripts/migrate-pins.js",
     "migrate:pins:dry": "node scripts/migrate-pins.js --dry-run",
-    "validate:schemas": "node scripts/validate-schemas.js"
+    "validate:schemas": "node scripts/validate-schemas.js",
+    "db:status": "prisma migrate status"
   },
   "build": {
     "appId": "com.bunkkererp.erp",

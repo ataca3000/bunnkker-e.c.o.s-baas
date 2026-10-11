@@ -87,6 +87,9 @@ model Order {
   customer      Customer?   @relation(fields: [customerId], references: [id])
   items         OrderItem[]
   events        OrderEvent[]
+
+  @@index([status, deliveryType])
+  @@index([assignedDriverId, status])
 }
 
 model OrderItem {
