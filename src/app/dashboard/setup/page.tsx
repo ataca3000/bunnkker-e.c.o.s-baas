@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import APIKeyManager from '@/components/admin/APIKeyManager';
 import InteractiveTerraMap from '@/components/admin/InteractiveTerraMap';
+import CloudBackupConfigWidget from '@/components/admin/CloudBackupConfigWidget';
 import { db } from '@/lib/firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { useAuth } from '@/context/AuthContext';
@@ -399,11 +400,13 @@ export default function SetupWizard() {
                                 {step === 5 && (
                                     <div className="space-y-6">
                                         <h3 className="flex items-center gap-2.5 text-cyan-400 font-bold text-xl uppercase tracking-wider">
-                                            <HardDrive /> Bóveda Local de Seguridad
+                                            <HardDrive /> Bóveda Local y Respaldos Google Cloud
                                         </h3>
                                         <p className="text-sm text-slate-400">
-                                            Conecta una memoria USB en este equipo y presiona el botón para configurarla como tu unidad inmutable física de resguardo.
+                                            Configura la frecuencia de sincronización automática hacia Google Cloud y la unidad física USB de resguardo local.
                                         </p>
+
+                                        <CloudBackupConfigWidget compact />
                                         
                                         <div className="p-8 rounded-xl bg-slate-900/20 border border-slate-800/80 text-center">
                                             <button 

@@ -47,13 +47,32 @@ import ThemeToggle from '@/components/ThemeToggle';
 
 
 const rolePaths: Record<string, string[]> = {
-    superadmin: ['/dashboard', '/dashboard/admin/sales', '/dashboard/admin/users', '/dashboard/admin/customers', '/dashboard/inventory', '/dashboard/delivery', '/dashboard/pickup', '/dashboard/design', '/dashboard/marketing', '/dashboard/billing', '/dashboard/audit', '/dashboard/suscripcion', '/dashboard/qr', '/dashboard/demo', '/dashboard/tests'],
-    admin: ['/dashboard', '/dashboard/admin/sales', '/dashboard/admin/customers', '/dashboard/inventory', '/dashboard/delivery', '/dashboard/pickup', '/dashboard/billing', '/dashboard/audit', '/dashboard/suscripcion'],
-    sales: ['/dashboard', '/dashboard/admin/sales', '/dashboard/admin/customers'],
-    inventory: ['/dashboard', '/dashboard/inventory'],
-    carga_descarga: ['/dashboard', '/dashboard/pickup'],
-    driver: ['/dashboard', '/dashboard/delivery'],
-    marketing: ['/dashboard', '/dashboard/marketing', '/dashboard/design'],
+    superadmin: [
+        '/dashboard', '/dashboard/sales', '/dashboard/admin/sales', '/dashboard/admin/users', '/dashboard/users',
+        '/dashboard/admin/customers', '/dashboard/crm', '/dashboard/team', '/dashboard/purchases', '/dashboard/reports',
+        '/dashboard/soporte', '/dashboard/setup', '/dashboard/pro-sync', '/dashboard/profile', '/dashboard/guia',
+        '/dashboard/inventory', '/dashboard/delivery', '/dashboard/pickup', '/dashboard/patio', '/dashboard/design',
+        '/dashboard/marketing', '/dashboard/omnipulse', '/dashboard/billing', '/dashboard/audit', '/dashboard/suscripcion',
+        '/dashboard/qr', '/dashboard/demo', '/dashboard/tests', '/dashboard/payments', '/dashboard/verificador',
+        '/dashboard/migracion', '/dashboard/migration', '/dashboard/link', '/dashboard/node-view'
+    ],
+    admin: [
+        '/dashboard', '/dashboard/sales', '/dashboard/admin/sales', '/dashboard/admin/users', '/dashboard/users',
+        '/dashboard/admin/customers', '/dashboard/crm', '/dashboard/team', '/dashboard/purchases', '/dashboard/reports',
+        '/dashboard/soporte', '/dashboard/setup', '/dashboard/pro-sync', '/dashboard/profile', '/dashboard/guia',
+        '/dashboard/inventory', '/dashboard/delivery', '/dashboard/pickup', '/dashboard/patio', '/dashboard/design',
+        '/dashboard/marketing', '/dashboard/omnipulse', '/dashboard/billing', '/dashboard/audit', '/dashboard/suscripcion',
+        '/dashboard/qr'
+    ],
+    sales: ['/dashboard', '/dashboard/sales', '/dashboard/admin/sales', '/dashboard/admin/customers', '/dashboard/crm', '/dashboard/qr', '/dashboard/profile', '/dashboard/guia'],
+    caja: ['/dashboard', '/dashboard/sales', '/dashboard/admin/sales', '/dashboard/admin/customers', '/dashboard/crm', '/dashboard/qr', '/dashboard/profile', '/dashboard/guia'],
+    billing: ['/dashboard', '/dashboard/sales', '/dashboard/billing', '/dashboard/audit', '/dashboard/profile', '/dashboard/guia'],
+    inventory: ['/dashboard', '/dashboard/inventory', '/dashboard/pickup', '/dashboard/patio', '/dashboard/profile', '/dashboard/guia'],
+    almacen: ['/dashboard', '/dashboard/inventory', '/dashboard/pickup', '/dashboard/patio', '/dashboard/profile', '/dashboard/guia'],
+    carga_descarga: ['/dashboard', '/dashboard/pickup', '/dashboard/patio', '/dashboard/delivery', '/dashboard/profile', '/dashboard/guia'],
+    driver: ['/dashboard', '/dashboard/delivery', '/dashboard/patio', '/dashboard/pickup', '/dashboard/profile', '/dashboard/guia'],
+    delivery: ['/dashboard', '/dashboard/delivery', '/dashboard/patio', '/dashboard/pickup', '/dashboard/profile', '/dashboard/guia'],
+    marketing: ['/dashboard', '/dashboard/marketing', '/dashboard/design', '/dashboard/omnipulse', '/dashboard/qr', '/dashboard/profile', '/dashboard/guia'],
     client: ['/cuenta']
 };
 
@@ -64,6 +83,7 @@ const menuGroups = [
         items: [
             { id: 'dashboard',  title: 'Dashboard General',  icon: <LayoutDashboard size={20} />, href: '/dashboard',             premium: false },
             { id: 'sales',      title: 'Control de Ventas',  icon: <ShoppingCart size={20} />,    href: '/dashboard/admin/sales', premium: false },
+            { id: 'pos',        title: 'Punto de Venta (POS)', icon: <Calculator size={20} />,    href: '/dashboard/sales',       premium: false },
             { id: 'users',      title: 'Usuarios y Roles',   icon: <Users size={20} />,           href: '/dashboard/admin/users', premium: false },
             { id: 'customers',  title: 'CRM y Clientes',     icon: <User size={20} />,            href: '/dashboard/admin/customers', premium: false },
             { id: 'qr',         title: 'Vincular por QR',    icon: <Share2 size={20} />,          href: '/dashboard/qr',          premium: false },
@@ -141,10 +161,10 @@ function ConnectionTooltip({ isOpen, firebaseStatus }: { isOpen: boolean; fireba
                         </div>
                         <div>
                             <p style={{ margin: 0, fontSize: '0.78rem', fontWeight: '800', color: '#1e293b' }}>
-                                {isOnline ? 'Sistema en Línea' : 'Sin Conexión'}
+                                {isOnline ? 'Sistema en Línea' : 'Modo Local / Offline'}
                             </p>
                             <p style={{ margin: 0, fontSize: '0.65rem', color: '#94a3b8' }}>
-                                Estado de Firestore
+                                Persistencia IndexedDB Activa
                             </p>
                         </div>
                     </div>
@@ -153,15 +173,15 @@ function ConnectionTooltip({ isOpen, firebaseStatus }: { isOpen: boolean; fireba
                     {[
                         {
                             icon: isOnline ? <CheckCircle2 size={13} color="#10b981" /> : <AlertTriangle size={13} color="#f59e0b" />,
-                            text: isOnline ? 'Sincronización en tiempo real activa' : 'Datos locales en caché activos',
+                            text: isOnline ? 'Sincronización en tiempo real activa' : 'Datos locales e IndexedDB activos',
                         },
                         {
                             icon: isOnline ? <CheckCircle2 size={13} color="#10b981" /> : <AlertTriangle size={13} color="#f59e0b" />,
-                            text: isOnline ? 'Escrituras confirmadas en la nube' : 'Los cambios se encolarán y sincronizarán al reconectar',
+                            text: isOnline ? 'Escrituras confirmadas en el servidor' : 'Los pedidos y carritos se guardan en IndexedDB y sincronizan al reconectar',
                         },
                         {
                             icon: <Info size={13} color="#94a3b8" />,
-                            text: isOnline ? 'Base de datos: Cloud Firestore' : 'Revisa tu conexión a internet o las API Keys de Firebase',
+                            text: isOnline ? 'Base de datos local y nube listas' : 'Tus operaciones continúan sin interrupción',
                         },
                     ].map((item, i) => (
                         <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', marginBottom: '8px' }}>
@@ -213,8 +233,7 @@ function ProfileSetupScreen({ uid }: { uid: string }) {
                 password:      password.trim(),
                 needsSetup:    false,
             });
-            toast.success('¡Perfil configurado con éxito! La página se actualizará.', '✅ Perfil');
-            window.location.reload();
+            toast.success('¡Perfil configurado con éxito!', '✅ Perfil');
         } catch (err) {
             console.error(err);
             setError('Error al actualizar el perfil. Intenta de nuevo.');
@@ -321,30 +340,33 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
     /* persist sidebar preference */
     useEffect(() => {
-        const saved = localStorage.getItem('_admincom_sidebar_collapsed');
-        if (saved === 'true') setIsCollapsed(true);
+        try {
+            const saved = localStorage.getItem('_admincom_sidebar_collapsed');
+            if (saved === 'true') setIsCollapsed(true);
+        } catch {}
     }, []);
 
-    // Fetch site config (activeModules)
+    // Fetch site config from local API (evitando errores de Firestore offline)
     useEffect(() => {
-        if (authLoading) return; // Wait for Auth to initialize
-        
+        if (authLoading) return;
+        const defaultModules = ['sales', 'pos', 'users', 'customers', 'qr', 'demo', 'inventory', 'delivery', 'pickup', 'design', 'marketing', 'billing', 'audit', 'dashboard', 'tests', 'subscription'];
+
         const fetchSiteConfig = async () => {
             try {
-                const docSnap = await getDoc(doc(db, 'settings', 'site_config'));
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    setSiteConfig(data);
-                    if (data.activeModules && Array.isArray(data.activeModules) && data.activeModules.length > 0) {
-                        setActiveModules(data.activeModules);
-                    } else {
-                        // Default fallback if not defined or empty
-                        setActiveModules(['sales', 'users', 'customers', 'qr', 'demo', 'inventory', 'delivery', 'pickup', 'design', 'marketing', 'billing', 'audit', 'dashboard', 'tests', 'subscription']);
+                const res = await fetch('/api/settings').catch(() => null);
+                if (res && res.ok) {
+                    const json = await res.json().catch(() => null);
+                    const data = json?.data || json;
+                    if (data && typeof data === 'object') {
+                        setSiteConfig(data);
+                        if (Array.isArray(data.activeModules) && data.activeModules.length > 0) {
+                            setActiveModules(data.activeModules);
+                            return;
+                        }
                     }
                 }
-            } catch (err) {
-                console.warn("Aviso: No se pudo cargar config del sitio (posible error de red o falta env):", err);
-            }
+            } catch {}
+            setActiveModules(defaultModules);
         };
         fetchSiteConfig();
     }, [authLoading]);
@@ -360,83 +382,40 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         return () => document.removeEventListener('mousedown', handler);
     }, []);
 
-    /* Single Session & RBAC Enforcement */
+    /* RBAC Enforcement (sin recargas forzadas ni desconexiones en falso) */
     useEffect(() => {
-        if (!profile?.uid || profile.uid === 'local_owner') return;
+        if (authLoading || !profile?.uid || profile.uid === 'local_owner') return;
 
-        // RBAC Check
-        const isMasterAdmin = profile.role === 'superadmin';
-        if (!isMasterAdmin && isDashboard) {
+        const isAdminRole = profile.role === 'superadmin' || profile.role === 'admin';
+        if (!isAdminRole && isDashboard) {
             const paths = rolePaths[profile.role] || [];
-            const isAllowed = paths.some(p => pathname?.startsWith(p));
+            const isAllowed = paths.some(p => pathname === p || pathname?.startsWith(p + '/'));
             if (!isAllowed) {
                 router.replace('/dashboard');
                 return;
             }
         }
-
-        // Active Modules Block Check
-        if (activeModules && profile.role !== 'superadmin') {
-            // Find which module id matches the current pathname
-            const matchingItem = menuGroups.flatMap(g => g.items).find(i => pathname?.startsWith(i.href) && i.href !== '/dashboard');
-            if (matchingItem && !activeModules.includes(matchingItem.id)) {
-                // If it's a known module but it's disabled in activeModules, kick them out
-                router.replace('/dashboard');
-                return;
-            }
-        }
-
-        // Single Session Watcher
-        let unsubscribe: any = () => {};
-        try {
-            if (profile && profile.uid && typeof profile.uid === 'string' && profile.uid !== 'local_owner') {
-                unsubscribe = onSnapshot(doc(db, 'users', profile.uid), (docSnap: any) => {
-                    if (docSnap.exists()) {
-                        const data = docSnap.data();
-                        const dbSession = data.currentSessionId;
-                        const localSession = localStorage.getItem('msj-session-id');
-                        if (dbSession && localSession && dbSession !== localSession) {
-                            toast.warning('Sesión iniciada en otro dispositivo. Cerrando esta sesión por seguridad...', '⚠️ Seguridad');
-                            setTimeout(() => {
-                                signOut().then(() => {
-                                    window.location.href = '/login';
-                                });
-                            }, 2500);
-                        }
-                    }
-                }, (error) => {
-                    console.warn("Aviso: onSnapshot desconectado (sin red o db inactiva):", error);
-                });
-            }
-        } catch (error) {
-            console.warn("Aviso: Fallo configurando onSnapshot:", error);
-        }
-
-        return () => {
-            if (unsubscribe) unsubscribe();
-        };
-    }, [profile?.uid, pathname, isDashboard, profile?.role, signOut, activeModules]);
+    }, [authLoading, profile?.uid, pathname, isDashboard, profile?.role, router]);
 
     useEffect(() => {
         if (firebaseStatus === 'online') {
-            const hasSeenPrompt = sessionStorage.getItem('terraform_update_prompt');
+            const hasSeenPrompt = sessionStorage.getItem('bunkker_update_prompt');
             if (!hasSeenPrompt) {
-                setTimeout(() => {
-                    toast.info(
-                        'Hay actualizaciones críticas disponibles. Contacta a brechaopensource para renovar tu licencia.',
-                        '📡 BUNKKER E.C.O.S. Online',
-                        10000
-                    );
-                    sessionStorage.setItem('bunkker_update_prompt', 'true');
-                }, 5000);
+                sessionStorage.setItem('bunkker_update_prompt', 'true');
             }
         }
     }, [firebaseStatus]);
 
-    const toggleSidebar = () => {
+    const toggleSidebar = (e?: React.MouseEvent) => {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
         setIsCollapsed(prev => {
             const next = !prev;
-            localStorage.setItem('_admincom_sidebar_collapsed', String(next));
+            try {
+                localStorage.setItem('_admincom_sidebar_collapsed', String(next));
+            } catch {}
             return next;
         });
     };
@@ -449,7 +428,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         return <>{children}</>;
     }
 
-    const isMasterAdmin = profile?.role === 'superadmin';
+    // Mostrar la barra lateral para superadmin y admin (y mantenerla estable durante la hidratación inicial de sesión)
+    const isPOSFullscreen = pathname === '/dashboard/sales';
+    const showAdminSidebar = !isPOSFullscreen && (!profile || profile.role === 'superadmin' || profile.role === 'admin');
     const sidebarWidth  = isCollapsed ? '90px' : '280px';
 
     /* ── Breadcrumbs helper ───────────────────────────────────── */
@@ -472,7 +453,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="bunkker-shell" style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bunkker-surface)', color: 'var(--bunkker-ink)' }}>
 
             {/* ── Sidebar (Layer 3) ─────────────────────────────────────────── */}
-            {isMasterAdmin && (
+            {showAdminSidebar && (
                 <aside className="liquid-glass" style={{
                     width: sidebarWidth,
                     color: 'white',
@@ -503,6 +484,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                             </div>
                         )}
                         <button
+                            type="button"
                             onClick={toggleSidebar}
                             style={{
                                 background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white',
@@ -519,10 +501,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     {/* Nav groups */}
                     <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1, overflowY: 'auto', paddingRight: '4px' }}>
                         {menuGroups.map((group, groupIdx) => {
-                            const userRole = profile?.role || 'sales';
-                            const allowedRoutes = rolePaths[userRole] || rolePaths['sales'];
+                            const userRole = profile?.role || 'superadmin';
+                            const allowedRoutes = rolePaths[userRole] || rolePaths['superadmin'];
                             const visibleItems = group.items.filter(item => 
-                                userRole === 'superadmin' || allowedRoutes.includes(item.href)
+                                userRole === 'superadmin' || userRole === 'admin' || allowedRoutes.includes(item.href)
                             );
 
                             if (visibleItems.length === 0) return null;
@@ -616,8 +598,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             {/* ── Main content (Layer 2) ────────────────────────────────────── */}
             <div style={{
                 flex: 1,
-                marginLeft: isMasterAdmin ? sidebarWidth : '0',
-                width: isMasterAdmin ? `calc(100% - ${sidebarWidth})` : '100%',
+                marginLeft: showAdminSidebar ? sidebarWidth : '0',
+                width: showAdminSidebar ? `calc(100% - ${sidebarWidth})` : '100%',
                 transition: 'all 0.3s cubic-bezier(0.4,0,0.2,1)',
                 display: 'flex',
                 flexDirection: 'column',
@@ -698,13 +680,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         {/* Connection badge */}
                         <div ref={tooltipRef} style={{ position: 'relative' }}>
                             <button
-                                onClick={() => {
-                                    if (firebaseStatus !== 'online') {
-                                        window.location.reload();
-                                    } else {
-                                        setConnTooltipOpen(!connTooltipOpen);
-                                    }
-                                }}
+                                type="button"
+                                onClick={() => setConnTooltipOpen(!connTooltipOpen)}
                                 title="Ver estado de conexión"
                                 style={{
                                     display: 'flex', alignItems: 'center', gap: '6px',

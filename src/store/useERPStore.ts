@@ -9,6 +9,7 @@ import { createCartSlice } from './slices/cartSlice';
 import { createProductsSlice, createOrdersSlice, createFinanceSlice, createConfigSlice } from './slices/otherSlices';
 import { createUISlice } from './slices/uiSlice';
 import { fallbackProducts, defaultSiteConfig } from './fallbackData';
+import { indexedDBCartStorage } from '@/lib/indexedDBCart';
 
 export { fallbackProducts, defaultSiteConfig };
 
@@ -25,7 +26,7 @@ export const useERPStore = create<ERPState>()(
             })),
             {
                 name: 'admincom-cart-storage',
-                storage: createJSONStorage(() => localStorage),
+                storage: createJSONStorage(() => indexedDBCartStorage),
                 partialize: (state) => ({ cart: state.cart }),
             }
         )

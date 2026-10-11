@@ -60,32 +60,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const loadUser = async (silent = false) => {
             try {
                 if (!silent) setLoading(true);
-                const res = await fetch('/api/users/me').catch(() => null);
+                const res = await fetch('/api/users/me', { credentials: 'include' }).catch(() => null);
                 if (res && res.ok) {
                     const data = await res.json().catch(() => null);
                     if (data && data.success && data.user) {
-                        setUser(data.user);
-                        setProfile({
-                            uid: data.user.id,
-                            email: data.user.email || '',
-                            displayName: data.user.name || 'Usuario ERP',
-                            role: data.user.role || 'sales',
-                            signature: data.user.signature || '',
-                            nodeAccess: [],
-                            lastLogin: Date.now(),
-                            isPremium: true
+                        setUser((prev: any) => (prev?.id === data.user.id && prev?.role === data.user.role ? prev : data.user));
+                        setProfile((prev) => {
+                            if (
+                                prev &&
+                                prev.uid === data.user.id &&
+                                prev.role === (data.user.role || 'sales') &&
+                                prev.displayName === (data.user.name || 'Usuario ERP')
+                            ) {
+                                return prev;
+                            }
+                            return {
+                                uid: data.user.id,
+                                email: data.user.email || '',
+                                displayName: data.user.name || 'Usuario ERP',
+                                role: data.user.role || 'sales',
+                                signature: data.user.signature || '',
+                                nodeAccess: [],
+                                lastLogin: Date.now(),
+                                isPremium: true
+                            };
                         });
-                    } else {
+                    } else if (!silent) {
                         setUser(null);
                         setProfile(null);
                     }
-                } else {
+                } else if (res && res.status === 401) {
+                    setUser(null);
+                    setProfile(null);
+                } else if (!silent) {
                     setUser(null);
                     setProfile(null);
                 }
             } catch {
-                setUser(null);
-                setProfile(null);
+                // En polling silencioso, un hipo de red NUNCA debe borrar la sesión activa ni retraer el sidebar
+                if (!silent) {
+                    setUser(null);
+                    setProfile(null);
+                }
             } finally {
                 if (!silent) setLoading(false);
             }
@@ -98,7 +114,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
                 loadUser(true);
             }
-        }, 10000);
+        }, 15000);
 
         return () => clearInterval(interval);
 

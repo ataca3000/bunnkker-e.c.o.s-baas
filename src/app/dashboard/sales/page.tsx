@@ -19,6 +19,7 @@ import { useERPStore } from '@/store/useERPStore';
 import { broadcastSync } from '@/lib/syncNotifier';
 import { playSupermarketBeep, playIncrementBeep, playErrorBeep, initAudioContextOnFirstGesture } from '@/lib/scannerAudio';
 import { saveDigitalTicket, type DigitalTicket } from '@/lib/digitalTicket';
+import { loadPosCartFromIDB, savePosCartToIDB, enqueueOfflineOrder, removeQueuedOfflineOrder } from '@/lib/indexedDBCart';
 
 // Lazy loading de componentes pesados (cero bloqueo en el arranque del POS)
 const CorteCajaCiego = dynamic(() => import('@/components/sales/CorteCajaCiego'), { ssr: false });
@@ -93,7 +94,8 @@ export default function SalesDashboard() {
         return () => clearInterval(timer);
     }, []);
 
-    // Cargar configuración de POS e inicializar audio en primer gesto
+    // Cargar configuración de POS, hidratar carrito POS desde IndexedDB e inicializar audio en primer gesto
+    const posCartHydrated = useRef(false);
     useEffect(() => {
         initAudioContextOnFirstGesture();
         try {
@@ -102,7 +104,84 @@ export default function SalesDashboard() {
                 setPosConfig(prev => ({ ...prev, ...JSON.parse(saved) }));
             }
         } catch {}
+
+        loadPosCartFromIDB().then((savedItems) => {
+            if (Array.isArray(savedItems) && savedItems.length > 0) {
+                setPosCart(prev => (prev.length === 0 ? savedItems : prev));
+            }
+            posCartHydrated.current = true;
+        }).catch(() => {
+            posCartHydrated.current = true;
+        });
     }, []);
+
+    // Persistir automáticamente el carrito del POS en IndexedDB y sincronizar posesión en RAM (Chunk Lease con TTL)
+    const posSessionIdRef = useRef<string>('');
+    useEffect(() => {
+        if (!posSessionIdRef.current && typeof window !== 'undefined') {
+            const saved = sessionStorage.getItem('bunkker_pos_lease_session');
+            if (saved) {
+                posSessionIdRef.current = saved;
+            } else {
+                const generated = `POS-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+                sessionStorage.setItem('bunkker_pos_lease_session', generated);
+                posSessionIdRef.current = generated;
+            }
+        }
+    }, []);
+
+    useEffect(() => {
+        if (!posCartHydrated.current) return;
+        savePosCartToIDB(posCart).catch(() => {});
+
+        const sessionId = posSessionIdRef.current || 'POS-CAJA';
+        if (posCart.length === 0) {
+            fetch('/api/inventory/chunk-leases', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'release_session',
+                    sessionId,
+                }),
+            }).catch(() => {});
+            return;
+        }
+
+        posCart.forEach((item) => {
+            fetch('/api/inventory/chunk-leases', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'lease',
+                    sessionId,
+                    ownerName: profile?.displayName || 'Cajero POS',
+                    productId: item.id,
+                    qty: item.quantity,
+                    ttlMs: 180 * 1000,
+                }),
+            })
+                .then(async (res) => {
+                    if (res.status === 409) {
+                        const data = await res.json().catch(() => null);
+                        if (data && typeof data.maxAllowed === 'number') {
+                            toast.warning(
+                                data.error || `Solo quedan ${data.maxAllowed} unidades libres en el Chunk.`
+                            );
+                            setPosCart((prev) =>
+                                prev
+                                    .map((ci) =>
+                                        ci.id === item.id
+                                            ? { ...ci, quantity: Math.min(ci.quantity, data.maxAllowed) }
+                                            : ci
+                                    )
+                                    .filter((ci) => ci.quantity > 0)
+                            );
+                        }
+                    }
+                })
+                .catch(() => {});
+        });
+    }, [posCart, profile?.displayName]);
 
     useEffect(() => {
         const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -432,27 +511,53 @@ export default function SalesDashboard() {
                 reservationHeld = true;
             }
 
-            // ─── LOCAL EDGE API SYNC ───
-            const response = await fetch('/api/orders', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    id: orderId,
-                    total: posTotal,
-                    paymentMethod: 'cash',
-                    status: finalStatus,
-                    deliveryType: orderType === 'delivery' ? 'DELIVERY' : 'PICKUP',
-                    deliveryMethod: orderType === 'delivery' ? 'repartidor' : 'pickup',
-                    vendedorId: profile?.uid || 'LOCAL',
-                    vendedorName: profile?.displayName || 'Cajero',
-                    confirmedAt: orderDate,
-                    items: posCart.map(i => ({ id: i.id, productId: i.id, quantity: i.quantity, price: i.price })),
-                    customer: orderPayload.customer,
-                    evidencePhoto: evidencePhoto || null
-                })
+            const posApiPayload = {
+                id: orderId,
+                total: posTotal,
+                paymentMethod: 'cash',
+                status: finalStatus,
+                deliveryType: orderType === 'delivery' ? 'DELIVERY' : 'PICKUP',
+                deliveryMethod: orderType === 'delivery' ? 'repartidor' : 'pickup',
+                vendedorId: profile?.uid || 'LOCAL',
+                vendedorName: profile?.displayName || 'Cajero',
+                confirmedAt: orderDate,
+                items: posCart.map(i => ({ id: i.id, productId: i.id, quantity: i.quantity, price: i.price, name: i.name })),
+                customer: orderPayload.customer,
+                evidencePhoto: evidencePhoto || null
+            };
+
+            // Resguardar primero en IndexedDB contra cierres de navegador o caída de red
+            await enqueueOfflineOrder({
+                orderId,
+                payload: posApiPayload,
+                source: 'pos'
             });
-            const result = await response.json().catch(() => null);
-            if (!response.ok || !result?.success) throw new Error(result?.error || 'No se pudo guardar la venta local.');
+
+            // ─── LOCAL EDGE API SYNC ───
+            let syncedImmediately = false;
+            try {
+                if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+                    throw new TypeError('Offline');
+                }
+                const response = await fetch('/api/orders', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(posApiPayload)
+                });
+                const result = await response.json().catch(() => null);
+                if (response.ok && result?.success) {
+                    syncedImmediately = true;
+                    await removeQueuedOfflineOrder(orderId);
+                } else if (response.status >= 400 && response.status < 500) {
+                    await removeQueuedOfflineOrder(orderId);
+                    throw new Error(result?.error || 'No se pudo guardar la venta local.');
+                }
+            } catch (netErr: any) {
+                const isValidationErr = netErr instanceof Error && !String(netErr.message).includes('Offline') && !String(netErr.message).includes('fetch') && !(netErr instanceof TypeError);
+                if (isValidationErr) throw netErr;
+                console.warn('[POS IndexedDB] Conexión inestable, venta guardada en IndexedDB para sincronización automática:', orderId);
+            }
+
             if (reservationHeld && socket) {
                 socket.emit('commit_stock', orderId);
                 reservationHeld = false;
@@ -463,8 +568,8 @@ export default function SalesDashboard() {
                 userId: profile?.uid || 'POS',
                 userName: profile?.displayName || cName || 'Cliente Mostrador',
                 userRole: profile?.role || 'sales',
-                description: `[POS] Venta directa ${orderId} — $${posTotal.toFixed(2)}`,
-                metadata: { orderId, total: posTotal, items: posCart.length },
+                description: `[POS] Venta directa ${orderId} — $${posTotal.toFixed(2)}${syncedImmediately ? '' : ' (Encolada en IndexedDB)'}`,
+                metadata: { orderId, total: posTotal, items: posCart.length, offlineQueued: !syncedImmediately },
             }).catch(() => {});
 
             // ─── RESGUARDO DE TICKET (COPIA CLIENTE + COPIA VENDEDOR) ───
@@ -505,7 +610,7 @@ export default function SalesDashboard() {
             // Abrir visor de comprobantes duales (Copia Cliente + Copia Tienda + Factura SAT)
             setIsTicketModalOpen(true);
 
-            showToast('¡Venta completada! Ticket resguardado en bitácora.');
+            showToast(syncedImmediately ? '¡Venta completada! Ticket resguardado en bitácora.' : '💾 Venta guardada en IndexedDB (Offline) y ticket emitido.');
             setPosCart([]);
             setIsPaymentOpen(false);
             setDeliveryInfo(undefined);

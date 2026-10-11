@@ -1,4 +1,3 @@
-
 "use client";
 import { motion } from 'framer-motion';
 import { useMemo, useState, useEffect } from 'react';
@@ -11,6 +10,7 @@ import RestockAlertWidget from '@/components/admin/RestockAlertWidget';
 import { BalanceEffectWidget } from '@/components/BalanceEffectWidget';
 import ModuleSection from '@/components/admin/ModuleSection';
 import KPICard from '@/components/admin/KPICard';
+import CloudBackupConfigWidget from '@/components/admin/CloudBackupConfigWidget';
 import { Palette, Globe } from 'lucide-react';
 import { isDemo, isNube } from '@/lib/envConfig';
 
@@ -464,6 +464,9 @@ export default function SuperAdminDashboard({
                 <StaffRankingWidget tenantId={profile?.tenantId} />
                 <RestockAlertWidget products={products} formatCurrency={formatCurrency} />
             </div>
+
+            {/* ── Configuración de Respaldos Automáticos a Google Cloud ──── */}
+            <CloudBackupConfigWidget />
 
             {/* ── Module Sections ────────────────────────────────── */}
             {categoryAdminVentas.length > 0 && <ModuleSection title="Administración y Ventas"         accentColor="#0ea5e9" items={categoryAdminVentas} />}

@@ -87,6 +87,42 @@ export async function PATCH(request: NextRequest) {
     try {
         const tenantId = getTenantId(request);
         const body = await request.json();
+
+        // Batch / Chunk Flush mode (Minecraft-style Dirty Chunk Persistence)
+        if (Array.isArray(body.batchUpdates)) {
+            const updates = body.batchUpdates as Array<{
+                id: string;
+                estante?: string;
+                fila?: string;
+                orderIndex?: number;
+                stockIncrement?: number;
+            }>;
+
+            if (updates.length === 0) {
+                return NextResponse.json({ success: true, count: 0, data: [] });
+            }
+
+            const operations = updates
+                .filter((u) => typeof u.id === 'string' && u.id.trim())
+                .map((u) => {
+                    const dataToUpdate: Record<string, unknown> = {};
+                    if (typeof u.stockIncrement === 'number') {
+                        dataToUpdate.stock = { increment: u.stockIncrement };
+                    }
+                    if (u.estante !== undefined) dataToUpdate.estante = u.estante;
+                    if (u.fila !== undefined) dataToUpdate.fila = u.fila;
+                    if (typeof u.orderIndex === 'number') dataToUpdate.orderIndex = u.orderIndex;
+
+                    return prisma.product.update({
+                        where: { id: u.id, tenantId },
+                        data: dataToUpdate,
+                    });
+                });
+
+            const results = await prisma.$transaction(operations);
+            return NextResponse.json({ success: true, count: results.length, data: results });
+        }
+
         const { id, stockIncrement, estante, fila } = body;
 
         if (!id) {

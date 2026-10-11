@@ -8,6 +8,7 @@ import type { BlockConfig } from '@/components/marketing/builder/Types';
 import type { Product, CartItem, Order } from '@/lib/types';
 import { toast } from '@/lib/toast';
 import { checkLicenseStatus } from '@/lib/license';
+import { enqueueOfflineOrder, flushOfflineOrderQueue, getQueuedOfflineOrders } from '@/lib/indexedDBCart';
 
 export type { Product, CartItem, Order };
 
@@ -136,13 +137,21 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     const firebaseStatus    = useERPStore((s) => s.firebaseStatus);
     const localMutationInFlight = useRef(0);
 
-    // ─── Local API Sync for Operational Data (Products & Orders) ──────────────
+    // ─── Local API Sync for Operational Data (Products & Orders) + IndexedDB Queue Flush ───
     useEffect(() => {
         let isFetching = false;
         const fetchLocalData = async () => {
             if (isFetching || localMutationInFlight.current > 0) return;
             isFetching = true;
             try {
+                // 1. Si hay pedidos pendientes en IndexedDB (guardados durante conexión inestable o cierre de navegador), sincronizarlos primero
+                const flushResult = await flushOfflineOrderQueue((syncedOrderId) => {
+                    toast.success(`Pedido offline ${syncedOrderId} sincronizado desde IndexedDB.`, '☁️ Sincronizado');
+                });
+                if (flushResult.synced > 0 && typeof window !== 'undefined' && (window as any).__inventorySocket) {
+                    (window as any).__inventorySocket.emit('sync_db_event', { action: 'OFFLINE_QUEUE_SYNCED' });
+                }
+
                 // Fetch Products from Local API
                 const prodRes = await fetch('/api/products');
                 if (prodRes.ok) {
@@ -156,18 +165,29 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
                     }
                 }
 
-                // Fetch Orders from Local API
+                // Fetch Orders from Local API and merge any still-queued offline orders from IndexedDB
                 const ordRes = await fetch('/api/orders');
                 if (ordRes.ok) {
                     const ordData = await ordRes.json();
                     if (ordData.success) {
-                        setOrders(ordData.data.sort((a: any, b: any) => (b.date || '').localeCompare(a.date || '')));
+                        const queued = await getQueuedOfflineOrders();
+                        const serverOrders = ordData.data || [];
+                        const serverIds = new Set(serverOrders.map((o: any) => o.id));
+                        const pendingOfflineOrders = queued
+                            .filter(q => !serverIds.has(q.orderId))
+                            .map(q => ({
+                                ...q.payload,
+                                id: q.orderId,
+                                offlineQueued: true
+                            }));
+                        const combined = [...pendingOfflineOrders, ...serverOrders];
+                        setOrders(combined.sort((a: any, b: any) => (b.date || '').localeCompare(a.date || '')));
                     }
                 }
                 
                 setFirebaseStatus('online'); // Using this status to represent "Local Server Online"
             } catch (err) {
-                console.warn('[BUNKKER ERP] No se pudo conectar al servidor local. El sistema continúa en modo offline.', err);
+                console.warn('[BUNKKER ERP] No se pudo conectar al servidor local. El sistema continúa en modo offline con IndexedDB.', err);
                 setFirebaseStatus('offline');
             } finally {
                 setLoading(false);
@@ -178,10 +198,23 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         // Initial fetch
         fetchLocalData();
 
+        // Sincronizar inmediatamente al recuperar red
+        const handleOnline = () => {
+            fetchLocalData();
+        };
+        if (typeof window !== 'undefined') {
+            window.addEventListener('online', handleOnline);
+        }
+
         // Ultra-fast polling for local network (every 2 seconds)
         const pollInterval = setInterval(fetchLocalData, 2000);
 
-        return () => clearInterval(pollInterval);
+        return () => {
+            clearInterval(pollInterval);
+            if (typeof window !== 'undefined') {
+                window.removeEventListener('online', handleOnline);
+            }
+        };
     }, [setProducts, setOrders, setFirebaseStatus, setLoading]);
 
     // ─── Socket.IO Sync for Floating Stock ─────────────────────────────────────
@@ -348,7 +381,7 @@ export const useCart = () => {
             throw new Error('Límite Freemium alcanzado (300/300 ventas). Suscripción requerida.');
         }
 
-        if (state.firebaseStatus === 'offline') { console.warn('⚠️ Sin conexión. El pedido se encolará localmente.'); }
+        if (state.firebaseStatus === 'offline') { console.warn('⚠️ Sin conexión. El pedido se encolará localmente en IndexedDB.'); }
         if (state.cart.length === 0) { toast.warning('El carrito está vacío.'); return; }
 
         const orderId = customerData.orderId || `ORD-${Date.now().toString().slice(-6)}`;
@@ -374,7 +407,6 @@ export const useCart = () => {
         const expiresAt = asRequest ? new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString() : null;
 
         // BUG-7 FIX: Usar crypto.getRandomValues en lugar de Math.random() para el PIN de entrega.
-        // Math.random() es predecible; un atacante puede estimar el rango si conoce el timestamp.
         const pinArray = new Uint16Array(1);
         crypto.getRandomValues(pinArray);
         const deliveryPin = (1000 + (pinArray[0] % 9000)).toString();
@@ -393,24 +425,50 @@ export const useCart = () => {
             deliveryPin
         };
 
+        const apiPayload = {
+            ...newOrder,
+            id: orderId,
+            asRequest,
+            stockDeducted: true,
+            items: state.cart.map(i => ({ productId: i.id, quantity: i.quantity, price: i.price, name: i.name }))
+        };
+
+        // 1. Pre-guardar en IndexedDB ANTES de la petición de red (Write-Ahead Log).
+        // Si el navegador se cierra a mitad del request o la conexión cae, el pedido no se pierde jamás.
+        await enqueueOfflineOrder({
+            orderId,
+            payload: apiPayload,
+            deliveryPin,
+            source: 'storefront'
+        });
+
         try {
+            if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+                throw new TypeError('Failed to fetch (Offline)');
+            }
+
             const res = await fetch('/api/orders', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    ...newOrder,
-                    id: orderId,
-                    asRequest,
-                    stockDeducted: true,
-                    items: state.cart.map(i => ({ productId: i.id, quantity: i.quantity, price: i.price }))
-                })
+                body: JSON.stringify(apiPayload)
             });
 
             if (!res.ok) {
                 const errData = await res.json().catch(() => ({}));
+                // Si el servidor falla con 5xx, mantener en IndexedDB para auto-sincronización
+                if (res.status >= 500) {
+                    throw new TypeError(`Server error ${res.status}`);
+                }
+                // Si fue rechazo de validación o negocio (400/401/403), remover de la cola offline
+                const { removeQueuedOfflineOrder } = await import('@/lib/indexedDBCart');
+                await removeQueuedOfflineOrder(orderId);
                 const detail = errData.error || errData.message || (res.status === 401 ? 'Acceso denegado (Inicia sesión como cliente o personal)' : `Error en servidor local (HTTP ${res.status})`);
                 throw new Error(detail);
             }
+
+            // Confirmado en el servidor: eliminar de la cola de pendientes en IndexedDB
+            const { removeQueuedOfflineOrder } = await import('@/lib/indexedDBCart');
+            await removeQueuedOfflineOrder(orderId);
 
             state.clearCart();
             await logAudit({
@@ -426,8 +484,27 @@ export const useCart = () => {
                 (window as any).__inventorySocket.emit('sync_db_event', { action: 'NEW_ORDER', id: orderId });
             }
 
-            return { orderId, deliveryPin };
+            return { orderId, deliveryPin, queuedOffline: false };
         } catch (err: any) {
+            const isNetworkFailure =
+                err instanceof TypeError ||
+                (typeof navigator !== 'undefined' && navigator.onLine === false) ||
+                String(err?.message || '').includes('Failed to fetch') ||
+                String(err?.message || '').includes('NetworkError') ||
+                String(err?.message || '').includes('Server error');
+
+            if (isNetworkFailure) {
+                // Mantener en IndexedDB, agregar optimísticamente al store local y limpiar el carrito
+                state.setOrders([{ ...newOrder, offlineQueued: true } as any, ...state.orders]);
+                state.clearCart();
+                toast.warning(
+                    `Conexión inestable: Tu pedido ${orderId} se guardó de forma segura en IndexedDB y se enviará automáticamente al reconectar.`,
+                    '💾 Guardado Offline (IndexedDB)',
+                    8000
+                );
+                return { orderId, deliveryPin, queuedOffline: true };
+            }
+
             console.error('Order error:', err);
             toast.error(err.message, '❌ Venta rechazada');
             throw err;

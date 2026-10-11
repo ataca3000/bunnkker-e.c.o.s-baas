@@ -20,19 +20,10 @@ export default function DeviceLockScreen({ children }: { children: React.ReactNo
     const [isOnline, setIsOnline] = useState(true);
 
     useEffect(() => {
-
-        // Lógica de Verificación de Suscripción
+        // Lógica de Verificación de Suscripción Local-First
         const checkSubscription = async () => {
             try {
-                if (isOnline) { // Sincronizar si hay conexión
-                    const confSnap = await getDoc(doc(db, 'settings', 'site_config'));
-                    const subData = confSnap.data();
-                    const expiresAt = subData?.subscriptionExpiresAt?.toMillis?.() || (Date.now() + 30 * 24 * 60 * 60 * 1000);
-                    localStorage.setItem('admin_sub_expires', expiresAt.toString());
-                }
-
-                // 2. Verificar localmente
-                const expiresStr = localStorage.getItem('admin_sub_expires'); // Leer siempre de localStorage
+                const expiresStr = localStorage.getItem('admin_sub_expires');
                 if (expiresStr) {
                     const expiresAt = parseInt(expiresStr, 10);
                     const now = Date.now();
@@ -45,7 +36,6 @@ export default function DeviceLockScreen({ children }: { children: React.ReactNo
                         setDaysRemaining(diffDays);
                     }
                 } else {
-                    // Primer arranque offline sin datos? Damos 30 días de gracia local
                     const defaultExpires = Date.now() + (30 * 24 * 60 * 60 * 1000);
                     localStorage.setItem('admin_sub_expires', defaultExpires.toString());
                     setIsSubscriptionLocked(false);
@@ -57,39 +47,32 @@ export default function DeviceLockScreen({ children }: { children: React.ReactNo
         };
 
         checkSubscription();
-    }, [isOnline]); // Se ejecuta cuando cambia el estado de conexión
+    }, [isOnline]);
 
     useEffect(() => {
-        // --- Configuración de Efectos y Listeners ---
         setMounted(true);
-        
-        // Función para actualizar el estado de la conexión y volver a verificar la suscripción
         const updateOnlineStatus = () => {
             setIsOnline(window.navigator.onLine);
         };
 
         window.addEventListener('online', updateOnlineStatus);
         window.addEventListener('offline', updateOnlineStatus);
-        updateOnlineStatus(); // Establecer estado inicial al montar
+        updateOnlineStatus();
 
-        // Revisar periódicamente (cada hora)
         const interval = setInterval(() => {
-            // Forzamos la re-verificación incluso si el estado online no ha cambiado
             setIsOnline(window.navigator.onLine);
         }, 3600000);
 
-        // --- Función de Limpieza ---
         return () => {
             clearInterval(interval);
             window.removeEventListener('online', updateOnlineStatus);
             window.removeEventListener('offline', updateOnlineStatus);
         };
-    }, []); // Este efecto solo se ejecuta una vez para configurar los listeners.
+    }, []);
 
     const handleManualUnlock = () => {
         setLoading(true);
         setTimeout(() => {
-            // PIN de emergencia o renovación offline: "999999" o "admin123"
             if (inputVal === '999999' || inputVal === 'admin123') {
                 const newExpires = Date.now() + (30 * 24 * 60 * 60 * 1000);
                 localStorage.setItem('admin_sub_expires', newExpires.toString());
@@ -103,9 +86,7 @@ export default function DeviceLockScreen({ children }: { children: React.ReactNo
         }, 1000);
     };
 
-    if (!mounted) return null;
-
-    if (isSubscriptionLocked) {
+    if (mounted && isSubscriptionLocked) {
         return (
             <div className="fixed inset-0 z-[99999] bg-slate-950 flex flex-col items-center justify-center font-sans">
                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black pointer-events-none" />

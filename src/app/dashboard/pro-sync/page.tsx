@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { ShieldCheck, CloudLightning, KeyRound, Sparkles, Map, HeadphonesIcon, DatabaseZap, CloudDownload, Loader2 } from 'lucide-react';
 import { toast } from '@/lib/toast';
+import CloudBackupConfigWidget from '@/components/admin/CloudBackupConfigWidget';
 
 export default function ProSyncPage() {
   const [serial, setSerial] = useState('');
@@ -244,9 +245,13 @@ export default function ProSyncPage() {
               
               <ShieldCheck className="w-16 h-16 text-sky-400 mb-6 relative z-10" />
               <h2 className="text-2xl font-black text-white mb-2 relative z-10">Conexión Segura</h2>
-              <p className="text-sky-200 text-sm mb-8 relative z-10">
-                Esta computadora está enviando respaldos militares encriptados a Google Cloud cada 2 horas automáticamente.
+              <p className="text-sky-200 text-sm mb-6 relative z-10">
+                Esta computadora está enviando respaldos militares encriptados a Google Cloud cada {backupStatus?.frequencyMinutes ? (backupStatus.frequencyMinutes >= 60 ? `${backupStatus.frequencyMinutes / 60} hora(s)` : `${backupStatus.frequencyMinutes} minutos`) : '2 horas'} automáticamente.
               </p>
+
+              <div className="relative z-10 mb-6">
+                <CloudBackupConfigWidget compact />
+              </div>
 
               <div className="relative z-10 p-[8px] bg-slate-950 border border-sky-900/50 rounded-xl mb-6">
                 <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Estado del Respaldo</h3>

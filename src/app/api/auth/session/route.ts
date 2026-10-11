@@ -19,11 +19,16 @@ import bcrypt from 'bcryptjs';
 import fs from 'fs';
 import path from 'path';
 
-function getCookieOpts(request?: NextRequest) {
-  const isHttps = request ? (request.url.startsWith('https://') || request.headers.get('x-forwarded-proto') === 'https') : false;
+function getCookieOpts(request?: NextRequest, httpOnlyFlag = true) {
+  const isHttps = request
+    ? request.url.startsWith('https://') ||
+      request.headers.get('x-forwarded-proto') === 'https' ||
+      request.headers.get('origin')?.startsWith('https://') ||
+      request.headers.get('referer')?.startsWith('https://')
+    : false;
   return {
-    httpOnly: true,
-    secure: isHttps, // Solo exigir cookie segura si la conexión es HTTPS (evita rechazos en HTTP LAN 192.168.x.x)
+    httpOnly: httpOnlyFlag,
+    secure: isHttps, // Solo exigir cookie segura si la conexión o el origen es HTTPS
     sameSite: (isHttps ? 'none' : 'lax') as 'none' | 'lax', // En HTTPS / iFrame se requiere 'none' para que la sesión persista
     path: '/',
     maxAge: 60 * 60 * 24, // 24 horas
@@ -297,19 +302,59 @@ export async function POST(request: NextRequest) {
       finalUid = matchedUser.id;
       finalRole = matchedUser.role;
 
+    } else if (body.isClientLogin || body.email) {
+      const cleanIdentifier = (body.email || '').toLowerCase().trim();
+      const rawPassword = (body.password || '').trim();
+      if (!cleanIdentifier || !rawPassword) {
+        return NextResponse.json(
+          { success: false, error: 'Ingresa tu correo o teléfono y tu contraseña.' },
+          { status: 400 }
+        );
+      }
+
+      const customer = await prisma.customer.findFirst({
+        where: {
+          OR: [
+            { email: cleanIdentifier },
+            { phone: cleanIdentifier }
+          ]
+        }
+      });
+
+      if (!customer) {
+        return NextResponse.json(
+          { success: false, error: 'No encontramos una cuenta con ese correo o teléfono.' },
+          { status: 401 }
+        );
+      }
+
+      if (customer.pin && customer.pin !== rawPassword) {
+        return NextResponse.json(
+          { success: false, error: 'Contraseña incorrecta.' },
+          { status: 401 }
+        );
+      }
+
+      if (!customer.pin) {
+        try {
+          await prisma.customer.update({
+            where: { id: customer.id },
+            data: { pin: rawPassword }
+          });
+        } catch {
+          // ignore
+        }
+      }
+
+      finalUid = customer.id;
+      finalRole = 'client';
     } else if (idToken) {
-      // Login de clientes públicos — requiere verificación criptográfica en producción
       if (process.env.NODE_ENV === 'production') {
-        // En producción, NO aceptar uid sin verificar el idToken con Firebase Admin SDK.
-        // Hasta que firebase-admin.ts sea reemplazado por el SDK real, rechazar este flujo.
-        console.error('[AUTH SESSION] ❌ Client idToken auth rejected: Firebase Admin SDK not configured for production verification');
         return NextResponse.json(
           { success: false, error: 'Autenticación de cliente no disponible. Contacte al administrador.' },
           { status: 503 }
         );
       }
-      // DEV-ONLY: Permitir login directo para pruebas locales
-      console.warn('[AUTH SESSION] ⚠️ [DEV MODE] Accepting unverified idToken for local testing');
       finalUid = uid || 'local_user';
       finalRole = 'client';
     } else {
@@ -320,10 +365,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Firma y cookies
-    const cookieOpts = getCookieOpts(request);
+    // Usamos httpOnly: false para que también puedan sincronizarse en el cliente si el iFrame bloquea Set-Cookie de terceros
+    const cookieOpts = getCookieOpts(request, false);
     const isInitialPin = Boolean(pin && INITIAL_STAFF_PIN_VALUES.includes(pin));
     const sig = signRole(finalRole, finalUid);
-    const response = NextResponse.json({ success: true, role: finalRole, uid: finalUid, signature: sig, requirePinChange: isInitialPin });
+    const response = NextResponse.json({
+      success: true,
+      role: finalRole,
+      uid: finalUid,
+      signature: sig,
+      requirePinChange: isInitialPin
+    });
     response.cookies.set('msj-session', finalUid, cookieOpts);
     response.cookies.set('msj-role', finalRole, cookieOpts);
     response.cookies.set('msj-role-sig', sig, cookieOpts);

@@ -1,4 +1,3 @@
-
 "use client";
 import { motion } from 'framer-motion';
 import { Share2, LogOut, Palette, ChevronRight, QrCode, TrendingUp } from 'lucide-react';

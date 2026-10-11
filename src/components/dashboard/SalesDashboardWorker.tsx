@@ -1,4 +1,3 @@
-
 "use client";
 import { motion } from 'framer-motion';
 import { LogOut, ScanLine, ChevronRight, Clock, AlertTriangle, Users } from 'lucide-react';

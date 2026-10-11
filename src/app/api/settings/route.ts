@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/firebase';
+import { db, hasRealCredentials } from '@/lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
-export async function GET(req: NextRequest) {
+let localSiteConfigCache: Record<string, any> | null = null;
+
+export async function GET(_req: NextRequest) {
+  if (!hasRealCredentials) {
+    return NextResponse.json({ success: true, data: localSiteConfigCache });
+  }
+
   try {
     const docRef = doc(db, 'settings', 'site_config');
     const docSnap = await getDoc(docRef);
@@ -10,26 +16,31 @@ export async function GET(req: NextRequest) {
     if (docSnap.exists()) {
       return NextResponse.json({ success: true, data: docSnap.data() });
     }
-    return NextResponse.json({ success: true, data: null });
+    return NextResponse.json({ success: true, data: localSiteConfigCache });
   } catch (error: any) {
-    console.error('[API SETTINGS GET ERROR]:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    // En modo offline o sin conexión a Firestore, retornar caché local silenciosamente
+    return NextResponse.json({ success: true, data: localSiteConfigCache });
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const docRef = doc(db, 'settings', 'site_config');
-    
-    await setDoc(docRef, {
+    const updated = {
+      ...(localSiteConfigCache || {}),
       ...body,
       updatedAt: new Date().toISOString()
-    }, { merge: true });
+    };
+    localSiteConfigCache = updated;
 
-    return NextResponse.json({ success: true });
+    if (hasRealCredentials) {
+      const docRef = doc(db, 'settings', 'site_config');
+      await setDoc(docRef, updated, { merge: true });
+    }
+
+    return NextResponse.json({ success: true, data: updated });
   } catch (error: any) {
-    console.error('[API SETTINGS POST ERROR]:', error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
+

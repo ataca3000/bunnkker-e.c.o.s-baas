@@ -19,6 +19,7 @@ import { toast } from "@/lib/toast";
 
 import { CartHeader, CartItemList, CartEmptyState } from "./cart/CartItems";
 import { CheckoutForm, CartFooter, type CheckoutFormData } from "./cart/CheckoutForm";
+import { loadCheckoutDraftFromIDB, saveCheckoutDraftToIDB } from "@/lib/indexedDBCart";
 
 const DEFAULT_FORM: CheckoutFormData = {
     name: '',
@@ -45,6 +46,24 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
     const [step, setStep] = useState<'cart' | 'checkout'>('cart');
     const [formData, setFormData] = useState<CheckoutFormData>(DEFAULT_FORM);
     const [isProcessing, setIsProcessing] = useState(false);
+
+    // Hidratar borrador de checkout desde IndexedDB al montar
+    useEffect(() => {
+        loadCheckoutDraftFromIDB().then((draft) => {
+            if (draft) {
+                setFormData(prev => ({
+                    ...prev,
+                    name: prev.name || draft.name || '',
+                    phone: prev.phone || draft.phone || '',
+                    address: prev.address || draft.address || '',
+                    rfc: prev.rfc || draft.rfc || '',
+                    regimenFiscal: prev.regimenFiscal || draft.regimenFiscal || '',
+                    usoCFDI: prev.usoCFDI || draft.usoCFDI || '',
+                    deliveryMethod: draft.deliveryMethod || prev.deliveryMethod,
+                }));
+            }
+        }).catch(() => {});
+    }, []);
 
     // Pre-rellenar datos del perfil cuando se carga
     const [prevProfile, setPrevProfile] = useState(profile);
@@ -95,7 +114,11 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
     const [showAuthRequiredModal, setShowAuthRequiredModal] = useState(false);
 
     const handleFormChange = (patch: Partial<CheckoutFormData>) => {
-        setFormData(prev => ({ ...prev, ...patch }));
+        setFormData(prev => {
+            const next = { ...prev, ...patch };
+            saveCheckoutDraftToIDB(next).catch(() => {});
+            return next;
+        });
     };
 
     const handleCheckout = async () => {
@@ -144,18 +167,20 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
                 reservationHeld = true;
             }
 
-            const result = await createOrder({ ...data, orderId }, data.requireInvoice, false, true);
+            const result: any = await createOrder({ ...data, orderId }, data.requireInvoice, false, true);
             if (!result?.orderId) throw new Error('No se pudo generar el pedido.');
             orderCreated = true;
 
-            const { deliveryPin } = result;
+            const { deliveryPin, queuedOffline } = result;
             const finalTotal = total + data.tip;
 
-            toast.success(
-                `Pedido ${orderId} en espera · Total: $${finalTotal.toFixed(2)}. Pasa a caja cuando almacén lo marque listo.${deliveryPin ? ` PIN de entrega: ${deliveryPin}.` : ''}`,
-                'Pedido generado',
-                8000
-            );
+            if (!queuedOffline) {
+                toast.success(
+                    `Pedido ${orderId} en espera · Total: $${finalTotal.toFixed(2)}. Pasa a caja cuando almacén lo marque listo.${deliveryPin ? ` PIN de entrega: ${deliveryPin}.` : ''}`,
+                    'Pedido generado',
+                    8000
+                );
+            }
             setStep('cart');
             onClose();
         } catch (err) {

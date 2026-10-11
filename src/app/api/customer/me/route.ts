@@ -1,21 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { jwtVerify } from 'jose';
+import { verifyRoleSignature } from '@/lib/apiAuth';
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'super_secret_local_key');
 
+async function resolveCustomerId(req: NextRequest): Promise<string | null> {
+    const jwtCookie = req.cookies.get('admincom_session')?.value;
+    const msjSession = req.cookies.get('msj-session')?.value;
+    const msjRole = req.cookies.get('msj-role')?.value;
+    const msjSig = req.cookies.get('msj-role-sig')?.value;
+
+    for (const candidate of [jwtCookie, msjSession]) {
+        if (!candidate) continue;
+        try {
+            const { payload } = await jwtVerify(candidate, JWT_SECRET);
+            if (payload.role === 'customer' && payload.uid) {
+                return payload.uid as string;
+            }
+        } catch {
+            // Not a JWT token
+        }
+    }
+
+    if (msjSession && msjRole === 'client' && msjSig) {
+        if (verifyRoleSignature(msjRole, msjSession, msjSig)) {
+            return msjSession;
+        }
+    }
+
+    return null;
+}
+
 export async function GET(req: NextRequest) {
     try {
-        const token = req.cookies.get('msj-session')?.value || req.cookies.get('admincom_session')?.value;
-        if (!token) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-
-        const { payload } = await jwtVerify(token, JWT_SECRET);
-        
-        if (payload.role !== 'customer') {
-            return NextResponse.json({ error: 'Rol incorrecto' }, { status: 403 });
-        }
-
-        const customerId = payload.uid as string;
+        const customerId = await resolveCustomerId(req);
+        if (!customerId) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 
         const customer = await prisma.customer.findUnique({
             where: { id: customerId },
@@ -42,11 +62,8 @@ export async function GET(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
     try {
-        const token = req.cookies.get('msj-session')?.value || req.cookies.get('admincom_session')?.value;
-        if (!token) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-
-        const { payload } = await jwtVerify(token, JWT_SECRET);
-        const customerId = payload.uid as string;
+        const customerId = await resolveCustomerId(req);
+        if (!customerId) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 
         const data = await req.json();
 
