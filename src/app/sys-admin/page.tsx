@@ -4,6 +4,25 @@ import { useState, useEffect, useCallback } from 'react';
 import { ShieldAlert, Database, DollarSign, Store, Lock, Key, Plus, RefreshCw, CheckCircle, XCircle, Copy, Trash2, LogIn, Loader2 } from 'lucide-react';
 import { toast } from '@/lib/toast';
 
+type AgentRole = 'support' | 'cashier' | 'warehouse' | 'delivery' | 'owner';
+
+interface AgentConfig {
+    provider: string;
+    model: string;
+    endpoint: string;
+    apiKey: string;
+    enabled: boolean;
+    privateScope: boolean;
+}
+
+const AGENT_ROLES: Array<{ id: AgentRole; label: string; description: string }> = [
+    { id: 'support', label: 'Soporte a clientes', description: 'Atención, dudas y seguimiento de clientes.' },
+    { id: 'cashier', label: 'Asistente de caja', description: 'Apoya cobros, cortes y operación del POS.' },
+    { id: 'warehouse', label: 'Asistente de almacén', description: 'Consulta inventario, ubicaciones y reposición.' },
+    { id: 'delivery', label: 'Asistente de reparto', description: 'Apoya rutas, entregas y evidencias.' },
+    { id: 'owner', label: 'Gerente del dueño', description: 'Resumen ejecutivo, alertas y decisiones.' },
+];
+
 interface License {
     key: string;
     clientName: string;
@@ -24,7 +43,52 @@ export default function SysAdmin() {
     const [loginLoading, setLoginLoading] = useState(false);
     const [loginError, setLoginError] = useState('');
 
-    const [tab, setTab] = useState<'main' | 'licenses'>('main');
+    const [tab, setTab] = useState<'main' | 'licenses' | 'agents'>('main');
+    const [agentConfigs, setAgentConfigs] = useState<Partial<Record<AgentRole, AgentConfig>>>({});
+    const [selectedAgent, setSelectedAgent] = useState<AgentRole>('support');
+    const [agentLoading, setAgentLoading] = useState(false);
+    const [agentMessage, setAgentMessage] = useState('');
+
+    const selectedAgentConfig = agentConfigs[selectedAgent] ?? {
+        provider: 'vercel-ai-gateway', model: 'openai/gpt-4o-mini', endpoint: '', apiKey: '', enabled: true, privateScope: true
+    };
+
+    const loadAgentConfigs = useCallback(async () => {
+        setAgentLoading(true);
+        try {
+            const res = await fetch('/api/ai-agents/config');
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Error cargando agentes');
+            setAgentConfigs(data.configs || {});
+        } catch (error) {
+            setAgentMessage(error instanceof Error ? error.message : 'Error cargando agentes');
+        } finally { setAgentLoading(false); }
+    }, []);
+
+    useEffect(() => {
+        if (authState === 'authenticated' && tab === 'agents') loadAgentConfigs();
+    }, [authState, tab, loadAgentConfigs]);
+
+    const saveAgentConfig = async () => {
+        setAgentLoading(true);
+        setAgentMessage('');
+        try {
+            const res = await fetch('/api/ai-agents/config', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ role: selectedAgent, config: selectedAgentConfig }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'No se pudo guardar');
+            setAgentConfigs(current => ({ ...current, [selectedAgent]: data.config }));
+            setAgentMessage('Configuración guardada. La llave nunca se muestra completa.');
+        } catch (error) {
+            setAgentMessage(error instanceof Error ? error.message : 'Error guardando configuración');
+        } finally { setAgentLoading(false); }
+    };
+
+    const updateSelectedAgent = (patch: Partial<AgentConfig>) => {
+        setAgentConfigs(current => ({ ...current, [selectedAgent]: { ...selectedAgentConfig, ...patch } }));
+    };
 
     // License management state
     const [licenses, setLicenses]     = useState<License[]>([]);
@@ -245,11 +309,11 @@ export default function SysAdmin() {
                         <p style={{ color: '#666', marginTop: '4px' }}>Zona de Desarrollo y Configuración</p>
                     </div>
                     <div style={{ display: 'flex', gap: '10px' }}>
-                        {(['main', 'licenses'] as const).map(t => (
+                        {(['main', 'licenses', 'agents'] as const).map(t => (
                             <button key={t} onClick={() => setTab(t)}
                                 style={{ padding: '8px 20px', borderRadius: '6px', fontWeight: '700', cursor: 'pointer', border: 'none',
                                     background: tab === t ? '#E30613' : '#ddd', color: tab === t ? 'white' : '#333' }}>
-                                {t === 'main' ? '🏠 SISTEMA' : '🔑 LICENCIAS'}
+                                {t === 'main' ? 'SISTEMA' : t === 'licenses' ? 'LICENCIAS' : 'AGENTES IA'}
                             </button>
                         ))}
                     </div>
@@ -272,7 +336,7 @@ export default function SysAdmin() {
                                 <h3 style={{ fontWeight: 'bold' }}>Multi-Sucursal</h3>
                             </div>
                             <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '1rem' }}>Despliega nuevas instancias para sucursales adicionales.</p>
-                            <button className="bunkker-btn" style={{ width: '100%', fontSize: '0.85rem' }}>+ AGREGAR NUEVA TIENDA</button>
+                            <button className="bunkker-btn" onClick={() => setTab('agents')} style={{ width: '100%', fontSize: '0.85rem' }}>CONFIGURAR AGENTES IA</button>
                         </div>
                         <div className="bunkker-card" style={{ borderLeft: '5px solid #8e44ad' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1rem' }}>
@@ -301,6 +365,38 @@ export default function SysAdmin() {
                                 <li>Si el cliente cambia de PC → usa <strong>&ldquo;Reset Máquinas&rdquo;</strong>.</li>
                                 <li>Para desactivar acceso inmediato → toggle <strong>Activa/Inactiva</strong>.</li>
                             </ul>
+                        </div>
+                    </div>
+                )}
+
+                {/* ── TAB: AGENTES IA ── */}
+                {tab === 'agents' && (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(230px, 0.8fr) minmax(320px, 1.4fr)', gap: '1.5rem' }}>
+                        <div className="bunkker-card" style={{ borderLeft: '5px solid #8e44ad' }}>
+                            <h2 style={{ marginTop: 0, color: '#8e44ad' }}>AGENTES OPERATIVOS</h2>
+                            <p style={{ color: '#666', fontSize: '0.85rem', marginBottom: '1rem' }}>Cada rol mantiene su modelo, instrucciones y datos separados.</p>
+                            <div style={{ display: 'grid', gap: '8px' }}>
+                                {AGENT_ROLES.map(agent => {
+                                    const configured = Boolean(agentConfigs[agent.id]);
+                                    return <button key={agent.id} onClick={() => { setSelectedAgent(agent.id); setAgentMessage(''); }} style={{ textAlign: 'left', padding: '12px', border: selectedAgent === agent.id ? '2px solid #8e44ad' : '1px solid #ddd', borderRadius: '8px', background: selectedAgent === agent.id ? '#f5edfa' : 'white', cursor: 'pointer' }}>
+                                        <strong>{agent.label}</strong><br /><small style={{ color: '#666' }}>{configured ? 'Configurado' : 'Sin configurar'}</small>
+                                    </button>;
+                                })}
+                            </div>
+                        </div>
+                        <div className="bunkker-card" style={{ borderLeft: '5px solid #0ea5e9' }}>
+                            <h2 style={{ marginTop: 0 }}>{AGENT_ROLES.find(agent => agent.id === selectedAgent)?.label}</h2>
+                            <p style={{ color: '#666', fontSize: '0.85rem' }}>{AGENT_ROLES.find(agent => agent.id === selectedAgent)?.description}</p>
+                            <div style={{ display: 'grid', gap: '12px', marginTop: '1.5rem' }}>
+                                <label><b>Proveedor</b><input value={selectedAgentConfig.provider} onChange={e => updateSelectedAgent({ provider: e.target.value })} placeholder="vercel-ai-gateway" style={{ width: '100%', padding: '10px', marginTop: '4px', border: '1px solid #ddd', borderRadius: '6px' }} /></label>
+                                <label><b>Modelo</b><input value={selectedAgentConfig.model} onChange={e => updateSelectedAgent({ model: e.target.value })} placeholder="openai/gpt-4o-mini" style={{ width: '100%', padding: '10px', marginTop: '4px', border: '1px solid #ddd', borderRadius: '6px' }} /></label>
+                                <label><b>Endpoint opcional</b><input value={selectedAgentConfig.endpoint} onChange={e => updateSelectedAgent({ endpoint: e.target.value })} placeholder="https://..." style={{ width: '100%', padding: '10px', marginTop: '4px', border: '1px solid #ddd', borderRadius: '6px' }} /></label>
+                                <label><b>API key / token</b><input type="password" value={selectedAgentConfig.apiKey} onChange={e => updateSelectedAgent({ apiKey: e.target.value })} placeholder="Se conserva si lo dejas vacío" style={{ width: '100%', padding: '10px', marginTop: '4px', border: '1px solid #ddd', borderRadius: '6px' }} /></label>
+                                <label style={{ display: 'flex', gap: '8px', alignItems: 'center' }}><input type="checkbox" checked={selectedAgentConfig.enabled} onChange={e => updateSelectedAgent({ enabled: e.target.checked })} /> Agente habilitado</label>
+                                <label style={{ display: 'flex', gap: '8px', alignItems: 'center' }}><input type="checkbox" checked={selectedAgentConfig.privateScope} onChange={e => updateSelectedAgent({ privateScope: e.target.checked })} /> Mantener tareas y datos aislados por rol</label>
+                                <button onClick={saveAgentConfig} disabled={agentLoading} className="bunkker-btn" style={{ width: '100%' }}>{agentLoading ? 'GUARDANDO...' : 'GUARDAR CONFIGURACIÓN'}</button>
+                                {agentMessage && <p style={{ color: agentMessage.includes('guardada') ? '#27ae60' : '#E30613', fontSize: '0.85rem' }}>{agentMessage}</p>}
+                            </div>
                         </div>
                     </div>
                 )}
