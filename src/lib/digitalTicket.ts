@@ -35,6 +35,8 @@ export interface DigitalTicket {
   evidencePhoto?: string | null;
   signatureData?: string | null;
   loadedBy?: string | null;
+  validationSerial?: string;
+  deliveryType?: 'PATIO' | 'CAJA';
 }
 
 const STORAGE_PREFIX = '_bunkker_tickets_';
@@ -55,6 +57,8 @@ export function saveDigitalTicket(
     evidencePhoto?: string | null;
     signatureData?: string | null;
     loadedBy?: string | null;
+    validationSerial?: string;
+    deliveryType?: 'PATIO' | 'CAJA';
   } = {}
 ): DigitalTicket {
   const safeCaja = cajaId || 'caja_1';
@@ -103,6 +107,8 @@ export function saveDigitalTicket(
     evidencePhoto: paymentDetails.evidencePhoto || null,
     signatureData: paymentDetails.signatureData || null,
     loadedBy: paymentDetails.loadedBy || null,
+    validationSerial: paymentDetails.validationSerial,
+    deliveryType: paymentDetails.deliveryType,
   };
 
   existing.unshift(ticket);
