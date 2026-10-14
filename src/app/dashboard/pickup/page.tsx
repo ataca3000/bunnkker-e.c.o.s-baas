@@ -1,16 +1,21 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Store, CheckCircle, Calendar, Clock, Package, Banknote } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Store, CheckCircle, Calendar, Clock, Package, Banknote, PenTool, Printer, X } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from '@/lib/toast';
 import BarcodeScanner from '@/components/BarcodeScanner';
+import DeliveryProofModal from '@/components/orders/DeliveryProofModal';
+import TicketEntrega from '@/components/TicketEntrega';
 
 export default function PickupDashboard() {
-    const { formatCurrency, products, orders: allOrders } = useCart();
+    const { formatCurrency, products, orders: allOrders, siteConfig } = useCart();
+    const { profile } = useAuth();
     const [scanTargetId, setScanTargetId] = useState<string | null>(null);
+    const [orderForDeliveryProof, setOrderForDeliveryProof] = useState<any>(null);
+    const [deliveredTicketOrder, setDeliveredTicketOrder] = useState<any>(null);
     
     // Filtrar pedidos que sean para recoger en tienda o patio
     const orders = allOrders.filter(o => ['tienda', 'patio', 'pickup'].includes(o.deliveryMethod || '') || ['PICKUP', 'PATIO'].includes(o.deliveryType || ''));
@@ -182,10 +187,10 @@ export default function PickupDashboard() {
                                             </p>
                                         </div>
                                         <button 
-                                            onClick={() => setScanTargetId(order.id)}
+                                            onClick={() => setOrderForDeliveryProof(order)}
                                             className="w-full bg-cyan-500 hover:bg-cyan-400 text-white font-black py-3 rounded-lg flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-[0_0_15px_rgba(34,211,238,0.4)]"
                                         >
-                                            <CheckCircle size={18} /> MARCAR COMO ENTREGADO
+                                            <PenTool size={18} /> ENTREGAR CON FOTO & FIRMA (PoD)
                                         </button>
                                     </motion.div>
                                 ))
@@ -195,18 +200,76 @@ export default function PickupDashboard() {
 
                 </div>
             </div>
+
+            {/* Modal de Validación de Entrega con Foto y Firma */}
+            {orderForDeliveryProof && (
+                <DeliveryProofModal
+                    isOpen={Boolean(orderForDeliveryProof)}
+                    onClose={() => setOrderForDeliveryProof(null)}
+                    order={orderForDeliveryProof}
+                    cajaId="pickup_1"
+                    cashierName={profile?.displayName || 'Encargado Pickup'}
+                    onSuccess={(updatedOrder) => {
+                        setDeliveredTicketOrder(updatedOrder);
+                        const state = require('@/store/useERPStore').useERPStore.getState();
+                        if (state.fetchOrders) state.fetchOrders();
+                    }}
+                />
+            )}
+
+            {/* Modal Visor de Ticket con Foto y Firma al finalizar entrega */}
+            <AnimatePresence>
+                {deliveredTicketOrder && (
+                    <div className="fixed inset-0 z-[230] bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="bg-white rounded-2xl p-6 max-w-sm w-full relative shadow-2xl flex flex-col items-center"
+                        >
+                            <button
+                                onClick={() => setDeliveredTicketOrder(null)}
+                                className="absolute top-3 right-3 text-zinc-500 hover:text-black p-1 rounded-full hover:bg-zinc-100"
+                            >
+                                <X size={20} />
+                            </button>
+                            <div className="overflow-y-auto max-h-[75vh] w-full">
+                                <TicketEntrega
+                                    order={deliveredTicketOrder}
+                                    businessInfo={siteConfig || { businessName: 'BUNKKER E.C.O.S.' }}
+                                />
+                            </div>
+                            <div className="mt-4 flex gap-2 w-full">
+                                <button
+                                    onClick={() => window.print()}
+                                    className="flex-1 py-2.5 bg-black text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5"
+                                >
+                                    <Printer size={15} /> Imprimir Comprobante
+                                </button>
+                                <button
+                                    onClick={() => setDeliveredTicketOrder(null)}
+                                    className="py-2.5 px-4 bg-zinc-200 text-zinc-800 font-bold rounded-xl text-xs"
+                                >
+                                    Cerrar
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
             {scanTargetId && (
                 <BarcodeScanner
                     isOpen={true}
                     onClose={() => setScanTargetId(null)}
                     onScanSuccess={async (decodedText: string) => {
-                        if (decodedText.trim().toLowerCase() !== scanTargetId.toLowerCase()) {
-                            toast.warning('El ticket no corresponde a este pedido.');
+                        const target = orders.find(o => o.id.toLowerCase() === decodedText.trim().toLowerCase());
+                        if (!target) {
+                            toast.warning('El ticket no corresponde a ningún pedido preparado.');
                             return;
                         }
-                        const orderId = scanTargetId;
                         setScanTargetId(null);
-                        await markAsDelivered(orderId);
+                        setOrderForDeliveryProof(target);
                     }}
                 />
             )}

@@ -29,7 +29,7 @@ export default function MarketCatalog({ initialCategory, hideHeader }: { initial
     const [search, setSearch]               = useState('');
     const [showScanner, setShowScanner]     = useState(false);
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-    const [visibleCount, setVisibleCount]   = useState(6);
+    const [visibleCount, setVisibleCount]   = useState(24);
 
     // Leer parámetro ?search= de la URL (enviado por Navbar al escanear)
     const [prevUrlSearch, setPrevUrlSearch] = useState<string | null>(null);
@@ -45,7 +45,7 @@ export default function MarketCatalog({ initialCategory, hideHeader }: { initial
     if (filter !== prevFilter || search !== prevSearch) {
         setPrevFilter(filter);
         setPrevSearch(search);
-        setVisibleCount(6);
+        setVisibleCount(24);
     }
 
     const handleScan = (decodedText: string) => {
@@ -59,25 +59,30 @@ export default function MarketCatalog({ initialCategory, hideHeader }: { initial
         setShowScanner(false);
     };
 
-    // Categorías únicas derivadas de los productos
-    const uniqueCategories = Array.from(new Set(contextProducts.map(p => p.category))).filter(Boolean).sort() as string[];
+    // Categorías únicas derivadas de los productos con fallback a 'General'
+    const uniqueCategories = Array.from(new Set(contextProducts.map(p => p.category || 'General'))).filter(Boolean).sort() as string[];
 
     // Banners del Canvas Editor
     const catalogBanners = (siteConfig.layout || []).filter((b: any) => b.type === 'banner' && b.visible !== false);
 
-    // Ordenar por productOrder del siteConfig y filtrar
+    // Ordenar por productOrder del siteConfig: los productos nuevos van al inicio para visibilidad inmediata
     const sorted = [...contextProducts].sort((a, b) => {
-        if (!siteConfig.productOrder) return 0;
+        if (!siteConfig.productOrder || siteConfig.productOrder.length === 0) {
+            return (b.orderIndex ?? 0) - (a.orderIndex ?? 0);
+        }
         const ia = siteConfig.productOrder.indexOf(a.id);
         const ib = siteConfig.productOrder.indexOf(b.id);
-        if (ia === -1 && ib === -1) return 0;
-        if (ia === -1) return 1;
-        if (ib === -1) return -1;
+        if (ia === -1 && ib === -1) {
+            return (b.orderIndex ?? 0) - (a.orderIndex ?? 0);
+        }
+        if (ia === -1) return -1; // Los productos nuevos se colocan al frente
+        if (ib === -1) return 1;
         return ia - ib;
     });
 
     const filtered = sorted.filter(p => {
-        const matchFilter = filter === 'Todos' || p.category === filter;
+        const prodCat = p.category || 'General';
+        const matchFilter = filter === 'Todos' || prodCat === filter;
         const term = search.toLowerCase().trim();
         const matchSearch = !term || 
             p.name.toLowerCase().includes(term) || 

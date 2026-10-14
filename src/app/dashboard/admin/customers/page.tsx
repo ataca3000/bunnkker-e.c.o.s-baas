@@ -27,6 +27,11 @@ interface CustomerOrder {
     paymentMethod: string;
     deliveryType: string;
     confirmedAt: string | null;
+    completedAt?: string | null;
+    loadedBy?: string | null;
+    vendedorName?: string | null;
+    signatureData?: string | null;
+    photoData?: string | null;
     items: OrderItem[];
 }
 
@@ -420,7 +425,7 @@ export default function CustomersCRM() {
                                 </div>
 
                                 {/* Resumen del total */}
-                                <div className="space-y-1.5 mb-6 text-right">
+                                <div className="space-y-1.5 mb-4 text-right">
                                     <div className="flex justify-between text-zinc-500 text-xs">
                                         <span>Subtotal:</span>
                                         <span>${(activeTicket.order.total / 1.16).toFixed(2)}</span>
@@ -434,6 +439,43 @@ export default function CustomersCRM() {
                                         <span>${Number(activeTicket.order.total).toFixed(2)}</span>
                                     </div>
                                 </div>
+
+                                {/* Trazabilidad Operativa */}
+                                <div className="mb-3 p-2 bg-zinc-50 border border-zinc-200 rounded text-[10px] text-zinc-600 space-y-0.5">
+                                    <div className="flex justify-between">
+                                        <span>Caja / Cobro:</span>
+                                        <strong className="text-black">{activeTicket.order.vendedorName || 'Piso'}</strong>
+                                    </div>
+                                    {activeTicket.order.loadedBy && (
+                                        <div className="flex justify-between">
+                                            <span>Almacén / Preparado:</span>
+                                            <strong className="text-black">{activeTicket.order.loadedBy}</strong>
+                                        </div>
+                                    )}
+                                    {activeTicket.order.completedAt && (
+                                        <div className="flex justify-between">
+                                            <span>Entregado el:</span>
+                                            <strong className="text-black">{new Date(activeTicket.order.completedAt).toLocaleString('es-MX')}</strong>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Evidencia Fotográfica */}
+                                {activeTicket.order.photoData && (
+                                    <div className="mb-3 text-center border border-zinc-200 p-1 bg-zinc-50 rounded">
+                                        <span className="text-[9px] font-bold uppercase text-zinc-600 block mb-1">📸 Evidencia de Entrega</span>
+                                        <img src={activeTicket.order.photoData} alt="Foto Entrega" className="max-h-24 mx-auto object-contain rounded" />
+                                    </div>
+                                )}
+
+                                {/* Firma de Conformidad */}
+                                {activeTicket.order.signatureData && (
+                                    <div className="mb-4 text-center border-t border-dashed border-zinc-300 pt-2">
+                                        <span className="text-[9px] font-bold uppercase text-zinc-600 block">Firma Cliente Recibido</span>
+                                        <img src={activeTicket.order.signatureData} alt="Firma Cliente" className="h-12 mx-auto object-contain" />
+                                        <span className="text-[9px] text-zinc-500 block">{activeTicket.client.name}</span>
+                                    </div>
+                                )}
 
                                 <div className="flex gap-2">
                                     <button 

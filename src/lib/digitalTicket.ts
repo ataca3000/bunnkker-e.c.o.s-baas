@@ -33,6 +33,8 @@ export interface DigitalTicket {
   facturaStatus?: 'pendiente' | 'facturado' | 'no_solicitada';
   facturaRfc?: string;
   evidencePhoto?: string | null;
+  signatureData?: string | null;
+  loadedBy?: string | null;
 }
 
 const STORAGE_PREFIX = '_bunkker_tickets_';
@@ -51,6 +53,8 @@ export function saveDigitalTicket(
     vendedorId?: string;
     vendedorName?: string;
     evidencePhoto?: string | null;
+    signatureData?: string | null;
+    loadedBy?: string | null;
   } = {}
 ): DigitalTicket {
   const safeCaja = cajaId || 'caja_1';
@@ -97,6 +101,8 @@ export function saveDigitalTicket(
     consecutiveNumber,
     facturaStatus: 'no_solicitada',
     evidencePhoto: paymentDetails.evidencePhoto || null,
+    signatureData: paymentDetails.signatureData || null,
+    loadedBy: paymentDetails.loadedBy || null,
   };
 
   existing.unshift(ticket);

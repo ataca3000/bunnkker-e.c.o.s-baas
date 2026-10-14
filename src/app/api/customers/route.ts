@@ -21,6 +21,11 @@ export async function GET(request: NextRequest) {
                         paymentMethod: true,
                         deliveryType: true,
                         confirmedAt: true,
+                        completedAt: true,
+                        loadedBy: true,
+                        vendedorName: true,
+                        signatureData: true,
+                        photoData: true,
                         items: {
                             select: {
                                 id: true,
@@ -71,6 +76,11 @@ export async function GET(request: NextRequest) {
                     paymentMethod: o.paymentMethod || 'cash',
                     deliveryType: o.deliveryType || 'LOCAL',
                     confirmedAt: o.confirmedAt ? new Date(o.confirmedAt).toISOString() : null,
+                    completedAt: o.completedAt ? new Date(o.completedAt).toISOString() : null,
+                    loadedBy: o.loadedBy || null,
+                    vendedorName: o.vendedorName || null,
+                    signatureData: o.signatureData || null,
+                    photoData: o.photoData || null,
                     items: o.items.map(it => ({
                         id: it.id,
                         productId: it.productId,

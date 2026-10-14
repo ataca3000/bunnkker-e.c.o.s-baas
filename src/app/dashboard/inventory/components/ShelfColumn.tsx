@@ -77,19 +77,23 @@ export default function ShelfColumn({
   }, [shelfName, isInRenderDistance, onChunkRenderStateChange]);
 
   // Agrupar productos dinámicamente por su nivel / fila (Capas Y del Chunk X)
-  const levelsMap: Record<string, Product[]> = {};
+  const levelsMap: Record<string, Product[]> = {
+    'Nivel 1': [],
+    'Nivel 2': [],
+    'Nivel 3': [],
+  };
 
   products.forEach((p) => {
-    const fila = p.location?.fila || 'GENERAL';
+    const rawFila = p.location?.fila || 'Nivel 1';
+    const fila = rawFila === 'GENERAL' ? 'Nivel 1' : rawFila;
     if (!levelsMap[fila]) levelsMap[fila] = [];
     levelsMap[fila].push(p);
   });
 
-  if (Object.keys(levelsMap).length === 0) {
-    levelsMap['GENERAL'] = [];
-  }
-
-  const sortedLevels = Object.keys(levelsMap).sort();
+  const sortedLevels = Object.keys(levelsMap).sort((a, b) => {
+    // Ordenar Nivel 1, Nivel 2, Nivel 3 primero
+    return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+  });
   const displayShelfName = shelfName === 'Sin Asignar' ? 'BODEGA GENERAL' : shelfName;
   const totalPhysicalUnits = products.reduce((acc, item) => acc + Math.max(0, Number(item.stock || 0)), 0);
 
@@ -102,19 +106,19 @@ export default function ShelfColumn({
           onSelectShelf(shelfName);
         }
       }}
-      className={`w-[340px] flex-shrink-0 flex flex-col rounded-[5px] h-full border transition-all duration-200 overflow-hidden select-none ${
+      className={`w-[350px] flex-shrink-0 flex flex-col rounded-2xl h-full border transition-all duration-200 overflow-hidden select-none shadow-2xl ${
         isHighlighted
           ? 'bg-slate-900 border-sky-400 ring-2 ring-sky-400/50 shadow-[0_0_28px_rgba(14,165,233,0.3)] z-20 opacity-100'
           : isDimmed
           ? 'bg-slate-950/60 border-slate-800/50 opacity-30 hover:opacity-65 cursor-pointer'
-          : 'bg-slate-900/80 border-slate-800 shadow-xl opacity-100'
+          : 'bg-slate-900/90 border-slate-800 shadow-xl opacity-100'
       }`}
     >
       <div
         className={`p-4 border-b flex justify-between items-center sticky top-0 z-10 transition-colors ${
           isHighlighted
             ? 'bg-sky-950/70 border-sky-500/40'
-            : 'bg-slate-800/50 border-slate-800'
+            : 'bg-slate-800/80 border-slate-800'
         }`}
       >
         <div className="min-w-0 flex-1 pr-2">

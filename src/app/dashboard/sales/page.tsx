@@ -7,7 +7,7 @@ import { useCart, type Product } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { 
     Clock, Bell, History, User, Store, ShieldAlert, Wifi, Globe, TerminalSquare, AlertCircle, XCircle, CheckCircle2, Phone, Lock, Unlock,
-    LayoutDashboard, LogOut, ShoppingCart, Trash2, Zap, UserCheck, Scale, Settings
+    LayoutDashboard, LogOut, ShoppingCart, Trash2, Zap, UserCheck, Scale, Settings, PenTool, Camera
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
@@ -30,6 +30,7 @@ const ScaleModal = dynamic(() => import('@/components/sales/caja-movil/ScaleModa
 const TicketReceiptModal = dynamic(() => import('@/components/sales/caja-movil/TicketReceiptModal').then(m => m.TicketReceiptModal), { ssr: false });
 const TicketHistoryModal = dynamic(() => import('@/components/sales/caja-movil/TicketHistoryModal').then(m => m.TicketHistoryModal), { ssr: false });
 const PosSettingsModal = dynamic(() => import('@/components/sales/caja-movil/PosSettingsModal').then(m => m.PosSettingsModal), { ssr: false });
+const DeliveryProofModal = dynamic(() => import('@/components/orders/DeliveryProofModal'), { ssr: false });
 
 // Componentes de Caja Móvil
 import { Catalog } from '@/components/sales/caja-movil/Catalog';
@@ -39,6 +40,7 @@ import { DEFAULT_POS_CONFIG, type PosConfig } from '@/components/sales/caja-movi
 import type { OrderType } from '@/components/sales/caja-movil/Cart';
 import type { DeliveryInfo } from '@/components/sales/caja-movil/DeliveryModal';
 import { StockAlertModal, type StockIssue } from '@/components/sales/caja-movil/StockAlertModal';
+import { CashTenderModal } from '@/components/sales/CashTenderModal';
 import ThemeToggle from '@/components/ThemeToggle';
 import { AnimatePresence, motion } from 'framer-motion';
 
@@ -81,6 +83,8 @@ export default function SalesDashboard() {
     // Assignments for pickup location (ventanilla/cajon)
     const [assignments, setAssignments] = useState<Record<string, { type: 'ventanilla' | 'cajon'; number: string }>>({});
     const [claimingOrderId, setClaimingOrderId] = useState<string | null>(null);
+    const [orderForDeliveryProof, setOrderForDeliveryProof] = useState<any>(null);
+    const [cashTenderOrder, setCashTenderOrder] = useState<any | null>(null);
 
     // Cancel PIN states
     const [orderToCancel, setOrderToCancel] = useState<string | null>(null);
@@ -997,8 +1001,11 @@ export default function SalesDashboard() {
                                 </div>
                             ) : (
                                 displayedOrders.map(order => {
-                                    const isAwaitingPayment = ['pending_payment', 'pending_confirmation', 'pending', 'NIGHT_QUEUE'].includes(order.status);
-                                    const isReady = ['READY_TO_SHIP', 'READY_FOR_PICKUP'].includes(order.status);
+                                    const isLoadedByAlmacen = Boolean(order.isLoaded) || ['READY_TO_SHIP', 'READY_FOR_PICKUP', 'READY_FOR_PICKUP_PAID', 'COMPLETED', 'DELIVERED'].includes(order.status);
+                                    const isPaid = Boolean(order.confirmedAt) || order.status === 'paid' || order.status === 'READY_FOR_PICKUP_PAID' || order.status === 'DELIVERED' || order.status === 'COMPLETED';
+                                    const isPendingAlmacen = !isLoadedByAlmacen;
+                                    const isReadyForCashierPayment = isLoadedByAlmacen && !isPaid;
+                                    const isReadyToDeliver = isLoadedByAlmacen && isPaid && !['DELIVERED', 'COMPLETED'].includes(order.status);
                                     
                                     return (
                                         <div key={order.id} className="bg-zinc-900/60 backdrop-blur-md rounded-[5px] p-[8px] sm:p-[8px] border border-white/10 shadow-lg flex flex-col justify-between">
@@ -1010,11 +1017,13 @@ export default function SalesDashboard() {
                                                     </div>
                                                     <div className="flex items-center gap-2">
                                                         <span className={`text-[10px] font-bold uppercase px-2.5 py-1 rounded-full border ${
-                                                            isAwaitingPayment ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' :
-                                                            isReady ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' :
+                                                            isPendingAlmacen ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' :
+                                                            isReadyForCashierPayment ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30 animate-pulse' :
+                                                            isReadyToDeliver ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30' :
+                                                            order.status === 'DELIVERED' ? 'bg-green-500/20 text-green-400 border-green-500/30' :
                                                             'bg-indigo-500/20 text-indigo-400 border-indigo-500/30'
                                                         }`}>
-                                                            {isAwaitingPayment ? 'POR COBRAR' : isReady ? 'LISTO ENTREGA' : 'REPARTO'}
+                                                            {isPendingAlmacen ? '⏳ EN ALMACÉN' : isReadyForCashierPayment ? '✓ LISTO P/ COBRO' : isReadyToDeliver ? '📦 LISTO ENTREGA' : order.status}
                                                         </span>
                                                         <button
                                                             onClick={() => handleDeleteOrder(order.id)}
@@ -1100,79 +1109,81 @@ export default function SalesDashboard() {
                                                     </button>
                                                 </div>
 
-                                                {isReady ? (
-                                                    <div className="space-y-2">
-                                                        <div className="bg-black/20 p-2 rounded-xl border border-white/5 flex gap-2">
-                                                            <select 
-                                                                value={assignments[order.id]?.type || 'ventanilla'}
-                                                                onChange={(e) => setAssignments(prev => ({
-                                                                    ...prev,
-                                                                    [order.id]: {
-                                                                        type: e.target.value as 'ventanilla' | 'cajon',
-                                                                        number: prev[order.id]?.number || '1'
-                                                                    }
-                                                                }))}
-                                                                className="flex-1 bg-zinc-950 border border-white/10 rounded-lg px-2 py-1 text-xs font-bold text-white"
-                                                            >
-                                                                <option value="ventanilla">🚪 Ventanilla</option>
-                                                                <option value="cajon">🚗 Cajón</option>
-                                                            </select>
-                                                            <select 
-                                                                value={assignments[order.id]?.number || '1'}
-                                                                onChange={(e) => setAssignments(prev => ({
-                                                                    ...prev,
-                                                                    [order.id]: {
-                                                                        type: prev[order.id]?.type || 'ventanilla',
-                                                                        number: e.target.value
-                                                                    }
-                                                                }))}
-                                                                className="flex-1 bg-zinc-950 border border-white/10 rounded-lg px-2 py-1 text-xs font-bold text-white"
-                                                            >
-                                                                <option value="1">#1</option>
-                                                                <option value="2">#2</option>
-                                                                <option value="3">#3</option>
-                                                                <option value="4">#4</option>
-                                                                <option value="5">#5</option>
-                                                            </select>
+                                                {isPendingAlmacen ? (
+                                                    <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-2.5 text-center space-y-1.5">
+                                                        <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-amber-400">
+                                                            <Clock size={13} className="animate-spin text-amber-400" />
+                                                            <span>En Almacén — Surtido en Curso</span>
                                                         </div>
-                                                        <button 
-                                                            onClick={async () => {
-                                                                const ass = assignments[order.id] || { type: 'ventanilla', number: '1' };
-                                                                try {
-                                                                    await confirmRequest(order.id, { [ass.type]: ass.number });
-                                                                    broadcastSync();
-                                                                    showToast("✅ Entrega confirmada.");
-                                                                } catch (err: any) {
-                                                                    toast.error(err?.message || "Error al confirmar.");
-                                                                }
-                                                            }}
-                                                            className="w-full py-2.5 bg-green-600 text-white font-bold rounded-xl hover:bg-green-500 text-xs flex justify-center items-center gap-1.5"
+                                                        <p className="text-[10px] text-zinc-400 leading-tight">
+                                                            Almacén debe confirmar y marcar listo el pedido antes de que Caja pueda cobrar.
+                                                        </p>
+                                                        <button
+                                                            disabled
+                                                            title="Cobro bloqueado hasta que almacén confirme que el producto está listo"
+                                                            className="w-full py-2 bg-zinc-800/80 text-zinc-500 font-bold rounded-xl text-xs cursor-not-allowed flex items-center justify-center gap-1.5 opacity-60"
                                                         >
-                                                            <CheckCircle2 size={15} /> Confirmar Entrega
+                                                            <Lock size={13} /> Cobro Bloqueado (Almacén Pendiente)
                                                         </button>
                                                     </div>
+                                                ) : isReadyForCashierPayment ? (
+                                                    <div className="space-y-2">
+                                                        <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-2 text-center text-[11px] font-bold text-emerald-400 flex flex-col items-center justify-center gap-1">
+                                                            <div className="flex items-center gap-1.5">
+                                                                <CheckCircle2 size={13} /> Surtido listo por {order.loadedBy || 'Almacén'}.
+                                                            </div>
+                                                            {order.deliveryType === 'PATIO' ? (
+                                                                <span className="text-[10px] font-black uppercase text-amber-300 bg-amber-500/20 border border-amber-500/40 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                                                                    🏗️ Ubicación: BAHÍA DE CARGA / PATIO
+                                                                </span>
+                                                            ) : (
+                                                                <span className="text-[10px] font-black uppercase text-emerald-300 bg-emerald-500/20 border border-emerald-500/40 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                                                                    📦 Ubicación: CAJA / MOSTRADOR
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <button
+                                                            onClick={() => setCashTenderOrder(order)}
+                                                            className="w-full py-2.5 bg-gradient-to-r from-emerald-600 to-green-600 text-white font-black rounded-xl hover:from-emerald-500 hover:to-green-500 uppercase tracking-widest text-xs shadow-[0_0_20px_rgba(16,185,129,0.3)] flex justify-center items-center gap-2 transition-all active:scale-95 cursor-pointer"
+                                                        >
+                                                            <CheckCircle2 size={15} /> Cobrar en Caja (${Number(order.total).toFixed(2)})
+                                                        </button>
+                                                    </div>
+                                                ) : isReadyToDeliver ? (
+                                                    <div className="space-y-2">
+                                                        <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-xl p-2 text-center text-[11px] font-bold text-cyan-400 flex flex-col items-center justify-center gap-1">
+                                                            <div className="flex items-center gap-1.5">
+                                                                <ShieldAlert size={13} /> Cobro verificado. Listo para entrega al cliente.
+                                                            </div>
+                                                            {order.deliveryType === 'PATIO' ? (
+                                                                <span className="text-[10px] font-black uppercase text-amber-300 bg-amber-500/20 border border-amber-500/40 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                                                                    🏗️ Entrega asignada a: BAHÍA DE CARGA (Patio)
+                                                                </span>
+                                                            ) : (
+                                                                <span className="text-[10px] font-black uppercase text-emerald-300 bg-emerald-500/20 border border-emerald-500/40 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                                                                    📦 Entrega asignada a: CAJA (Mostrador)
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <button
+                                                            onClick={() => setOrderForDeliveryProof(order)}
+                                                            className="w-full py-2.5 bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-black rounded-xl hover:from-cyan-500 hover:to-blue-500 uppercase tracking-widest text-xs shadow-[0_0_20px_rgba(6,182,212,0.3)] flex justify-center items-center gap-2 transition-all active:scale-95"
+                                                        >
+                                                            <PenTool size={15} /> Validar Entrega (Foto + Firma PoD)
+                                                        </button>
+                                                    </div>
+                                                ) : order.status === 'DELIVERED' ? (
+                                                    <div className="bg-zinc-800/80 border border-white/5 rounded-xl p-2 text-center text-xs text-zinc-300">
+                                                        <span className="text-emerald-400 font-bold flex items-center justify-center gap-1">
+                                                            <CheckCircle2 size={14} /> Entregado con Foto y Firma
+                                                        </span>
+                                                    </div>
                                                 ) : (
-                                                    <button 
-                                                        onClick={async () => {
-                                                            try {
-                                                                const res = await fetch('/api/orders', {
-                                                                    method: 'PATCH',
-                                                                    headers: { 'Content-Type': 'application/json' },
-                                                                    body: JSON.stringify({ id: order.id, status: 'paid' })
-                                                                });
-                                                                if (res.ok) {
-                                                                    showToast("✅ Cobro registrado en caja. Pedido enviado a despacho.");
-                                                                    broadcastSync();
-                                                                } else {
-                                                                    toast.error("No se pudo registrar el pago.");
-                                                                }
-                                                            } catch {
-                                                                toast.error("Error al registrar el pago.");
-                                                            }
-                                                        }}
-                                                        className="w-full py-2.5 bg-gradient-to-r from-emerald-600 to-green-600 text-white font-black rounded-xl hover:from-emerald-500 hover:to-green-500 uppercase tracking-widest text-xs shadow-[0_0_20px_rgba(16,185,129,0.3)] flex justify-center items-center gap-2 transition-all active:scale-95"
+                                                    <button
+                                                        onClick={() => setOrderForDeliveryProof(order)}
+                                                        className="w-full py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-bold rounded-xl text-xs flex justify-center items-center gap-1.5"
                                                     >
-                                                        <CheckCircle2 size={15} /> Cobrar y Despachar
+                                                        <PenTool size={14} /> Entrega de Pedido
                                                     </button>
                                                 )}
 
@@ -1274,6 +1285,50 @@ export default function SalesDashboard() {
                     setIsTicketModalOpen(true);
                 }}
             />
+
+            {/* Modal de Cobro en Caja (Monto Recibido, Cambio, Serial y Ticket Digital) */}
+            <CashTenderModal
+                isOpen={Boolean(cashTenderOrder)}
+                onClose={() => setCashTenderOrder(null)}
+                order={cashTenderOrder}
+                cashierName={profile?.displayName || 'Cajero de Turno'}
+                cashierUid={profile?.uid || 'CAJA-1'}
+                onPaymentSuccess={(ticket, updatedOrder) => {
+                    setCashTenderOrder(null);
+                    broadcastSync();
+                    if (ticket) {
+                        setCurrentTicket(ticket);
+                        setIsTicketModalOpen(true);
+                    }
+                    const isPatio = updatedOrder.deliveryType === 'PATIO' || updatedOrder.deliveryMethod === 'patio';
+                    if (isPatio) {
+                        toast.success('✅ Cobro completado. El cliente ahora puede pasar al patio con su Ticket/QR para que el personal de patio escanee y entregue con firma y foto.');
+                    } else {
+                        // En mostrador/caja, permitir cerrar la entrega directamente
+                        setOrderForDeliveryProof(updatedOrder);
+                    }
+                }}
+            />
+
+            {/* Modal de Validación de Entrega con Foto y Firma de Cliente (PoD) */}
+            {orderForDeliveryProof && (
+                <DeliveryProofModal
+                    isOpen={Boolean(orderForDeliveryProof)}
+                    onClose={() => setOrderForDeliveryProof(null)}
+                    order={orderForDeliveryProof}
+                    cajaId="caja_1"
+                    cashierName={profile?.displayName || 'Cajero de Turno'}
+                    onSuccess={(updatedOrder, savedTicket) => {
+                        broadcastSync();
+                        if (savedTicket) {
+                            setCurrentTicket(savedTicket);
+                            setIsTicketModalOpen(true);
+                        } else {
+                            showToast(`✅ Entrega de orden ${updatedOrder?.id || ''} completada.`);
+                        }
+                    }}
+                />
+            )}
 
             {/* Modal de Configuración de Caja y Panel */}
             <PosSettingsModal

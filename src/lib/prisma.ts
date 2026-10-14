@@ -1,11 +1,15 @@
 import { PrismaClient } from '@prisma/client';
 import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
 
 // Prisma Client inicializado de forma segura y compatible con SQLite local, PostgreSQL cloud y modo en memoria (AI Studio)
 
 function hashPin(pin: string): string {
   return crypto.createHash('sha256').update(pin).digest('hex');
 }
+
+const PERSISTENCE_FILE = path.join(process.cwd(), '.prisma_memory_store.json');
 
 const initialMemoryStore: Record<string, any[]> = {
   product: [
@@ -167,8 +171,44 @@ function applyUpdateData(target: any, data: any) {
   return updated;
 }
 
+function loadPersistedStore(): Record<string, any[]> {
+  try {
+    if (fs.existsSync(PERSISTENCE_FILE)) {
+      const content = fs.readFileSync(PERSISTENCE_FILE, 'utf-8');
+      const parsed = JSON.parse(content);
+      if (parsed && typeof parsed === 'object') {
+        for (const [key, val] of Object.entries(initialMemoryStore)) {
+          if (!parsed[key] || !Array.isArray(parsed[key]) || parsed[key].length === 0) {
+            parsed[key] = [...val];
+          }
+        }
+        return parsed;
+      }
+    }
+  } catch (err) {
+    console.warn('[Prisma Store] Error loading persisted memory store:', err);
+  }
+  return { ...initialMemoryStore };
+}
+
+let saveTimer: any = null;
+function triggerStoreSave(store: Record<string, any[]>) {
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    try {
+      fs.writeFileSync(PERSISTENCE_FILE, JSON.stringify(store, null, 2), 'utf-8');
+    } catch (err) {
+      console.warn('[Prisma Store] Error saving store to disk:', err);
+    }
+  }, 100);
+}
+
 function createInMemoryPrisma() {
-  const store: Record<string, any[]> = initialMemoryStore;
+  const g = globalThis as any;
+  if (!g._bunkker_memory_store) {
+    g._bunkker_memory_store = loadPersistedStore();
+  }
+  const store: Record<string, any[]> = g._bunkker_memory_store;
 
   const getTable = (prop: string): any[] => {
     if (!store[prop]) store[prop] = [];
@@ -261,6 +301,7 @@ function createInMemoryPrisma() {
           });
         }
       }
+      triggerStoreSave(store);
       return attachRelations(prop, newRecord, args?.include);
     },
     update: async (args?: any) => {
@@ -269,9 +310,11 @@ function createInMemoryPrisma() {
       if (idx === -1) {
         const fallback = { id: args?.where?.id || crypto.randomUUID(), ...(args?.data ?? {}) };
         tbl.push(fallback);
+        triggerStoreSave(store);
         return attachRelations(prop, fallback, args?.include);
       }
       tbl[idx] = applyUpdateData(tbl[idx], args?.data);
+      triggerStoreSave(store);
       return attachRelations(prop, tbl[idx], args?.include);
     },
     updateMany: async (args?: any) => {
@@ -283,6 +326,7 @@ function createInMemoryPrisma() {
           count++;
         }
       }
+      if (count > 0) triggerStoreSave(store);
       return { count };
     },
     upsert: async (args?: any) => {
@@ -290,6 +334,7 @@ function createInMemoryPrisma() {
       const idx = tbl.findIndex((r) => matchesWhere(r, args?.where));
       if (idx !== -1) {
         tbl[idx] = applyUpdateData(tbl[idx], args?.update);
+        triggerStoreSave(store);
         return attachRelations(prop, tbl[idx], args?.include);
       }
       const created = {
@@ -299,6 +344,7 @@ function createInMemoryPrisma() {
         ...(args?.create ?? {}),
       };
       tbl.push(created);
+      triggerStoreSave(store);
       return attachRelations(prop, created, args?.include);
     },
     delete: async (args?: any) => {
@@ -306,6 +352,7 @@ function createInMemoryPrisma() {
       const idx = tbl.findIndex((r) => matchesWhere(r, args?.where));
       if (idx !== -1) {
         const [removed] = tbl.splice(idx, 1);
+        triggerStoreSave(store);
         return removed;
       }
       return {};
@@ -314,6 +361,7 @@ function createInMemoryPrisma() {
       const tbl = getTable(prop);
       const before = tbl.length;
       store[prop] = tbl.filter((r) => !matchesWhere(r, args?.where));
+      triggerStoreSave(store);
       return { count: before - store[prop].length };
     },
   });

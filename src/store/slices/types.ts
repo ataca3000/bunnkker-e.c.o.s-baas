@@ -4,6 +4,7 @@ export interface CartSlice {
     cart: CartItem[];
     isCartOpen: boolean;
     addToCart: (product: Product, quantity?: number) => void;
+    decrementFromCart?: (productId: string) => void;
     removeFromCart: (productId: string) => void;
     clearCart: () => void;
     openCart: () => void;

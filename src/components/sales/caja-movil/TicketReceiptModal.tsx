@@ -191,6 +191,23 @@ export function TicketReceiptModal({ isOpen, onClose, ticket, siteConfig, cajaId
                             </span>
                         </div>
 
+                        {/* Evidencia Fotográfica (si existe) */}
+                        {ticket.evidencePhoto && (
+                            <div className="my-2 border border-black p-1 text-center bg-gray-50">
+                                <span className="text-[8px] font-bold uppercase text-gray-700 block mb-1">📸 Foto de Entrega (PoD)</span>
+                                <img src={ticket.evidencePhoto} alt="Evidencia" className="max-h-20 mx-auto object-contain border border-gray-300" />
+                            </div>
+                        )}
+
+                        {/* Firma de Conformidad (si existe) */}
+                        {ticket.signatureData && (
+                            <div className="my-2 text-center border-t border-dashed border-black pt-1">
+                                <span className="text-[8px] font-bold uppercase text-gray-700 block">Firma Cliente Recibido</span>
+                                <img src={ticket.signatureData} alt="Firma" className="h-12 mx-auto object-contain" />
+                                <span className="text-[8px] text-gray-600 block">{ticket.customerName}</span>
+                            </div>
+                        )}
+
                         {/* Leyenda y Notas según la copia */}
                         {activeTab === 'cliente' ? (
                             <div className="text-center text-[9px] space-y-1 text-gray-700 border-t border-dashed border-black pt-2">

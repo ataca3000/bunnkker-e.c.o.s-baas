@@ -9,3 +9,5 @@ declare module 'qrcode.react';
 declare module 'react-qr-code';
 declare module 'nodemailer';
 declare module 'facturapi';
+declare module 'react-signature-canvas';
+declare module 'react-webcam';

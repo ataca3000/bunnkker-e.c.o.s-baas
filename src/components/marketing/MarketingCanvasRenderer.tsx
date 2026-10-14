@@ -318,7 +318,10 @@ export default function MarketingCanvasRenderer({ pageId }: { pageId: string }) 
                     transition={{ duration: 1, ease: "easeOut" }}
                     className="relative z-10 max-w-5xl mx-auto px-6 text-center"
                 >
-                    <div className="backdrop-blur-xl bg-white/5 border border-white/10 p-12 md:p-20 rounded-3xl shadow-2xl">
+                    <div 
+                        className="backdrop-blur-xl bg-white/5 border border-white/10 p-12 md:p-20 rounded-3xl shadow-2xl max-w-full"
+                        style={{ color: '#d3d1d1', textAlign: 'center', fontWeight: 'bold', fontStyle: 'normal', textDecorationLine: 'none', height: '366.5px', width: '1331px' }}
+                    >
                         <motion.h1 
                             initial={{ scale: 0.95 }}
                             animate={{ scale: 1 }}
@@ -327,11 +330,17 @@ export default function MarketingCanvasRenderer({ pageId }: { pageId: string }) 
                         >
                             {siteConfig.marketTitle || 'Construye tus Sueños'}
                         </motion.h1>
-                        <p className="text-xl md:text-2xl text-slate-300 max-w-3xl mx-auto font-light leading-relaxed mb-10">
+                        <p 
+                            className="text-xl md:text-2xl text-slate-300 mx-auto font-light leading-relaxed mb-10 max-w-full"
+                            style={{ width: '992px', height: '94.5px' }}
+                        >
                             {siteConfig.marketSubtitle || 'Materiales, herramientas y acabados de la más alta calidad para tu obra.'}
                         </p>
                         
-                        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                        <div 
+                            className="flex flex-col sm:flex-row gap-4 justify-center items-center max-w-full"
+                            style={{ width: '1331px', height: '79px' }}
+                        >
                             <button onClick={() => document.getElementById('catalogo-section')?.scrollIntoView({ behavior: 'smooth' })} className="px-8 py-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-white font-bold rounded-full transition-all shadow-[0_0_20px_rgba(249,115,22,0.4)] hover:shadow-[0_0_30px_rgba(249,115,22,0.6)] hover:-translate-y-1 flex items-center gap-2">
                                 Ver Catálogo
                             </button>
@@ -375,7 +384,7 @@ export default function MarketingCanvasRenderer({ pageId }: { pageId: string }) 
                 <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[100px] pointer-events-none" />
                 <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-orange-500/10 rounded-full blur-[100px] pointer-events-none" />
                 
-                <div className="max-w-7xl mx-auto px-6 relative z-10">
+                <div className="max-w-7xl mx-auto px-6 relative z-10" style={{ width: '1918px', maxWidth: '100%' }}>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
                         
                         {/* Info */}
@@ -424,7 +433,8 @@ export default function MarketingCanvasRenderer({ pageId }: { pageId: string }) 
                             ) : (
                                 <form 
                                     onSubmit={(e) => { e.preventDefault(); setFormSent(true); }}
-                                    className="flex flex-col gap-5"
+                                    className="flex flex-col gap-5 max-w-full"
+                                    style={{ width: '810px', height: '519.656px', maxWidth: '100%' }}
                                 >
                                     <h3 className="text-2xl font-bold text-white mb-2">Solicitar Cotización</h3>
                                     

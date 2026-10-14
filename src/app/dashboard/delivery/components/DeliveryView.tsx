@@ -52,8 +52,8 @@ export default function DeliveryView({
   const [pinInput, setPinInput] = useState<string>('');
   const [pinError, setPinError] = useState<string>('');
   const [isVerifyingGPS, setIsVerifyingGPS] = useState(false);
-  const webcamRef = useRef<Webcam>(null);
-  const signatureRef = useRef<SignatureCanvas>(null);
+  const webcamRef = useRef<any>(null);
+  const signatureRef = useRef<any>(null);
 
   const openGoogleMaps = () => {
     const url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(order.address || '')}`;

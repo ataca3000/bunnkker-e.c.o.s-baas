@@ -35,7 +35,8 @@ import {
     User,
     Save,
     RefreshCw as Refresh,
-    Activity
+    Activity,
+    Sparkles
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
@@ -44,6 +45,7 @@ import { db } from '@/lib/firebase';
 import { doc, updateDoc, onSnapshot, getDoc } from 'firebase/firestore';
 import { toast } from '@/lib/toast';
 import ThemeToggle from '@/components/ThemeToggle';
+import IconCarouselNav from '@/components/admin/IconCarouselNav';
 
 
 const rolePaths: Record<string, string[]> = {
@@ -329,6 +331,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const pathname = usePathname();
     const router = useRouter();
     const [isCollapsed, setIsCollapsed]         = useState(false);
+    const [navMode, setNavMode]                 = useState<'carousel' | 'sidebar'>('carousel');
     const [connTooltipOpen, setConnTooltipOpen] = useState(false);
     const tooltipRef                            = useRef<HTMLDivElement>(null);
     const [activeModules, setActiveModules]     = useState<string[] | null>(null);
@@ -338,11 +341,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const { isReadOnly, isPremium, profile, signOut, loading: authLoading } = useAuth();
     const { firebaseStatus } = useCart();
 
-    /* persist sidebar preference */
+    /* persist sidebar and navigation mode preferences */
     useEffect(() => {
         try {
             const saved = localStorage.getItem('_admincom_sidebar_collapsed');
             if (saved === 'true') setIsCollapsed(true);
+            const savedNav = localStorage.getItem('_admincom_nav_mode');
+            if (savedNav === 'sidebar' || savedNav === 'carousel') {
+                setNavMode(savedNav);
+            } else {
+                // Default to carousel mode as requested by user
+                setNavMode('carousel');
+            }
         } catch {}
     }, []);
 

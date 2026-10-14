@@ -139,6 +139,17 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
     // ─── Local API Sync for Operational Data (Products & Orders) + IndexedDB Queue Flush ───
     useEffect(() => {
+        // Pre-hidratar inmediatamente desde caché para evitar parpadeos
+        try {
+            const cached = localStorage.getItem('_bunkker_cached_products');
+            if (cached) {
+                const parsed = JSON.parse(cached);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    setProducts(parsed);
+                }
+            }
+        } catch {}
+
         let isFetching = false;
         const fetchLocalData = async () => {
             if (isFetching || localMutationInFlight.current > 0) return;
@@ -159,9 +170,18 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
                     if (prodData.success) {
                         const mappedProducts = prodData.data.map((p: any) => ({
                             ...p,
+                            category: p.category || 'General',
                             location: { estante: p.estante || '', fila: p.fila || '' }
                         }));
-                        setProducts(mappedProducts);
+                        // Salvaguardar productos recién creados en los últimos 60 segundos si el servidor aún no los devuelve
+                        const currentProducts = useERPStore.getState().products;
+                        const serverIds = new Set(mappedProducts.map((p: any) => p.id));
+                        const freshlyCreated = currentProducts.filter(p => !serverIds.has(p.id) && (Date.now() - (new Date(p.createdAt || 0).getTime())) < 60000);
+                        const finalProducts = [...mappedProducts, ...freshlyCreated];
+                        setProducts(finalProducts);
+                        try {
+                            localStorage.setItem('_bunkker_cached_products', JSON.stringify(finalProducts));
+                        } catch {}
                     }
                 }
 
@@ -599,12 +619,13 @@ export const useCart = () => {
         } catch (err) { throw err; }
     }, [isReadOnly, profile]);
 
-    const completeLoading = useCallback(async (orderId: string) => {
+    const completeLoading = useCallback(async (orderId: string, targetLocation?: 'caja' | 'carga') => {
         const state = useERPStore.getState();
         if (isReadOnly || state.firebaseStatus === 'offline') return;
         const workerName = profile?.displayName || 'Cargador';
         const timestamp = new Date().toISOString().replace('T', ' ').split('.')[0];
-        const plainAudit = `[${timestamp}] ${workerName.toUpperCase()}: FINALIZÓ CARGA DE ORDEN ${orderId}`;
+        const locationText = targetLocation === 'carga' ? 'EN BAHÍA DE CARGA / PATIO' : 'EN CAJA / MOSTRADOR';
+        const plainAudit = `[${timestamp}] ${workerName.toUpperCase()}: FINALIZÓ CARGA DE ORDEN ${orderId} (${locationText})`;
 
         try {
             const response = await fetch('/api/orders', {
@@ -612,12 +633,17 @@ export const useCart = () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     id: orderId,
-                    action: 'complete_loading'
+                    action: 'complete_loading',
+                    targetLocation: targetLocation || 'caja'
                 })
             });
             if (!response.ok) throw new Error('No se pudo finalizar la preparación de la orden.');
             if (typeof window !== 'undefined' && (window as any).__inventorySocket) {
-                (window as any).__inventorySocket.emit('sync_db_event', { action: 'ORDER_LOADING_COMPLETED', id: orderId });
+                (window as any).__inventorySocket.emit('sync_db_event', { 
+                    action: 'ORDER_LOADING_COMPLETED', 
+                    id: orderId,
+                    targetLocation: targetLocation || 'caja'
+                });
             }
 
             await logAudit({

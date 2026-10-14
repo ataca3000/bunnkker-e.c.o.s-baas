@@ -62,6 +62,9 @@ export interface Order {
   loadingStartedAt?: string;
   loadingFinishedAt?: string;
   isLoaded?: boolean;
+  signatureData?: string | null;
+  photoData?: string | null;
+  completedAt?: string | null;
   cancelledAt?: string;
   assignedDriverId?: string;
   claimedBy?: string;

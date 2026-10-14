@@ -55,6 +55,20 @@ export const createCartSlice: StateCreator<
             broadcastReservationChange(product.id, 'RESERVE', quantity);
         }),
 
+    decrementFromCart: (productId: string) =>
+        set((state) => {
+            const item = state.cart.find((i: any) => i.id === productId);
+            if (!item) return;
+            if (item.quantity > 1) {
+                item.quantity -= 1;
+                (item as any).lastModified = Date.now();
+                broadcastReservationChange(productId, 'RELEASE', 1);
+            } else {
+                broadcastReservationChange(productId, 'RELEASE', 1);
+                state.cart = state.cart.filter((i: any) => i.id !== productId);
+            }
+        }),
+
     removeFromCart: (productId) =>
         set((state) => {
             const item = state.cart.find((i: any) => i.id === productId);

@@ -150,11 +150,11 @@ export default async function middleware(request: NextRequest) {
   // --- 3. API Protection ---
   if (pathname.startsWith('/api')) {
     const publicApiRoutes = ['/api/auth', '/api/customer', '/api/public', '/api/omnipulse', '/api/settings'];
-    // Permitir lectura pública de productos para el catálogo de clientes sin requerir login
-    const isPublicGet = request.method === 'GET' && (pathname === '/api/products' || pathname.startsWith('/api/products/'));
+    // Permitir acceso a productos para que la validación RBAC granular se ejecute en el route handler (compatible con headers y sesiones locales)
+    const isProductsApi = pathname === '/api/products' || pathname.startsWith('/api/products/');
     // Permitir creación de pedidos (la seguridad, RBAC y validación de roles/invitados se gestiona de forma segura en /api/orders)
     const isPublicOrderCreate = request.method === 'POST' && pathname === '/api/orders';
-    const isPublicApi = isPublicGet || isPublicOrderCreate || publicApiRoutes.some(r => pathname.startsWith(r));
+    const isPublicApi = isProductsApi || isPublicOrderCreate || publicApiRoutes.some(r => pathname.startsWith(r));
 
     if (!isPublicApi) {
       const session = request.cookies.get('msj-session')?.value;

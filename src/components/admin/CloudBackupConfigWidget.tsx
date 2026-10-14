@@ -12,13 +12,20 @@ import {
     HardDriveDownload,
     Zap,
     Server,
-    Lock
+    Lock,
+    Usb,
+    HardDrive,
+    SearchCheck,
+    AlertOctagon,
+    FileCheck2
 } from 'lucide-react';
 import { toast } from '@/lib/toast';
 import { useCart } from '@/context/CartContext';
 
 export interface CloudBackupConfig {
     enabled: boolean;
+    destination?: 'all' | 'gcp' | 'usb';
+    usbPath?: string;
     frequencyMinutes: number;
     retentionDays: number;
     region: string;
@@ -31,6 +38,16 @@ export interface CloudBackupConfig {
     nextBackupIn?: number | null;
 }
 
+export interface AuditVerificationResult {
+    checkedAt: string;
+    match: boolean;
+    hasBackup: boolean;
+    localHash: string;
+    storedHash: string | null;
+    status: 'VERIFIED' | 'DISCREPANCY_DETECTED' | 'NO_CLOUD_BACKUP';
+    message: string;
+}
+
 const FREQUENCY_OPTIONS = [
     { value: 15, label: 'Cada 15 min', badge: 'Tiempo Real / Alta Frecuencia', desc: 'Ideal para cajas con alto flujo de ventas por minuto.' },
     { value: 60, label: 'Cada 1 hora', badge: 'Equilibrado', desc: 'Sincronización horaria óptima de bloques e inventario.' },
@@ -38,6 +55,12 @@ const FREQUENCY_OPTIONS = [
     { value: 360, label: 'Cada 6 horas', badge: 'Por Turno', desc: 'Respaldo automático al cambio de turno operativo.' },
     { value: 720, label: 'Cada 12 horas', badge: 'Medio Día', desc: 'Dos puntos de restauración inmutables al día.' },
     { value: 1440, label: 'Cada 24 horas', badge: 'Corte Diario', desc: 'Respaldo nocturno consolidado al cierre de jornada.' },
+];
+
+const DESTINATION_OPTIONS = [
+    { id: 'all', label: 'Híbrido Redundante (USB Local + Google Cloud)', icon: Zap, desc: 'Tolerancia total a fallos: Snapshot en disco/USB y réplica en bucket GCP.' },
+    { id: 'gcp', label: 'Solo Google Cloud Storage', icon: Cloud, desc: 'Almacenamiento inmutable en la nube para recuperación ante desastres.' },
+    { id: 'usb', label: 'Solo Almacenamiento Local (USB / SSD Externo)', icon: Usb, desc: 'Operación 100% aislada de internet (Air-gapped / Local-First).' },
 ];
 
 const REGION_OPTIONS = [
@@ -53,6 +76,8 @@ export default function CloudBackupConfigWidget({ compact = false }: { compact?:
 
     const [config, setConfig] = useState<CloudBackupConfig>({
         enabled: true,
+        destination: 'all',
+        usbPath: 'D:/BUNKKER_BACKUPS',
         frequencyMinutes: 120,
         retentionDays: 30,
         region: 'us-central1',
@@ -68,6 +93,8 @@ export default function CloudBackupConfigWidget({ compact = false }: { compact?:
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [isRunningBackup, setIsRunningBackup] = useState(false);
+    const [isAuditingHash, setIsAuditingHash] = useState(false);
+    const [auditResult, setAuditResult] = useState<AuditVerificationResult | null>(null);
 
     const fetchStatus = useCallback(async () => {
         try {
@@ -93,6 +120,8 @@ export default function CloudBackupConfigWidget({ compact = false }: { compact?:
                         ...localSaved,
                         ...(siteConfig as any)?.cloudBackupConfig,
                         enabled: data.enabled ?? localSaved.enabled ?? prev.enabled,
+                        destination: data.destination ?? localSaved.destination ?? prev.destination ?? 'all',
+                        usbPath: data.usbPath ?? localSaved.usbPath ?? prev.usbPath ?? 'D:/BUNKKER_BACKUPS',
                         frequencyMinutes: Number(data.frequencyMinutes || localSaved.frequencyMinutes || prev.frequencyMinutes || 120),
                         retentionDays: Number(data.retentionDays || localSaved.retentionDays || prev.retentionDays || 30),
                         region: data.region || localSaved.region || prev.region || 'us-central1',
@@ -135,6 +164,8 @@ export default function CloudBackupConfigWidget({ compact = false }: { compact?:
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     enabled: nextConfig.enabled,
+                    destination: nextConfig.destination,
+                    usbPath: nextConfig.usbPath,
                     frequencyMinutes: nextConfig.frequencyMinutes,
                     retentionDays: nextConfig.retentionDays,
                     region: nextConfig.region,
@@ -161,6 +192,7 @@ export default function CloudBackupConfigWidget({ compact = false }: { compact?:
                         ...(siteConfig || {}),
                         cloudBackupFrequencyMinutes: nextConfig.frequencyMinutes,
                         cloudBackupEnabled: nextConfig.enabled,
+                        cloudBackupDestination: nextConfig.destination,
                     } as any);
                 } catch {
                     // non-blocking
@@ -168,10 +200,11 @@ export default function CloudBackupConfigWidget({ compact = false }: { compact?:
             }
 
             const selectedOption = FREQUENCY_OPTIONS.find(o => o.value === nextConfig.frequencyMinutes);
+            const destLabel = DESTINATION_OPTIONS.find(d => d.id === nextConfig.destination)?.label || 'Híbrido Redundante';
             toast.success(
                 nextConfig.enabled
-                    ? `Respaldos programados en Google Cloud (${selectedOption?.label || `cada ${nextConfig.frequencyMinutes} min`}).`
-                    : 'Respaldos automáticos en Google Cloud pausados.',
+                    ? `Respaldos automáticos configurados en [${destLabel}] (${selectedOption?.label || `cada ${nextConfig.frequencyMinutes} min`}).`
+                    : 'Respaldos automáticos pausados.',
                 'Configuración Guardada'
             );
         } catch (error: any) {
@@ -189,6 +222,8 @@ export default function CloudBackupConfigWidget({ compact = false }: { compact?:
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     enabled: config.enabled,
+                    destination: config.destination,
+                    usbPath: config.usbPath,
                     frequencyMinutes: config.frequencyMinutes,
                     retentionDays: config.retentionDays,
                     region: config.region,
@@ -199,7 +234,7 @@ export default function CloudBackupConfigWidget({ compact = false }: { compact?:
             });
 
             if (!res.ok) {
-                throw new Error('No se pudo completar el snapshot en Google Cloud.');
+                throw new Error('No se pudo completar el snapshot de respaldo.');
             }
 
             const data = await res.json();
@@ -217,14 +252,74 @@ export default function CloudBackupConfigWidget({ compact = false }: { compact?:
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
             }
 
+            // Also trigger hash check immediately
+            handleAuditHashVerification(updated.lastBackupHash);
+
             toast.success(
-                `Snapshot SHA-256 sincronizado con Google Cloud (${config.region}).`,
-                'Respaldo Completado'
+                `Snapshot inmutable SHA-256 generado con éxito en ${config.destination === 'usb' ? 'Almacenamiento Local/USB' : config.destination === 'gcp' ? `Google Cloud (${config.region})` : `Google Cloud (${config.region}) + USB Local`}.`,
+                'Respaldo Exitoso'
             );
         } catch (error: any) {
             toast.error(error.message || 'Error al ejecutar respaldo inmediato.', 'Error de Respaldo');
         } finally {
             setIsRunningBackup(false);
+        }
+    };
+
+    const handleAuditHashVerification = async (explicitHash?: string | null) => {
+        setIsAuditingHash(true);
+        try {
+            const res = await fetch('/api/backup/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                const result: AuditVerificationResult = {
+                    checkedAt: data.checkedAt || new Date().toISOString(),
+                    match: Boolean(data.match),
+                    hasBackup: Boolean(data.hasBackup),
+                    localHash: data.localHash || '',
+                    storedHash: data.storedHash || explicitHash || config.lastBackupHash,
+                    status: data.status || (data.match ? 'VERIFIED' : 'DISCREPANCY_DETECTED'),
+                    message: data.message || ''
+                };
+                setAuditResult(result);
+
+                if (result.match) {
+                    toast.success(
+                        `Hash SHA-256 verificado: ${result.localHash.slice(0, 12)}... Integridad local y réplica idénticas.`,
+                        '🛡️ Integridad Verificada'
+                    );
+                } else if (result.hasBackup) {
+                    toast.warning(
+                        `Discrepancia detectada: Local [${result.localHash.slice(0, 8)}...] vs Nube [${(result.storedHash || '').slice(0, 8)}...]. Se recomienda sincronizar.`,
+                        '⚠️ Discrepancia de Base de Datos'
+                    );
+                } else {
+                    toast.info(
+                        'Base de datos local calculada, pero no hay respaldo previo en la nube para comparar. Genera un respaldo ahora.',
+                        'Sin Snapshot Previo'
+                    );
+                }
+
+                // Disparar evento en tiempo real para todos los clientes conectados
+                if (typeof window !== 'undefined' && (window as any).__inventorySocket) {
+                    (window as any).__inventorySocket.emit('sync_db_event', {
+                        action: 'DB_HASH_AUDITED',
+                        status: result.status,
+                        match: result.match,
+                        localHash: result.localHash,
+                        storedHash: result.storedHash
+                    });
+                }
+            } else {
+                throw new Error(data.error || 'No se pudo auditar la base de datos.');
+            }
+        } catch (e: any) {
+            toast.error(e.message || 'Error al ejecutar verificación de integridad.', 'Error de Auditoría');
+        } finally {
+            setIsAuditingHash(false);
         }
     };
 
@@ -270,7 +365,7 @@ export default function CloudBackupConfigWidget({ compact = false }: { compact?:
                     <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                             <h3 style={{ margin: 0, fontSize: '1.12rem', fontWeight: 800, color: '#f8fafc', letterSpacing: '-0.01em' }}>
-                                Respaldos Automáticos a Google Cloud
+                                Redundancia de Respaldo: Local (USB) & Google Cloud
                             </h3>
                             <span
                                 style={{
@@ -279,11 +374,11 @@ export default function CloudBackupConfigWidget({ compact = false }: { compact?:
                                     color: config.enabled ? '#34d399' : '#94a3b8',
                                 }}
                             >
-                                · {config.enabled ? 'SINCRONIZACIÓN ACTIVA' : 'PAUSADO'} · {currentFreqMeta.label.toUpperCase()}
+                                · {config.enabled ? 'REDUNDANCIA ACTIVA' : 'PAUSADO'} · {currentFreqMeta.label.toUpperCase()}
                             </span>
                         </div>
                         <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: '#94a3b8' }}>
-                            Define la frecuencia de snapshots inmutables (SQLite / PostgreSQL + Configuración) hacia Google Cloud Storage.
+                            Configura la frecuencia de respaldo automático hacia almacenamiento local (USB) o Google Cloud con verificación criptográfica SHA-256.
                         </p>
                     </div>
                 </div>
@@ -343,9 +438,157 @@ export default function CloudBackupConfigWidget({ compact = false }: { compact?:
                         }}
                     >
                         <RefreshCw size={15} className={isRunningBackup ? 'animate-spin' : ''} />
-                        {isRunningBackup ? 'Respaldando en GCP...' : 'Respaldar Ahora'}
+                        {isRunningBackup ? 'Generando Snapshot...' : 'Respaldar Ahora'}
+                    </motion.button>
+
+                    <motion.button
+                        type="button"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => handleAuditHashVerification()}
+                        disabled={isAuditingHash}
+                        style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '8px 16px',
+                            borderRadius: '10px',
+                            fontSize: '0.78rem',
+                            fontWeight: 800,
+                            cursor: isAuditingHash ? 'wait' : 'pointer',
+                            border: '1px solid rgba(16, 185, 129, 0.4)',
+                            backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                            color: '#34d399',
+                            transition: 'all 0.15s ease',
+                        }}
+                    >
+                        <SearchCheck size={15} className={isAuditingHash ? 'animate-pulse' : ''} />
+                        {isAuditingHash ? 'Auditando SHA-256...' : 'Auditar Hash BD'}
                     </motion.button>
                 </div>
+            </div>
+
+            {/* Destination Mode Selector */}
+            <div style={{ marginBottom: '20px', background: 'rgba(2, 6, 23, 0.4)', padding: '14px', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#e2e8f0', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <HardDrive size={15} color="#38bdf8" /> Destino de Respaldo & Redundancia por Falla de Nodo
+                    </label>
+                    <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
+                        Protege contra pérdida de datos si el servidor o PC local falla
+                    </span>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '10px' }}>
+                    {DESTINATION_OPTIONS.map((dest) => {
+                        const isSelected = (config.destination || 'all') === dest.id;
+                        const DestIcon = dest.icon;
+                        return (
+                            <button
+                                key={dest.id}
+                                type="button"
+                                onClick={() => handleSaveConfig({ destination: dest.id as any })}
+                                disabled={isSaving}
+                                style={{
+                                    textAlign: 'left',
+                                    padding: '12px 14px',
+                                    borderRadius: '12px',
+                                    cursor: 'pointer',
+                                    border: isSelected ? '1px solid #38bdf8' : '1px solid rgba(255, 255, 255, 0.08)',
+                                    backgroundColor: isSelected ? 'rgba(14, 165, 233, 0.18)' : 'rgba(15, 23, 42, 0.65)',
+                                    boxShadow: isSelected ? '0 0 20px rgba(14, 165, 233, 0.18)' : 'none',
+                                    transition: 'all 0.15s ease',
+                                }}
+                            >
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                                    <span style={{ fontSize: '0.84rem', fontWeight: 800, color: isSelected ? '#38bdf8' : '#f1f5f9', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <DestIcon size={16} color={isSelected ? '#38bdf8' : '#94a3b8'} />
+                                        {dest.label}
+                                    </span>
+                                    {isSelected && <CheckCircle2 size={15} color="#38bdf8" />}
+                                </div>
+                                <span style={{ fontSize: '0.7rem', color: isSelected ? '#bae6fd' : '#64748b', display: 'block', lineHeight: 1.4 }}>
+                                    {dest.desc}
+                                </span>
+                            </button>
+                        );
+                    })}
+                </div>
+
+                {(config.destination === 'usb' || config.destination === 'all') && (
+                    <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(15, 23, 42, 0.7)', padding: '10px 14px', borderRadius: '10px', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
+                        <Usb size={16} color="#38bdf8" />
+                        <span style={{ fontSize: '0.74rem', color: '#94a3b8', fontWeight: 600 }}>Ruta Unidad USB / Almacenamiento Montado:</span>
+                        <input
+                            type="text"
+                            value={config.usbPath || 'D:/BUNKKER_BACKUPS'}
+                            onChange={(e) => setConfig(prev => ({ ...prev, usbPath: e.target.value }))}
+                            onBlur={() => handleSaveConfig({ usbPath: config.usbPath })}
+                            placeholder="Ej. D:/BUNKKER_BACKUPS o /mnt/usb/backups"
+                            style={{
+                                background: 'rgba(2, 6, 23, 0.8)',
+                                color: '#38bdf8',
+                                border: '1px solid rgba(56, 189, 248, 0.3)',
+                                borderRadius: '6px',
+                                padding: '4px 10px',
+                                fontSize: '0.74rem',
+                                fontFamily: 'monospace',
+                                flex: 1,
+                                outline: 'none',
+                            }}
+                        />
+                        <button
+                            type="button"
+                            onClick={() => handleSaveConfig({ usbPath: config.usbPath })}
+                            style={{ background: 'rgba(14, 165, 233, 0.2)', border: '1px solid rgba(14, 165, 233, 0.4)', color: '#38bdf8', padding: '4px 10px', borderRadius: '6px', fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer' }}
+                        >
+                            Fijar Ruta
+                        </button>
+                    </div>
+                )}
+            </div>
+
+            {/* Real-time Hash Integrity Audit Card */}
+            <div style={{ marginBottom: '20px', background: auditResult?.match ? 'rgba(6, 78, 59, 0.25)' : auditResult?.hasBackup ? 'rgba(127, 29, 29, 0.25)' : 'rgba(30, 41, 59, 0.4)', padding: '14px', borderRadius: '14px', border: auditResult?.match ? '1px solid rgba(16, 185, 129, 0.4)' : auditResult?.hasBackup ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid rgba(255, 255, 255, 0.08)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {auditResult?.match ? (
+                            <ShieldCheck size={18} color="#10b981" />
+                        ) : auditResult?.hasBackup ? (
+                            <AlertOctagon size={18} color="#ef4444" />
+                        ) : (
+                            <SearchCheck size={18} color="#38bdf8" />
+                        )}
+                        <h4 style={{ margin: 0, fontSize: '0.86rem', fontWeight: 800, color: '#f8fafc', letterSpacing: '-0.01em' }}>
+                            Auditoría Forense de Integridad: Hash SHA-256 (Local vs Nube)
+                        </h4>
+                    </div>
+                    <span style={{ fontSize: '0.72rem', fontWeight: 700, color: auditResult?.match ? '#34d399' : auditResult?.hasBackup ? '#f87171' : '#94a3b8' }}>
+                        {auditResult ? (auditResult.match ? 'ESTADO: ÍNTEGRO Y SINCRONIZADO' : auditResult.hasBackup ? 'ALERTA: DISCREPANCIA DETECTADA' : 'ESTADO: PENDIENTE DE PRIMER SNAPSHOT') : 'AUDITORÍA DISPONIBLE'}
+                    </span>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '10px', fontSize: '0.75rem', marginTop: '10px' }}>
+                    <div style={{ background: 'rgba(15, 23, 42, 0.6)', padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <span style={{ color: '#94a3b8', display: 'block', fontSize: '0.68rem', textTransform: 'uppercase', fontWeight: 700 }}>Hash Base de Datos Local:</span>
+                        <code style={{ color: '#38bdf8', fontFamily: 'monospace', fontSize: '0.75rem', wordBreak: 'break-all' }}>
+                            {auditResult?.localHash || 'Haz clic en "Auditar Hash BD"'}
+                        </code>
+                    </div>
+
+                    <div style={{ background: 'rgba(15, 23, 42, 0.6)', padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <span style={{ color: '#94a3b8', display: 'block', fontSize: '0.68rem', textTransform: 'uppercase', fontWeight: 700 }}>Hash Último Respaldo Nube / Snapshot:</span>
+                        <code style={{ color: auditResult?.match ? '#10b981' : auditResult?.storedHash ? '#f87171' : '#94a3b8', fontFamily: 'monospace', fontSize: '0.75rem', wordBreak: 'break-all' }}>
+                            {auditResult?.storedHash || config.lastBackupHash || 'Ningún respaldo registrado'}
+                        </code>
+                    </div>
+                </div>
+
+                {auditResult && (
+                    <p style={{ margin: '10px 0 0', fontSize: '0.74rem', color: auditResult.match ? '#a7f3d0' : '#fecaca', lineHeight: 1.4 }}>
+                        {auditResult.message}
+                    </p>
+                )}
             </div>
 
             {/* Frequency Selector Grid */}

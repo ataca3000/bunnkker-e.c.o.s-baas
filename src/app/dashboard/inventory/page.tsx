@@ -23,12 +23,13 @@ import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import Link from 'next/link';
 import ShelfColumn from './components/ShelfColumn';
 import ProductCard from './components/ProductCard';
+import TrashDropZone from './components/TrashDropZone';
 import ChunkArchitectureMap from './components/ChunkArchitectureMap';
 import ImportCSVButton from './ImportCSVButton';
 import { arrayMove } from '@dnd-kit/sortable';
 import { toast } from '@/lib/toast';
-import TrashDropZone from './components/TrashDropZone';
 import { useERPStore } from '@/store/useERPStore';
+import CloudBackupConfigWidget from '@/components/admin/CloudBackupConfigWidget';
 
 export default function InventoryDashboard() {
     const { products, formatCurrency } = useCart();
@@ -50,7 +51,7 @@ export default function InventoryDashboard() {
     }, [products]);
 
     // Tabs
-    const [activeTab, setActiveTab] = useState<'catalog' | 'shelves' | 'chunks_map' | 'transfer' | 'shrinkage' | 'trash'>('catalog');
+    const [activeTab, setActiveTab] = useState<'catalog' | 'shelves' | 'chunks_map' | 'transfer' | 'backup' | 'shrinkage' | 'trash'>('catalog');
     const [hydratedChunksMap, setHydratedChunksMap] = useState<Record<string, boolean>>({});
     const [trashedProducts, setTrashedProducts] = useState<Product[]>([]);
     const [trashLoading, setTrashLoading] = useState(false);
@@ -258,10 +259,12 @@ export default function InventoryDashboard() {
             const overData = over.data.current as { shelfName?: string; levelName?: string } | undefined;
             const targetProduct = localProducts.find(item => item.id === overId);
             const targetParts = overId.includes('::') ? overId.split('::') : [];
-            const targetShelfName = (overData?.shelfName || targetParts[0] || targetProduct?.location?.estante || 'Sin Asignar').toUpperCase().trim();
-            const targetLevelName = overData?.levelName || targetParts[1] || targetProduct?.location?.fila || 'GENERAL';
+            let targetShelfName = (overData?.shelfName || (targetParts[0] === 'shelf' ? targetParts[1] : targetParts[0]) || targetProduct?.location?.estante || 'Sin Asignar').toUpperCase().trim();
+            let targetLevelName = overData?.levelName || (targetParts[0] === 'shelf' ? 'Nivel 1' : targetParts[1]) || targetProduct?.location?.fila || 'Nivel 1';
+            if (targetLevelName === 'GENERAL') targetLevelName = 'Nivel 1';
             const currentShelfName = (product.location?.estante || 'Sin Asignar').toUpperCase().trim();
-            const currentLevelName = product.location?.fila || 'GENERAL';
+            let currentLevelName = product.location?.fila || 'Nivel 1';
+            if (currentLevelName === 'GENERAL') currentLevelName = 'Nivel 1';
 
             if (targetShelfName === currentShelfName && targetLevelName === currentLevelName) {
                 const levelProducts = localProducts.filter(item =>
@@ -719,7 +722,12 @@ export default function InventoryDashboard() {
             // ─── LOCAL EDGE API SYNC ───
             const res = await fetch('/api/products', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-user-role': profile?.role || 'superadmin',
+                    'x-user-id': profile?.uid || 'local_owner'
+                },
+                credentials: 'include',
                 body: JSON.stringify(dataToSave)
             });
 
@@ -786,6 +794,11 @@ export default function InventoryDashboard() {
             try {
                 const res = await fetch(`/api/products?id=${encodeURIComponent(productId)}`, {
                     method: 'DELETE',
+                    headers: {
+                        'x-user-role': profile?.role || 'superadmin',
+                        'x-user-id': profile?.uid || 'local_owner'
+                    },
+                    credentials: 'include'
                 });
                 const result = await res.json().catch(() => null);
                 if (!res.ok || !result?.success) {
@@ -825,7 +838,12 @@ export default function InventoryDashboard() {
         try {
             const response = await fetch('/api/products', {
                 method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-user-role': profile?.role || 'superadmin',
+                    'x-user-id': profile?.uid || 'local_owner'
+                },
+                credentials: 'include',
                 body: JSON.stringify({ id: product.id, restore: true })
             });
             const result = await response.json().catch(() => null);
@@ -852,7 +870,14 @@ export default function InventoryDashboard() {
         if (profile?.role !== 'superadmin') return;
         if (!confirm(`¿Borrar definitivamente "${product.name}"? Esta acción no se puede deshacer.`)) return;
         try {
-            const response = await fetch(`/api/products?id=${encodeURIComponent(product.id)}&permanent=true`, { method: 'DELETE' });
+            const response = await fetch(`/api/products?id=${encodeURIComponent(product.id)}&permanent=true`, {
+                method: 'DELETE',
+                headers: {
+                    'x-user-role': profile?.role || 'superadmin',
+                    'x-user-id': profile?.uid || 'local_owner'
+                },
+                credentials: 'include'
+            });
             const result = await response.json().catch(() => null);
             if (!response.ok || !result?.success) throw new Error(result?.error || 'No se pudo borrar definitivamente.');
             setTrashedProducts(previous => previous.filter(item => item.id !== product.id));
@@ -1277,6 +1302,13 @@ export default function InventoryDashboard() {
                                 </button>
                                 <button 
                                     type="button"
+                                    onClick={() => setActiveTab('backup')}
+                                    className={`py-2 px-5 font-bold text-sm transition-all outline-none rounded-sm flex items-center gap-2 ${activeTab === 'backup' ? 'bg-[#0ea5e9] text-white shadow-md shadow-blue-500/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+                                >
+                                    <Database size={16} /> Respaldo & Redundancia USB/GCP
+                                </button>
+                                <button 
+                                    type="button"
                                     onClick={() => setActiveTab('shrinkage')}
                                     className={`py-2 px-5 font-bold text-sm transition-all outline-none rounded-sm flex items-center gap-2 ${activeTab === 'shrinkage' ? 'bg-red-500 text-white shadow-md shadow-red-500/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
                                 >
@@ -1293,7 +1325,9 @@ export default function InventoryDashboard() {
                             </div>
 
                             {activeTab === 'catalog' && (
-                                <section className="overflow-hidden border border-slate-700/70 bg-slate-900/70 shadow-xl">
+                                <>
+                                    <CloudBackupConfigWidget compact={true} />
+                                    <section className="overflow-hidden border border-slate-700/70 bg-slate-900/70 shadow-xl">
                                     <div className="flex flex-col gap-[8px] border-b border-slate-700/70 p-[8px] md:flex-row md:items-center md:justify-between">
                                         <div>
                                             <h2 className="text-lg font-black uppercase text-white">Inventario de productos</h2>
@@ -1376,6 +1410,7 @@ export default function InventoryDashboard() {
                                         </table>
                                     </div>
                                 </section>
+                            </>
                             )}
 
                             {activeTab === 'shelves' && (
@@ -1503,6 +1538,17 @@ export default function InventoryDashboard() {
                                                 >
                                                     Todos ({allEstantes.length})
                                                 </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowNewEstanteModal(true)}
+                                                    title="Crear un nuevo estante físico o pasillo (Widget Android)"
+                                                    className="px-3 py-1.5 text-xs font-bold rounded-xl transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5 bg-sky-500/15 border border-sky-400/40 text-sky-300 hover:bg-sky-500 hover:text-white shadow-sm active:scale-95"
+                                                >
+                                                    <div className="w-4 h-4 rounded bg-sky-500 text-white flex items-center justify-center font-bold text-[10px]">
+                                                        +
+                                                    </div>
+                                                    <span>+ Estante</span>
+                                                </button>
                                                 {allEstantes.map((estante) => {
                                                     const count = (estantesMap[estante] || []).length;
                                                     const isSelected = activeEstante === estante;
@@ -1532,8 +1578,8 @@ export default function InventoryDashboard() {
                                         )}
                                     </div>
 
-                                    {/* DISEÑO KANBAN: COLUMNAS POR ESTANTE CON DESTACADO FÍSICO Y CHUNKS */}
-                                    <div className="flex overflow-x-auto gap-[8px] pb-8 snap-x hide-scrollbar items-start h-[calc(100vh-300px)]">
+                                    {/* DISEÑO KANBAN: COLUMNAS POR ESTANTE CON DESTACADO FÍSICO Y SCROLL LATERAL */}
+                                    <div className="flex overflow-x-auto gap-5 pb-8 snap-x hide-scrollbar items-start h-[calc(100vh-300px)]">
                                         <DndContext
                                             sensors={sensors}
                                             collisionDetection={closestCorners}
@@ -1542,7 +1588,7 @@ export default function InventoryDashboard() {
                                         >
                                             <TrashDropZone />
                                             {allEstantes.length === 0 && (
-                                                <div className="text-sm font-bold text-slate-400 py-2 w-full text-center">No hay estantes creados. Utiliza "Nueva Sección".</div>
+                                                <div className="text-sm font-bold text-slate-400 py-2 w-full text-center">No hay estantes creados. Utiliza el widget "+ Añadir Estante".</div>
                                             )}
                                             {allEstantes.map((estante, chunkIdx) => {
                                                 const productsInEstante = estantesMap[estante] || [];
@@ -1577,12 +1623,42 @@ export default function InventoryDashboard() {
                                                     />
                                                 );
                                             })}
+
+                                            {/* WIDGET ESTILO ANDROID: BOTÓN DE CREACIÓN DE ESTANTES */}
                                             <button 
+                                                type="button"
                                                 onClick={() => setShowNewEstanteModal(true)} 
-                                                className="w-[340px] flex-shrink-0 flex flex-col items-center justify-center bg-slate-900/40 border-2 border-dashed border-slate-700/50 hover:border-[#0ea5e9] hover:bg-[#0ea5e9]/10 rounded-[5px] h-full transition-all group"
+                                                className="w-[300px] min-h-[460px] flex-shrink-0 flex flex-col items-center justify-between p-6 bg-gradient-to-b from-slate-900/90 to-slate-950/95 border-2 border-dashed border-sky-500/40 hover:border-sky-400 rounded-[32px] transition-all group shadow-2xl hover:shadow-[0_0_35px_rgba(14,165,233,0.3)] hover:scale-[1.01] active:scale-[0.99] cursor-pointer relative overflow-hidden backdrop-blur-xl"
+                                                title="Toca para crear un nuevo estante físico con niveles automáticos"
                                             >
-                                                <Plus size={48} className="text-slate-600 group-hover:text-[#0ea5e9] mb-4 transition-colors" />
-                                                <span className="text-sm font-bold text-slate-500 group-hover:text-[#0ea5e9] uppercase tracking-widest transition-colors">Añadir Estante</span>
+                                                {/* Android Widget Header Badge */}
+                                                <div className="w-full flex items-center justify-between pb-3 border-b border-white/5">
+                                                    <span className="text-[10px] font-black uppercase tracking-wider text-sky-400 flex items-center gap-1.5">
+                                                        <span className="w-2 h-2 rounded-full bg-sky-400 animate-ping"></span>
+                                                        WIDGET ALMACÉN
+                                                    </span>
+                                                    <span className="text-[10px] font-mono text-slate-500 uppercase">ANDROID UI</span>
+                                                </div>
+
+                                                {/* Android Launcher Squircle Icon */}
+                                                <div className="flex flex-col items-center justify-center my-auto text-center py-4">
+                                                    <div className="w-24 h-24 rounded-[28px] bg-gradient-to-tr from-sky-400 via-blue-500 to-indigo-600 shadow-[0_12px_30px_rgba(14,165,233,0.45)] flex items-center justify-center text-white transition-all duration-300 group-hover:scale-110 group-hover:rotate-6 active:scale-95 mb-5 ring-4 ring-white/10">
+                                                        <Plus size={48} strokeWidth={2.8} />
+                                                    </div>
+                                                    <h3 className="text-lg font-black text-white tracking-tight uppercase group-hover:text-sky-300 transition-colors">
+                                                        Crear Estante
+                                                    </h3>
+                                                    <p className="text-xs text-slate-400 mt-2 max-w-[220px] leading-relaxed">
+                                                        Añade un nuevo pasillo o rack físico. Se generarán automáticamente los niveles para organizar productos.
+                                                    </p>
+                                                </div>
+
+                                                {/* Android Widget Pill Action */}
+                                                <div className="w-full pt-3 border-t border-white/5 flex justify-center">
+                                                    <div className="px-5 py-2.5 rounded-full bg-sky-500/20 border border-sky-400/40 text-sky-300 group-hover:bg-sky-500 group-hover:text-white text-xs font-black uppercase tracking-wider transition-all shadow-md">
+                                                        + Añadir Sección
+                                                    </div>
+                                                </div>
                                             </button>
                                             <DragOverlay>
                                                 {draggedProductId ? (
@@ -1748,6 +1824,12 @@ export default function InventoryDashboard() {
                                             </div>
                                         </div>
                                     )}
+                                </div>
+                            )}
+
+                            {activeTab === 'backup' && (
+                                <div className="space-y-6">
+                                    <CloudBackupConfigWidget compact={false} />
                                 </div>
                             )}
 

@@ -9,6 +9,8 @@ const BACKUP_CONFIG_PATH = path.resolve(process.cwd(), 'bunkker.backup.json');
 
 interface PersistedBackupSettings {
     enabled: boolean;
+    destination?: 'all' | 'gcp' | 'usb';
+    usbPath?: string;
     frequencyMinutes: number;
     retentionDays: number;
     region: string;
@@ -21,6 +23,8 @@ interface PersistedBackupSettings {
 
 const DEFAULT_SETTINGS: PersistedBackupSettings = {
     enabled: true,
+    destination: 'all',
+    usbPath: 'D:/BUNKKER_BACKUPS',
     frequencyMinutes: 120,
     retentionDays: 30,
     region: 'us-central1',
@@ -94,6 +98,8 @@ export async function GET(request: NextRequest) {
 
         return NextResponse.json({
             enabled,
+            destination: localSettings.destination || 'all',
+            usbPath: localSettings.usbPath || 'D:/BUNKKER_BACKUPS',
             frequencyMinutes,
             retentionDays: localSettings.retentionDays,
             region: localSettings.region,
@@ -111,7 +117,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-    const auth = requireRole(request, ['superadmin', 'admin']);
+    const auth = requireRole(request, ['superadmin', 'admin', 'inventory']);
     if (!auth.ok) return auth.response;
 
     try {
@@ -120,6 +126,8 @@ export async function POST(request: NextRequest) {
 
         const frequencyMinutes = Number(body.frequencyMinutes ?? current.frequencyMinutes) || 120;
         const enabled = typeof body.enabled === 'boolean' ? body.enabled : current.enabled;
+        const destination = body.destination || current.destination || 'all';
+        const usbPath = body.usbPath || current.usbPath || 'D:/BUNKKER_BACKUPS';
         const retentionDays = Number(body.retentionDays ?? current.retentionDays) || 30;
         const region = body.region || current.region || 'us-central1';
         const encryptAES256 = typeof body.encryptAES256 === 'boolean' ? body.encryptAES256 : current.encryptAES256;
@@ -134,6 +142,7 @@ export async function POST(request: NextRequest) {
             const payloadSeed = JSON.stringify({
                 timestamp: nowIso,
                 region,
+                destination,
                 frequencyMinutes,
                 retentionDays,
             });
@@ -163,6 +172,8 @@ export async function POST(request: NextRequest) {
 
         const saved = writeLocalBackupSettings({
             enabled,
+            destination,
+            usbPath,
             frequencyMinutes,
             retentionDays,
             region,

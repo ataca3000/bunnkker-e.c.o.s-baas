@@ -490,6 +490,11 @@ export async function PATCH(request: NextRequest) {
                         throw new Error('ORDER_CONFLICT:El pedido no está listo, ya fue pagado o pertenece a otro cajero.');
                     }
 
+                    // REGLA ESTRICTA DE CAJA: Caja solo puede cobrar una vez que almacén haya terminado de surtir y marcar listo el pedido
+                    if (!current.isLoaded && !['READY_TO_SHIP', 'READY_FOR_PICKUP', 'READY_FOR_PICKUP_PAID', 'COMPLETED'].includes(current.status)) {
+                        throw new Error('ORDER_CONFLICT:El pedido aún está siendo preparado en almacén. Almacén debe marcarlo como LISTO antes de cobrar.');
+                    }
+
                     // FLOTACIÓN ESTRICTA: En caja se asegura la existencia y se aparta en reservedStock.
                     // El 'stock' físico en anaquel NO se decrementa definitivamente hasta que se valida la entrega con comprobante/firma.
                     for (const item of current.items) {
@@ -574,8 +579,18 @@ export async function PATCH(request: NextRequest) {
             if (!current || current.isLoaded || (current.loadedByUid !== auth.uid && actorRole !== 'superadmin' && actorRole !== 'admin')) {
                 return NextResponse.json({ success: false, error: 'El pedido no está asignado a este almacenista.' }, { status: 409 });
             }
-            const isPickup = ['PICKUP', 'PATIO'].includes(current.deliveryType);
-            const isDelivery = current.deliveryType === 'DELIVERY';
+            
+            // Si el almacenista especifica dónde queda listo: 'caja' (PICKUP/MOSTRADOR) o 'carga' (PATIO/BAHÍA DE CARGA)
+            const targetLocation = body.targetLocation || updates.targetLocation;
+            let effectiveDeliveryType = current.deliveryType;
+            if (targetLocation === 'caja') {
+                effectiveDeliveryType = 'PICKUP';
+            } else if (targetLocation === 'carga') {
+                effectiveDeliveryType = 'PATIO';
+            }
+
+            const isPickup = ['PICKUP', 'PATIO'].includes(effectiveDeliveryType);
+            const isDelivery = effectiveDeliveryType === 'DELIVERY';
             const isPaid = Boolean(current.confirmedAt) || current.status === 'paid';
             const nextStatus = isPickup
                 ? isPaid ? 'READY_FOR_PICKUP_PAID' : 'READY_FOR_PICKUP'
@@ -584,10 +599,29 @@ export async function PATCH(request: NextRequest) {
                     : 'COMPLETED';
             const updated = await prisma.order.updateMany({
                 where: { id, status: current.status, isLoaded: false, loadedByUid: current.loadedByUid },
-                data: { isLoaded: true, loadingFinishedAt: new Date(), status: nextStatus }
+                data: { 
+                    isLoaded: true, 
+                    loadingFinishedAt: new Date(), 
+                    status: nextStatus,
+                    deliveryType: effectiveDeliveryType
+                }
             });
             if (updated.count !== 1) return NextResponse.json({ success: false, error: 'El pedido cambió de estado; actualiza la lista.' }, { status: 409 });
-            await prisma.orderEvent.create({ data: { orderId: id, eventType: 'LOADING_COMPLETED', fromStatus: current.status, toStatus: nextStatus, actorId: auth.uid, actorName, actorRole } });
+            await prisma.orderEvent.create({ 
+                data: { 
+                    orderId: id, 
+                    eventType: 'LOADING_COMPLETED', 
+                    fromStatus: current.status, 
+                    toStatus: nextStatus, 
+                    actorId: auth.uid, 
+                    actorName, 
+                    actorRole,
+                    details: JSON.stringify({
+                        targetLocation: targetLocation || (effectiveDeliveryType === 'PATIO' ? 'carga' : 'caja'),
+                        deliveryType: effectiveDeliveryType
+                    })
+                } 
+            });
             return NextResponse.json({ success: true, data: await prisma.order.findUnique({ where: { id } }) });
         }
 
@@ -603,14 +637,17 @@ export async function PATCH(request: NextRequest) {
         }
 
         if (action === 'confirm_pickup_receipt') {
-            if (!['pickup', 'inventory', 'carga_descarga', 'driver', 'admin', 'superadmin'].includes(actorRole)) {
+            if (!['pickup', 'inventory', 'carga_descarga', 'driver', 'sales', 'billing', 'admin', 'superadmin'].includes(actorRole)) {
                 return NextResponse.json({ success: false, error: 'Rol sin permiso para entregar pedidos pickup.' }, { status: 403 });
             }
             const order = await prisma.$transaction(async (tx) => {
                 const current = await tx.order.findUnique({ where: { id }, include: { items: true } });
-                if (!current || !['READY_FOR_PICKUP_PAID', 'READY_FOR_PICKUP'].includes(current.status) || !current.confirmedAt) {
+                if (!current || !['READY_FOR_PICKUP_PAID', 'READY_FOR_PICKUP', 'paid'].includes(current.status) || !current.confirmedAt) {
                     throw new Error('ORDER_CONFLICT:El pedido debe estar preparado y pagado antes de entregarlo.');
                 }
+
+                const signatureData = updates.signatureData || body.signatureData || null;
+                const photoData = updates.photoData || body.photoData || null;
 
                 // DEDUCCIÓN FINAL AL VALIDAR ENTREGA EN TIENDA / PATIO:
                 // Se descuenta físicamente de 'stock' y se limpia la reserva 'reservedStock'.
@@ -626,12 +663,45 @@ export async function PATCH(request: NextRequest) {
 
                 const updated = await tx.order.updateMany({
                     where: { id, status: current.status, confirmedAt: { not: null } },
-                    data: { status: 'DELIVERED', completedAt: new Date() }
+                    data: { 
+                        status: 'DELIVERED', 
+                        completedAt: new Date(),
+                        ...(signatureData ? { signatureData } : {}),
+                        ...(photoData ? { photoData } : {})
+                    }
                 });
                 if (updated.count !== 1) throw new Error('ORDER_CONFLICT:El pedido ya fue cerrado por otro operador.');
 
-                await writeOrderEvent(tx, { orderId: id, eventType: 'PICKUP_RECEIVED', fromStatus: current.status, toStatus: 'DELIVERED', actorId: auth.uid, actorName, actorRole });
-                return tx.order.findUnique({ where: { id } });
+                await writeOrderEvent(tx, { 
+                    orderId: id, 
+                    eventType: 'ORDER_DELIVERED_POD', 
+                    fromStatus: current.status, 
+                    toStatus: 'DELIVERED', 
+                    actorId: auth.uid, 
+                    actorName, 
+                    actorRole,
+                    details: {
+                        photoAttached: Boolean(photoData),
+                        signatureAttached: Boolean(signatureData),
+                        vendedorName: current.vendedorName,
+                        loadedBy: current.loadedBy
+                    }
+                });
+
+                // Registrar en la bitácora administrativa de auditoría
+                try {
+                    await tx.auditLog.create({
+                        data: {
+                            action: 'ORDER_DELIVERED',
+                            details: `Entrega validada (PoD) para orden ${id} por ${actorName} (${actorRole}). Foto: ${photoData ? 'SÍ' : 'NO'}, Firma: ${signatureData ? 'SÍ' : 'NO'}.`,
+                            userId: auth.uid
+                        }
+                    });
+                } catch {
+                    // Resiliente si la tabla auditLog no tiene todas las columnas
+                }
+
+                return tx.order.findUnique({ where: { id }, include: { customer: true, items: true } });
             });
 
             return NextResponse.json({ success: true, data: order });
