@@ -464,7 +464,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
             {/* ── Sidebar (Layer 3) ─────────────────────────────────────────── */}
             {showAdminSidebar && (
-                <aside className="liquid-glass" style={{
+                <aside className="liquid-glass admin-sidebar" style={{
                     width: sidebarWidth,
                     color: 'white',
                     padding: isCollapsed ? '2rem 0.75rem' : '2rem 1.5rem',
@@ -509,7 +509,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     </div>
 
                     {/* Nav groups */}
-                    <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1, overflowY: 'auto', paddingRight: '4px' }}>
+                    <nav className="admin-sidebar-nav" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1, overflowY: 'auto', paddingRight: '4px' }}>
                         {menuGroups.map((group, groupIdx) => {
                             const userRole = profile?.role || 'superadmin';
                             const allowedRoutes = rolePaths[userRole] || rolePaths['superadmin'];
@@ -543,6 +543,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
                                         return (
                                             <Link
+                                                className="admin-sidebar-link"
                                                 key={item.id}
                                                 id={`tour-sidebar-${item.id}`}
                                                 href={locked ? '#' : item.href}
