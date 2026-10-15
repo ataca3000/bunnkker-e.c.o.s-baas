@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { validateApiSession, requireActiveRole, getTenantId } from '@/lib/apiAuth';
+import { roundMoney } from '@/lib/financial';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,7 +39,7 @@ export async function POST(request: NextRequest) {
         if (!concept || typeof concept !== 'string' || !concept.trim()) {
             return NextResponse.json({ success: false, error: 'El concepto es requerido' }, { status: 400 });
         }
-        const numericAmount = Number(amount);
+        const numericAmount = roundMoney(Number(amount));
         if (isNaN(numericAmount) || numericAmount < 0) {
             return NextResponse.json({ success: false, error: 'El monto debe ser un número válido mayor o igual a 0' }, { status: 400 });
         }

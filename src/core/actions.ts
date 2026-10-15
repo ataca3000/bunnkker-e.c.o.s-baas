@@ -1,16 +1,18 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { roundMoney } from "@/lib/financial";
 import type { VentaCoreParams, VentaResult } from "./index";
 
 export async function createLocalSale(datos: VentaCoreParams, total: number, isOffline: boolean): Promise<VentaResult> {
     try {
+        const cleanTotal = roundMoney(total);
         // Ejecutamos una transacción local en SQLite
         const result = await prisma.$transaction(async (tx) => {
             // 1. Crear la orden
             const order = await tx.order.create({
                 data: {
-                    total,
+                    total: cleanTotal,
                     paymentMethod: datos.metodoPago,
                     offline: isOffline,
                     synced: false,
@@ -18,7 +20,7 @@ export async function createLocalSale(datos: VentaCoreParams, total: number, isO
                         create: datos.productos.map(p => ({
                             productId: p.id,
                             cantidad: p.cantidad,
-                            precio: p.precio
+                            precio: roundMoney(p.precio)
                         }))
                     }
                 }

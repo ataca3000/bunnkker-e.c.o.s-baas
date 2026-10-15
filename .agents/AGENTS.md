@@ -1,36 +1,17 @@
-.
-├── .github/
-│   └── agente-instructions.md    # Master system instructions (N3 Protocol)
-├── manifesto/                     # Core principles & system boundaries
-├── learning/                      # Confidence metrics, penalties & validated rewards
-├── logs/                          # ADRs, failure autopsies & simulations
-└── memory/                        # Causal, procedural & immutable vault data
+.agents/
+├── AGENTS.md                     # Master system guidelines (N3 Protocol)
+├── VISION_Y_METAS.md             # Vision and system goals
+├── manifesto/                    # Core engineering axioms and boundaries
+├── learning/                     # Confidence metrics, penalties, and validated patterns
+├── legacy/                       # Archived approaches and historical versions
+├── diaries/                      # Session journals
+├── discoveries/                  # Technical snippets and findings
+├── lessons/                      # Post-mortem bug resolutions
+├── theories/                     # Architectural hypotheses
+├── logs/                         # ADRs, failure autopsies, and simulations
+└── memory/                       # Causal, episodic, procedural, and vault data
 
-
-# N3-Protocol & Persistent Memory Layer
-
-A template repository providing a deterministic first-principles workflow and a persistent Markdown memory layer for AI coding assistants.
-
-## Overview
-
-AI coding assistants frequently suffer from context amnesia between sessions, lack structured architectural review processes, and accumulate technical debt. This repository establishes a framework to solve these issues using two mechanisms:
-
-1. **The N3 Protocol:** A strict 4-phase engineering workflow (Understand, Diagnose, Design, Execute) with mandatory verifiable deliverables.
-2. **Persistent Document Cache:** A structured folder tree of Markdown files acting as the assistant's long-term memory (logs, decisions, penalties, and procedural guides) entirely decoupled from source code execution.
-
-## Repository Layout
-.
-├── .github/
-│   └── copilot-instructions.md       # Master system prompt and rules for the AI assistant
-├── manifesto/                        # Core engineering axioms and boundaries
-├── learning/                         # Confidence metrics, penalties, and validated patterns
-├── legacy/                           # Archived approaches and historical versions
-├── diaries/                          # Session journals
-├── discoveries/                      # Technical snippets and findings
-├── lessons/                          # Post-mortem bug resolutions
-├── theories/                         # Architectural hypotheses
-├── logs/                             # ADRs, failure autopsies, and simulations
-└── memory/                           # Causal, episodic, procedural, and vault data# N3-Protocol & Persistent Memory Layer for AI Assistants
+# N3-Protocol & Persistent Memory Layer for AI Assistants
 
  **Overview:** A deterministic first-principles engineering workflow and structured local memory layer for AI coding assistants. Designed to eliminate context amnesia, enforce rigorous debugging, and maintain a zero-bloat codebase.
 
@@ -103,20 +84,21 @@ Execute strictly in order. Each phase must produce a verifiable deliverable; if 
 
 ## 3. Persistent Memory & Document Cache Structure
 
-The repository maintains an external Markdown-based document cache so the assistant retains context across sessions without bloating source code:
+The repository maintains an external Markdown-based document cache inside `.agents/` so the assistant retains context across sessions without bloating source code:
 
-* `manifesto/`: Core principles, axioms, and master rules.
-* `learning/`: Technical growth blocks (confidence metrics, logic penalties, validated rewards, uncertainty zones).
-* `legacy/`: Historical versions or discarded approaches.
-* `diaries/`: Session logs.
-* `discoveries/`: Innovative snippets and technical findings.
-* `lessons/`: Bug resolution learnings.
-* `theories/`: Architecture hypotheses to test.
-* `logs/`: Structured logs (decisions/ADRs, discoveries, failures/autopsies, simulations).
-* `memory/`: Structured agent memory (causal, episodic, identity, long-term, procedural, short-term, procedures, trash, vault).
+* `.agents/manifesto/`: Core principles, axioms, and master rules.
+* `.agents/learning/`: Technical growth blocks (confidence metrics, logic penalties, validated rewards, uncertainty zones).
+* `.agents/legacy/`: Historical versions or discarded approaches.
+* `.agents/diaries/`: Session logs.
+* `.agents/discoveries/`: Innovative snippets and technical findings.
+* `.agents/lessons/`: Bug resolution learnings.
+* `.agents/theories/`: Architecture hypotheses to test.
+* `.agents/logs/`: Structured logs (decisions/ADRs, discoveries, failures/autopsies, simulations).
+* `.agents/memory/`: Structured agent memory (causal, episodic, identity, long-term, procedural, short-term, procedures, trash, vault).
 
 ### Autonomous Management Rules for the Assistant
-1. **Asynchronous Logging:** Upon resolving complex tasks, record execution summaries in `logs/decisions/` or `diaries/` (`Problem → Root Cause → Solution`).
-2. **Skill Updates:** When discovering reusable patterns, update or create Markdown files under `learning/rewards/` or `memory/procedural/`.
-3. **Failure Tracking:** If an approach fails, log the evidence in `learning/penalties/` and `logs/failures/` to prevent recurrence.
-4. **Zero Code Pollution:** Markdown files act exclusively as external disk memory and never interfere with software compilation or runtime execution.
+1. **Asynchronous Logging:** Upon resolving complex tasks, record execution summaries in `.agents/logs/decisions/` or `.agents/diaries/` (`Problem → Root Cause → Solution`).
+2. **Skill Updates:** When discovering reusable patterns, update or create Markdown files under `.agents/learning/rewards/` or `.agents/memory/procedural/`.
+3. **Failure Tracking:** If an approach fails, log the evidence in `.agents/learning/penalties/` and `.agents/logs/failures/` to prevent recurrence.
+4. **Zero Code Pollution:** Markdown files act exclusively as external disk memory inside `.agents/` and never interfere with software compilation or runtime execution.
+

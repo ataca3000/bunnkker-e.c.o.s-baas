@@ -1,21 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { validateApiSession } from '@/lib/apiAuth';
+import { validateApiSession, getTenantId } from '@/lib/apiAuth';
 import { prisma } from '@/lib/prisma';
 import { db as firestoreAdmin } from '@/lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
-import { calculateExpectedAmount, calculateDiscrepancy, ALLOWED_CLOSE_STATUSES } from '@/lib/financial';
+import { calculateExpectedAmount, calculateDiscrepancy, ALLOWED_CLOSE_STATUSES, roundMoney } from '@/lib/financial';
 
 export async function POST(request: NextRequest) {
     const auth = validateApiSession(request);
     if (!auth.ok) return auth.response;
     try {
-        const tenantId = request.headers.get('x-tenant-id') || 'default-local';
+        const tenantId = getTenantId(request);
         const body = await request.json();
         const { declaredAmount, cashierId, cashierName } = body;
 
         if (declaredAmount === undefined || !cashierId) {
             return NextResponse.json({ error: 'Faltan datos requeridos (declaredAmount, cashierId)' }, { status: 400 });
         }
+
+        const cleanDeclared = roundMoney(Number(declaredAmount));
 
         // 1. Obtener el último cierre de caja de este tenant
         const lastLog = await prisma.cashRegisterLog.findFirst({
@@ -44,7 +46,7 @@ export async function POST(request: NextRequest) {
         });
 
         const expectedAmount = calculateExpectedAmount(ordersToCount);
-        const discrepancy = calculateDiscrepancy(declaredAmount, expectedAmount);
+        const discrepancy = calculateDiscrepancy(cleanDeclared, expectedAmount);
 
         // 3. Registrar de forma inmutable en Prisma
         const log = await prisma.cashRegisterLog.create({
@@ -52,7 +54,7 @@ export async function POST(request: NextRequest) {
                 tenantId,
                 cashierId,
                 cashierName: cashierName || 'Cajero',
-                declaredAmount,
+                declaredAmount: cleanDeclared,
                 expectedAmount,
                 discrepancy,
                 synced: false

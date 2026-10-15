@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { jwtVerify } from 'jose';
 
 import { validateApiSession, validateActiveDbUser } from '@/lib/apiAuth';
+import { roundMoney } from '@/lib/financial';
 const CUSTOMER_JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'super_secret_local_key');
 
 async function writeOrderEvent(tx: any, event: {
@@ -177,7 +178,7 @@ export async function POST(request: NextRequest) {
         const deliveryLat = body.deliveryLat ?? body.lat ?? clientData.lat ?? location.lat;
         const deliveryLng = body.deliveryLng ?? body.lng ?? clientData.lng ?? location.lng;
 
-        const numTotal = Number(total);
+        const numTotal = roundMoney(Number(total));
         if (!orderId || Number.isNaN(numTotal) || !Array.isArray(items) || items.length === 0) {
             return NextResponse.json({ success: false, error: 'Order ID, total numérico válido y productos son obligatorios.' }, { status: 400 });
         }
@@ -356,7 +357,7 @@ export async function POST(request: NextRequest) {
                         create: items.map((item: any) => ({
                             productId: item.productId || item.id,
                             cantidad: Math.max(1, Math.round(Number(item.quantity ?? item.cantidad ?? 1))),
-                            precio: Number(item.price ?? item.precio ?? 0)
+                            precio: roundMoney(Number(item.price ?? item.precio ?? 0))
                         }))
                     }
                 },
