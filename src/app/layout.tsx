@@ -104,6 +104,7 @@ export const viewport: Viewport = {
 import { CartProvider } from "@/context/CartContext";
 import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
+import { LanguageProvider } from "@/context/LanguageContext";
 import { ThemeScript } from "@/components/ThemeScript";
 import ClickSoundProvider from "@/components/ClickSoundProvider";
 import AntiDevTools from "@/components/AntiDevTools";
@@ -133,29 +134,31 @@ export default async function RootLayout({
         <SchemaMarkup />
         <UsbLockScreen />
         <div className="flex flex-col min-h-screen">
-          <ThemeProvider>
-            <AuthProvider>
-              <DeviceLockScreen>
-                <CartProvider>
-                  <ConnectionStatus />
-                  <Navbar />
-                  <AdminLayout>
-                    <ClientBootGuard>
-                      {children}
-                    </ClientBootGuard>
-                  </AdminLayout>
-                  <AdminAsistente />
-                  <ClickSoundProvider />
-                  <UpdateNotification />
-                  <FreemiumLockModal />
-                  <Footer />
-                  <ToastContainer />
-                  <PWAInstallPrompt />
-                  <ServiceWorkerRegister />
-                </CartProvider>
-              </DeviceLockScreen>
-            </AuthProvider>
-          </ThemeProvider>
+          <LanguageProvider>
+            <ThemeProvider>
+              <AuthProvider>
+                <DeviceLockScreen>
+                  <CartProvider>
+                    <ConnectionStatus />
+                    <Navbar />
+                    <AdminLayout>
+                      <ClientBootGuard>
+                        {children}
+                      </ClientBootGuard>
+                    </AdminLayout>
+                    <AdminAsistente />
+                    <ClickSoundProvider />
+                    <UpdateNotification />
+                    <FreemiumLockModal />
+                    <Footer />
+                    <ToastContainer />
+                    <PWAInstallPrompt />
+                    <ServiceWorkerRegister />
+                  </CartProvider>
+                </DeviceLockScreen>
+              </AuthProvider>
+            </ThemeProvider>
+          </LanguageProvider>
         </div>
         <CookieConsent />
       </body>

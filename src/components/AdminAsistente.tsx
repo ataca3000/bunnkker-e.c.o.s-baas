@@ -223,7 +223,7 @@ export default function AdminAsistente() {
 
     return (
         <>
-            <div style={{ position: 'fixed', bottom: '20px', right: '20px', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '10px' }}>
+            <div className="fixed bottom-24 md:bottom-6 right-4 md:right-6 z-[9999] flex flex-col items-end gap-2.5">
                 <AnimatePresence>
                     {!isOpen && showGreeting && (
                         <motion.div

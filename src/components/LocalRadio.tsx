@@ -221,9 +221,9 @@ export default function LocalRadio() {
     if (!isStaff) return null;
 
     return (
-        <div className="fixed bottom-28 right-6 z-[9000] pointer-events-auto flex flex-col items-end">
+        <div className="fixed bottom-24 md:bottom-8 left-4 md:left-[280px] z-[9000] pointer-events-auto flex flex-col items-start">
             {isReceiving && (
-                <div className="absolute -top-12 right-0 bg-sky-500 text-white text-xs font-black px-4 py-1.5 rounded-full whitespace-nowrap animate-pulse shadow-[0_0_15px_rgba(14,165,233,0.5)] flex items-center gap-2">
+                <div className="absolute -top-12 left-0 bg-sky-500 text-white text-xs font-black px-4 py-1.5 rounded-full whitespace-nowrap animate-pulse shadow-[0_0_15px_rgba(14,165,233,0.5)] flex items-center gap-2">
                     <Radio size={14} className="animate-spin-slow" />
                     {rxSender}
                 </div>
@@ -249,7 +249,7 @@ export default function LocalRadio() {
                     <div className="absolute inset-0 border-2 border-red-500 rounded-full animate-ping opacity-75"></div>
                 )}
             </button>
-            <p className="text-[9px] text-right text-slate-500 font-bold uppercase tracking-widest mt-2 hidden md:block">
+            <p className="text-[9px] text-left text-slate-500 font-bold uppercase tracking-widest mt-2 hidden md:block">
                 {connectionState === 'connected' ? 'Radio LAN · PTT (Espacio)' : connectionState === 'connecting' ? 'Conectando radio local…' : 'Radio local offline · inicia radio-server.js'}
             </p>
         </div>

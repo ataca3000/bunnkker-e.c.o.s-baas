@@ -46,6 +46,7 @@ import { doc, updateDoc, onSnapshot, getDoc } from 'firebase/firestore';
 import { toast } from '@/lib/toast';
 import ThemeToggle from '@/components/ThemeToggle';
 import IconCarouselNav from '@/components/admin/IconCarouselNav';
+import SuperAdminBottomNav from '@/components/admin/SuperAdminBottomNav';
 
 
 const rolePaths: Record<string, string[]> = {
@@ -458,7 +459,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
             {/* ── Sidebar (Layer 3) ─────────────────────────────────────────── */}
             {showAdminSidebar && (
-                <aside className="liquid-glass admin-sidebar" style={{
+                <aside className="liquid-glass admin-sidebar hidden md:flex" style={{
                     width: sidebarWidth,
                     color: 'white',
                     padding: isCollapsed ? '2rem 0.75rem' : '2rem 1.5rem',
@@ -601,17 +602,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             )}
 
             {/* ── Main content (Layer 2) ────────────────────────────────────── */}
-            <div style={{
-                flex: 1,
-                marginLeft: showAdminSidebar ? sidebarWidth : '0',
-                width: showAdminSidebar ? `calc(100% - ${sidebarWidth})` : '100%',
-                transition: 'all 0.3s cubic-bezier(0.4,0,0.2,1)',
-                display: 'flex',
-                flexDirection: 'column',
-                minHeight: '100vh',
-                position: 'relative',
-                zIndex: 10, // Content Layer
-            }}>
+            <div
+                className="admin-main-viewport flex-1 flex flex-col min-h-screen relative z-10 transition-all duration-300 pb-28 md:pb-6 ml-0 md:ml-[var(--admin-sidebar-w,260px)] w-full md:w-[calc(100%-var(--admin-sidebar-w,260px))]"
+                style={{
+                    '--admin-sidebar-w': showAdminSidebar ? sidebarWidth : '0px',
+                } as React.CSSProperties}
+            >
                 {/* ── Top header bar ─────────────────────────────── */}
                 <div className="liquid-glass" style={{
                     borderBottom: '1px solid rgba(0,242,255,0.2)',
@@ -790,6 +786,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     {children}
                 </div>
             </div>
+
+            {/* ── Super Admin Bottom Carousel Nav (Devices / Mobile) ──────── */}
+            <SuperAdminBottomNav
+                isPremium={isPremium}
+                userRole={profile?.role || 'superadmin'}
+                allowedRoutes={rolePaths[profile?.role || 'superadmin']}
+            />
         </div>
     );
 }

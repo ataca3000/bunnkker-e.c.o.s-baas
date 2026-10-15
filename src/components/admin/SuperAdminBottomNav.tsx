@@ -26,6 +26,7 @@ import {
     Sparkles
 } from 'lucide-react';
 import { toast } from '@/lib/toast';
+import { useTranslation } from '@/context/LanguageContext';
 
 export interface BottomNavItem {
     id: string;
@@ -205,6 +206,7 @@ export default function SuperAdminBottomNav({
     allowedRoutes
 }: SuperAdminBottomNavProps) {
     const pathname = usePathname();
+    const { t } = useTranslation();
     const trackRef = useRef<HTMLDivElement>(null);
     const [canScrollLeft, setCanScrollLeft] = useState(false);
     const [canScrollRight, setCanScrollRight] = useState(true);
@@ -347,7 +349,7 @@ export default function SuperAdminBottomNav({
                                         active ? 'text-white' : 'text-slate-300'
                                     }`}
                                 >
-                                    {item.shortLabel}
+                                    {t(`nav.${item.id}`, item.shortLabel)}
                                 </span>
 
                                 {/* Premium lock badge */}
