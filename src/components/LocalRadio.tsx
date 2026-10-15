@@ -6,9 +6,11 @@ import { useAuth } from '@/context/AuthContext';
 import { usePathname } from 'next/navigation';
 import { Mic, MicOff, Radio } from 'lucide-react';
 import { toast } from '@/lib/toast';
+import { useTranslation } from '@/context/LanguageContext';
 
 export default function LocalRadio() {
     const { profile } = useAuth();
+    const { t } = useTranslation();
     const pathname = usePathname();
     const [socket, setSocket] = useState<Socket | null>(null);
     const [isRecording, setIsRecording] = useState(false);
@@ -240,7 +242,7 @@ export default function LocalRadio() {
                         ? 'bg-sky-500/90 text-white scale-105 shadow-[0_0_20px_rgba(14,165,233,0.6)] border-2 border-white'
                         : 'bg-slate-900/60 text-cyan-400 hover:bg-slate-800/80 hover:text-white border border-cyan-500/40 shadow-[0_0_15px_rgba(0,242,255,0.15)]'
                 }`}
-                title="Mantén presionado para hablar (o usa la barra espaciadora)"
+                title={t('radio.hold_to_talk', 'Mantén presionado para hablar (o usa la barra espaciadora)')}
             >
                 {isRecording ? <Mic size={28} className="animate-pulse" /> : <MicOff size={24} />}
                 
@@ -250,7 +252,7 @@ export default function LocalRadio() {
                 )}
             </button>
             <p className="text-[9px] text-left text-slate-500 font-bold uppercase tracking-widest mt-2 hidden md:block">
-                {connectionState === 'connected' ? 'Radio LAN · PTT (Espacio)' : connectionState === 'connecting' ? 'Conectando radio local…' : 'Radio local offline · inicia radio-server.js'}
+                {connectionState === 'connected' ? t('radio.lan_ptt', 'Radio LAN · PTT (Espacio)') : connectionState === 'connecting' ? t('radio.connecting', 'Conectando radio local…') : t('radio.offline', 'Radio local offline · inicia radio-server.js')}
             </p>
         </div>
     );

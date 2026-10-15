@@ -45,6 +45,8 @@ import { db } from '@/lib/firebase';
 import { doc, updateDoc, onSnapshot, getDoc } from 'firebase/firestore';
 import { toast } from '@/lib/toast';
 import ThemeToggle from '@/components/ThemeToggle';
+import LanguageSelector from '@/components/LanguageSelector';
+import { useTranslation } from '@/context/LanguageContext';
 import IconCarouselNav from '@/components/admin/IconCarouselNav';
 import SuperAdminBottomNav from '@/components/admin/SuperAdminBottomNav';
 
@@ -335,6 +337,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const isDashboard = pathname?.startsWith('/dashboard');
     const { isReadOnly, isPremium, profile, signOut, loading: authLoading } = useAuth();
     const { firebaseStatus } = useCart();
+    const { t } = useTranslation();
 
     /* persist sidebar and navigation mode preferences */
     useEffect(() => {
@@ -629,7 +632,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                             onMouseEnter={e => (e.currentTarget.style.color = '#0284c7')}
                             onMouseLeave={e => (e.currentTarget.style.color = '#0ea5e9')}
                         >
-                            PANEL
+                            {t('nav.panel', 'PANEL')}
                         </Link>
 
                         {pathname !== '/dashboard' && (
@@ -661,7 +664,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     </nav>
 
                     {/* Status Indicators & Profile */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        {/* Selector de Idioma (Español, Inglés, Francés, Chino) */}
+                        <LanguageSelector />
+
                         {/* Selector de Tema */}
                         <ThemeToggle />
 
@@ -675,7 +681,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                             border: isPremium ? '1px solid rgba(245,158,11,0.2)' : '1px solid rgba(255,255,255,0.1)',
                         }}>
                             <ShieldCheck size={13} />
-                            <span className="hidden sm:inline">{isPremium ? 'PREMIUM ACTIVE' : 'BÁSICO'}</span>
+                            <span className="hidden sm:inline">{isPremium ? t('status.premium_active', 'PREMIUM ACTIVE') : t('status.basic', 'BÁSICO')}</span>
                         </div>
 
                         {/* Connection badge */}
@@ -709,7 +715,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                         }} />
                                     )}
                                 </span>
-                                <span className="hidden sm:inline">{firebaseStatus === 'online' ? 'SISTEMA ONLINE' : 'SIN CONEXIÓN'}</span>
+                                <span className="hidden sm:inline">{firebaseStatus === 'online' ? t('status.online', 'SISTEMA ONLINE') : t('status.offline', 'SIN CONEXIÓN')}</span>
                             </button>
 
                             <ConnectionTooltip isOpen={connTooltipOpen} firebaseStatus={firebaseStatus} />
@@ -729,7 +735,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                 title="Volver a la vista anterior"
                             >
                                 <ChevronLeft size={14} />
-                                <span className="hidden sm:inline">ATRÁS</span>
+                                <span className="hidden sm:inline">{t('nav.back', 'ATRÁS')}</span>
                             </button>
                         )}
 
@@ -746,7 +752,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                             title="Ir a Mi Perfil"
                         >
                             <User size={14} />
-                            <span className="hidden sm:inline">PERFIL</span>
+                            <span className="hidden sm:inline">{t('nav.profile', 'PERFIL')}</span>
                         </Link>
 
                         {/* Cerrar Sesión */}
@@ -762,7 +768,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                             title="Cerrar Sesión"
                         >
                             <LogOut size={14} />
-                            <span className="hidden sm:inline">SALIR</span>
+                            <span className="hidden sm:inline">{t('nav.logout', 'SALIR')}</span>
                         </button>
                     </div>
                 </div>
@@ -777,7 +783,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         borderBottom: '1px solid #FFCB05',
                     }}>
                         <AlertCircle size={16} color="#FFCB05" style={{ flexShrink: 0 }} />
-                        <span>MODO DEMOSTRACIÓN: Usted está en modo de solo lectura. Los cambios no se guardarán en la base de datos real.</span>
+                        <span>{t('status.demo_warning', 'MODO DEMOSTRACIÓN: Usted está en modo de solo lectura. Los cambios no se guardarán en la base de datos real.')}</span>
                     </div>
                 )}
 
