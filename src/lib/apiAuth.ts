@@ -6,7 +6,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 
 export type ApiAuthResult =
-  | { ok: true; uid: string; role: string }
+  | { ok: true; uid: string; role: string; tenantId?: string }
   | { ok: false; response: NextResponse };
 
 const WRITE_ROLES = ['superadmin', 'admin', 'inventory', 'sales', 'billing'];
@@ -126,7 +126,7 @@ export async function validateActiveDbUser(
     const db = prismaInstance || (await import('@/lib/prisma')).prisma;
     const user = await db.user.findUnique({
       where: { id: auth.uid },
-      select: { id: true, role: true, active: true }
+      select: { id: true, role: true, active: true, tenantId: true }
     });
 
     if (!user || !user.active) {
@@ -149,7 +149,7 @@ export async function validateActiveDbUser(
       };
     }
 
-    return { ok: true, uid: user.id, role: user.role };
+    return { ok: true, uid: user.id, role: user.role, tenantId: user.tenantId };
   } catch (error: any) {
     console.error('[AUTH FAIL-CLOSED] Fallo al validar usuario en SQLite:', error?.message);
     return {

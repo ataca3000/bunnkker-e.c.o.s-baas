@@ -11,7 +11,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { generateSecureRandomInt, signRole, hashPinSha256 } from '@/lib/apiAuth';
+import { generateSecureRandomInt, signRole, hashPinSha256, getTenantId } from '@/lib/apiAuth';
 import { redis } from '@/lib/redis';
 import { prisma } from '@/lib/prisma';
 import { INITIAL_STAFF_PINS, INITIAL_STAFF_PIN_VALUES } from '@/lib/initialStaffPins';
@@ -181,6 +181,8 @@ export async function POST(request: NextRequest) {
       const prefixedPin = cleanPin.startsWith('A') ? cleanPin : `A${cleanPin}`;
       const prefixedPinSha = hashPinSha256(prefixedPin);
 
+      const tenantId = getTenantId(request);
+
       // Búsqueda del usuario por PIN hasheado (o fallback legacy)
       let user: any = null;
       try {
@@ -190,6 +192,26 @@ export async function POST(request: NextRequest) {
             active: true 
           } 
         });
+
+        // Si no se encontró por coincidencia exacta en 'pin', buscar usuarios con pinHash usando bcrypt
+        if (!user) {
+          const candidateUsers = await prisma.user.findMany({
+            where: { active: true, pinHash: { not: null } },
+            select: { id: true, name: true, role: true, active: true, pin: true, pinHash: true, tenantId: true, deviceId: true }
+          });
+          for (const u of candidateUsers) {
+            if (u.pinHash) {
+              const isMatch = await bcrypt.compare(cleanPin, u.pinHash) ||
+                              (strippedPin !== cleanPin && await bcrypt.compare(strippedPin, u.pinHash)) ||
+                              (prefixedPin !== cleanPin && await bcrypt.compare(prefixedPin, u.pinHash)) ||
+                              (rawPin !== cleanPin && await bcrypt.compare(rawPin, u.pinHash));
+              if (isMatch) {
+                user = u;
+                break;
+              }
+            }
+          }
+        }
 
         // Si no existe el usuario en la BD pero es uno de los PINs iniciales predeterminados
         const defaultRoleInfo = INITIAL_STAFF_PINS[cleanPin] || 
@@ -203,6 +225,7 @@ export async function POST(request: NextRequest) {
           try {
             user = await prisma.user.create({
               data: {
+                tenantId,
                 name: defaultRoleInfo.name,
                 role: defaultRoleInfo.role,
                 pin: pinSha,
@@ -275,13 +298,13 @@ export async function POST(request: NextRequest) {
         }
       });
 
-      // Migrar el campo legacy 'pin' a SHA-256 e inyectar 'pinHash' si no existe
-      if (user.pin === pin) {
+      // Migrar el campo legacy 'pin' a SHA-256 e inyectar 'pinHash' con bcrypt si aún no existe
+      if (user?.id && (!user.pinHash || user.pin === rawPin || user.pin === cleanPin)) {
         try {
-          const pinHash = user.pinHash || await bcrypt.hash(pin, SALT_ROUNDS);
+          const safePinHash = user.pinHash || await bcrypt.hash(cleanPin, SALT_ROUNDS);
           await prisma.user.update({
             where: { id: user.id },
-            data: { pin: pinSha, pinHash }
+            data: { pin: pinSha, pinHash: safePinHash }
           });
         } catch (e) {
           console.warn("[AUTH SESSION] No se pudo actualizar pinHash en BD (modo offline/fallback):", e);
