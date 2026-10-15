@@ -31,7 +31,6 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
   '/dashboard/qr':              ['superadmin', 'admin', 'marketing', 'sales', 'caja'],
   '/dashboard/demo':            ['superadmin'],
   '/dashboard/suscripcion':     ['superadmin'],
-  '/dashboard/tests':           ['superadmin'],
 };
 
 // Redirecciones directas desde /dashboard según el rol del empleado
@@ -94,6 +93,10 @@ export default async function middleware(request: NextRequest) {
   requestHeaders.set('x-tenant-id', tenantId);
 
   // --- 2. RBAC - protección del dashboard ---
+  if (pathname === '/dashboard/tests') {
+    return NextResponse.redirect(new URL('/dashboard', request.url));
+  }
+
   if (pathname.startsWith('/dashboard')) {
     const session = request.cookies.get('msj-session')?.value;
     const role    = request.cookies.get('msj-role')?.value;

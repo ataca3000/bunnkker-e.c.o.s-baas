@@ -135,7 +135,6 @@ export default function SuperAdminDashboard({
         { id: 'audit',     title: 'Registro Auditoría',  icon: <Map size={26} />,            color: '#ef4444', href: '/dashboard/audit',         desc: 'Bitácora inmutable de operaciones y caja.' },
         { id: 'reports',   title: 'Reportes',             icon: <BarChart3 size={26} />,      color: '#0ea5e9', href: '/dashboard/reports',       desc: 'Análisis de ventas, KPIs y exportación de datos.' },
         { id: 'soporte',   title: 'Soporte y Tickets',   icon: <Headphones size={26} />,     color: '#14b8a6', href: '/dashboard/soporte',       desc: 'Gestión de tickets de soporte y quejas de clientes.' },
-        { id: 'tests',     title: 'Laboratorio de Estrés',icon: <Terminal size={26} />,      color: '#f97316', href: '/dashboard/tests',         desc: 'Simulaciones de carga y concurrencia local.' },
     ].filter(m => isModuleActive(m.id));
 
     const categoryCloud = isNube() ? [

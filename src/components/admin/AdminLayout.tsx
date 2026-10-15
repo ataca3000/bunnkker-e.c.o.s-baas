@@ -55,7 +55,7 @@ const rolePaths: Record<string, string[]> = {
         '/dashboard/soporte', '/dashboard/setup', '/dashboard/pro-sync', '/dashboard/profile', '/dashboard/guia',
         '/dashboard/inventory', '/dashboard/delivery', '/dashboard/pickup', '/dashboard/patio', '/dashboard/design',
         '/dashboard/marketing', '/dashboard/omnipulse', '/dashboard/billing', '/dashboard/audit', '/dashboard/suscripcion',
-        '/dashboard/qr', '/dashboard/demo', '/dashboard/tests', '/dashboard/payments', '/dashboard/verificador',
+        '/dashboard/qr', '/dashboard/demo', '/dashboard/payments', '/dashboard/verificador',
         '/dashboard/migracion', '/dashboard/migration', '/dashboard/link', '/dashboard/node-view'
     ],
     admin: [
@@ -113,12 +113,6 @@ const menuGroups = [
             { id: 'billing',      title: 'Facturas SAT',       icon: <FileText size={20} />,  href: '/dashboard/billing',      premium: true  },
             { id: 'audit',        title: 'Registro Auditoría', icon: <History size={20} />,   href: '/dashboard/audit',        premium: false },
             { id: 'subscription', title: 'Mi Suscripción',     icon: <CreditCard size={20} />, href: '/dashboard/suscripcion', premium: false },
-        ],
-    },
-    {
-        label: 'Herramientas',
-        items: [
-            { id: 'tests', title: 'Pruebas de Lógica', icon: <Play size={20} />, href: '/dashboard/tests', premium: false },
         ],
     },
 ];

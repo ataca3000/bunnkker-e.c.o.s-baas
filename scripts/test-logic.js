@@ -38,6 +38,7 @@ function testPipelineDomicilioOffline() {
     
     if (orden.status === "DELIVERED" && orden.signature) {
         console.log("🏁 TEST LOGÍSTICO COMPLETO: Los estados fluyen sin errores.");
+        return true;
     } else {
         throw new Error("Fallo en la consistencia de estados del pipeline de entrega.");
     }
@@ -50,9 +51,18 @@ function testSecurityAndClassifier() {
         const output = execSync('npx vitest run src/__tests__/security_and_classifier.test.ts', { encoding: 'utf-8' });
         console.log(output);
         console.log("✅ AUDITORÍA DE SEGURIDAD Y CLASIFICADOR: COMPLETADA CON ÉXITO");
+        return true;
     } catch (error) {
-        if (error.message?.includes('Cannot find module') || error.stdout?.includes('UNRESOLVED_IMPORT')) {
-            console.log("ℹ️ Vitest no está instalado localmente en node_modules. El test de pipeline logístico pasó correctamente.");
+        const errorMsg = String(error.message || '') + String(error.stdout || '');
+        if (
+            errorMsg.includes('Cannot find module') ||
+            errorMsg.includes('UNRESOLVED_IMPORT') ||
+            errorMsg.includes('not recognized') ||
+            errorMsg.includes('no se reconoce') ||
+            errorMsg.includes('command not found')
+        ) {
+            console.warn("⚠️ AVISO: Vitest o dependencias no están instaladas en node_modules. Ejecuta 'npm install --legacy-peer-deps' para auditar seguridad.");
+            return false;
         } else {
             console.error("❌ ERROR EN LA AUDITORÍA DE SEGURIDAD O CLASIFICADOR:\n", error.stdout || error.message);
             process.exit(1);
@@ -61,9 +71,14 @@ function testSecurityAndClassifier() {
 }
 
 try {
-    testPipelineDomicilioOffline();
-    testSecurityAndClassifier();
-    console.log("\n🚀 TODOS LOS TEST COMPLETADOS: El sistema está blindado y verificado para producción.\n");
+    const pipelineOk = testPipelineDomicilioOffline();
+    const securityOk = testSecurityAndClassifier();
+
+    if (pipelineOk && securityOk) {
+        console.log("\n🚀 SUITE COMPLETA VERIFICADA: Lógica de pipeline y seguridad blindada.\n");
+    } else if (pipelineOk) {
+        console.log("\nℹ️ VERIFICACIÓN PARCIAL: Lógica de pipeline verificada con éxito. (Instalar dependencias completas para ejecutar Vitest en host).\n");
+    }
 } catch (e) {
     console.error("❌ Fallo crítico en las pruebas:", e.message);
     process.exit(1);
