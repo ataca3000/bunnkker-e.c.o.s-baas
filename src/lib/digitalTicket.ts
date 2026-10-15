@@ -41,6 +41,8 @@ export interface DigitalTicket {
 
 const STORAGE_PREFIX = '_bunkker_tickets_';
 
+import { roundMoney, safeAddMoney } from '@/lib/financial';
+
 export function saveDigitalTicket(
   cajaId: string,
   cashierName: string,
@@ -77,14 +79,22 @@ export function saveDigitalTicket(
   const timeStr = now.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   const dateStr = now.toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
-  const formattedItems: DigitalTicketItem[] = items.map(i => ({
-    id: i.id || '',
-    name: i.name || 'Producto',
-    quantity: i.quantity || 1,
-    unitType: i.unitType || 'PZA',
-    price: Number(i.price) || 0,
-    subtotal: Number(( (i.price || 0) * (i.quantity || 1) ).toFixed(2)),
-  }));
+  const formattedItems: DigitalTicketItem[] = items.map(i => {
+    const unitPrice = roundMoney(Number(i.price) || 0);
+    const qty = Number(i.quantity) || 1;
+    return {
+      id: i.id || '',
+      name: i.name || 'Producto',
+      quantity: qty,
+      unitType: i.unitType || 'PZA',
+      price: unitPrice,
+      subtotal: roundMoney(unitPrice * qty),
+    };
+  });
+
+  const finalTotal = roundMoney(Number(total) || 0);
+  const received = roundMoney(Number(paymentDetails.amountReceived ?? finalTotal));
+  const changeAmt = roundMoney(Number(paymentDetails.change ?? Math.max(0, received - finalTotal)));
 
   const ticket: DigitalTicket = {
     id: `TCK-${safeCaja.toUpperCase()}-${String(consecutiveNumber).padStart(5, '0')}`,
@@ -98,9 +108,9 @@ export function saveDigitalTicket(
     timestamp: `${timeStr} - ${dateStr}`,
     dateIso: now.toISOString(),
     items: formattedItems,
-    total: Number(total.toFixed(2)),
-    amountReceived: Number((paymentDetails.amountReceived || total).toFixed(2)),
-    change: Number((paymentDetails.change || 0).toFixed(2)),
+    total: finalTotal,
+    amountReceived: received,
+    change: changeAmt,
     paymentMethod: paymentDetails.paymentMethod || 'EFECTIVO EN CAJA',
     consecutiveNumber,
     facturaStatus: 'no_solicitada',
