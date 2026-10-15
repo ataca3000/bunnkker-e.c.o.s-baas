@@ -221,7 +221,7 @@ export default function LocalRadio() {
     if (!isStaff) return null;
 
     return (
-        <div className="fixed bottom-6 right-6 z-[9000] pointer-events-auto flex flex-col items-end">
+        <div className="fixed bottom-28 right-6 z-[9000] pointer-events-auto flex flex-col items-end">
             {isReceiving && (
                 <div className="absolute -top-12 right-0 bg-sky-500 text-white text-xs font-black px-4 py-1.5 rounded-full whitespace-nowrap animate-pulse shadow-[0_0_15px_rgba(14,165,233,0.5)] flex items-center gap-2">
                     <Radio size={14} className="animate-spin-slow" />

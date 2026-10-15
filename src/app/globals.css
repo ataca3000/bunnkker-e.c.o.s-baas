@@ -269,85 +269,16 @@ button:disabled {
 /* Responsive Utilities */
 @media (max-width: 768px) {
   .bunkker-shell aside.admin-sidebar {
-    position: fixed !important;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    top: auto;
-    width: 100% !important;
-    height: auto !important;
-    max-height: 104px;
-    padding: 0.5rem 0.75rem calc(0.5rem + env(safe-area-inset-bottom)) !important;
-    border-right: 0 !important;
-    border-top: 1px solid var(--bunkker-teal) !important;
-    box-shadow: 0 -8px 24px rgba(19, 35, 43, 0.18) !important;
-  }
-
-  .bunkker-shell aside.admin-sidebar > div:first-child {
     display: none !important;
   }
 
-  .bunkker-shell aside.admin-sidebar .admin-sidebar-nav {
-    display: flex !important;
-    flex-direction: row !important;
-    align-items: stretch;
-    gap: 0.5rem !important;
-    width: 100%;
-    overflow-x: auto !important;
-    overflow-y: hidden !important;
-    padding: 0 0 2px !important;
-    scrollbar-width: none;
-    flex: none !important;
-    -webkit-overflow-scrolling: touch;
-    scroll-snap-type: x proximity;
-  }
-
-  .bunkker-shell aside.admin-sidebar .admin-sidebar-nav::-webkit-scrollbar { display: none; }
-  .bunkker-shell aside.admin-sidebar .admin-sidebar-nav > div,
-  .bunkker-shell aside.admin-sidebar .admin-sidebar-nav > a {
-    flex: 0 0 auto;
-  }
-  .bunkker-shell aside.admin-sidebar .admin-sidebar-nav > div {
-    display: contents !important;
-  }
-  .bunkker-shell aside.admin-sidebar .admin-sidebar-nav > div > div {
-    display: none !important;
-  }
-  .bunkker-shell aside.admin-sidebar .admin-sidebar-nav > div > .admin-sidebar-link,
-  .bunkker-shell aside.admin-sidebar .admin-sidebar-nav > .admin-sidebar-link {
-    min-width: 76px;
-    width: 76px;
-    height: 64px;
-    padding: 8px 6px !important;
-    flex-direction: column;
-    justify-content: center !important;
-    gap: 4px !important;
-    border-left: 0 !important;
-    border-bottom: 3px solid transparent;
-    border-radius: 12px;
-    scroll-snap-align: start;
-  }
-  .bunkker-shell aside.admin-sidebar .admin-sidebar-link > span {
-    display: block !important;
-    max-width: 68px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    font-size: 0.62rem !important;
-    text-align: center;
-  }
-  .bunkker-shell aside.admin-sidebar .admin-sidebar-link[style*="rgba(0,242,255"] {
-    border-bottom-color: var(--bunkker-teal) !important;
-  }
-  .bunkker-shell aside.admin-sidebar .admin-sidebar-nav > div:nth-last-child(2),
-  .bunkker-shell aside.admin-sidebar .admin-sidebar-nav > div:nth-last-child(1) {
-    display: none !important;
-  }
+  .bunkker-shell > div.admin-main-viewport,
   .bunkker-shell > div:last-child {
     margin-left: 0 !important;
     width: 100% !important;
     padding-bottom: 104px;
   }
+}
 
   .bunkker-btn,
   .bunkker-btn-secondary {
