@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
-import { useLanguage, SupportedLanguage } from '@/context/LanguageContext';
+import { useLanguage, type SupportedLanguage } from '@/context/LanguageContext';
 import { Globe, Check, ChevronDown } from 'lucide-react';
 
 interface LanguageOption {
