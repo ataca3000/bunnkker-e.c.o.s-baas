@@ -39,6 +39,7 @@
     "appId": "com.bunkkererp.erp",
     "productName": "BUNKKER E.C.O.S. ERP",
     "electronVersion": "42.11.10",
+    "electronDist": ".electron-dist",
     "copyright": "Copyright © 2026 brecha soluciones ds bunkker e.c.o.s",
     "directories": {
       "output": "dist-build-win",
@@ -179,7 +180,6 @@
     "protobufjs": "^7.6.5",
     "fast-uri": "^3.1.8",
     "@grpc/grpc-js": "^1.14.5",
-    "brace-expansion": "^2.1.7",
     "engine.io": "^6.6.10"
   }
 }

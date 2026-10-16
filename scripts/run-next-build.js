@@ -43,10 +43,6 @@ try {
   if (!fs.existsSync(serverDir)) {
     fs.mkdirSync(serverDir, { recursive: true });
   }
-  const pagesDir = path.join(serverDir, 'pages');
-  if (!fs.existsSync(pagesDir)) {
-    fs.mkdirSync(pagesDir, { recursive: true });
-  }
   const edgeFile = path.join(serverDir, 'edge-runtime-webpack.js');
   if (!fs.existsSync(edgeFile)) {
     fs.writeFileSync(edgeFile, '// Placeholder for Next.js build tracer\nmodule.exports = {};\n');
