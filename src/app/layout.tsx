@@ -9,6 +9,7 @@ import UpdateNotification from "@/components/UpdateNotification";
 import ConnectionStatus from "@/components/ConnectionStatus";
 import SchemaMarkup from "@/components/SchemaMarkup";
 import UsbLockScreen from "@/components/UsbLockScreen";
+import { Analytics } from "@vercel/analytics/next";
 
 const inter = { className: "font-sans" };
 
@@ -161,6 +162,7 @@ export default async function RootLayout({
           </LanguageProvider>
         </div>
         <CookieConsent />
+        <Analytics />
       </body>
     </html>
   );
