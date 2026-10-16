@@ -1,8 +1,10 @@
 import type { NextConfig } from "next";
 import path from "path";
 
+const isDesktopBuild = (process.env.BUILD_TARGET === 'desktop' || process.env.NEXT_PUBLIC_APP_ENV === 'local') && !process.env.VERCEL;
+
 const nextConfig: NextConfig = {
-  output: 'standalone',
+  ...(isDesktopBuild ? { output: 'standalone' } : {}),
   // TODO (S3.2): Reactivar reactStrictMode: true una vez identificado el componente
   // que causa doble-render problemático. StrictMode detecta efectos secundarios
   // inesperados y refs obsoletas — su desactivación oculta bugs reales.
