@@ -23,6 +23,9 @@ const nextConfig: NextConfig = {
     // Cambiar a false cuando `npm run lint` no reporte errores.
     ignoreDuringBuilds: true,
   },
+  env: {
+    NEXT_PUBLIC_APP_ENV: process.env.NEXT_PUBLIC_APP_ENV || (process.env.VERCEL ? 'demo' : ''),
+  },
   experimental: {
     optimizePackageImports: ['lucide-react', 'firebase', 'firebase/firestore', '@stripe/stripe-js', 'framer-motion']
   },

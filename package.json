@@ -17,7 +17,7 @@
     "lint": "eslint .",
     "dev:electron": "electron .",
     "build:web": "node ./scripts/run-next-build.js web nube",
-    "build:demo": "node ./scripts/run-next-build.js web demo",
+    "build:demo": "prisma generate && node ./scripts/run-next-build.js web demo",
     "build:standalone": "node ./scripts/run-next-build.js desktop local && node scripts/copy-standalone.js",
     "build:secure": "npm run build:standalone",
     "dist": "npm run build:secure && electron-builder",
