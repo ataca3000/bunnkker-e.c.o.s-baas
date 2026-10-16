@@ -497,6 +497,7 @@ ipcMain.handle('scan-for-vault-drive', async () => {
             }
         });
     });
+});
 const ensureFirewallRules = () => {
     if (process.platform !== 'win32') return;
     try {
