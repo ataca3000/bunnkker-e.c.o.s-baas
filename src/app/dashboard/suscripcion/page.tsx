@@ -21,13 +21,14 @@ const plans = [
     {
         id: 'pro_monthly',
         name: 'Suscripción Mensual PRO',
-        subtitle: '$200 MXN / mes',
-        price: 200,
+        subtitle: '$349 MXN / mes',
+        price: 349,
         popular: true,
         color: '#22D3EE',
         icon: <Zap size={32} className="text-cyan-300" />,
         features: [
-            '300+ Ventas ilimitadas sin bloqueo',
+            'Ventas ilimitadas sin bloqueo',
+            'Cajas y Usuarios Ilimitados en LAN',
             'Todos los 8 roles de usuario',
             'POS, Inventario e Impresión Térmica',
             'Sincronización P2P en Red WiFi LAN',

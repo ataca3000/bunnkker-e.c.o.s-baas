@@ -4,6 +4,7 @@ import { jwtVerify } from 'jose';
 
 import { validateApiSession, validateActiveDbUser } from '@/lib/apiAuth';
 import { roundMoney } from '@/lib/financial';
+import { getSalesTrialStatus, recordPersistentSale } from '@/lib/salesCounter';
 const CUSTOMER_JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'super_secret_local_key');
 
 async function writeOrderEvent(tx: any, event: {
@@ -173,6 +174,19 @@ export async function POST(request: NextRequest) {
         // AISLAMIENTO DE TENANT: Se deriva de la configuración soberana en base de datos, no de headers arbitrarios
         const appConfig = await prisma.appConfig.findUnique({ where: { id: 'global' } }).catch(() => null);
         const tenantId = appConfig?.tenantId || 'default';
+        const isSubscribed = Boolean(appConfig && (appConfig as any).subscriptionStatus === 'active');
+
+        // REGLA 100 + 20 VENTAS (Anti-Tampering): Verificar límite de prueba antes de procesar
+        const trialStatus = getSalesTrialStatus(tenantId, isSubscribed);
+        if (trialStatus.isLocked) {
+            return NextResponse.json({
+                success: false,
+                error: 'Has completado tus 100 ventas de prueba + 20 ventas de cortesía (120 ventas). Activa tu suscripción mensual para continuar cobrando.',
+                code: 'SUBSCRIPTION_REQUIRED',
+                trialStatus
+            }, { status: 402 });
+        }
+
         const isCashierRequest = Boolean(authenticatedCustomerId || body.asRequest || !staffSession.ok);
         const location = clientData.gpsCoords || body.gpsCoords || {};
         const deliveryLat = body.deliveryLat ?? body.lat ?? clientData.lat ?? location.lat;
@@ -378,7 +392,10 @@ export async function POST(request: NextRequest) {
             return order;
         });
 
-        return NextResponse.json({ success: true, data: orderResult });
+        // Registrar venta de forma monotónica e irreversible en disco (Anti-Tampering)
+        const counterInfo = recordPersistentSale(tenantId);
+
+        return NextResponse.json({ success: true, data: orderResult, trialStatus: counterInfo });
 
     } catch (error: any) {
         const collisionId = orderId || body?.orderId || body?.id;
