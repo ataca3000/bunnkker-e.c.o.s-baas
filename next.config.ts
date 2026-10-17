@@ -17,10 +17,6 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: false,
   },
   eslint: {
-    // S3.3: ESLint corre en cada build para visibilidad.
-    // ESTRATEGIA PRIMER DEPLOY: ignoreDuringBuilds: true para no bloquear
-    // el pipeline mientras se resuelven errores pre-existentes progresivamente.
-    // Cambiar a false cuando `npm run lint` no reporte errores.
     ignoreDuringBuilds: true,
   },
   env: {

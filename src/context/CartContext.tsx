@@ -37,7 +37,7 @@ export interface PromoWidget {
 
 export interface VisualLayoutBlock {
     id: string;
-    type: 'hero' | 'catalog' | 'map' | 'custom_text' | 'image' | 'widget' | 'about';
+    type: 'hero' | 'catalog' | 'map' | 'custom_text' | 'image' | 'widget' | 'about' | 'banner';
     order: number;
     visible: boolean;
     settings?: {
@@ -45,16 +45,19 @@ export interface VisualLayoutBlock {
         alignment?: 'left' | 'center' | 'right';
         columns?: number;
         categoryFilter?: string;
+        categoryTarget?: string;
         showRatings?: boolean;
         borderRadius?: number;
         buttonText?: string;
         backgroundColor?: string;
         textColor?: string;
+        titleColor?: string;
         whatsappNumber?: string;
         questionsText?: string;
         titleText?: string;
         subtitleText?: string;
         imageUrl?: string;
+        mediaUrl?: string;
     };
 }
 

@@ -1,4 +1,3 @@
-// @ts-nocheck
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -320,11 +319,11 @@ export default function StoreBuilderCanvas() {
             const uploadTask = uploadBytesResumable(storageRef, file);
 
             uploadTask.on('state_changed', 
-                (snapshot) => {
+                (snapshot: any) => {
                     const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
                     setUploadProgress(progress);
                 }, 
-                (error) => {
+                (error: any) => {
                     console.error('Error uploading:', error);
                     toast.error('Error al subir el archivo. Revisa tu conexión o configuración de Storage.');
                     setIsUploading(false);

@@ -1,4 +1,3 @@
-// @ts-nocheck
 /* eslint-disable */
 "use client";
 
@@ -396,8 +395,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         const isAdminRole = profile.role === 'superadmin' || profile.role === 'admin';
         if (!isAdminRole && isDashboard) {
-            const paths = rolePaths[profile.role] || [];
-            const isAllowed = paths.some(p => pathname === p || pathname?.startsWith(p + '/'));
+            const currentRole = profile.role || '';
+            const paths = rolePaths[currentRole] || [];
+            const isAllowed = paths.some((p: string) => pathname === p || pathname?.startsWith(p + '/'));
             if (!isAllowed) {
                 router.replace('/dashboard');
                 return;
