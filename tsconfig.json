@@ -41,8 +41,6 @@
   "exclude": [
     "node_modules",
     ".next",
-    "GESTOR-DE-EMPRESAS-LOGISTICAS-main",
-    "src/__tests__",
-    "src/worker"
+    "GESTOR-DE-EMPRESAS-LOGISTICAS-main"
   ]
 }

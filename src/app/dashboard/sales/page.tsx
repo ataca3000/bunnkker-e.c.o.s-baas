@@ -12,7 +12,7 @@ import {
 import dynamic from 'next/dynamic';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { useBluetoothScale } from '@/hooks/useBluetoothScale';
-import { printReceiptWithWebSerial } from '@/lib/thermalPrinter';
+import { printReceipt } from '@/lib/thermalPrinter';
 import { logAudit } from '@/lib/audit';
 import { toast } from '@/lib/toast';
 import { useERPStore } from '@/store/useERPStore';
@@ -658,19 +658,26 @@ export default function SalesDashboard() {
             );
             setCurrentTicket(savedTicket);
 
-            // Impresión nativa ESC/POS por Web Serial si está configurado
+            // Impresión ESC/POS por Web Serial con respaldo por navegador. Nunca bloquea la venta.
             if (posConfig.autoPrintReceipt) {
-                try {
-                    await printReceiptWithWebSerial({
-                        businessName: siteConfig?.businessName || posConfig.cajaName || 'BUNKKER POS',
-                        orderId: orderId,
-                        items: posCart.map(i => ({ name: i.name, quantity: i.quantity, price: i.price })),
-                        total: posTotal,
-                        date: new Date(),
-                        customerName: cName as string
-                    });
-                } catch (e) {
-                    console.warn('Impresora serial no conectada, mostrando visor de ticket digital.');
+                const printResult = await printReceipt({
+                    businessName: siteConfig?.businessName || posConfig.cajaName || 'BUNKKER POS',
+                    orderId: orderId,
+                    items: posCart.map(i => ({ name: i.name, quantity: i.quantity, price: i.price })),
+                    total: posTotal,
+                    date: new Date(),
+                    customerName: cName as string
+                });
+                if (!printResult.ok) {
+                    showToast(`🖨️ ${printResult.message} El ticket digital está disponible en pantalla.`);
+                    logAudit({
+                        type: 'PRINT_FAILED',
+                        userId: profile?.uid || 'POS',
+                        userName: profile?.displayName || 'Cajero',
+                        userRole: profile?.role || 'sales',
+                        description: `[POS] Fallo de impresión en ${orderId}: ${printResult.code}`,
+                        metadata: { orderId, code: printResult.code },
+                    }).catch(() => { });
                 }
             }
 

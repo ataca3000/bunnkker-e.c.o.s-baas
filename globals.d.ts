@@ -11,6 +11,7 @@ interface SerialPortLike {
 
 interface SerialLike {
   requestPort(options?: unknown): Promise<SerialPortLike>;
+  getPorts(): Promise<SerialPortLike[]>;
 }
 
 interface Navigator {
