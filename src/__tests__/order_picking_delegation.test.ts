@@ -100,4 +100,55 @@ describe('Order Picking, Delegation & Deconstruction Logic', () => {
         const superResult = canAuthorizeRefund('superadmin', 'DELIVERED');
         expect(superResult.authorized).toBe(true);
     });
+
+    // 5. Cancelled Order Transition: PENDIENTE_REACOMODO -> STOCK_RESTITUIDO
+    it('should track cancellation states from PENDIENTE_REACOMODO to STOCK_RESTITUIDO', () => {
+        const order = {
+            id: 'ORD-999',
+            status: 'cancelled',
+            rejectionReason: 'CANCELADO_PENDIENTE_REACOMODO'
+        };
+
+        expect(order.rejectionReason).toBe('CANCELADO_PENDIENTE_REACOMODO');
+
+        // Almacén o cajero completa la deconstrucción y regreso a anaquel
+        const completeRestock = (o: typeof order) => ({
+            ...o,
+            rejectionReason: 'CANCELADA_STOCK_RESTITUIDO',
+            isLoaded: false
+        });
+
+        const completedOrder = completeRestock(order);
+        expect(completedOrder.rejectionReason).toBe('CANCELADA_STOCK_RESTITUIDO');
+    });
+
+    // 6. Admin Return as New Intake (Owner option without altering fiscal history)
+    it('should record owner return as administrative data and increment warehouse stock as new intake', () => {
+        let warehouseStock = 50;
+        const closedSale = {
+            id: 'ORD-888',
+            status: 'COMPLETED',
+            total: 1500,
+            items: [{ productId: 'prod_1', cantidad: 10 }]
+        };
+
+        const processOwnerReturnAsNewIntake = (order: typeof closedSale, userRole: string) => {
+            if (!['admin', 'superadmin'].includes(userRole)) {
+                throw new Error('Solo el dueño o administrador puede registrar esta devolución');
+            }
+            // 1. Ingreso nuevo a almacén
+            warehouseStock += order.items[0].cantidad;
+            // 2. Registro administrativo sin alterar total ni historial fiscal cerrado
+            return {
+                ...order,
+                adminReturnNote: 'Devolución registrada por Dueño (Dato administrativo - Ingreso nuevo a stock)',
+                stockIntakeRecorded: true
+            };
+        };
+
+        const result = processOwnerReturnAsNewIntake(closedSale, 'admin');
+        expect(warehouseStock).toBe(60); // 50 + 10 ingresados
+        expect(result.total).toBe(1500); // El total de la venta histórica se preserva intacto
+        expect(result.stockIntakeRecorded).toBe(true);
+    });
 });

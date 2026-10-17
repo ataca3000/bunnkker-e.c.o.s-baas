@@ -773,10 +773,17 @@ export default function SalesDashboard() {
         'READY_TO_SHIP',
         'READY_FOR_PICKUP',
         'pending_delivery',
-        'NIGHT_QUEUE'
+        'NIGHT_QUEUE',
+        'cancelled',
+        'refunded'
     ];
 
     const pendingOrders = orders.filter(o => PENDING_CASHIER_STATUSES.includes(o.status) && !isTestOrder(o));
+
+    const pendingPrepOrders = orders.filter(o => !o.isLoaded && !['DELIVERED', 'COMPLETED', 'cancelled', 'refunded'].includes(o.status) && !isTestOrder(o));
+    const readyToPayOrders = orders.filter(o => (o.isLoaded || ['READY_TO_SHIP', 'READY_FOR_PICKUP'].includes(o.status)) && !o.confirmedAt && o.status !== 'paid' && !['DELIVERED', 'COMPLETED', 'cancelled', 'refunded'].includes(o.status) && !isTestOrder(o));
+    const cancelledOrders = orders.filter(o => (o.status === 'cancelled' || o.status === 'refunded') && !isTestOrder(o));
+    const cancelledReacomodoOrders = cancelledOrders.filter(o => o.rejectionReason !== 'CANCELADA_STOCK_RESTITUIDO');
 
     const displayedOrders = pendingOrders.filter(o => {
         if (orderFilter === 'pending') {
@@ -787,6 +794,9 @@ export default function SalesDashboard() {
         }
         if (orderFilter === 'delivery') {
             return o.status === 'pending_delivery';
+        }
+        if (orderFilter === 'cancelled') {
+            return o.status === 'cancelled' || o.status === 'refunded';
         }
         return true;
     });
@@ -1042,10 +1052,76 @@ export default function SalesDashboard() {
                                 >
                                     Repartos ({pendingOrders.filter(o => o.status === 'pending_delivery').length})
                                 </button>
+                                <button
+                                    onClick={() => setOrderFilter('cancelled')}
+                                    className={`px-4 py-2 rounded-xl text-xs font-bold uppercase transition-all ${
+                                        orderFilter === 'cancelled'
+                                            ? 'bg-rose-600 text-white shadow-md'
+                                            : 'bg-zinc-900/60 text-rose-400 hover:text-white border border-rose-500/20'
+                                    }`}
+                                >
+                                    Cancelados ({cancelledOrders.length})
+                                </button>
                             </div>
                             <span className="text-[11px] text-zinc-500 font-mono">
                                 Actualización en tiempo real
                             </span>
+                        </div>
+
+                        {/* 🦁 LION Guía Conversacional en Caja con Respuestas Sugeridas Rápidas */}
+                        <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border border-sky-500/30 rounded-2xl p-4 shadow-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4 max-w-7xl mx-auto">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-2xl bg-sky-500/20 border border-sky-500/40 flex items-center justify-center text-xl shrink-0 shadow-sm">
+                                    🦁
+                                </div>
+                                <div>
+                                    <h4 className="text-xs font-black uppercase tracking-wider text-sky-400 flex items-center gap-2">
+                                        LION Asistente en Caja
+                                        <span className="text-[10px] bg-sky-500/20 text-sky-300 px-2 py-0.5 rounded-full font-mono font-bold">
+                                            IA OPERATIVA
+                                        </span>
+                                    </h4>
+                                    <p className="text-sm text-slate-200 mt-0.5">
+                                        Bien, tienes <strong className="text-amber-400">{pendingPrepOrders.length} pedido(s) pendientes</strong> en espera del designado o prepáralos tú mismo, y <strong className="text-emerald-400">{readyToPayOrders.length} listo(s) para cobrar</strong> en caja.
+                                        {cancelledReacomodoOrders.length > 0 && (
+                                            <span className="text-rose-400 block sm:inline sm:ml-2 font-medium">
+                                                • ⚠️ {cancelledReacomodoOrders.length} cancelado(s) pendiente(s) de reacomodo.
+                                            </span>
+                                        )}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Botones sugeridos rápidos sin necesidad de escribir */}
+                            <div className="flex flex-wrap items-center gap-2 shrink-0">
+                                {pendingPrepOrders.length > 0 && (
+                                    <button
+                                        onClick={() => setPickingOrder(pendingPrepOrders[0])}
+                                        className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs flex items-center gap-1.5 shadow-md shadow-amber-500/20 active:scale-95 transition-all"
+                                    >
+                                        <Zap size={14} />
+                                        <span>⚡ Preparar #{pendingPrepOrders[0].id.slice(0, 6)}</span>
+                                    </button>
+                                )}
+                                {readyToPayOrders.length > 0 && (
+                                    <button
+                                        onClick={() => setCashTenderOrder(readyToPayOrders[0])}
+                                        className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400 text-slate-950 font-black text-xs flex items-center gap-1.5 shadow-md shadow-emerald-500/20 active:scale-95 transition-all"
+                                    >
+                                        <CheckCircle2 size={14} />
+                                        <span>💰 Cobrar #{readyToPayOrders[0].id.slice(0, 6)}</span>
+                                    </button>
+                                )}
+                                {cancelledReacomodoOrders.length > 0 && (
+                                    <button
+                                        onClick={() => setOrderFilter('cancelled')}
+                                        className="px-3 py-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 font-bold text-xs flex items-center gap-1.5 transition-colors"
+                                    >
+                                        <RefreshCw size={12} />
+                                        <span>Reacomodar ({cancelledReacomodoOrders.length})</span>
+                                    </button>
+                                )}
+                            </div>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[8px] max-w-7xl mx-auto">
@@ -1254,25 +1330,59 @@ export default function SalesDashboard() {
                                                     </button>
                                                 )}
 
-                                                {/* Botón de Deconstrucción / Reincorporación si fue cancelado o devuelto */}
+                                                {/* Estado y Acciones de Cancelación / Deconstrucción */}
                                                 {(order.status === 'cancelled' || order.status === 'refunded') && (
-                                                    <button
-                                                        onClick={() => setDeconstructingOrder(order)}
-                                                        className="w-full py-2 bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/40 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm"
-                                                    >
-                                                        <RefreshCw size={13} /> Deconstrucción: Devolver a Anaquel
-                                                    </button>
+                                                    <div className="space-y-1.5 pt-1">
+                                                        {order.rejectionReason === 'CANCELADA_STOCK_RESTITUIDO' ? (
+                                                            <div className="bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 rounded-xl p-2 text-center text-xs font-bold flex items-center justify-center gap-1.5">
+                                                                <CheckCircle2 size={13} className="text-emerald-400" />
+                                                                <span>Cancelada — Stock de vuelta en anaquel</span>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="space-y-1.5">
+                                                                <div className="bg-rose-500/15 border border-rose-500/30 text-rose-300 rounded-xl p-1.5 text-center text-[11px] font-bold flex items-center justify-center gap-1.5">
+                                                                    <AlertCircle size={13} className="text-rose-400" />
+                                                                    <span>Cancelado — Pendiente de reacomodo</span>
+                                                                </div>
+                                                                <button
+                                                                    onClick={() => setDeconstructingOrder(order)}
+                                                                    className="w-full py-2 bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white font-black rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all shadow-md active:scale-95 cursor-pointer"
+                                                                >
+                                                                    <RefreshCw size={13} /> Deconstrucción: Devolver a Anaquel
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 )}
 
-                                                {/* Botón de Devolución a Inventario para Administradores */}
+                                                {/* Botón de Devolución Administrativa para el Dueño (Ingreso nuevo a stock sin alterar contabilidad) */}
                                                 {(order.status === 'DELIVERED' || order.status === 'COMPLETED' || order.status === 'paid') && 
                                                  (profile?.role === 'superadmin' || profile?.role === 'admin') && (
                                                     <button
-                                                        onClick={() => handleAdminRefund(order.id)}
+                                                        onClick={async () => {
+                                                            if (confirm(`¿Registrar devolución de venta #${order.id}? El stock entrará a almacén como nuevo ingreso sin alterar el histórico contable.`)) {
+                                                                try {
+                                                                    const res = await fetch('/api/orders', {
+                                                                        method: 'PATCH',
+                                                                        headers: { 'Content-Type': 'application/json' },
+                                                                        body: JSON.stringify({ id: order.id, action: 'admin_return_as_new_intake' })
+                                                                    });
+                                                                    const data = await res.json();
+                                                                    if (data.success) {
+                                                                        showToast('✅ Devolución registrada como dato del dueño. Stock reingresado.');
+                                                                        broadcastSync();
+                                                                    } else {
+                                                                        toast.error(data.error || 'Error al procesar devolución');
+                                                                    }
+                                                                } catch {
+                                                                    toast.error('Error de red al registrar devolución.');
+                                                                }
+                                                            }
+                                                        }}
                                                         className="w-full py-1.5 bg-zinc-800/80 hover:bg-rose-950/40 text-zinc-400 hover:text-rose-300 border border-white/5 hover:border-rose-500/30 font-bold rounded-xl text-[11px] flex items-center justify-center gap-1.5 transition-all"
-                                                        title="Autorizar devolución de venta cerrada e iniciar deconstrucción"
+                                                        title="Registrar devolución como dato del dueño y dar ingreso nuevo a stock"
                                                     >
-                                                        <RefreshCw size={12} /> Devolución a Inventario (Admin)
+                                                        <RefreshCw size={12} /> Devolución Dueño (Ingreso Nuevo a Almacén)
                                                     </button>
                                                 )}
 

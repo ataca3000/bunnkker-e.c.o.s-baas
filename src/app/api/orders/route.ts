@@ -754,8 +754,8 @@ export async function PATCH(request: NextRequest) {
                     where: { id },
                     data: {
                         isLoaded: false,
-                        status: 'RESTOCKED',
-                        rejectionReason: `Deconstrucción completada: artículos devueltos a sus anaqueles por ${actorName}`
+                        status: 'cancelled',
+                        rejectionReason: 'CANCELADA_STOCK_RESTITUIDO'
                     }
                 });
 
@@ -763,12 +763,13 @@ export async function PATCH(request: NextRequest) {
                     orderId: id,
                     eventType: 'RESTOCK_COMPLETED',
                     fromStatus: current.status,
-                    toStatus: 'RESTOCKED',
+                    toStatus: 'cancelled',
                     actorId: auth.uid,
                     actorName,
                     actorRole,
                     details: {
                         verifiedBy: actorName,
+                        reacomodoStatus: 'CANCELADA_STOCK_RESTITUIDO',
                         returnedItemsCount: current.items.length
                     }
                 });
@@ -776,7 +777,50 @@ export async function PATCH(request: NextRequest) {
                 return tx.order.findUnique({ where: { id }, include: { items: true, customer: true } });
             });
 
-            return NextResponse.json({ success: true, data: updated, message: 'Artículos reincorporados al anaquel exitosamente.' });
+            return NextResponse.json({ success: true, data: updated, message: 'Artículos reincorporados al anaquel exitosamente. Stock restituido.' });
+        }
+
+        if (action === 'admin_return_as_new_intake') {
+            if (!['admin', 'superadmin'].includes(actorRole)) {
+                return NextResponse.json({ success: false, error: 'Solo el dueño o administrador puede registrar esta devolución administrativa.' }, { status: 403 });
+            }
+            const current = await prisma.order.findUnique({ where: { id }, include: { items: true } });
+            if (!current) return NextResponse.json({ success: false, error: 'Pedido no encontrado' }, { status: 404 });
+
+            // Ingreso nuevo a stock en almacén sin modificar contabilidad pasada
+            const updated = await prisma.$transaction(async (tx) => {
+                for (const item of current.items) {
+                    await tx.product.update({
+                        where: { id: item.productId },
+                        data: { stock: { increment: item.cantidad } }
+                    });
+                }
+
+                await tx.order.update({
+                    where: { id },
+                    data: {
+                        rejectionReason: `Devuelto (Dato Dueño): Stock ingresado a almacén por ${actorName}`
+                    }
+                });
+
+                await writeOrderEvent(tx, {
+                    orderId: id,
+                    eventType: 'ADMIN_RETURN_INTAKE',
+                    fromStatus: current.status,
+                    toStatus: current.status,
+                    actorId: auth.uid,
+                    actorName,
+                    actorRole,
+                    details: {
+                        note: 'Devolución meramente como dato administrativo del dueño; stock entra como ingreso nuevo',
+                        itemsRestocked: current.items.length
+                    }
+                });
+
+                return tx.order.findUnique({ where: { id }, include: { items: true, customer: true } });
+            });
+
+            return NextResponse.json({ success: true, data: updated, message: 'Devolución registrada como dato del dueño. Artículos agregados a inventario como nuevo ingreso.' });
         }
 
         if (action === 'claim_delivery') {
@@ -898,6 +942,9 @@ export async function PATCH(request: NextRequest) {
 
         let order;
         if (updates.status === 'cancelled') {
+            if (!prismaUpdates.rejectionReason) {
+                prismaUpdates.rejectionReason = 'CANCELADO_PENDIENTE_REACOMODO';
+            }
             order = await prisma.$transaction(async (tx) => {
                 const changed = await tx.order.updateMany({
                     where: { id, status: current.status },
