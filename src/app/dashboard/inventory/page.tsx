@@ -556,6 +556,15 @@ export default function InventoryDashboard() {
         }
     };
 
+    const parseShrinkageDate = (val: any): Date | null => {
+        if (!val) return null;
+        if (typeof val === 'object' && typeof val?.seconds === 'number') {
+            return new Date(val.seconds * 1000);
+        }
+        const d = new Date(val);
+        return isNaN(d.getTime()) ? null : d;
+    };
+
     useEffect(() => {
         if (activeTab === 'shrinkage') {
             fetchShrinkageLogs();
@@ -2145,7 +2154,9 @@ export default function InventoryDashboard() {
                                                 <div>
                                                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Último Recuento</span>
                                                     <span className="text-xs font-bold text-slate-200">
-                                                        {shrinkageLogs.length > 0 ? new Date(shrinkageLogs[0].createdAt?.seconds * 1000 || Date.now()).toLocaleDateString() : 'Ninguno registrado'}
+                                                        {shrinkageLogs.length > 0 && parseShrinkageDate(shrinkageLogs[0].createdAt)
+                                                            ? parseShrinkageDate(shrinkageLogs[0].createdAt)!.toLocaleDateString()
+                                                            : 'Ninguno registrado'}
                                                     </span>
                                                 </div>
                                             </div>
@@ -2189,7 +2200,7 @@ export default function InventoryDashboard() {
                                                         {shrinkageLogs.map((log) => (
                                                             <tr key={log.id} className="hover:bg-slate-50/50 transition-colors">
                                                                 <td className="py-4 text-slate-400 whitespace-nowrap">
-                                                                    {log.createdAt ? new Date(log.createdAt.seconds * 1000).toLocaleString() : 'Reciente'}
+                                                                    {parseShrinkageDate(log.createdAt)?.toLocaleString() || 'Reciente'}
                                                                 </td>
                                                                 <td className="py-4 font-bold text-white">{log.productName}</td>
                                                                 <td className="py-4 text-slate-400">{log.productCategory}</td>
