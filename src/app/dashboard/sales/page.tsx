@@ -7,7 +7,7 @@ import { useCart, type Product } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { 
     Clock, Bell, History, User, Store, ShieldAlert, Wifi, Globe, TerminalSquare, AlertCircle, XCircle, CheckCircle2, Phone, Lock, Unlock,
-    LayoutDashboard, LogOut, ShoppingCart, Trash2, Zap, UserCheck, Scale, Settings, PenTool, Camera
+    LayoutDashboard, LogOut, ShoppingCart, Trash2, Zap, UserCheck, Scale, Settings, PenTool, Camera, RefreshCw, Package
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
@@ -52,7 +52,7 @@ export default function SalesDashboard() {
     
     // UI State
     const [activeTab, setActiveTab] = useState<'pos' | 'online'>('pos');
-    const [orderFilter, setOrderFilter] = useState<'all' | 'pending' | 'ready' | 'delivery'>('all');
+    const [orderFilter, setOrderFilter] = useState<'all' | 'pending' | 'ready' | 'delivery' | 'cancelled'>('all');
     const [showCorteCaja, setShowCorteCaja] = useState(false);
     const [showCameraScanner, setShowCameraScanner] = useState(false);
     const [currentTime, setCurrentTime] = useState('');
@@ -88,8 +88,9 @@ export default function SalesDashboard() {
     const [cashTenderOrder, setCashTenderOrder] = useState<any | null>(null);
     const [pickingOrder, setPickingOrder] = useState<any | null>(null);
     const [deconstructingOrder, setDeconstructingOrder] = useState<any | null>(null);
+    const [onlyMyOrders, setOnlyMyOrders] = useState(false);
 
-    const handlePickingComplete = async ({ orderId }: { orderId: string }) => {
+    const handlePickingComplete = async (orderId: string) => {
         const order = orders.find(o => o.id === orderId) || pickingOrder;
         setPickingOrder(null);
         if (order) {
@@ -97,7 +98,7 @@ export default function SalesDashboard() {
         }
     };
 
-    const handleDeconstructComplete = async ({ orderId }: { orderId: string }) => {
+    const handleDeconstructComplete = async (orderId: string) => {
         try {
             const res = await fetch('/api/orders', {
                 method: 'PATCH',
@@ -786,6 +787,10 @@ export default function SalesDashboard() {
     const cancelledReacomodoOrders = cancelledOrders.filter(o => o.rejectionReason !== 'CANCELADA_STOCK_RESTITUIDO');
 
     const displayedOrders = pendingOrders.filter(o => {
+        if (onlyMyOrders) {
+            const isMine = o.vendedorId === profile?.uid || o.loadedByUid === profile?.uid || o.vendedorName === profile?.displayName;
+            if (!isMine) return false;
+        }
         if (orderFilter === 'pending') {
             return ['pending_payment', 'pending_confirmation', 'pending', 'NIGHT_QUEUE'].includes(o.status);
         }
@@ -1063,9 +1068,22 @@ export default function SalesDashboard() {
                                     Cancelados ({cancelledOrders.length})
                                 </button>
                             </div>
-                            <span className="text-[11px] text-zinc-500 font-mono">
-                                Actualización en tiempo real
-                            </span>
+                            <div className="flex items-center gap-3">
+                                <button
+                                    onClick={() => setOnlyMyOrders(prev => !prev)}
+                                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border ${
+                                        onlyMyOrders
+                                            ? 'bg-sky-500 text-white border-sky-400 shadow-md shadow-sky-500/20'
+                                            : 'bg-zinc-900/60 text-zinc-400 hover:text-white border-white/10'
+                                    }`}
+                                    title="Filtrar solo pedidos atendidos o surtidos por mí"
+                                >
+                                    <span>👤</span> {onlyMyOrders ? 'Viendo: Mis Pedidos' : 'Ver solo mis pedidos'}
+                                </button>
+                                <span className="text-[11px] text-zinc-500 font-mono hidden sm:inline">
+                                    Actualización en tiempo real
+                                </span>
+                            </div>
                         </div>
 
                         {/* 🦁 LION Guía Conversacional en Caja con Respuestas Sugeridas Rápidas */}

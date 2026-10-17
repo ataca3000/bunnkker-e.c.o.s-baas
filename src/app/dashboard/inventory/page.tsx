@@ -11,7 +11,7 @@ import {
     Barcode, ArrowRight, ArrowLeft, Save, Loader2, X,
     Folder, FolderOpen, ChevronDown, ChevronUp, Shield, QrCode,
     Download, Upload, AlertTriangle, TrendingDown, History, Sparkles, Database, FileText,
-    Mic, Printer, Trash2, FileSpreadsheet, Layers, CheckCircle2, Filter
+    Mic, Printer, Trash2, FileSpreadsheet, Layers, CheckCircle2, Filter, Clock
 } from 'lucide-react';
 import { exportToExcel } from '@/lib/excelExport';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -30,9 +30,10 @@ import { arrayMove } from '@dnd-kit/sortable';
 import { toast } from '@/lib/toast';
 import { useERPStore } from '@/store/useERPStore';
 import CloudBackupConfigWidget from '@/components/admin/CloudBackupConfigWidget';
+import OrderPickingAssistant from '@/components/orders/OrderPickingAssistant';
 
 export default function InventoryDashboard() {
-    const { products, formatCurrency } = useCart();
+    const { products, formatCurrency, orders, completeLoading } = useCart();
     const { profile, isReadOnly } = useAuth();
     
     const [searchTerm, setSearchTerm] = useState('');
@@ -43,6 +44,11 @@ export default function InventoryDashboard() {
     const [localProducts, setLocalProducts] = useState<Product[]>([]);
     const mutationInFlight = useRef(0);
 
+    // Picking / Deconstrucción IA para Almacén
+    const [pickingOrder, setPickingOrder] = useState<any | null>(null);
+    const [deconstructingOrder, setDeconstructingOrder] = useState<any | null>(null);
+    const [onlyMyOrders, setOnlyMyOrders] = useState(false);
+
     useEffect(() => {
         if (mutationInFlight.current > 0) return;
         // Sort products by orderIndex to keep them stable
@@ -51,7 +57,7 @@ export default function InventoryDashboard() {
     }, [products]);
 
     // Tabs
-    const [activeTab, setActiveTab] = useState<'catalog' | 'shelves' | 'chunks_map' | 'transfer' | 'backup' | 'shrinkage' | 'trash'>('catalog');
+    const [activeTab, setActiveTab] = useState<'catalog' | 'shelves' | 'chunks_map' | 'transfer' | 'backup' | 'shrinkage' | 'trash' | 'orders'>('catalog');
     const [hydratedChunksMap, setHydratedChunksMap] = useState<Record<string, boolean>>({});
     const [trashedProducts, setTrashedProducts] = useState<Product[]>([]);
     const [trashLoading, setTrashLoading] = useState(false);
@@ -968,6 +974,27 @@ export default function InventoryDashboard() {
         setExpandedEstantes(prev => ({ ...prev, [estante]: !prev[estante] }));
     };
 
+    const pendingPrepOrders = (orders || []).filter(o => {
+        const isNotLoaded = !o.isLoaded && !['DELIVERED', 'COMPLETED', 'cancelled', 'refunded'].includes(o.status);
+        if (onlyMyOrders && o.loadedByUid && o.loadedByUid !== profile?.uid) return false;
+        return isNotLoaded;
+    });
+
+    const cancelledRestockOrders = (orders || []).filter(o => 
+        (o.status === 'cancelled' || o.status === 'refunded') && 
+        o.rejectionReason !== 'CANCELADA_STOCK_RESTITUIDO'
+    );
+
+    const finalizeOrderAndNotify = async (orderId: string, targetLocation: 'caja' | 'carga' = 'caja') => {
+        try {
+            await completeLoading(orderId, targetLocation);
+            const locationName = targetLocation === 'carga' ? 'Bahía de Carga / Patio' : 'Caja / Mostrador';
+            toast.success(`✅ Pedido ${orderId} surtido y marcado LISTO en [${locationName}].`);
+        } catch (e: any) {
+            toast.error(e?.message || 'Error al completar el pedido.');
+        }
+    };
+
     return (
         <div className="relative min-h-[100dvh] bg-slate-950 text-white p-4 md:p-8">
             <div className="fixed inset-0 z-0 pointer-events-none">
@@ -1274,6 +1301,18 @@ export default function InventoryDashboard() {
                             <div className="flex flex-wrap gap-2 mb-8 bg-slate-900/50 p-2 rounded-xl border border-slate-700/50 w-fit">
                                 <button
                                     type="button"
+                                    onClick={() => setActiveTab('orders')}
+                                    className={`py-2 px-5 font-bold text-sm transition-all outline-none rounded-sm flex items-center gap-2 ${activeTab === 'orders' ? 'bg-amber-400 text-slate-950 font-black shadow-md shadow-amber-400/30 ring-2 ring-amber-300' : 'text-amber-400 hover:text-white hover:bg-slate-800'}`}
+                                >
+                                    <Clock size={16} /> Pizarra de Surtido
+                                    {pendingPrepOrders.length > 0 && (
+                                        <span className="bg-red-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full animate-pulse">
+                                            {pendingPrepOrders.length}
+                                        </span>
+                                    )}
+                                </button>
+                                <button
+                                    type="button"
                                     onClick={() => setActiveTab('catalog')}
                                     className={`py-2 px-5 font-bold text-sm transition-all outline-none rounded-sm flex items-center gap-2 ${activeTab === 'catalog' ? 'bg-[#0ea5e9] text-white shadow-md shadow-blue-500/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
                                 >
@@ -1323,6 +1362,175 @@ export default function InventoryDashboard() {
                                     {trashedProducts.length > 0 && <span className="text-[10px] font-mono tabular-nums text-red-200">({trashedProducts.length})</span>}
                                 </button>
                             </div>
+
+                            {activeTab === 'orders' && (
+                                <section className="space-y-6">
+                                    {/* Encabezado y Asistente LION de Almacén */}
+                                    <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border border-amber-500/30 rounded-2xl p-6 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-2xl shrink-0 shadow-inner">
+                                                🦁
+                                            </div>
+                                            <div>
+                                                <h3 className="text-base font-black uppercase text-amber-400 tracking-wider flex items-center gap-2">
+                                                    Pizarra Global de Surtido & Recolección en Almacén
+                                                </h3>
+                                                <p className="text-xs text-slate-300 mt-1">
+                                                    {pendingPrepOrders.length === 0 
+                                                        ? '✨ Todo el inventario está al día. No hay pedidos pendientes de recolección.' 
+                                                        : `Tienes ${pendingPrepOrders.length} pedido(s) esperando recolección física en anaquel. Puedes tomarlos tú o usar el Asistente IA.`
+                                                    }
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-2 w-full md:w-auto">
+                                            <button
+                                                type="button"
+                                                onClick={() => setOnlyMyOrders(prev => !prev)}
+                                                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 border ${
+                                                    onlyMyOrders
+                                                        ? 'bg-amber-500 text-slate-950 font-black border-amber-400 shadow-md'
+                                                        : 'bg-slate-900 text-slate-400 hover:text-white border-slate-800'
+                                                }`}
+                                            >
+                                                <span>👤</span> {onlyMyOrders ? 'Viendo: Mis Asignados' : 'Ver solo mis asignados'}
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Si hay cancelaciones pendientes de reacomodo */}
+                                    {cancelledRestockOrders.length > 0 && (
+                                        <div className="bg-rose-950/40 border border-rose-500/30 rounded-2xl p-4 shadow-lg">
+                                            <h4 className="text-xs font-black uppercase tracking-wider text-rose-400 flex items-center gap-2 mb-3">
+                                                <span>⚠️</span> Deconstrucción: {cancelledRestockOrders.length} pedido(s) cancelado(s) pendiente(s) de devolver a estante
+                                            </h4>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                                {cancelledRestockOrders.map(o => (
+                                                    <div key={o.id} className="bg-slate-900/90 border border-rose-500/20 p-4 rounded-xl flex justify-between items-center">
+                                                        <div>
+                                                            <div className="font-mono text-xs font-bold text-white">{o.id}</div>
+                                                            <div className="text-[11px] text-slate-400">{o.customer?.name || o.customerName || 'Cliente'}</div>
+                                                            <div className="text-[10px] text-rose-300 font-bold mt-1">{(o.items || []).length} artículos a reacomodar</div>
+                                                        </div>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setDeconstructingOrder(o)}
+                                                            className="px-3 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-black uppercase transition-all shadow-md active:scale-95 flex items-center gap-1.5"
+                                                        >
+                                                            <span>↩️</span> Reacomodar
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Grilla de Pedidos Pendientes de Surtido */}
+                                    {pendingPrepOrders.length === 0 ? (
+                                        <div className="border border-slate-800 bg-slate-900/40 rounded-2xl p-16 text-center">
+                                            <Package size={48} className="mx-auto text-slate-700 mb-3" />
+                                            <h4 className="text-base font-bold text-slate-300 uppercase">Sin pedidos pendientes</h4>
+                                            <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+                                                Cuando un cliente levante una orden en tienda o en línea, aparecerá aquí al instante para iniciar el surtido por estantes.
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                            {pendingPrepOrders.map(order => {
+                                                const isClaimedByMe = order.loadedByUid === profile?.uid;
+                                                const isClaimedByOther = order.loadedByUid && order.loadedByUid !== profile?.uid;
+
+                                                return (
+                                                    <div 
+                                                        key={order.id}
+                                                        className={`bg-slate-900/90 border rounded-2xl p-5 shadow-xl flex flex-col justify-between transition-all ${
+                                                            isClaimedByMe 
+                                                                ? 'border-sky-500 ring-1 ring-sky-400/50' 
+                                                                : isClaimedByOther 
+                                                                    ? 'border-slate-800 opacity-60' 
+                                                                    : 'border-slate-700/80 hover:border-amber-400/50'
+                                                        }`}
+                                                    >
+                                                        <div>
+                                                            <div className="flex justify-between items-start gap-2 mb-3">
+                                                                <span className="font-mono text-xs font-black text-white bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-700">
+                                                                    {order.id}
+                                                                </span>
+                                                                <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full border ${
+                                                                    order.status === 'paid' 
+                                                                        ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' 
+                                                                        : 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+                                                                }`}>
+                                                                    {order.status === 'paid' ? 'Pagado · Surtir' : 'Por Cobrar'}
+                                                                </span>
+                                                            </div>
+
+                                                            <h4 className="text-sm font-black text-white uppercase tracking-tight">
+                                                                {order.customer?.name || order.customerName || 'Cliente Mostrador'}
+                                                            </h4>
+                                                            <p className="text-xs text-slate-400 mt-0.5">
+                                                                Destino: <span className="font-bold text-slate-300">{order.deliveryType === 'PATIO' ? 'Bahía de Carga / Patio' : 'Caja / Mostrador'}</span>
+                                                            </p>
+
+                                                            {/* Lista compacta de artículos con ubicación */}
+                                                            <div className="mt-3 bg-slate-950/60 rounded-xl p-2.5 border border-slate-800/80 max-h-36 overflow-y-auto custom-scrollbar space-y-1.5">
+                                                                {(order.items || []).map((item: any, idx: number) => {
+                                                                    const prod = products.find(p => p.id === item.id);
+                                                                    return (
+                                                                        <div key={idx} className="flex justify-between items-center text-xs">
+                                                                            <span className="text-slate-200 truncate flex-1 pr-2">
+                                                                                <span className="font-bold text-amber-400 mr-1">{item.quantity}x</span> {item.name}
+                                                                            </span>
+                                                                            <span className="text-[10px] font-mono text-slate-400 shrink-0">
+                                                                                📍 {prod?.location?.estante || 'Bodega'} / {prod?.location?.fila || 'Gral'}
+                                                                            </span>
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Acciones */}
+                                                        <div className="mt-4 pt-3 border-t border-slate-800 flex flex-col gap-2">
+                                                            {isClaimedByOther ? (
+                                                                <div className="text-center py-2 text-xs text-slate-400 font-bold bg-slate-800/40 rounded-xl">
+                                                                    🔒 Tomado por {order.loadedBy || 'otro operador'}
+                                                                </div>
+                                                            ) : (
+                                                                <div className="flex gap-2">
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setPickingOrder(order)}
+                                                                        className="flex-1 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-md active:scale-95 flex items-center justify-center gap-1.5"
+                                                                    >
+                                                                        <span>🤖</span> Surtir con IA
+                                                                    </button>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => finalizeOrderAndNotify(order.id, 'caja')}
+                                                                        className="px-3 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs uppercase rounded-xl transition-all"
+                                                                        title="Marcar listo en Caja sin abrir asistente"
+                                                                    >
+                                                                        ✓ Caja
+                                                                    </button>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => finalizeOrderAndNotify(order.id, 'carga')}
+                                                                        className="px-3 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs uppercase rounded-xl transition-all"
+                                                                        title="Marcar listo en Patio/Carga sin abrir asistente"
+                                                                    >
+                                                                        🏗️ Patio
+                                                                    </button>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </section>
+                            )}
 
                             {activeTab === 'catalog' && (
                                 <>
@@ -2236,6 +2444,69 @@ export default function InventoryDashboard() {
                             </button>
                         </motion.div>
                     </motion.div>
+                )}
+
+                {/* Asistente de Recolección / Picking IA en Almacén */}
+                {pickingOrder && (
+                    <OrderPickingAssistant
+                        order={pickingOrder}
+                        role="inventory"
+                        mode="picking"
+                        onClose={() => setPickingOrder(null)}
+                        onComplete={async (orderId) => {
+                            setPickingOrder(null);
+                            await finalizeOrderAndNotify(orderId, pickingOrder.deliveryType === 'PATIO' ? 'carga' : 'caja');
+                        }}
+                        onDelegate={async (id, target) => {
+                            try {
+                                const res = await fetch('/api/orders', {
+                                    method: 'PATCH',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ id, action: 'delegate_order', targetRole: target })
+                                });
+                                if (!res.ok) {
+                                    const err = await res.json().catch(() => ({}));
+                                    throw new Error(err.error || 'Error al delegar pedido');
+                                }
+                                setPickingOrder(null);
+                                if (typeof window !== 'undefined' && (window as any).__inventorySocket) {
+                                    (window as any).__inventorySocket.emit('sync_db_event', { action: 'ORDER_DELEGATED', id, target });
+                                }
+                                toast.success(`📦 Pedido delegado exitosamente a ${target.toUpperCase()}`);
+                            } catch (err: any) {
+                                toast.error(err.message || 'Error al delegar');
+                            }
+                        }}
+                    />
+                )}
+
+                {/* Asistente de Deconstrucción / Reacomodo IA en Almacén */}
+                {deconstructingOrder && (
+                    <OrderPickingAssistant
+                        order={deconstructingOrder}
+                        role="inventory"
+                        mode="deconstruction"
+                        onClose={() => setDeconstructingOrder(null)}
+                        onComplete={async (orderId) => {
+                            try {
+                                const res = await fetch('/api/orders', {
+                                    method: 'PATCH',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ id: orderId, action: 'return_to_shelf' })
+                                });
+                                const data = await res.json().catch(() => null);
+                                if (!res.ok || !data?.success) throw new Error(data?.error || 'Error al reincorporar artículos');
+                                toast.success(`✅ Todos los materiales del pedido ${orderId} fueron restituidos a su anaquel en Almacén.`);
+                                if (typeof window !== 'undefined' && (window as any).__inventorySocket) {
+                                    (window as any).__inventorySocket.emit('sync_db_event', { action: 'RESTOCK_COMPLETED', id: orderId });
+                                }
+                            } catch (err: any) {
+                                toast.error(err.message || 'Error al devolver al anaquel');
+                            } finally {
+                                setDeconstructingOrder(null);
+                            }
+                        }}
+                    />
                 )}
             </AnimatePresence>
 

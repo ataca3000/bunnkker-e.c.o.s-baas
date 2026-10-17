@@ -24,10 +24,12 @@ export default function PatioDashboard() {
     const [deliveredTicketOrder, setDeliveredTicketOrder] = useState<any | null>(null);
     const [pickingOrder, setPickingOrder] = useState<any | null>(null);
     const [deconstructingOrder, setDeconstructingOrder] = useState<any | null>(null);
+    const [onlyMyLoads, setOnlyMyLoads] = useState(false);
 
     // 1. Cargas pendientes de surtir en Almacén
     const pendingLoads = useMemo(() => {
         return orders.filter(o => {
+            if (onlyMyLoads && o.loadedByUid && o.loadedByUid !== profile?.uid) return false;
             const validStatus = ['READY_TO_SHIP', 'paid', 'pending_payment', 'pending_confirmation', 'paid_pending_delivery', 'PREPARANDO', 'READY_FOR_PICKUP', 'NIGHT_QUEUE', 'PENDIENTE_LLEGADA'].includes(o.status);
             const notLoaded = !(o as any).isLoaded && !['DELIVERED', 'READY_FOR_PICKUP_PAID', 'OUT_FOR_DELIVERY', 'COMPLETED'].includes(o.status);
             const custName = o.customer?.name || o.customerName || 'Cliente';
@@ -39,11 +41,12 @@ export default function PatioDashboard() {
             if (b.status === 'NIGHT_QUEUE' || b.status === 'PENDIENTE_LLEGADA') return -1;
             return 0;
         });
-    }, [orders, searchTerm]);
+    }, [orders, searchTerm, onlyMyLoads, profile?.uid]);
 
     // 2. Pedidos que Almacén marcó como listos en Bahía de Carga / Patio para entrega directa
     const readyPatioLoads = useMemo(() => {
         return orders.filter(o => {
+            if (onlyMyLoads && o.loadedByUid !== profile?.uid && (o as any).deliveryProof?.deliveredByUid !== profile?.uid) return false;
             const isLoaded = (o as any).isLoaded;
             const isPatioLocation = o.deliveryType === 'PATIO' || (o as any).selectedDeliveryLocation === 'carga';
             const notDelivered = o.status !== 'DELIVERED';
@@ -52,7 +55,7 @@ export default function PatioDashboard() {
                                  custName.toLowerCase().includes(searchTerm.toLowerCase());
             return isLoaded && isPatioLocation && notDelivered && matchesSearch;
         });
-    }, [orders, searchTerm]);
+    }, [orders, searchTerm, onlyMyLoads, profile?.uid]);
 
     const finalizeOrderAndNotify = async (orderId: string, targetLocation: 'caja' | 'carga' = 'caja') => {
         setProcessingId(orderId);
@@ -139,26 +142,38 @@ export default function PatioDashboard() {
             </header>
 
             {/* Pestañas de Vista Operacional */}
-            <div className="flex gap-3 mb-6 border-b border-slate-800/80 pb-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-6 border-b border-slate-800/80 pb-3">
+                <div className="flex gap-3">
+                    <button
+                        onClick={() => setActiveTab('pending')}
+                        className={`px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-2 transition-all ${
+                            activeTab === 'pending'
+                                ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/25 ring-2 ring-sky-400/50'
+                                : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-850'
+                        }`}
+                    >
+                        <Clock size={16} /> Cargas en Preparación ({pendingLoads.length})
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('ready_patio')}
+                        className={`px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-2 transition-all ${
+                            activeTab === 'ready_patio'
+                                ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/25 ring-2 ring-emerald-400/50'
+                                : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-850'
+                        }`}
+                    >
+                        <PenTool size={16} /> Listos para Entrega en Patio · PoD ({readyPatioLoads.length})
+                    </button>
+                </div>
                 <button
-                    onClick={() => setActiveTab('pending')}
-                    className={`px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-2 transition-all ${
-                        activeTab === 'pending'
-                            ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/25 ring-2 ring-sky-400/50'
-                            : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-850'
+                    onClick={() => setOnlyMyLoads(prev => !prev)}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 border ${
+                        onlyMyLoads
+                            ? 'bg-sky-500 text-white border-sky-400 shadow-md shadow-sky-500/25'
+                            : 'bg-slate-900 text-slate-400 hover:text-white border-slate-800'
                     }`}
                 >
-                    <Clock size={16} /> Cargas en Preparación ({pendingLoads.length})
-                </button>
-                <button
-                    onClick={() => setActiveTab('ready_patio')}
-                    className={`px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-2 transition-all ${
-                        activeTab === 'ready_patio'
-                            ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/25 ring-2 ring-emerald-400/50'
-                            : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-850'
-                    }`}
-                >
-                    <PenTool size={16} /> Listos para Entrega en Patio · PoD ({readyPatioLoads.length})
+                    <span>👤</span> {onlyMyLoads ? 'Viendo: Mis Cargas de Hoy' : 'Ver solo mis cargas'}
                 </button>
             </div>
 
