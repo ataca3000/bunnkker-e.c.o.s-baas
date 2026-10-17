@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { isNube } from '@/lib/envConfig';
 import AdvancedMap from '@/components/AdvancedMap';
 import { optimizeRoute } from '@/lib/tspRouter';
+import OrderPickingAssistant from '@/components/orders/OrderPickingAssistant';
 
 // Formula Haversine se movió a tspRouter.ts
 
@@ -18,6 +19,7 @@ export default function MyRoute({
   onBackToPool: () => void;
 }) {
   const [localOrders, setLocalOrders] = useState<DeliveryOrder[]>([]);
+  const [auditOrder, setAuditOrder] = useState<DeliveryOrder | null>(null);
 
   // Sync localOrders when orders prop changes
   React.useEffect(() => {
@@ -167,17 +169,39 @@ export default function MyRoute({
                     <MapPin size={14} className="text-sky-400" /> <span className="line-clamp-1">{order.address}</span>
                  </p>
               </div>
-              <button 
-                onClick={() => onStartDelivery(order.id)}
-                className="w-12 h-12 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-sky-500/30 border border-white/10 hover:border-sky-500/50 transition-all active:scale-95"
-                aria-label="Ir a entrega"
-              >
-                <ChevronRight size={24} />
-              </button>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => setAuditOrder(order)}
+                  className="px-3 py-2 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-500/40 text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95"
+                  title="Auditar carga con lista y asistente IA"
+                >
+                  📦 Auditar Carga
+                </button>
+                <button 
+                  onClick={() => onStartDelivery(order.id)}
+                  className="w-12 h-12 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-sky-500/30 border border-white/10 hover:border-sky-500/50 transition-all active:scale-95"
+                  aria-label="Ir a entrega"
+                >
+                  <ChevronRight size={24} />
+                </button>
+              </div>
             </div>
           </motion.div>
         ))}
       </div>
+
+      {/* Modal de Auditoría de Carga para el Repartidor */}
+      {auditOrder && (
+        <OrderPickingAssistant
+          order={auditOrder}
+          role="driver"
+          mode="picking"
+          onClose={() => setAuditOrder(null)}
+          onComplete={async (orderId) => {
+            setAuditOrder(null);
+          }}
+        />
+      )}
     </div>
   );
 }

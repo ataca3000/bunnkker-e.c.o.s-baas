@@ -101,6 +101,55 @@ export default function AdminAsistente() {
 
             if (isOwner) {
                 // Respuestas del modo Gerente / Propietario
+                if (queryText.includes('picking') || queryText.includes('recolect') || queryText.includes('surtir') || queryText.includes('preparar')) {
+                    const pendingOrders = orders ? orders.filter((o: any) => !o.isLoaded && !['DELIVERED', 'COMPLETED', 'CANCELLED'].includes(o.status)) : [];
+                    setMessages(prev => [...prev, {
+                        role: 'assistant',
+                        content: (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                <p>📦 <strong>Asistente de Recolección (Picking IA):</strong></p>
+                                <p>Actualmente hay <strong>{pendingOrders.length} pedido(s)</strong> pendientes de surtido en sucursal/almacén.</p>
+                                {pendingOrders.slice(0, 3).map((o: any) => (
+                                    <div key={o.id} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '6px 10px', fontSize: '0.8rem' }}>
+                                        <strong>{o.id}</strong> - {o.customerName || o.customer?.name || 'Cliente'} ({o.items?.length || 0} ítems)
+                                    </div>
+                                ))}
+                                <Link 
+                                    href="/dashboard/sales" 
+                                    onClick={() => setIsOpen(false)}
+                                    style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#0284c7', fontWeight: 'bold', textDecoration: 'underline', marginTop: '4px' }}
+                                >
+                                    👉 Abrir Surtidor / Ventas con Asistente IA
+                                </Link>
+                            </div>
+                        )
+                    }]);
+                    setIsTyping(false);
+                    return;
+                }
+
+                if (queryText.includes('deconstru') || queryText.includes('devolucion') || queryText.includes('regresar') || queryText.includes('anaquel')) {
+                    const cancelledOrders = orders ? orders.filter((o: any) => o.status === 'CANCELLED' || o.status === 'REFUNDED') : [];
+                    setMessages(prev => [...prev, {
+                        role: 'assistant',
+                        content: (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                <p>↩️ <strong>Deconstrucción y Devolución a Anaqueles:</strong></p>
+                                <p>Hay <strong>{cancelledOrders.length} pedido(s)</strong> cancelados o reembolsados listos para regresar productos a sus estantes físicos.</p>
+                                <Link 
+                                    href="/dashboard/sales" 
+                                    onClick={() => setIsOpen(false)}
+                                    style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#d97706', fontWeight: 'bold', textDecoration: 'underline' }}
+                                >
+                                    👉 Ir a Ventas / Deconstrucción Asistida
+                                </Link>
+                            </div>
+                        )
+                    }]);
+                    setIsTyping(false);
+                    return;
+                }
+
                 if (queryText.includes('cancelacion') || queryText.includes('error') || queryText.includes('fallo') || queryText.includes('alerta') || queryText.includes('stock bajo') || queryText.includes('inventario')) {
                     const lowStock = products ? products.filter((p: any) => p.stock < 5) : [];
                     let ticketText = "";
@@ -307,10 +356,11 @@ export default function AdminAsistente() {
                         }}>
                             {isOwner ? (
                                 <>
+                                    <button onClick={() => handleSend('recolectar pedido picking')} style={{ padding: '6px 12px', borderRadius: '12px', border: '1px solid #38bdf8', background: '#f0f9ff', fontSize: '0.75rem', fontWeight: 'bold', cursor: 'pointer', whiteSpace: 'nowrap', color: '#0284c7' }}>📦 Picking IA</button>
+                                    <button onClick={() => handleSend('deconstruir pedido devolucion')} style={{ padding: '6px 12px', borderRadius: '12px', border: '1px solid #f59e0b', background: '#fffbeb', fontSize: '0.75rem', fontWeight: 'bold', cursor: 'pointer', whiteSpace: 'nowrap', color: '#b45309' }}>↩️ Deconstruir</button>
                                     <button onClick={() => handleSend('resumen de ventas')} style={{ padding: '6px 12px', borderRadius: '12px', border: '1px solid #e2e8f0', background: 'white', fontSize: '0.75rem', fontWeight: 'bold', cursor: 'pointer', whiteSpace: 'nowrap', color: '#0ea5e9' }}>📊 Ventas</button>
                                     <button onClick={() => handleSend('alertas de inventario')} style={{ padding: '6px 12px', borderRadius: '12px', border: '1px solid #e2e8f0', background: 'white', fontSize: '0.75rem', fontWeight: 'bold', cursor: 'pointer', whiteSpace: 'nowrap', color: '#0ea5e9' }}>⚠️ Stock Bajo</button>
-                                    <button onClick={() => handleSend('quejas de clientes')} style={{ padding: '6px 12px', borderRadius: '12px', border: '1px solid #e2e8f0', background: 'white', fontSize: '0.75rem', fontWeight: 'bold', cursor: 'pointer', whiteSpace: 'nowrap', color: '#0ea5e9' }}>📨 Quejas Recibidas</button>
-                                    <button onClick={() => handleSend('sugerencias de precios')} style={{ padding: '6px 12px', borderRadius: '12px', border: '1px solid #e2e8f0', background: 'white', fontSize: '0.75rem', fontWeight: 'bold', cursor: 'pointer', whiteSpace: 'nowrap', color: '#0ea5e9' }}>💡 Sugerir Precios</button>
+                                    <button onClick={() => handleSend('quejas de clientes')} style={{ padding: '6px 12px', borderRadius: '12px', border: '1px solid #e2e8f0', background: 'white', fontSize: '0.75rem', fontWeight: 'bold', cursor: 'pointer', whiteSpace: 'nowrap', color: '#0ea5e9' }}>📨 Quejas</button>
                                 </>
                             ) : (
                                 <>

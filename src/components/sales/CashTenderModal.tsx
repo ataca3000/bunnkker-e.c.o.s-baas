@@ -68,7 +68,8 @@ export function CashTenderModal({
                     change,
                     validationSerial,
                     cashierName,
-                    cashierUid
+                    cashierUid,
+                    selfPreparation: true
                 })
             });
 

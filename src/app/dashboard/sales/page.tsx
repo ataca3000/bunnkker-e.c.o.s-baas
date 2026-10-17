@@ -31,6 +31,7 @@ const TicketReceiptModal = dynamic(() => import('@/components/sales/caja-movil/T
 const TicketHistoryModal = dynamic(() => import('@/components/sales/caja-movil/TicketHistoryModal').then(m => m.TicketHistoryModal), { ssr: false });
 const PosSettingsModal = dynamic(() => import('@/components/sales/caja-movil/PosSettingsModal').then(m => m.PosSettingsModal), { ssr: false });
 const DeliveryProofModal = dynamic(() => import('@/components/orders/DeliveryProofModal'), { ssr: false });
+import OrderPickingAssistant from '@/components/orders/OrderPickingAssistant';
 
 // Componentes de Caja Móvil
 import { Catalog } from '@/components/sales/caja-movil/Catalog';
@@ -85,6 +86,61 @@ export default function SalesDashboard() {
     const [claimingOrderId, setClaimingOrderId] = useState<string | null>(null);
     const [orderForDeliveryProof, setOrderForDeliveryProof] = useState<any>(null);
     const [cashTenderOrder, setCashTenderOrder] = useState<any | null>(null);
+    const [pickingOrder, setPickingOrder] = useState<any | null>(null);
+    const [deconstructingOrder, setDeconstructingOrder] = useState<any | null>(null);
+
+    const handlePickingComplete = async ({ orderId }: { orderId: string }) => {
+        const order = orders.find(o => o.id === orderId) || pickingOrder;
+        setPickingOrder(null);
+        if (order) {
+            setCashTenderOrder(order);
+        }
+    };
+
+    const handleDeconstructComplete = async ({ orderId }: { orderId: string }) => {
+        try {
+            const res = await fetch('/api/orders', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: orderId, action: 'return_to_shelf' })
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast(`📦 Artículos del pedido ${orderId} reincorporados al anaquel.`);
+                broadcastSync();
+            } else {
+                toast.error(data.error || 'Error reincorporando artículos.');
+            }
+        } catch {
+            toast.error('Error de red al reincorporar artículos.');
+        } finally {
+            setDeconstructingOrder(null);
+        }
+    };
+
+    const handleAdminRefund = async (orderId: string) => {
+        if (!confirm(`¿Autorizar devolución de la venta #${orderId}? Los artículos quedarán pendientes de reincorporación a inventario.`)) return;
+        try {
+            const res = await fetch('/api/orders', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: orderId, action: 'admin_refund_order', reason: 'Devolución autorizada por Admin' })
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast(`↩️ Devolución de venta ${orderId} autorizada.`);
+                broadcastSync();
+                const target = orders.find(o => o.id === orderId);
+                if (target) {
+                    setDeconstructingOrder(target);
+                }
+            } else {
+                toast.error(data.error || 'No se pudo procesar la devolución.');
+            }
+        } catch {
+            toast.error('Error de red al procesar devolución.');
+        }
+    };
 
     // Cancel PIN states
     const [orderToCancel, setOrderToCancel] = useState<string | null>(null);
@@ -1110,21 +1166,32 @@ export default function SalesDashboard() {
                                                 </div>
 
                                                 {isPendingAlmacen ? (
-                                                    <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-2.5 text-center space-y-1.5">
-                                                        <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-amber-400">
-                                                            <Clock size={13} className="animate-spin text-amber-400" />
-                                                            <span>En Almacén — Surtido en Curso</span>
+                                                    <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-2.5 text-center space-y-2">
+                                                        <div className="flex items-center justify-between text-xs font-bold text-amber-400">
+                                                            <div className="flex items-center gap-1.5">
+                                                                <Clock size={13} className="animate-spin text-amber-400" />
+                                                                <span>En Almacén</span>
+                                                            </div>
+                                                            <span className="text-[10px] bg-amber-500/20 px-2 py-0.5 rounded text-amber-300 font-mono">
+                                                                Operador Único Disponible
+                                                            </span>
                                                         </div>
-                                                        <p className="text-[10px] text-zinc-400 leading-tight">
-                                                            Almacén debe confirmar y marcar listo el pedido antes de que Caja pueda cobrar.
-                                                        </p>
-                                                        <button
-                                                            disabled
-                                                            title="Cobro bloqueado hasta que almacén confirme que el producto está listo"
-                                                            className="w-full py-2 bg-zinc-800/80 text-zinc-500 font-bold rounded-xl text-xs cursor-not-allowed flex items-center justify-center gap-1.5 opacity-60"
-                                                        >
-                                                            <Lock size={13} /> Cobro Bloqueado (Almacén Pendiente)
-                                                        </button>
+                                                        <div className="grid grid-cols-2 gap-2">
+                                                            <button
+                                                                onClick={() => setPickingOrder(order)}
+                                                                className="py-2 px-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black rounded-xl text-[11px] shadow-md flex items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer"
+                                                                title="Recolectar producto por producto con asistencia de IA LION"
+                                                            >
+                                                                <Package size={13} /> Recolectar IA
+                                                            </button>
+                                                            <button
+                                                                onClick={() => setCashTenderOrder(order)}
+                                                                className="py-2 px-2 bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-300 border border-emerald-500/40 font-black rounded-xl text-[11px] shadow-md flex items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer"
+                                                                title="Auto-surtir en mostrador y cobrar de inmediato"
+                                                            >
+                                                                <Zap size={13} /> Surtir y Cobrar
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 ) : isReadyForCashierPayment ? (
                                                     <div className="space-y-2">
@@ -1184,6 +1251,28 @@ export default function SalesDashboard() {
                                                         className="w-full py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-bold rounded-xl text-xs flex justify-center items-center gap-1.5"
                                                     >
                                                         <PenTool size={14} /> Entrega de Pedido
+                                                    </button>
+                                                )}
+
+                                                {/* Botón de Deconstrucción / Reincorporación si fue cancelado o devuelto */}
+                                                {(order.status === 'cancelled' || order.status === 'refunded') && (
+                                                    <button
+                                                        onClick={() => setDeconstructingOrder(order)}
+                                                        className="w-full py-2 bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/40 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm"
+                                                    >
+                                                        <RefreshCw size={13} /> Deconstrucción: Devolver a Anaquel
+                                                    </button>
+                                                )}
+
+                                                {/* Botón de Devolución a Inventario para Administradores */}
+                                                {(order.status === 'DELIVERED' || order.status === 'COMPLETED' || order.status === 'paid') && 
+                                                 (profile?.role === 'superadmin' || profile?.role === 'admin') && (
+                                                    <button
+                                                        onClick={() => handleAdminRefund(order.id)}
+                                                        className="w-full py-1.5 bg-zinc-800/80 hover:bg-rose-950/40 text-zinc-400 hover:text-rose-300 border border-white/5 hover:border-rose-500/30 font-bold rounded-xl text-[11px] flex items-center justify-center gap-1.5 transition-all"
+                                                        title="Autorizar devolución de venta cerrada e iniciar deconstrucción"
+                                                    >
+                                                        <RefreshCw size={12} /> Devolución a Inventario (Admin)
                                                     </button>
                                                 )}
 
@@ -1449,6 +1538,46 @@ export default function SalesDashboard() {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* Asistente de Recolección IA (Picking) */}
+            {pickingOrder && (
+                <OrderPickingAssistant
+                    order={pickingOrder}
+                    role="sales"
+                    mode="picking"
+                    onClose={() => setPickingOrder(null)}
+                    onComplete={handlePickingComplete}
+                    onDelegate={async (id, target) => {
+                        try {
+                            const res = await fetch('/api/orders', {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ id, action: 'delegate_order', targetRole: target })
+                            });
+                            if (!res.ok) {
+                                const err = await res.json().catch(() => ({}));
+                                throw new Error(err.error || 'Error al delegar pedido');
+                            }
+                            setPickingOrder(null);
+                            broadcastSync();
+                            showToast(`📦 Pedido delegado exitosamente a ${target.toUpperCase()}`);
+                        } catch (err: any) {
+                            showToast(`❌ ${err.message || 'Error al delegar'}`);
+                        }
+                    }}
+                />
+            )}
+
+            {/* Asistente de Deconstrucción IA (Devolución a Anaqueles) */}
+            {deconstructingOrder && (
+                <OrderPickingAssistant
+                    order={deconstructingOrder}
+                    role="inventory"
+                    mode="deconstruction"
+                    onClose={() => setDeconstructingOrder(null)}
+                    onComplete={handleDeconstructComplete}
+                />
             )}
 
             {/* Toast Notification */}

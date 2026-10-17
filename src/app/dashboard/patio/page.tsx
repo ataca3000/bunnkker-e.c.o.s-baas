@@ -10,6 +10,7 @@ import BarcodeScanner from '@/components/BarcodeScanner';
 import { toast } from '@/lib/toast';
 import DeliveryProofModal from '@/components/orders/DeliveryProofModal';
 import TicketEntrega from '@/components/TicketEntrega';
+import OrderPickingAssistant from '@/components/orders/OrderPickingAssistant';
 
 export default function PatioDashboard() {
     const { orders, startLoading, completeLoading, products, siteConfig } = useCart();
@@ -21,6 +22,8 @@ export default function PatioDashboard() {
     const [notifiedOrder, setNotifiedOrder] = useState<any | null>(null);
     const [orderForDeliveryProof, setOrderForDeliveryProof] = useState<any | null>(null);
     const [deliveredTicketOrder, setDeliveredTicketOrder] = useState<any | null>(null);
+    const [pickingOrder, setPickingOrder] = useState<any | null>(null);
+    const [deconstructingOrder, setDeconstructingOrder] = useState<any | null>(null);
 
     // 1. Cargas pendientes de surtir en Almacén
     const pendingLoads = useMemo(() => {
@@ -262,9 +265,15 @@ export default function PatioDashboard() {
                                         ) : !order.loadedBy ? (
                                             <div className="flex flex-col gap-2">
                                                 <button 
+                                                    onClick={() => setPickingOrder(order)}
+                                                    className="bg-purple-600 hover:bg-purple-500 text-white px-6 py-2.5 rounded-xl font-black text-xs uppercase flex items-center gap-2 justify-center transition-all shadow-md active:scale-95 border border-purple-400/30"
+                                                >
+                                                    🤖 Asistente Recolección IA
+                                                </button>
+                                                <button 
                                                     onClick={() => handleAction(order.id, 'start')}
                                                     disabled={!!processingId}
-                                                    className="bg-sky-500 hover:bg-sky-400 text-white px-6 py-3.5 rounded-xl font-black text-xs uppercase flex items-center gap-2 justify-center transition-all shadow-lg shadow-sky-500/25 active:scale-95"
+                                                    className="bg-sky-500 hover:bg-sky-400 text-white px-6 py-3 rounded-xl font-black text-xs uppercase flex items-center gap-2 justify-center transition-all shadow-lg shadow-sky-500/25 active:scale-95"
                                                 >
                                                     {processingId === order.id ? <Loader2 className="animate-spin" size={16} /> : <Play size={16} />} INICIAR SURTIDO
                                                 </button>
@@ -541,6 +550,54 @@ export default function PatioDashboard() {
                             </div>
                         </motion.div>
                     </div>
+                )}
+
+                {/* Asistente de Recolección / Carga IA */}
+                {pickingOrder && (
+                    <OrderPickingAssistant
+                        order={pickingOrder}
+                        role="patio"
+                        mode="picking"
+                        onClose={() => setPickingOrder(null)}
+                        onComplete={async (orderId) => {
+                            setPickingOrder(null);
+                            await finalizeOrderAndNotify(orderId, 'carga');
+                        }}
+                        onDelegate={async (id, target) => {
+                            try {
+                                const res = await fetch('/api/orders', {
+                                    method: 'PATCH',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ id, action: 'delegate_order', targetRole: target })
+                                });
+                                if (!res.ok) {
+                                    const err = await res.json().catch(() => ({}));
+                                    throw new Error(err.error || 'Error al delegar pedido');
+                                }
+                                setPickingOrder(null);
+                                if (typeof window !== 'undefined' && (window as any).__inventorySocket) {
+                                    (window as any).__inventorySocket.emit('sync_db_event', { action: 'ORDER_DELEGATED', id, target });
+                                }
+                                toast.success(`📦 Pedido delegado exitosamente a ${target.toUpperCase()}`);
+                            } catch (err: any) {
+                                toast.error(err.message || 'Error al delegar');
+                            }
+                        }}
+                    />
+                )}
+
+                {/* Asistente de Deconstrucción IA */}
+                {deconstructingOrder && (
+                    <OrderPickingAssistant
+                        order={deconstructingOrder}
+                        role="patio"
+                        mode="deconstruction"
+                        onClose={() => setDeconstructingOrder(null)}
+                        onComplete={async (orderId) => {
+                            setDeconstructingOrder(null);
+                            toast.success(`✅ Todos los materiales del pedido ${orderId} fueron reingresados a su estante en Patio.`);
+                        }}
+                    />
                 )}
             </AnimatePresence>
         </div>

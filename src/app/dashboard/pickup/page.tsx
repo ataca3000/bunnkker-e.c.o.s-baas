@@ -9,6 +9,7 @@ import { toast } from '@/lib/toast';
 import BarcodeScanner from '@/components/BarcodeScanner';
 import DeliveryProofModal from '@/components/orders/DeliveryProofModal';
 import TicketEntrega from '@/components/TicketEntrega';
+import OrderPickingAssistant from '@/components/orders/OrderPickingAssistant';
 
 export default function PickupDashboard() {
     const { formatCurrency, products, orders: allOrders, siteConfig } = useCart();
@@ -16,6 +17,8 @@ export default function PickupDashboard() {
     const [scanTargetId, setScanTargetId] = useState<string | null>(null);
     const [orderForDeliveryProof, setOrderForDeliveryProof] = useState<any>(null);
     const [deliveredTicketOrder, setDeliveredTicketOrder] = useState<any>(null);
+    const [pickingOrder, setPickingOrder] = useState<any | null>(null);
+    const [deconstructingOrder, setDeconstructingOrder] = useState<any | null>(null);
     
     // Filtrar pedidos que sean para recoger en tienda o patio
     const orders = allOrders.filter(o => ['tienda', 'patio', 'pickup'].includes(o.deliveryMethod || '') || ['PICKUP', 'PATIO'].includes(o.deliveryType || ''));
@@ -140,7 +143,16 @@ export default function PickupDashboard() {
                                             </ul>
                                         </div>
 
-                                        <div className="w-full border border-yellow-500/30 bg-yellow-500/10 p-3 text-center text-xs font-bold text-yellow-300">
+                                        <div className="flex flex-col gap-2 mt-2">
+                                            <button
+                                                onClick={() => setPickingOrder(order)}
+                                                className="w-full bg-cyan-600/30 hover:bg-cyan-600/50 text-cyan-200 border border-cyan-500/30 font-bold py-2 rounded-lg text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95"
+                                            >
+                                                🤖 Asistente de Recolección / Delegar
+                                            </button>
+                                        </div>
+
+                                        <div className="w-full border border-yellow-500/30 bg-yellow-500/10 p-3 text-center text-xs font-bold text-yellow-300 mt-2">
                                             Pasa a Caja para validar el pago antes de entregar.
                                             {order.vendedorName ? ` Caja asignada: ${order.vendedorName}.` : ''}
                                         </div>
@@ -270,6 +282,55 @@ export default function PickupDashboard() {
                         }
                         setScanTargetId(null);
                         setOrderForDeliveryProof(target);
+                    }}
+                />
+            )}
+
+            {/* Asistente de Recolección / Surtido IA */}
+            {pickingOrder && (
+                <OrderPickingAssistant
+                    order={pickingOrder}
+                    role="pickup"
+                    mode="picking"
+                    onClose={() => setPickingOrder(null)}
+                    onComplete={async (orderId) => {
+                        setPickingOrder(null);
+                        toast.success(`✅ Pedido ${orderId} surtido en mostrador de Pickup.`);
+                        const state = require('@/store/useERPStore').useERPStore.getState();
+                        if (state.fetchOrders) state.fetchOrders();
+                    }}
+                    onDelegate={async (id, target) => {
+                        try {
+                            const res = await fetch('/api/orders', {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ id, action: 'delegate_order', targetRole: target })
+                            });
+                            if (!res.ok) {
+                                const err = await res.json().catch(() => ({}));
+                                throw new Error(err.error || 'Error al delegar pedido');
+                            }
+                            setPickingOrder(null);
+                            toast.success(`📦 Pedido delegado exitosamente a ${target.toUpperCase()}`);
+                            const state = require('@/store/useERPStore').useERPStore.getState();
+                            if (state.fetchOrders) state.fetchOrders();
+                        } catch (err: any) {
+                            toast.error(err.message || 'Error al delegar');
+                        }
+                    }}
+                />
+            )}
+
+            {/* Asistente de Deconstrucción IA */}
+            {deconstructingOrder && (
+                <OrderPickingAssistant
+                    order={deconstructingOrder}
+                    role="pickup"
+                    mode="deconstruction"
+                    onClose={() => setDeconstructingOrder(null)}
+                    onComplete={async (orderId) => {
+                        setDeconstructingOrder(null);
+                        toast.success(`✅ Artículos del pedido ${orderId} regresados a anaquel.`);
                     }}
                 />
             )}

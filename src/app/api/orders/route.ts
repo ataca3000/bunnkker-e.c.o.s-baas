@@ -473,7 +473,7 @@ export async function PATCH(request: NextRequest) {
         const actorName = actorUser?.name || auth.uid;
         const actorRole = auth.role;
         const cashierRoles = ['sales', 'billing', 'admin', 'superadmin'];
-        const loadingRoles = ['carga_descarga', 'inventory', 'admin', 'superadmin'];
+        const loadingRoles = ['carga_descarga', 'inventory', 'admin', 'superadmin', 'sales', 'billing', 'pickup'];
         const deliveryRoles = ['driver', 'carga_descarga', 'admin', 'superadmin'];
         const cashierReadyStatuses = ['READY_TO_SHIP', 'READY_FOR_PICKUP', 'pending_payment', 'pending_confirmation', 'pending', 'NIGHT_QUEUE'];
 
@@ -508,9 +508,18 @@ export async function PATCH(request: NextRequest) {
                         throw new Error('ORDER_CONFLICT:El pedido no está listo, ya fue pagado o pertenece a otro cajero.');
                     }
 
-                    // REGLA ESTRICTA DE CAJA: Caja solo puede cobrar una vez que almacén haya terminado de surtir y marcar listo el pedido
-                    if (!current.isLoaded && !['READY_TO_SHIP', 'READY_FOR_PICKUP', 'READY_FOR_PICKUP_PAID', 'COMPLETED'].includes(current.status)) {
-                        throw new Error('ORDER_CONFLICT:El pedido aún está siendo preparado en almacén. Almacén debe marcarlo como LISTO antes de cobrar.');
+                    // REGLA FLEXIBLE / OPERADOR ÚNICO:
+                    // Si el pedido no estaba cargado pero el cobro se hace en caja o con bandera de auto-preparación/operador único,
+                    // se auto-completa el surtido (isLoaded = true) permitiendo operación fluida sin requerir otro operador.
+                    const isSelfPreparation = Boolean(updates.selfPreparation || body.selfPreparation || current.deliveryType === 'LOCAL' || current.vendedorId === auth.uid || cashierRoles.includes(actorRole));
+                    let effectiveIsLoaded = current.isLoaded;
+
+                    if (!effectiveIsLoaded) {
+                        if (isSelfPreparation) {
+                            effectiveIsLoaded = true;
+                        } else if (!['READY_TO_SHIP', 'READY_FOR_PICKUP', 'READY_FOR_PICKUP_PAID', 'COMPLETED'].includes(current.status)) {
+                            throw new Error('ORDER_CONFLICT:El pedido aún está siendo preparado en almacén. Almacén debe marcarlo como LISTO antes de cobrar, o activa "Preparar en Caja".');
+                        }
                     }
 
                     // FLOTACIÓN ESTRICTA: En caja se asegura la existencia y se aparta en reservedStock.
@@ -528,7 +537,7 @@ export async function PATCH(request: NextRequest) {
 
                     const isPickup = ['PICKUP', 'PATIO'].includes(current.deliveryType);
                     const isDelivery = current.deliveryType === 'DELIVERY';
-                    const nextStatus = current.isLoaded
+                    const nextStatus = effectiveIsLoaded
                         ? isDelivery ? 'OUT_FOR_DELIVERY' : isPickup ? 'READY_FOR_PICKUP_PAID' : 'COMPLETED'
                         : 'paid';
                     const updated = await tx.order.updateMany({
@@ -547,6 +556,12 @@ export async function PATCH(request: NextRequest) {
                             confirmedAt: new Date(),
                             vendedorId: auth.uid,
                             vendedorName: actorName,
+                            ...(effectiveIsLoaded && !current.isLoaded ? {
+                                isLoaded: true,
+                                loadedBy: actorName,
+                                loadedByUid: auth.uid,
+                                loadingFinishedAt: new Date()
+                            } : {}),
                             ...(updates.ventanilla ? { ventanilla: updates.ventanilla } : {}),
                             ...(updates.cajon ? { cajon: updates.cajon } : {})
                         }
@@ -594,11 +609,11 @@ export async function PATCH(request: NextRequest) {
         if (action === 'complete_loading') {
             if (!loadingRoles.includes(actorRole)) return NextResponse.json({ success: false, error: 'Rol sin permiso para finalizar la preparación.' }, { status: 403 });
             const current = await prisma.order.findUnique({ where: { id } });
-            if (!current || current.isLoaded || (current.loadedByUid !== auth.uid && actorRole !== 'superadmin' && actorRole !== 'admin')) {
-                return NextResponse.json({ success: false, error: 'El pedido no está asignado a este almacenista.' }, { status: 409 });
+            if (!current || current.isLoaded || (current.loadedByUid && current.loadedByUid !== auth.uid && !['superadmin', 'admin', 'sales'].includes(actorRole))) {
+                return NextResponse.json({ success: false, error: 'El pedido no está asignado a este operador.' }, { status: 409 });
             }
             
-            // Si el almacenista especifica dónde queda listo: 'caja' (PICKUP/MOSTRADOR) o 'carga' (PATIO/BAHÍA DE CARGA)
+            // Si el operador especifica dónde queda listo: 'caja' (PICKUP/MOSTRADOR) o 'carga' (PATIO/BAHÍA DE CARGA)
             const targetLocation = body.targetLocation || updates.targetLocation;
             let effectiveDeliveryType = current.deliveryType;
             if (targetLocation === 'caja') {
@@ -616,9 +631,11 @@ export async function PATCH(request: NextRequest) {
                     ? isPaid ? 'OUT_FOR_DELIVERY' : 'READY_TO_SHIP'
                     : 'COMPLETED';
             const updated = await prisma.order.updateMany({
-                where: { id, status: current.status, isLoaded: false, loadedByUid: current.loadedByUid },
+                where: { id, status: current.status, isLoaded: false },
                 data: { 
                     isLoaded: true, 
+                    loadedBy: current.loadedBy || actorName,
+                    loadedByUid: current.loadedByUid || auth.uid,
                     loadingFinishedAt: new Date(), 
                     status: nextStatus,
                     deliveryType: effectiveDeliveryType
@@ -641,6 +658,125 @@ export async function PATCH(request: NextRequest) {
                 } 
             });
             return NextResponse.json({ success: true, data: await prisma.order.findUnique({ where: { id } }) });
+        }
+
+        if (action === 'delegate_order') {
+            if (actorRole === 'driver') {
+                return NextResponse.json({ success: false, error: 'El repartidor no puede delegar pedidos de tienda.' }, { status: 403 });
+            }
+            const targetRole = body.targetRole || body.targetLocation || 'caja';
+            const current = await prisma.order.findUnique({ where: { id } });
+            if (!current) return NextResponse.json({ success: false, error: 'Pedido no encontrado' }, { status: 404 });
+
+            await prisma.order.update({
+                where: { id },
+                data: {
+                    vendedorId: targetRole === 'caja' ? null : current.vendedorId,
+                    loadedByUid: null,
+                    loadedBy: null
+                }
+            });
+
+            await writeOrderEvent(prisma as any, {
+                orderId: id,
+                eventType: 'ORDER_DELEGATED',
+                fromStatus: current.status,
+                toStatus: current.status,
+                actorId: auth.uid,
+                actorName,
+                actorRole,
+                details: { delegatedTo: targetRole, reason: body.reason || 'Operador ocupado / Delegación rápida' }
+            });
+
+            return NextResponse.json({ success: true, message: `Pedido delegado a ${targetRole}` });
+        }
+
+        if (action === 'admin_refund_order') {
+            if (!['admin', 'superadmin'].includes(actorRole)) {
+                return NextResponse.json({ success: false, error: 'Solo administradores pueden autorizar devoluciones de ventas cerradas.' }, { status: 403 });
+            }
+            const current = await prisma.order.findUnique({ where: { id }, include: { items: true } });
+            if (!current) return NextResponse.json({ success: false, error: 'Pedido no encontrado' }, { status: 404 });
+
+            const updated = await prisma.$transaction(async (tx) => {
+                await tx.order.update({
+                    where: { id },
+                    data: {
+                        status: 'refunded',
+                        rejectionReason: body.reason || 'Devolución autorizada por Administrador'
+                    }
+                });
+
+                // Si se solicita reincorporación inmediata
+                if (body.immediateRestock) {
+                    for (const item of current.items) {
+                        await tx.product.update({
+                            where: { id: item.productId },
+                            data: { stock: { increment: item.cantidad } }
+                        });
+                    }
+                }
+
+                await writeOrderEvent(tx, {
+                    orderId: id,
+                    eventType: 'ORDER_REFUNDED_BY_ADMIN',
+                    fromStatus: current.status,
+                    toStatus: 'refunded',
+                    actorId: auth.uid,
+                    actorName,
+                    actorRole,
+                    details: {
+                        reason: body.reason || 'Devolución de venta cerrada',
+                        immediateRestock: Boolean(body.immediateRestock),
+                        totalRefunded: current.total
+                    }
+                });
+
+                return tx.order.findUnique({ where: { id }, include: { items: true, customer: true } });
+            });
+
+            return NextResponse.json({ success: true, data: updated, message: 'Devolución autorizada. Artículos listos para reincorporación al anaquel.' });
+        }
+
+        if (action === 'return_to_shelf') {
+            const current = await prisma.order.findUnique({ where: { id }, include: { items: true } });
+            if (!current) return NextResponse.json({ success: false, error: 'Pedido no encontrado' }, { status: 404 });
+
+            const updated = await prisma.$transaction(async (tx) => {
+                for (const item of current.items) {
+                    await tx.product.update({
+                        where: { id: item.productId },
+                        data: { stock: { increment: item.cantidad } }
+                    });
+                }
+
+                await tx.order.update({
+                    where: { id },
+                    data: {
+                        isLoaded: false,
+                        status: 'RESTOCKED',
+                        rejectionReason: `Deconstrucción completada: artículos devueltos a sus anaqueles por ${actorName}`
+                    }
+                });
+
+                await writeOrderEvent(tx, {
+                    orderId: id,
+                    eventType: 'RESTOCK_COMPLETED',
+                    fromStatus: current.status,
+                    toStatus: 'RESTOCKED',
+                    actorId: auth.uid,
+                    actorName,
+                    actorRole,
+                    details: {
+                        verifiedBy: actorName,
+                        returnedItemsCount: current.items.length
+                    }
+                });
+
+                return tx.order.findUnique({ where: { id }, include: { items: true, customer: true } });
+            });
+
+            return NextResponse.json({ success: true, data: updated, message: 'Artículos reincorporados al anaquel exitosamente.' });
         }
 
         if (action === 'claim_delivery') {
