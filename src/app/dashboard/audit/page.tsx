@@ -5,7 +5,6 @@ import { useMemo, useState, useEffect, useCallback, memo, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import VirtualizedAuditList, { type AuditRowData } from '@/components/VirtualizedAuditList';
 import { type AuditLog } from '@/types/audit';
-// @ts-expect-error - react-window types not resolved
 import { areEqual, type ListChildComponentProps } from 'react-window';
 import Link from 'next/link';
 import { Settings, ShieldCheck, Camera, PenTool, CheckCircle2, Clock, Eye, X, Package, FileText, Store, Truck, UserCheck, AlertTriangle } from 'lucide-react';

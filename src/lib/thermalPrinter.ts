@@ -32,10 +32,12 @@ export const printReceiptWithWebSerial = async (data: PrintData) => {
 
     try {
         // Pedir al usuario seleccionar el puerto USB/Serial de la impresora
-        // @ts-ignore - Web Serial API navigator.serial is not in standard DOM typings
         const port = await navigator.serial.requestPort();
         await port.open({ baudRate: 9600 }); // Impresoras térmicas comunes usan 9600 o 115200
 
+        if (!port.writable) {
+            throw new Error('El puerto serial no expone un flujo de escritura.');
+        }
         const writer = port.writable.getWriter();
 
         // Inicializar
