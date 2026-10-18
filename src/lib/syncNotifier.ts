@@ -1,4 +1,5 @@
 // Helper global para sincronizacion instantanea en tiempo real (0ms Multi-Tab / Multi-Rol)
+import { useEffect } from 'react';
 
 let tabChannel: BroadcastChannel | null = null;
 if (typeof window !== 'undefined' && typeof BroadcastChannel !== 'undefined') {
@@ -32,4 +33,45 @@ export function broadcastSync() {
   try {
     window.dispatchEvent(new CustomEvent('bunkker_sync_event'));
   } catch (err) {}
+}
+
+/**
+ * Hook para escuchar eventos de sincronización en tiempo real entre múltiples pantallas/pestañas:
+ * - /dashboard/sales (Caja)
+ * - /dashboard/inventory (Almacén / Order Picking)
+ * - /dashboard/patio (Patio de Carga)
+ * - /dashboard/pickup (Mostrador Pick Up)
+ * - /carrito/checkout (Pedidos Web)
+ */
+export function useSyncListener(onSync: () => void) {
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    let channel: BroadcastChannel | null = null;
+    try {
+      if (typeof BroadcastChannel !== 'undefined') {
+        channel = new BroadcastChannel('bunkker_tab_sync');
+        channel.onmessage = (event) => {
+          if (event.data?.type === 'SYNC_REFETCH') {
+            onSync();
+          }
+        };
+      }
+    } catch (err) {
+      console.warn('[SyncListener] BroadcastChannel init error:', err);
+    }
+
+    const handleCustomEvent = () => {
+      onSync();
+    };
+
+    window.addEventListener('bunkker_sync_event', handleCustomEvent);
+
+    return () => {
+      try {
+        channel?.close();
+      } catch {}
+      window.removeEventListener('bunkker_sync_event', handleCustomEvent);
+    };
+  }, [onSync]);
 }

@@ -7,7 +7,7 @@ import { useCart, type Product } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import {
     Clock, Bell, History, User, Store, ShieldAlert, Wifi, Globe, TerminalSquare, AlertCircle, XCircle, CheckCircle2, Phone, Lock, Unlock,
-    LayoutDashboard, LogOut, ShoppingCart, Trash2, Zap, UserCheck, Scale, Settings, PenTool, Camera, RefreshCw, Package
+    LayoutDashboard, LogOut, ShoppingCart, Trash2, Zap, UserCheck, Scale, Settings, PenTool, Camera, RefreshCw, Package, Search
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
@@ -62,6 +62,7 @@ export default function SalesDashboard() {
     // POS State
     const [isKioskMode, setIsKioskMode] = useState(false);
     const [posSearch, setPosSearch] = useState('');
+    const [onlineSearch, setOnlineSearch] = useState('');
     const [posCart, setPosCart] = useState<(Product & { quantity: number })[]>([]);
     const [orderType, setOrderType] = useState<OrderType>('local');
     const [isPaymentOpen, setIsPaymentOpen] = useState(false);
@@ -805,17 +806,26 @@ export default function SalesDashboard() {
             if (!isMine) return false;
         }
         if (orderFilter === 'pending') {
-            return ['pending_payment', 'pending_confirmation', 'pending', 'NIGHT_QUEUE'].includes(o.status);
+            if (!['pending_payment', 'pending_confirmation', 'pending', 'NIGHT_QUEUE'].includes(o.status)) return false;
+        } else if (orderFilter === 'ready') {
+            if (!['READY_TO_SHIP', 'READY_FOR_PICKUP'].includes(o.status)) return false;
+        } else if (orderFilter === 'delivery') {
+            if (o.status !== 'pending_delivery') return false;
+        } else if (orderFilter === 'cancelled') {
+            if (o.status !== 'cancelled' && o.status !== 'refunded') return false;
         }
-        if (orderFilter === 'ready') {
-            return ['READY_TO_SHIP', 'READY_FOR_PICKUP'].includes(o.status);
+
+        if (onlineSearch.trim()) {
+            const term = onlineSearch.toLowerCase().trim();
+            const matchesId = o.id.toLowerCase().includes(term);
+            const matchesCustomer = (o.customer?.name || '').toLowerCase().includes(term);
+            const matchesPhone = (o.customer?.phone || '').includes(term);
+            const matchesItems = (o.items || []).some((it: any) =>
+                (it.name || it.productName || it.productId || '').toLowerCase().includes(term)
+            );
+            return matchesId || matchesCustomer || matchesPhone || matchesItems;
         }
-        if (orderFilter === 'delivery') {
-            return o.status === 'pending_delivery';
-        }
-        if (orderFilter === 'cancelled') {
-            return o.status === 'cancelled' || o.status === 'refunded';
-        }
+
         return true;
     });
 
@@ -840,24 +850,32 @@ export default function SalesDashboard() {
                     </div>
                 </div>
 
-                {/* Central Tabs for POS and Online */}
-                <div className="flex bg-black/40 p-1 rounded-xl border border-white/5 mx-2 sm:mx-4 shadow-inner">
+                {/* Central Tabs for POS and Online - Botones Grandes y Táctiles */}
+                <div className="flex bg-black/50 p-1.5 rounded-2xl border border-white/10 mx-2 sm:mx-4 shadow-inner gap-1.5">
                     <button
                         onClick={() => setActiveTab('pos')}
-                        className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all ${activeTab === 'pos' ? 'bg-white/10 text-white shadow-md' : 'text-zinc-500 hover:text-zinc-300'}`}
+                        className={`flex items-center gap-2 px-4 sm:px-7 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-black transition-all active:scale-95 ${
+                            activeTab === 'pos' 
+                                ? 'bg-white/15 text-white shadow-lg border border-white/20' 
+                                : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/5'
+                        }`}
                     >
-                        <Store className="w-4 h-4" /> <span className="hidden xs:inline">PUNTO DE</span> VENTA
+                        <Store className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400" /> <span className="hidden xs:inline">PUNTO DE</span> VENTA
                     </button>
                     <button
                         onClick={() => setActiveTab('online')}
-                        className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all relative ${activeTab === 'online' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30 shadow-md' : 'text-zinc-500 hover:text-zinc-300'}`}
+                        className={`flex items-center gap-2 px-4 sm:px-7 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-black transition-all active:scale-95 relative ${
+                            activeTab === 'online' 
+                                ? 'bg-blue-600/30 text-blue-300 border border-blue-500/40 shadow-lg' 
+                                : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/5'
+                        }`}
                     >
-                        <Globe className="w-4 h-4" /> COLA ({pendingOrders.length})
+                        <Globe className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" /> COLA ({pendingOrders.length})
                         {pendingOrders.length > 0 && (
-                            <span className="absolute top-1 right-2 w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
+                            <span className="absolute top-1 right-2 w-2.5 h-2.5 rounded-full bg-red-500 animate-ping"></span>
                         )}
                         {pendingOrders.length > 0 && (
-                            <span className="absolute top-1 right-2 w-2 h-2 rounded-full bg-red-500"></span>
+                            <span className="absolute top-1 right-2 w-2.5 h-2.5 rounded-full bg-red-500"></span>
                         )}
                     </button>
                 </div>
@@ -868,13 +886,14 @@ export default function SalesDashboard() {
                     {/* Botón Báscula Bluetooth / Serial */}
                     <button
                         onClick={() => setIsScaleOpen(true)}
-                        className={`transition-all flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg border text-xs font-bold ${scale.isConnected
+                        className={`transition-all flex items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border text-xs sm:text-sm font-bold active:scale-95 ${
+                            scale.isConnected
                                 ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40 shadow-[0_0_12px_rgba(6,182,212,0.3)]'
                                 : 'bg-white/5 hover:text-white border-white/10'
-                            }`}
+                        }`}
                         title="Báscula de Pesaje BLE / Serial (F3)"
                     >
-                        <Scale className="h-4 w-4 text-cyan-400" />
+                        <Scale className="h-4 w-4 sm:h-5 sm:w-5 text-cyan-400 shrink-0" />
                         <span className="hidden md:inline font-mono">
                             {scale.isConnected ? `${scale.weight.toFixed(3)} ${scale.unit}` : 'BÁSCULA'}
                         </span>
@@ -883,59 +902,61 @@ export default function SalesDashboard() {
                     {/* Botón Bitácora / Historial de Tickets */}
                     <button
                         onClick={() => setIsHistoryOpen(true)}
-                        className="hover:text-white transition-colors flex items-center gap-1 bg-white/5 px-2.5 sm:px-3 py-1.5 rounded-lg border border-white/10 text-xs font-bold"
+                        className="hover:text-white transition-all active:scale-95 flex items-center gap-1.5 bg-white/5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border border-white/10 text-xs sm:text-sm font-bold shadow-sm"
                         title="Historial de Tickets y Reimpresión (F8)"
                     >
-                        <History className="h-4 w-4 text-amber-400" />
+                        <History className="h-4 w-4 sm:h-5 sm:w-5 text-amber-400 shrink-0" />
                         <span className="hidden sm:inline">TICKETS</span>
                     </button>
 
                     {/* Botón Configuración de Caja */}
                     <button
                         onClick={() => setIsSettingsOpen(true)}
-                        className="hover:text-white transition-colors flex items-center gap-1 bg-white/5 px-2 sm:px-2.5 py-1.5 rounded-lg border border-white/10 text-xs font-bold"
+                        className="hover:text-white transition-all active:scale-95 flex items-center gap-1 bg-white/5 p-2 sm:p-2.5 rounded-xl border border-white/10 text-xs sm:text-sm font-bold shadow-sm"
                         title="Configuración de Caja y Panel"
                     >
-                        <Settings className="h-4 w-4 text-zinc-400 hover:text-cyan-300" />
+                        <Settings className="h-4 w-4 sm:h-5 sm:w-5 text-zinc-400 hover:text-cyan-300 shrink-0" />
                     </button>
 
                     {hasStockIssues && (
                         <button
                             onClick={() => setIsStockAlertOpen(true)}
-                            className="px-3 py-1.5 rounded-lg bg-red-600/30 border-2 border-red-500/80 text-red-300 hover:bg-red-600/40 text-xs font-black tracking-wider flex items-center gap-1.5 shadow-[0_0_15px_rgba(239,68,68,0.5)] animate-pulse"
+                            className="px-3.5 py-2 rounded-xl bg-red-600/30 border-2 border-red-500/80 text-red-300 hover:bg-red-600/40 text-xs sm:text-sm font-black tracking-wider flex items-center gap-2 shadow-[0_0_15px_rgba(239,68,68,0.5)] animate-pulse active:scale-95"
                             title="Venta bloqueada: Clic para resolver faltantes de stock"
                         >
-                            <span className="w-2 h-2 rounded-full bg-red-400 animate-ping"></span>
+                            <span className="w-2.5 h-2.5 rounded-full bg-red-400 animate-ping"></span>
                             STOCK INSUFICIENTE ({stockIssues.length})
                         </button>
                     )}
-                    <div className="hidden lg:flex items-center gap-1.5 text-xs bg-black/40 border border-white/5 py-1.5 px-3 rounded-full">
-                        <Clock className="h-3.5 w-3.5 text-zinc-400" />
+                    <div className="hidden lg:flex items-center gap-1.5 text-xs sm:text-sm bg-black/40 border border-white/5 py-2 px-3.5 rounded-full">
+                        <Clock className="h-4 w-4 text-zinc-400" />
                         <span className="font-mono">{currentTime}</span>
                     </div>
                     <button
-                        className={`transition-colors flex items-center gap-1 px-3 py-1.5 rounded-lg border ${isKioskMode ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-white/5 hover:text-white border-white/10'}`}
+                        className={`transition-all active:scale-95 flex items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border text-xs sm:text-sm font-bold ${
+                            isKioskMode ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-white/5 hover:text-white border-white/10'
+                        }`}
                         onClick={() => setIsKioskMode(!isKioskMode)}
                         title="Modo Kiosco (Bloquear Pantalla)"
                     >
-                        {isKioskMode ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
-                        <span className="text-xs font-bold hidden xl:block">{isKioskMode ? 'KIOSCO ACTIVO' : 'FIJAR'}</span>
+                        {isKioskMode ? <Lock className="h-4 w-4 sm:h-5 sm:w-5" /> : <Unlock className="h-4 w-4 sm:h-5 sm:w-5" />}
+                        <span className="hidden xl:block">{isKioskMode ? 'KIOSCO ACTIVO' : 'FIJAR'}</span>
                     </button>
                     <button
-                        className="hover:text-white transition-colors flex items-center gap-1 bg-white/5 px-3 py-1.5 rounded-lg border border-white/10"
+                        className="hover:text-white transition-all active:scale-95 flex items-center gap-1.5 bg-white/5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border border-white/10 text-xs sm:text-sm font-bold shadow-sm"
                         onClick={() => setShowCorteCaja(true)}
                     >
-                        <ShieldAlert className="h-4 w-4" />
-                        <span className="text-xs font-bold hidden sm:block">CORTE</span>
+                        <ShieldAlert className="h-4 w-4 sm:h-5 sm:w-5 text-rose-400" />
+                        <span className="hidden sm:block">CORTE</span>
                     </button>
 
                     {/* Botón Salir al Dashboard */}
                     <button
                         onClick={() => router.push('/dashboard')}
-                        className="hover:text-white transition-colors flex items-center gap-1.5 bg-cyan-950/60 hover:bg-cyan-900/80 text-cyan-300 px-3 py-1.5 rounded-lg border border-cyan-800 text-xs font-bold"
+                        className="hover:text-white transition-all active:scale-95 flex items-center gap-1.5 bg-cyan-950/70 hover:bg-cyan-900/90 text-cyan-200 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl border border-cyan-700/60 text-xs sm:text-sm font-black shadow-sm"
                         title="Volver al Menú Principal del Dashboard"
                     >
-                        <LayoutDashboard className="h-4 w-4" />
+                        <LayoutDashboard className="h-4 w-4 sm:h-5 sm:w-5" />
                         <span className="hidden sm:inline">DASHBOARD</span>
                     </button>
 
@@ -948,10 +969,10 @@ export default function SalesDashboard() {
                             await signOut();
                             window.location.href = '/login';
                         }}
-                        className="hover:text-red-300 transition-colors flex items-center gap-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 px-3 py-1.5 rounded-lg border border-red-500/30 text-xs font-bold"
+                        className="hover:text-red-300 transition-all active:scale-95 flex items-center gap-1.5 bg-red-500/15 hover:bg-red-500/25 text-red-300 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border border-red-500/40 text-xs sm:text-sm font-black shadow-sm"
                         title="Cerrar sesión del cajero"
                     >
-                        <LogOut className="h-4 w-4" />
+                        <LogOut className="h-4 w-4 sm:h-5 sm:w-5" />
                         <span className="hidden sm:inline">SALIR</span>
                     </button>
 
@@ -1026,69 +1047,89 @@ export default function SalesDashboard() {
                 ) : (
                     /* COLA ONLINE */
                     <div className="flex-1 overflow-y-auto p-4 sm:p-[8px] bg-transparent custom-scrollbar space-y-6">
-                        {/* Selector de Filtros de Cola */}
-                        <div className="flex flex-wrap gap-2 max-w-7xl mx-auto items-center justify-between">
-                            <div className="flex flex-wrap gap-2">
-                                <button
-                                    onClick={() => setOrderFilter('all')}
-                                    className={`px-4 py-2 rounded-xl text-xs font-bold uppercase transition-all ${orderFilter === 'all'
-                                            ? 'bg-blue-600 text-white shadow-md'
-                                            : 'bg-zinc-900/60 text-zinc-400 hover:text-white border border-white/5'
-                                        }`}
-                                >
-                                    Todos ({pendingOrders.length})
-                                </button>
-                                <button
-                                    onClick={() => setOrderFilter('pending')}
-                                    className={`px-4 py-2 rounded-xl text-xs font-bold uppercase transition-all ${orderFilter === 'pending'
-                                            ? 'bg-amber-600 text-white shadow-md'
-                                            : 'bg-zinc-900/60 text-zinc-400 hover:text-white border border-white/5'
-                                        }`}
-                                >
-                                    Por Cobrar ({pendingOrders.filter(o => ['pending_payment', 'pending_confirmation', 'pending', 'NIGHT_QUEUE'].includes(o.status)).length})
-                                </button>
-                                <button
-                                    onClick={() => setOrderFilter('ready')}
-                                    className={`px-4 py-2 rounded-xl text-xs font-bold uppercase transition-all ${orderFilter === 'ready'
-                                            ? 'bg-emerald-600 text-white shadow-md'
-                                            : 'bg-zinc-900/60 text-zinc-400 hover:text-white border border-white/5'
-                                        }`}
-                                >
-                                    Listos Entrega ({pendingOrders.filter(o => ['READY_TO_SHIP', 'READY_FOR_PICKUP'].includes(o.status)).length})
-                                </button>
-                                <button
-                                    onClick={() => setOrderFilter('delivery')}
-                                    className={`px-4 py-2 rounded-xl text-xs font-bold uppercase transition-all ${orderFilter === 'delivery'
-                                            ? 'bg-indigo-600 text-white shadow-md'
-                                            : 'bg-zinc-900/60 text-zinc-400 hover:text-white border border-white/5'
-                                        }`}
-                                >
-                                    Repartos ({pendingOrders.filter(o => o.status === 'pending_delivery').length})
-                                </button>
-                                <button
-                                    onClick={() => setOrderFilter('cancelled')}
-                                    className={`px-4 py-2 rounded-xl text-xs font-bold uppercase transition-all ${orderFilter === 'cancelled'
-                                            ? 'bg-rose-600 text-white shadow-md'
-                                            : 'bg-zinc-900/60 text-rose-400 hover:text-white border border-rose-500/20'
-                                        }`}
-                                >
-                                    Cancelados ({cancelledOrders.length})
-                                </button>
+                        {/* Barra de Búsqueda Táctil de Pedidos Online */}
+                        <div className="max-w-7xl mx-auto space-y-3">
+                            <div className="relative flex-1">
+                                <Search className="w-5 h-5 text-zinc-400 absolute left-4 top-3.5" />
+                                <input
+                                    type="text"
+                                    placeholder="Buscar pedido por folio, cliente, teléfono o nombre de producto..."
+                                    value={onlineSearch}
+                                    onChange={(e) => setOnlineSearch(e.target.value)}
+                                    className="w-full pl-12 pr-12 py-3 bg-zinc-900/90 border border-white/10 rounded-2xl text-sm sm:text-base font-medium text-white placeholder-zinc-500 focus:outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-500/30 transition-all shadow-md backdrop-blur-md"
+                                />
+                                {onlineSearch && (
+                                    <button
+                                        onClick={() => setOnlineSearch('')}
+                                        className="absolute right-3.5 top-3 p-1.5 text-zinc-400 hover:text-white rounded-xl hover:bg-white/10 transition-colors"
+                                        title="Limpiar búsqueda de pedidos"
+                                    >
+                                        <XCircle size={20} />
+                                    </button>
+                                )}
                             </div>
-                            <div className="flex items-center gap-3">
-                                <button
-                                    onClick={() => setOnlyMyOrders(prev => !prev)}
-                                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border ${onlyMyOrders
-                                            ? 'bg-sky-500 text-white border-sky-400 shadow-md shadow-sky-500/20'
-                                            : 'bg-zinc-900/60 text-zinc-400 hover:text-white border-white/10'
-                                        }`}
-                                    title="Filtrar solo pedidos atendidos o surtidos por mí"
-                                >
-                                    <span>👤</span> {onlyMyOrders ? 'Viendo: Mis Pedidos' : 'Ver solo mis pedidos'}
-                                </button>
-                                <span className="text-[11px] text-zinc-500 font-mono hidden sm:inline">
-                                    Actualización en tiempo real
-                                </span>
+
+                            {/* Selector de Filtros de Cola - Botones Grandes y Táctiles */}
+                            <div className="flex flex-wrap gap-2.5 items-center justify-between">
+                                <div className="flex flex-wrap gap-2 sm:gap-2.5">
+                                    <button
+                                        onClick={() => setOrderFilter('all')}
+                                        className={`px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl text-xs sm:text-sm font-black uppercase tracking-wider transition-all active:scale-95 shadow-sm ${orderFilter === 'all'
+                                                ? 'bg-blue-600 text-white shadow-blue-600/30 shadow-lg'
+                                                : 'bg-zinc-900/80 text-zinc-300 hover:text-white border border-white/10 hover:bg-zinc-800'
+                                            }`}
+                                    >
+                                        Todos ({pendingOrders.length})
+                                    </button>
+                                    <button
+                                        onClick={() => setOrderFilter('pending')}
+                                        className={`px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl text-xs sm:text-sm font-black uppercase tracking-wider transition-all active:scale-95 shadow-sm ${orderFilter === 'pending'
+                                                ? 'bg-amber-600 text-white shadow-amber-600/30 shadow-lg'
+                                                : 'bg-zinc-900/80 text-zinc-300 hover:text-white border border-white/10 hover:bg-zinc-800'
+                                            }`}
+                                    >
+                                        Por Cobrar ({pendingOrders.filter(o => ['pending_payment', 'pending_confirmation', 'pending', 'NIGHT_QUEUE'].includes(o.status)).length})
+                                    </button>
+                                    <button
+                                        onClick={() => setOrderFilter('ready')}
+                                        className={`px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl text-xs sm:text-sm font-black uppercase tracking-wider transition-all active:scale-95 shadow-sm ${orderFilter === 'ready'
+                                                ? 'bg-emerald-600 text-white shadow-emerald-600/30 shadow-lg'
+                                                : 'bg-zinc-900/80 text-zinc-300 hover:text-white border border-white/10 hover:bg-zinc-800'
+                                            }`}
+                                    >
+                                        Listos Entrega ({pendingOrders.filter(o => ['READY_TO_SHIP', 'READY_FOR_PICKUP'].includes(o.status)).length})
+                                    </button>
+                                    <button
+                                        onClick={() => setOrderFilter('delivery')}
+                                        className={`px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl text-xs sm:text-sm font-black uppercase tracking-wider transition-all active:scale-95 shadow-sm ${orderFilter === 'delivery'
+                                                ? 'bg-indigo-600 text-white shadow-indigo-600/30 shadow-lg'
+                                                : 'bg-zinc-900/80 text-zinc-300 hover:text-white border border-white/10 hover:bg-zinc-800'
+                                            }`}
+                                    >
+                                        Repartos ({pendingOrders.filter(o => o.status === 'pending_delivery').length})
+                                    </button>
+                                    <button
+                                        onClick={() => setOrderFilter('cancelled')}
+                                        className={`px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl text-xs sm:text-sm font-black uppercase tracking-wider transition-all active:scale-95 shadow-sm ${orderFilter === 'cancelled'
+                                                ? 'bg-rose-600 text-white shadow-rose-600/30 shadow-lg'
+                                                : 'bg-zinc-900/80 text-rose-300 hover:text-white border border-rose-500/20 hover:bg-rose-950/20'
+                                            }`}
+                                    >
+                                        Cancelados ({cancelledOrders.length})
+                                    </button>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <button
+                                        onClick={() => setOnlyMyOrders(prev => !prev)}
+                                        className={`px-4 py-2.5 sm:py-3 rounded-2xl text-xs sm:text-sm font-black transition-all flex items-center gap-2 border active:scale-95 ${onlyMyOrders
+                                                ? 'bg-sky-500 text-white border-sky-400 shadow-md shadow-sky-500/20'
+                                                : 'bg-zinc-900/80 text-zinc-300 hover:text-white border-white/10'
+                                            }`}
+                                        title="Filtrar solo pedidos atendidos o surtidos por mí"
+                                    >
+                                        <span>👤</span> {onlyMyOrders ? 'Viendo: Mis Pedidos' : 'Ver solo mis pedidos'}
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
@@ -1236,10 +1277,10 @@ export default function SalesDashboard() {
                                                         <button
                                                             onClick={() => handleClaimOrder(order.id)}
                                                             disabled={claimingOrderId === order.id}
-                                                            className="flex-1 py-2 px-2 bg-blue-600/20 border border-blue-500/30 text-blue-300 font-bold rounded-xl hover:bg-blue-600/30 text-xs transition-colors flex items-center justify-center gap-1.5"
+                                                            className="flex-1 py-3 px-3 bg-blue-600/30 border border-blue-500/40 text-blue-200 font-black rounded-xl hover:bg-blue-600/40 text-xs sm:text-sm transition-all flex items-center justify-center gap-2 active:scale-95 shadow-sm"
                                                             title="Asignar este pedido a mi caja"
                                                         >
-                                                            <UserCheck size={14} /> Tomar
+                                                            <UserCheck size={16} /> Tomar
                                                         </button>
                                                     )}
                                                     <button
@@ -1257,10 +1298,10 @@ export default function SalesDashboard() {
                                                                 showToast(`Pedido ${order.id} cargado en Punto de Venta.`);
                                                             }
                                                         }}
-                                                        className="flex-1 py-2 px-2 bg-purple-600/20 border border-purple-500/30 text-purple-300 font-bold rounded-xl hover:bg-purple-600/30 text-xs transition-colors flex items-center justify-center gap-1.5"
+                                                        className="flex-1 py-3 px-3 bg-purple-600/30 border border-purple-500/40 text-purple-200 font-black rounded-xl hover:bg-purple-600/40 text-xs sm:text-sm transition-all flex items-center justify-center gap-2 active:scale-95 shadow-sm"
                                                         title="Cargar artículos al POS para modificar o cobrar"
                                                     >
-                                                        <ShoppingCart size={14} /> Cargar POS
+                                                        <ShoppingCart size={16} /> Cargar POS
                                                     </button>
                                                 </div>
 
@@ -1268,7 +1309,7 @@ export default function SalesDashboard() {
                                                     <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-2.5 text-center space-y-2">
                                                         <div className="flex items-center justify-between text-xs font-bold text-amber-400">
                                                             <div className="flex items-center gap-1.5">
-                                                                <Clock size={13} className="animate-spin text-amber-400" />
+                                                                <Clock size={14} className="animate-spin text-amber-400" />
                                                                 <span>En Almacén</span>
                                                             </div>
                                                             <span className="text-[10px] bg-amber-500/20 px-2 py-0.5 rounded text-amber-300 font-mono">
@@ -1278,78 +1319,78 @@ export default function SalesDashboard() {
                                                         <div className="grid grid-cols-2 gap-2">
                                                             <button
                                                                 onClick={() => setPickingOrder(order)}
-                                                                className="py-2 px-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black rounded-xl text-[11px] shadow-md flex items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer"
+                                                                className="py-3 px-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black rounded-xl text-xs shadow-md flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer"
                                                                 title="Recolectar producto por producto con asistencia de IA LION"
                                                             >
-                                                                <Package size={13} /> Recolectar IA
+                                                                <Package size={15} /> Recolectar IA
                                                             </button>
                                                             <button
                                                                 onClick={() => setCashTenderOrder(order)}
-                                                                className="py-2 px-2 bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-300 border border-emerald-500/40 font-black rounded-xl text-[11px] shadow-md flex items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer"
+                                                                className="py-3 px-2 bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-300 border border-emerald-500/40 font-black rounded-xl text-xs shadow-md flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer"
                                                                 title="Auto-surtir en mostrador y cobrar de inmediato"
                                                             >
-                                                                <Zap size={13} /> Surtir y Cobrar
+                                                                <Zap size={15} /> Surtir y Cobrar
                                                             </button>
                                                         </div>
                                                     </div>
                                                 ) : isReadyForCashierPayment ? (
                                                     <div className="space-y-2">
-                                                        <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-2 text-center text-[11px] font-bold text-emerald-400 flex flex-col items-center justify-center gap-1">
+                                                        <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-2 text-center text-xs font-bold text-emerald-400 flex flex-col items-center justify-center gap-1">
                                                             <div className="flex items-center gap-1.5">
-                                                                <CheckCircle2 size={13} /> Surtido listo por {order.loadedBy || 'Almacén'}.
+                                                                <CheckCircle2 size={14} /> Surtido listo por {order.loadedBy || 'Almacén'}.
                                                             </div>
                                                             {order.deliveryType === 'PATIO' ? (
-                                                                <span className="text-[10px] font-black uppercase text-amber-300 bg-amber-500/20 border border-amber-500/40 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                                                                <span className="text-[11px] font-black uppercase text-amber-300 bg-amber-500/20 border border-amber-500/40 px-2.5 py-0.5 rounded-full inline-flex items-center gap-1">
                                                                     🏗️ Ubicación: BAHÍA DE CARGA / PATIO
                                                                 </span>
                                                             ) : (
-                                                                <span className="text-[10px] font-black uppercase text-emerald-300 bg-emerald-500/20 border border-emerald-500/40 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                                                                <span className="text-[11px] font-black uppercase text-emerald-300 bg-emerald-500/20 border border-emerald-500/40 px-2.5 py-0.5 rounded-full inline-flex items-center gap-1">
                                                                     📦 Ubicación: CAJA / MOSTRADOR
                                                                 </span>
                                                             )}
                                                         </div>
                                                         <button
                                                             onClick={() => setCashTenderOrder(order)}
-                                                            className="w-full py-2.5 bg-gradient-to-r from-emerald-600 to-green-600 text-white font-black rounded-xl hover:from-emerald-500 hover:to-green-500 uppercase tracking-widest text-xs shadow-[0_0_20px_rgba(16,185,129,0.3)] flex justify-center items-center gap-2 transition-all active:scale-95 cursor-pointer"
+                                                            className="w-full py-3.5 sm:py-4 bg-gradient-to-r from-emerald-600 to-green-600 text-white font-black rounded-2xl hover:from-emerald-500 hover:to-green-500 uppercase tracking-widest text-xs sm:text-sm shadow-[0_0_20px_rgba(16,185,129,0.35)] flex justify-center items-center gap-2 transition-all active:scale-95 cursor-pointer"
                                                         >
-                                                            <CheckCircle2 size={15} /> Cobrar en Caja (${Number(order.total).toFixed(2)})
+                                                            <CheckCircle2 size={18} /> Cobrar en Caja (${Number(order.total).toFixed(2)})
                                                         </button>
                                                     </div>
                                                 ) : isReadyToDeliver ? (
                                                     <div className="space-y-2">
-                                                        <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-xl p-2 text-center text-[11px] font-bold text-cyan-400 flex flex-col items-center justify-center gap-1">
+                                                        <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-xl p-2 text-center text-xs font-bold text-cyan-400 flex flex-col items-center justify-center gap-1">
                                                             <div className="flex items-center gap-1.5">
-                                                                <ShieldAlert size={13} /> Cobro verificado. Listo para entrega al cliente.
+                                                                <ShieldAlert size={14} /> Cobro verificado. Listo para entrega al cliente.
                                                             </div>
                                                             {order.deliveryType === 'PATIO' ? (
-                                                                <span className="text-[10px] font-black uppercase text-amber-300 bg-amber-500/20 border border-amber-500/40 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                                                                <span className="text-[11px] font-black uppercase text-amber-300 bg-amber-500/20 border border-amber-500/40 px-2.5 py-0.5 rounded-full inline-flex items-center gap-1">
                                                                     🏗️ Entrega asignada a: BAHÍA DE CARGA (Patio)
                                                                 </span>
                                                             ) : (
-                                                                <span className="text-[10px] font-black uppercase text-emerald-300 bg-emerald-500/20 border border-emerald-500/40 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                                                                <span className="text-[11px] font-black uppercase text-emerald-300 bg-emerald-500/20 border border-emerald-500/40 px-2.5 py-0.5 rounded-full inline-flex items-center gap-1">
                                                                     📦 Entrega asignada a: CAJA (Mostrador)
                                                                 </span>
                                                             )}
                                                         </div>
                                                         <button
                                                             onClick={() => setOrderForDeliveryProof(order)}
-                                                            className="w-full py-2.5 bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-black rounded-xl hover:from-cyan-500 hover:to-blue-500 uppercase tracking-widest text-xs shadow-[0_0_20px_rgba(6,182,212,0.3)] flex justify-center items-center gap-2 transition-all active:scale-95"
+                                                            className="w-full py-3.5 sm:py-4 bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-black rounded-2xl hover:from-cyan-500 hover:to-blue-500 uppercase tracking-widest text-xs sm:text-sm shadow-[0_0_20px_rgba(6,182,212,0.35)] flex justify-center items-center gap-2 transition-all active:scale-95"
                                                         >
-                                                            <PenTool size={15} /> Validar Entrega (Foto + Firma PoD)
+                                                            <PenTool size={18} /> Validar Entrega (Foto + Firma PoD)
                                                         </button>
                                                     </div>
                                                 ) : order.status === 'DELIVERED' ? (
-                                                    <div className="bg-zinc-800/80 border border-white/5 rounded-xl p-2 text-center text-xs text-zinc-300">
-                                                        <span className="text-emerald-400 font-bold flex items-center justify-center gap-1">
-                                                            <CheckCircle2 size={14} /> Entregado con Foto y Firma
+                                                    <div className="bg-zinc-800/80 border border-white/5 rounded-xl p-2.5 text-center text-xs sm:text-sm text-zinc-300">
+                                                        <span className="text-emerald-400 font-bold flex items-center justify-center gap-1.5">
+                                                            <CheckCircle2 size={16} /> Entregado con Foto y Firma
                                                         </span>
                                                     </div>
                                                 ) : (
                                                     <button
                                                         onClick={() => setOrderForDeliveryProof(order)}
-                                                        className="w-full py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-bold rounded-xl text-xs flex justify-center items-center gap-1.5"
+                                                        className="w-full py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-bold rounded-xl text-xs sm:text-sm flex justify-center items-center gap-2 active:scale-95 transition-all"
                                                     >
-                                                        <PenTool size={14} /> Entrega de Pedido
+                                                        <PenTool size={16} /> Entrega de Pedido
                                                     </button>
                                                 )}
 
@@ -1357,21 +1398,21 @@ export default function SalesDashboard() {
                                                 {(order.status === 'cancelled' || order.status === 'refunded') && (
                                                     <div className="space-y-1.5 pt-1">
                                                         {order.rejectionReason === 'CANCELADA_STOCK_RESTITUIDO' ? (
-                                                            <div className="bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 rounded-xl p-2 text-center text-xs font-bold flex items-center justify-center gap-1.5">
-                                                                <CheckCircle2 size={13} className="text-emerald-400" />
+                                                             <div className="bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 rounded-xl p-2.5 text-center text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5">
+                                                                <CheckCircle2 size={15} className="text-emerald-400" />
                                                                 <span>Cancelada — Stock de vuelta en anaquel</span>
                                                             </div>
                                                         ) : (
                                                             <div className="space-y-1.5">
-                                                                <div className="bg-rose-500/15 border border-rose-500/30 text-rose-300 rounded-xl p-1.5 text-center text-[11px] font-bold flex items-center justify-center gap-1.5">
-                                                                    <AlertCircle size={13} className="text-rose-400" />
+                                                                <div className="bg-rose-500/15 border border-rose-500/30 text-rose-300 rounded-xl p-2 text-center text-xs font-bold flex items-center justify-center gap-1.5">
+                                                                    <AlertCircle size={14} className="text-rose-400" />
                                                                     <span>Cancelado — Pendiente de reacomodo</span>
                                                                 </div>
                                                                 <button
                                                                     onClick={() => setDeconstructingOrder(order)}
-                                                                    className="w-full py-2 bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white font-black rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all shadow-md active:scale-95 cursor-pointer"
+                                                                    className="w-full py-3 bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white font-black rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-md active:scale-95 cursor-pointer"
                                                                 >
-                                                                    <RefreshCw size={13} /> Deconstrucción: Devolver a Anaquel
+                                                                    <RefreshCw size={15} /> Deconstrucción: Devolver a Anaquel
                                                                 </button>
                                                             </div>
                                                         )}
@@ -1402,10 +1443,10 @@ export default function SalesDashboard() {
                                                                     }
                                                                 }
                                                             }}
-                                                            className="w-full py-1.5 bg-zinc-800/80 hover:bg-rose-950/40 text-zinc-400 hover:text-rose-300 border border-white/5 hover:border-rose-500/30 font-bold rounded-xl text-[11px] flex items-center justify-center gap-1.5 transition-all"
+                                                            className="w-full py-2 sm:py-2.5 bg-zinc-800/80 hover:bg-rose-950/40 text-zinc-400 hover:text-rose-300 border border-white/5 hover:border-rose-500/30 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95"
                                                             title="Registrar devolución como dato del dueño y dar ingreso nuevo a stock"
                                                         >
-                                                            <RefreshCw size={12} /> Devolución Dueño (Ingreso Nuevo a Almacén)
+                                                            <RefreshCw size={14} /> Devolución Dueño (Ingreso Nuevo a Almacén)
                                                         </button>
                                                     )}
 
@@ -1413,15 +1454,15 @@ export default function SalesDashboard() {
                                                 <div className="flex gap-2 pt-1">
                                                     <button
                                                         onClick={() => setOrderToCancel(order.id)}
-                                                        className="flex-1 py-2 bg-amber-500/10 border border-amber-500/20 text-amber-400 font-bold rounded-xl hover:bg-amber-500/20 text-xs transition-colors flex items-center justify-center gap-1"
+                                                        className="flex-1 py-2.5 sm:py-3 bg-amber-500/10 border border-amber-500/25 text-amber-300 font-bold rounded-xl hover:bg-amber-500/20 text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 active:scale-95"
                                                     >
-                                                        <XCircle size={13} /> Cancelar
+                                                        <XCircle size={15} /> Cancelar
                                                     </button>
                                                     <button
                                                         onClick={() => handleDeleteOrder(order.id)}
-                                                        className="flex-1 py-2 bg-red-500/10 border border-red-500/20 text-red-400 font-bold rounded-xl hover:bg-red-500/20 text-xs transition-colors flex items-center justify-center gap-1"
+                                                        className="flex-1 py-2.5 sm:py-3 bg-red-500/10 border border-red-500/25 text-red-300 font-bold rounded-xl hover:bg-red-500/20 text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 active:scale-95"
                                                     >
-                                                        <Trash2 size={13} /> Eliminar
+                                                        <Trash2 size={15} /> Eliminar
                                                     </button>
                                                 </div>
                                             </div>

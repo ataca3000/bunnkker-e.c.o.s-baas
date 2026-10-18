@@ -106,17 +106,17 @@ export function Cart({ items, products = [], orderType, setOrderType, updateQuan
                   </div>
 
                   <div className="flex flex-col items-end gap-2">
-                     <div className={`flex items-center gap-1 rounded-lg shadow-sm p-0.5 border ${
+                     <div className={`flex items-center gap-1 rounded-xl shadow-sm p-1 border ${
                        isExceeded
                          ? 'bg-red-950/60 border-red-500/80 ring-2 ring-red-500/30'
-                         : 'bg-black/40 border-white/10'
+                         : 'bg-black/50 border-white/10'
                      }`}>
                        <button 
                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                         className="w-8 h-8 flex items-center justify-center text-zinc-400 hover:bg-white/10 hover:text-white rounded-md transition-colors"
+                         className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center text-zinc-300 hover:bg-white/10 hover:text-white rounded-lg transition-colors active:scale-95"
                          title="Reducir cantidad"
                        >
-                         <Minus className="h-4 w-4" />
+                         <Minus className="h-4 w-4 sm:h-5 sm:w-5" />
                        </button>
                        <input
                           type="number"
@@ -127,31 +127,31 @@ export function Cart({ items, products = [], orderType, setOrderType, updateQuan
                              if (!e.target.value) updateQuantity(item.id, 1);
                              if (item.quantity === 0) removeItem(item.id);
                           }}
-                          className={`w-12 text-center text-sm font-black focus:outline-none rounded bg-transparent hide-arrows ${
+                          className={`w-12 sm:w-14 text-center text-sm sm:text-base font-black focus:outline-none rounded bg-transparent hide-arrows ${
                             isExceeded ? 'text-red-300' : 'text-white'
                           }`}
                        />
                        <button 
                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
                          disabled={isAtMax}
-                         className={`w-8 h-8 flex items-center justify-center rounded-md transition-colors ${
+                         className={`w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-lg transition-colors active:scale-95 ${
                            isAtMax
                              ? 'text-zinc-600 bg-white/5 cursor-not-allowed'
-                             : 'text-zinc-400 hover:bg-white/10 hover:text-white'
+                             : 'text-zinc-300 hover:bg-white/10 hover:text-white'
                          }`}
                          title={isAtMax ? `Stock máximo alcanzado (${availableStock})` : "Incrementar cantidad"}
                        >
-                         <Plus className="h-4 w-4" />
+                         <Plus className="h-4 w-4 sm:h-5 sm:w-5" />
                        </button>
                      </div>
                      <div className="flex items-center gap-2">
-                       <span className="text-sm font-bold text-white">${(item.price * item.quantity).toFixed(2)}</span>
+                       <span className="text-sm sm:text-base font-bold text-white">${(item.price * item.quantity).toFixed(2)}</span>
                        <button 
                          onClick={() => removeItem(item.id)}
-                         className="text-zinc-500 hover:text-red-400 transition-colors p-1 rounded-md hover:bg-white/5"
+                         className="text-zinc-400 hover:text-red-400 transition-colors p-1.5 rounded-lg hover:bg-white/10 active:scale-95"
                          title="Eliminar del pedido"
                        >
-                         <X className="h-4 w-4" />
+                         <X className="h-4 w-4 sm:h-5 sm:w-5" />
                        </button>
                      </div>
                   </div>
@@ -169,7 +169,7 @@ export function Cart({ items, products = [], orderType, setOrderType, updateQuan
                     {availableStock > 0 ? (
                       <button
                         onClick={() => updateQuantity(item.id, availableStock)}
-                        className="px-2 py-0.5 rounded-md bg-amber-500/30 hover:bg-amber-500/40 border border-amber-500/50 text-amber-200 text-[10px] font-black shrink-0 transition-colors"
+                        className="px-2.5 py-1 rounded-md bg-amber-500/30 hover:bg-amber-500/40 border border-amber-500/50 text-amber-200 text-xs font-black shrink-0 transition-colors"
                         title="Ajustar cantidad al stock máximo disponible"
                       >
                         Ajustar a {availableStock}
@@ -177,7 +177,7 @@ export function Cart({ items, products = [], orderType, setOrderType, updateQuan
                     ) : (
                       <button
                         onClick={() => removeItem(item.id)}
-                        className="px-2 py-0.5 rounded-md bg-red-600/40 hover:bg-red-600/60 border border-red-500/50 text-red-200 text-[10px] font-black shrink-0 transition-colors"
+                        className="px-2.5 py-1 rounded-md bg-red-600/40 hover:bg-red-600/60 border border-red-500/50 text-red-200 text-xs font-black shrink-0 transition-colors"
                         title="Quitar producto sin stock del pedido"
                       >
                         Quitar
@@ -192,17 +192,17 @@ export function Cart({ items, products = [], orderType, setOrderType, updateQuan
       </div>
 
       {/* Footer / Checkout Area */}
-      <div className="p-4 border-t border-white/10 bg-black/60 backdrop-blur-xl shrink-0">
+      <div className="p-4 sm:p-5 border-t border-white/10 bg-black/60 backdrop-blur-xl shrink-0">
          
          {/* Banner de bloqueo si hay stock insuficiente */}
          {hasStockBlocked && (
-           <div className="bg-red-950/80 border-2 border-red-500/80 rounded-xl p-3 mb-3 flex items-start gap-2.5 text-red-200 shadow-[0_0_25px_rgba(239,68,68,0.3)] animate-pulse">
+           <div className="bg-red-950/80 border-2 border-red-500/80 rounded-2xl p-3.5 mb-3.5 flex items-start gap-3 text-red-200 shadow-[0_0_25px_rgba(239,68,68,0.3)] animate-pulse">
              <AlertOctagon className="h-5 w-5 text-red-400 shrink-0 mt-0.5" />
-             <div className="flex-1 min-w-0 text-xs">
+             <div className="flex-1 min-w-0 text-xs sm:text-sm">
                <span className="font-black text-white uppercase tracking-wider block">
                  Venta Bloqueada: Stock Insuficiente
                </span>
-               <span className="text-[11px] text-red-200/90 leading-tight block mt-0.5">
+               <span className="text-xs text-red-200/90 leading-tight block mt-0.5">
                  {stockExceededItems.length === 1
                    ? `"${stockExceededItems[0].name}" supera el stock disponible.`
                    : `${stockExceededItems.length} productos en el pedido superan las existencias físicas.`
@@ -212,35 +212,35 @@ export function Cart({ items, products = [], orderType, setOrderType, updateQuan
            </div>
          )}
 
-         <div className="flex bg-white/5 p-1 rounded-xl mb-4 border border-white/5">
+         <div className="flex bg-white/5 p-1.5 rounded-2xl mb-4 border border-white/10 gap-1.5">
            <button
              onClick={() => setOrderType('local')}
-             className={`flex-1 flex items-center justify-center py-2.5 text-sm font-medium rounded-lg transition-all ${
-               orderType === 'local' ? 'bg-white/10 text-white shadow-[0_0_10px_rgba(255,255,255,0.05)] border border-white/10' : 'text-zinc-400 hover:text-zinc-300 hover:bg-white/[0.02]'
+             className={`flex-1 flex items-center justify-center py-3 sm:py-3.5 text-xs sm:text-sm font-bold rounded-xl transition-all active:scale-95 ${
+               orderType === 'local' ? 'bg-white/15 text-white shadow-[0_0_15px_rgba(255,255,255,0.08)] border border-white/20' : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]'
              }`}
            >
-             <Store className="h-4 w-4 mr-2" />
+             <Store className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
              Entrega en Piso
            </button>
            <button
              onClick={() => setOrderType('delivery')}
-             className={`flex-1 flex items-center justify-center py-2.5 text-sm font-medium rounded-lg transition-all ${
-               orderType === 'delivery' ? 'bg-blue-600/20 text-blue-300 shadow-[0_0_10px_rgba(37,99,235,0.2)] border border-blue-500/30' : 'text-zinc-400 hover:text-zinc-300 hover:bg-white/[0.02]'
+             className={`flex-1 flex items-center justify-center py-3 sm:py-3.5 text-xs sm:text-sm font-bold rounded-xl transition-all active:scale-95 ${
+               orderType === 'delivery' ? 'bg-blue-600/30 text-blue-300 shadow-[0_0_15px_rgba(37,99,235,0.25)] border border-blue-500/40' : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]'
              }`}
            >
-             <Truck className="h-4 w-4 mr-2" />
+             <Truck className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
              Envío Domicilio
            </button>
          </div>
 
          <div className="space-y-2 mb-4 px-1">
-           <div className="flex justify-between text-sm text-zinc-400">
+           <div className="flex justify-between text-xs sm:text-sm text-zinc-400">
              <span>Subtotal</span>
              <span>${total.toFixed(2)}</span>
            </div>
-           <div className="flex justify-between text-lg font-display font-bold text-white">
+           <div className="flex justify-between text-base sm:text-xl font-display font-black text-white">
              <span>Total a Cobrar</span>
-             <span>${total.toFixed(2)}</span>
+             <span className="text-emerald-400">${total.toFixed(2)}</span>
            </div>
          </div>
 
@@ -248,38 +248,40 @@ export function Cart({ items, products = [], orderType, setOrderType, updateQuan
            <button
              onClick={onClear}
              disabled={items.length === 0}
-             className={`flex-[1] py-5 rounded-2xl flex items-center justify-center text-sm font-black tracking-widest uppercase transition-all ${
+             className={`flex-[1] py-4 sm:py-5 rounded-2xl flex items-center justify-center text-xs sm:text-sm font-black tracking-widest uppercase transition-all shadow-sm ${
                items.length === 0
                  ? 'bg-white/5 text-zinc-600 border border-white/5 cursor-not-allowed'
                  : 'bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/30 active:scale-95'
              }`}
            >
-             <X className="mr-1" size={18} /> Cancelar
+             <X className="mr-1.5" size={18} /> Cancelar
            </button>
            
            <button
              onClick={onCheckout}
              disabled={items.length === 0}
-             className={`flex-[2] py-5 rounded-2xl flex flex-col items-center justify-center text-xl font-black uppercase tracking-wider transition-all relative overflow-hidden ${
+             className={`flex-[2] py-4 sm:py-5 rounded-2xl flex flex-col items-center justify-center text-lg sm:text-xl font-black uppercase tracking-wider transition-all relative overflow-hidden shadow-lg ${
                items.length === 0 
                  ? 'bg-white/5 text-zinc-600 border border-white/5 cursor-not-allowed'
                  : hasStockBlocked
                    ? 'bg-gradient-to-r from-red-700 via-rose-700 to-red-800 text-white hover:from-red-600 hover:to-rose-600 shadow-[0_0_25px_rgba(239,68,68,0.5)] border-2 border-red-400 active:scale-95'
-                   : 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white hover:from-emerald-400 hover:to-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.4)] border border-emerald-400/50 active:scale-95'
+                   : 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white hover:from-emerald-400 hover:to-emerald-500 shadow-[0_0_25px_rgba(16,185,129,0.5)] border border-emerald-400/50 active:scale-95'
              }`}
            >
              {items.length > 0 ? (
                <>
                  <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] animate-[shimmer_2s_infinite]"></div>
                  {hasStockBlocked ? (
-                   <span className="flex items-center gap-1.5 text-base sm:text-lg text-white">
-                     <AlertOctagon size={20} className="text-red-300 animate-bounce" />
+                   <span className="flex items-center gap-2 text-base sm:text-lg text-white font-black">
+                     <AlertOctagon size={22} className="text-red-300 animate-bounce" />
                      Venta Bloqueada
                    </span>
                  ) : (
-                   orderType === 'delivery' ? 'Datos Envío' : 'Cobrar'
+                   <span className="text-base sm:text-lg">
+                     {orderType === 'delivery' ? 'Datos Envío' : 'Cobrar'}
+                   </span>
                  )}
-                 <span className={`text-xs font-bold ${hasStockBlocked ? 'text-red-200' : 'opacity-80'}`}>
+                 <span className={`text-xs sm:text-sm font-bold ${hasStockBlocked ? 'text-red-200' : 'opacity-90'}`}>
                    {hasStockBlocked ? '⚠️ Clic para resolver faltantes' : `$${total.toFixed(2)}`}
                  </span>
                </>

@@ -226,8 +226,25 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         const handleOnline = () => {
             fetchLocalData();
         };
+
+        // Sincronización instantánea multi-pestaña y multi-pantalla (0ms)
+        let tabChannel: BroadcastChannel | null = null;
         if (typeof window !== 'undefined') {
             window.addEventListener('online', handleOnline);
+            window.addEventListener('bunkker_sync_event', fetchLocalData);
+
+            if (typeof BroadcastChannel !== 'undefined') {
+                try {
+                    tabChannel = new BroadcastChannel('bunkker_tab_sync');
+                    tabChannel.onmessage = (event) => {
+                        if (event.data?.type === 'SYNC_REFETCH') {
+                            fetchLocalData();
+                        }
+                    };
+                } catch (e) {
+                    console.warn('[CartContext] Error initializing tabChannel:', e);
+                }
+            }
         }
 
         // Ultra-fast polling for local network (every 2 seconds)
@@ -237,6 +254,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             clearInterval(pollInterval);
             if (typeof window !== 'undefined') {
                 window.removeEventListener('online', handleOnline);
+                window.removeEventListener('bunkker_sync_event', fetchLocalData);
+                if (tabChannel) {
+                    try { tabChannel.close(); } catch {}
+                }
             }
         };
     }, [setProducts, setOrders, setFirebaseStatus, setLoading]);
@@ -306,33 +327,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             // Make socket available globally for checkout reservation
             (window as any).__inventorySocket = newSocket;
 
-            // BroadcastChannel for 0ms Multi-Tab synchronization in the same browser
-            let tabChannel: BroadcastChannel | null = null;
-            if (typeof BroadcastChannel !== 'undefined') {
-                tabChannel = new BroadcastChannel('bunkker_tab_sync');
-                tabChannel.onmessage = (event) => {
-                    if (event.data?.type === 'SYNC_REFETCH') {
-                        // Refetch products and orders immediately across tabs
-                        const state = useERPStore.getState();
-                        Promise.all([fetch('/api/products'), fetch('/api/orders')]).then(async ([resP, resO]) => {
-                            if (resP.ok) {
-                                const dataP = await resP.json();
-                                if (state.setProducts) {
-                                    state.setProducts((dataP.data || []).map((p: any) => ({
-                                        ...p,
-                                        location: { estante: p.estante || '', fila: p.fila || '' }
-                                    })));
-                                }
-                            }
-                            if (resO.ok) {
-                                const dataO = await resO.json();
-                                if (state.setOrders) state.setOrders(dataO.data || []);
-                            }
-                        }).catch(() => {});
-                    }
-                };
-            }
-
             // LFEDS Timer: Auto-limpieza de reservas expiradas (>30 min)
             const reservationCheckInterval = setInterval(() => {
                 const state = useERPStore.getState();
@@ -343,7 +337,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
             return () => {
                 newSocket.disconnect();
-                if (tabChannel) tabChannel.close();
                 clearInterval(reservationCheckInterval);
             };
         }
