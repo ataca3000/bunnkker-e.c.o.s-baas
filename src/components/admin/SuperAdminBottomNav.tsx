@@ -261,15 +261,15 @@ export default function SuperAdminBottomNav({
 
     return (
         <nav
-            aria-label="Navegación Móvil Super Admin"
-            className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-950/95 backdrop-blur-2xl border-t border-cyan-500/30 shadow-[0_-10px_35px_rgba(0,0,0,0.7)] transition-all select-none"
+            aria-label="Navegación Super Admin"
+            className="fixed bottom-0 left-0 right-0 z-40 bg-slate-950/95 backdrop-blur-2xl border-t border-cyan-500/30 shadow-[0_-10px_35px_rgba(0,0,0,0.7)] transition-all select-none"
             style={{ paddingBottom: 'calc(0.4rem + env(safe-area-inset-bottom, 0px))' }}
         >
             {/* Header / status badge strip */}
             <div className="flex items-center justify-between px-3 pt-1.5 pb-1 border-b border-white/5 text-[10px]">
                 <div className="flex items-center gap-1.5 text-cyan-400 font-extrabold tracking-wider uppercase">
                     <Sparkles size={11} className="animate-pulse" />
-                    <span>SUPER ADMIN · CARRUSEL MÓVIL</span>
+                    <span>SUPER ADMIN · ACCESO RÁPIDO</span>
                 </div>
                 <div className="flex items-center gap-1 text-[9px] text-slate-400 font-bold">
                     <span>Desliza lateralmente</span>

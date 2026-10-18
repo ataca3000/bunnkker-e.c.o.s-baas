@@ -18,6 +18,9 @@ import { INITIAL_STAFF_PINS, INITIAL_STAFF_PIN_VALUES } from '@/lib/initialStaff
 import bcrypt from 'bcryptjs';
 import fs from 'fs';
 import path from 'path';
+import { SignJWT } from 'jose';
+
+const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'super_secret_local_key');
 
 function getCookieOpts(request?: NextRequest, httpOnlyFlag = true) {
   const isHttps = request
@@ -121,6 +124,7 @@ export async function POST(request: NextRequest) {
 
     let finalUid = uid || '';
     let finalRole = 'client';
+    let matchedCustomer: any = null;
 
     // Obtener la IP del cliente para mitigar ataques de brute-force
     const clientIp = request.headers.get('x-forwarded-for') || '127.0.0.1';
@@ -371,6 +375,7 @@ export async function POST(request: NextRequest) {
 
       finalUid = customer.id;
       finalRole = 'client';
+      matchedCustomer = customer;
     } else if (idToken) {
       if (process.env.NODE_ENV === 'production') {
         return NextResponse.json(
@@ -392,16 +397,47 @@ export async function POST(request: NextRequest) {
     const cookieOpts = getCookieOpts(request, false);
     const isInitialPin = Boolean(pin && INITIAL_STAFF_PIN_VALUES.includes(pin));
     const sig = signRole(finalRole, finalUid);
+
+    let clientToken: string | undefined = undefined;
+    if (finalRole === 'client' && matchedCustomer) {
+      clientToken = await new SignJWT({
+        uid: matchedCustomer.id,
+        phone: matchedCustomer.phone,
+        role: 'customer',
+        name: matchedCustomer.name,
+        email: matchedCustomer.email
+      })
+        .setProtectedHeader({ alg: 'HS256' })
+        .setExpirationTime('30d')
+        .sign(JWT_SECRET);
+    }
+
     const response = NextResponse.json({
       success: true,
       role: finalRole,
       uid: finalUid,
       signature: sig,
-      requirePinChange: isInitialPin
+      requirePinChange: isInitialPin,
+      token: clientToken,
+      customer: matchedCustomer ? {
+        id: matchedCustomer.id,
+        name: matchedCustomer.name,
+        email: matchedCustomer.email,
+        phone: matchedCustomer.phone,
+        address: matchedCustomer.address,
+        rfc: matchedCustomer.rfc,
+        razonSocial: matchedCustomer.razonSocial,
+        regimenFiscal: matchedCustomer.regimenFiscal,
+        usoCFDI: matchedCustomer.usoCFDI,
+        codigoPostal: matchedCustomer.codigoPostal
+      } : undefined
     });
     response.cookies.set('msj-session', finalUid, cookieOpts);
     response.cookies.set('msj-role', finalRole, cookieOpts);
     response.cookies.set('msj-role-sig', sig, cookieOpts);
+    if (clientToken) {
+      response.cookies.set('admincom_session', clientToken, cookieOpts);
+    }
 
     // Generar una IP privada virtual aleatoria para trabajadores para el bypass de firewall en túnel
     if (finalRole !== 'client') {

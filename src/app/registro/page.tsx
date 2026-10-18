@@ -1,14 +1,8 @@
 "use client";
 
 import { useState } from 'react';
-import { auth, db } from '@/lib/firebase';
-import {
-    createUserWithEmailAndPassword,
-    signInWithEmailAndPassword,
-    sendPasswordResetEmail
-} from 'firebase/auth';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
+import { saveCustomerSession } from '@/lib/customerAuth';
 import {
     UserPlus, Mail, Lock, User, Phone, Loader2,
     ArrowRight, ShieldCheck, KeyRound, MapPin,
@@ -69,31 +63,38 @@ export default function RegisterPage() {
         e.preventDefault();
         reset();
         if (password !== confirm) { setError('Las contraseñas no coinciden.'); return; }
-        if (password.length < 6) { setError('La contraseña debe tener al menos 6 caracteres.'); return; }
+        if (password.length < 4) { setError('La contraseña o PIN debe tener al menos 4 caracteres.'); return; }
         setLoading(true);
         try {
-            const fakeEmail = `${phone.replace(/\D/g, '')}@cliente.admin.com`;
-            const cred = await createUserWithEmailAndPassword(auth, fakeEmail, password);
-            const uid = cred.user.uid;
-            await setDoc(doc(db, 'users', uid), {
-                email: fakeEmail,
-                displayName: name,
-                phone,
-                age: parseInt(age) || null,
-                gender,
-                address,
-                curpRfc: curpRfc.toUpperCase(),
-                role: 'client',
-                status: 'active',
-                createdAt: serverTimestamp(),
+            const fakeEmail = `${phone.replace(/\D/g, '')}@cliente.local`;
+            const res = await fetch('/api/auth/register-client', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({
+                    name,
+                    email: fakeEmail,
+                    phone,
+                    password,
+                    address,
+                    rfc: curpRfc
+                })
             });
-            document.cookie = `msj-session=${uid}; path=/; max-age=86400; SameSite=Lax`;
-            document.cookie = `msj-role=client; path=/; max-age=86400; SameSite=Lax`;
-            window.location.href = '/cuenta';
+            const data = await res.json();
+            if (res.ok && data.success) {
+                saveCustomerSession({
+                    uid: data.uid,
+                    role: data.role || 'client',
+                    signature: data.signature,
+                    token: data.token
+                }, data.customer);
+                setSuccess('¡Cuenta creada con éxito! Entrando a tu cuenta...');
+                window.location.assign('/cuenta');
+            } else {
+                setError(data.error || 'Error al crear la cuenta. Intenta de nuevo.');
+            }
         } catch (err: any) {
-            if (err.code === 'auth/email-already-in-use') setError('Este número ya está registrado.');
-            else if (err.code === 'auth/weak-password') setError('El PIN/Contraseña debe tener al menos 6 caracteres.');
-            else setError('Error al crear la cuenta. Intenta de nuevo.');
+            setError('Error de conexión con el servidor. Intenta de nuevo.');
         } finally { setLoading(false); }
     };
 
@@ -103,11 +104,32 @@ export default function RegisterPage() {
         reset();
         setLoading(true);
         try {
-            const fakeEmail = `${loginPhone.replace(/\D/g, '')}@cliente.admin.com`;
-            await signInWithEmailAndPassword(auth, fakeEmail, loginPass);
-            window.location.href = '/cuenta';
+            const cleanPhone = loginPhone.trim();
+            const res = await fetch('/api/customer/auth', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({
+                    phone: cleanPhone,
+                    pin: loginPass,
+                    action: 'login'
+                })
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                saveCustomerSession({
+                    uid: data.uid || data.customer?.id,
+                    role: data.role || 'client',
+                    signature: data.signature,
+                    token: data.token
+                }, data.customer);
+                setSuccess('¡Bienvenido! Entrando a tu cuenta...');
+                window.location.assign('/cuenta');
+            } else {
+                setError(data.error || 'Número o contraseña incorrectos.');
+            }
         } catch {
-            setError('Número o contraseña incorrectos.');
+            setError('Error de conexión al iniciar sesión.');
         } finally { setLoading(false); }
     };
 

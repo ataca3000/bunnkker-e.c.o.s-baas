@@ -43,6 +43,11 @@ export function saveCustomerSession(session: CustomerSessionData, customer?: any
     localStorage.setItem('_bunkker_customer_session', JSON.stringify(session));
     if (customer) {
       localStorage.setItem('_bunkker_customer', JSON.stringify(customer));
+    } else {
+      const existing = localStorage.getItem('_bunkker_customer');
+      if (!existing && session.uid) {
+        localStorage.setItem('_bunkker_customer', JSON.stringify({ id: session.uid, name: 'Cliente' }));
+      }
     }
 
     // Sincronizar en document.cookie para compatibilidad con Next.js Route Handlers y Middleware

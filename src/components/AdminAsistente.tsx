@@ -272,7 +272,7 @@ export default function AdminAsistente() {
 
     return (
         <>
-            <div className="fixed bottom-24 md:bottom-6 right-4 md:right-6 z-[9999] flex flex-col items-end gap-2.5">
+            <div className="fixed bottom-20 md:bottom-20 right-4 md:right-6 z-[9999] flex flex-col items-end gap-2.5">
                 <AnimatePresence>
                     {!isOpen && showGreeting && (
                         <motion.div
@@ -319,7 +319,7 @@ export default function AdminAsistente() {
                         initial={{ opacity: 0, scale: 0.85, y: 50 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.85, y: 50 }}
-                        className={styles.chatWindow}
+                        className={`${styles.chatWindow} !bottom-20 !right-4 md:!right-6`}
                     >
                         <div className={styles.chatHeader} style={isOwner ? { background: '#0f172a' } : {}}>
                             <div className={styles.chatHeaderTitle}>

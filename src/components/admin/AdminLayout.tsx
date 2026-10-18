@@ -438,8 +438,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
     // Mostrar la barra lateral para superadmin y admin (y mantenerla estable durante la hidratación inicial de sesión)
     const isPOSFullscreen = pathname === '/dashboard/sales';
-    const showAdminSidebar = !isPOSFullscreen && (!profile || profile.role === 'superadmin' || profile.role === 'admin');
-    const sidebarWidth  = isCollapsed ? '90px' : '280px';
+    // La barra de navegación se traslada abajo en todos los dispositivos (móvil y escritorio) para evitar encimamiento
+    const showAdminSidebar = false;
+    const sidebarWidth  = '0px';
 
     /* ── Breadcrumbs helper ───────────────────────────────────── */
     const labelsMap: Record<string, string> = {
@@ -606,10 +607,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
             {/* ── Main content (Layer 2) ────────────────────────────────────── */}
             <div
-                className="admin-main-viewport flex-1 flex flex-col min-h-screen relative z-10 transition-all duration-300 pb-28 md:pb-6 ml-0 md:ml-[var(--admin-sidebar-w,260px)] w-full md:w-[calc(100%-var(--admin-sidebar-w,260px))]"
-                style={{
-                    '--admin-sidebar-w': showAdminSidebar ? sidebarWidth : '0px',
-                } as React.CSSProperties}
+                className="admin-main-viewport flex-1 flex flex-col min-h-screen relative z-10 transition-all duration-300 pb-28 w-full"
             >
                 {/* ── Top header bar ─────────────────────────────── */}
                 <div className="liquid-glass" style={{

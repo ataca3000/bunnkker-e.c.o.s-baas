@@ -266,17 +266,23 @@ button:disabled {
 .bunkker-industrial button:hover, .bunkker-industrial a:hover { box-shadow: 0 0 0 2px rgba(200,240,0,.28); }
 .bunkker-help { border-left: 3px solid var(--bunkker-yellow); background: #fffbe8; color: var(--bunkker-ink); }
 
+/* Admin Layout Viewport & Bottom Navigation Clearance */
+.bunkker-shell aside.admin-sidebar {
+  display: none !important;
+}
+
+.bunkker-shell > div.admin-main-viewport {
+  margin-left: 0 !important;
+  width: 100% !important;
+  padding-bottom: 120px !important;
+}
+
 /* Responsive Utilities */
 @media (max-width: 768px) {
-  .bunkker-shell aside.admin-sidebar {
-    display: none !important;
-  }
-
-  .bunkker-shell > div.admin-main-viewport,
   .bunkker-shell > div:last-child {
     margin-left: 0 !important;
     width: 100% !important;
-    padding-bottom: 104px;
+    padding-bottom: 120px;
   }
 
   .bunkker-btn,

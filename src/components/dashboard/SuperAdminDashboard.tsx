@@ -300,28 +300,7 @@ export default function SuperAdminDashboard({
             {/* ⚖️ Algoritmo Efecto Balanza: Rotación vs. Margen Puro (IA SuperAdmin) */}
             <BalanceEffectWidget />
 
-            {/* ── Banner de Descarga (Demo a Local) ──────────────────── */}
-            {isDemo() && (
-                <div className="bg-gradient-to-r from-sky-900 to-indigo-900 border border-sky-500/30 rounded-xl p-8 mb-8 flex flex-col md:flex-row items-center justify-between gap-[8px] shadow-2xl shadow-sky-900/20 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 p-32 bg-sky-500/10 blur-[100px] rounded-full pointer-events-none" />
-                    <div className="relative z-10">
-                        <h2 className="text-2xl font-black text-white uppercase tracking-widest mb-2">
-                            Promesas cualquiera, ponme a trabajar.
-                        </h2>
-                        <p className="text-sky-200">
-                            Descarga BUNKKER E.C.O.S. para Windows y gestiona tu negocio 100% sin internet.
-                        </p>
-                    </div>
-                    <a 
-                        href="#download"
-                        className="relative z-10 bg-white hover:bg-sky-50 text-sky-900 font-black uppercase tracking-widest py-4 px-8 rounded-xl shadow-lg transition-transform hover:scale-105 active:scale-95 whitespace-nowrap flex items-center gap-2"
-                        onClick={(e) => { e.preventDefault(); alert('¡Listo para compilar! Ejecuta npm run dist:win y sube el .exe a tu nube preferida para pegar el enlace aquí.'); }}
-                    >
-                        <Terminal size={20} />
-                        Descargar .exe Gratis
-                    </a>
-                </div>
-            )}
+
 
             {/* ── Gráfico de Ventas (7 Días - Recharts BarChart) ─────────────────────────────────────── */}
             <div className="bunkker-card" style={{ marginBottom: '2.5rem' }}>

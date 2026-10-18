@@ -14,8 +14,12 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: false, error: 'Nombre y Correo Electrónico obligatorios' }, { status: 400 });
         }
 
-        const cleanEmail = email.toLowerCase().trim();
-        const cleanPhone = (phone || `55${Date.now().toString().slice(-8)}`).trim();
+        const rawInput = (email || '').trim();
+        const isEmailInput = rawInput.includes('@');
+        const cleanEmail = isEmailInput ? rawInput.toLowerCase() : `${rawInput.replace(/\D/g, '')}@cliente.local`;
+        const cleanPhone = isEmailInput 
+            ? (phone ? phone.replace(/\D/g, '') : `55${Date.now().toString().slice(-8)}`)
+            : rawInput.replace(/\D/g, '');
         const cleanPin = password ? password.trim() : null;
 
         let customer = await prisma.customer.findFirst({

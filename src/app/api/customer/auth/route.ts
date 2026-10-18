@@ -16,13 +16,27 @@ export async function POST(req: NextRequest) {
         if (action === 'register') {
             if (!name) return NextResponse.json({ error: 'El nombre es requerido para registrarse' }, { status: 400 });
             
-            const existing = await prisma.customer.findFirst({ where: { phone } });
+            const identifier = (phone || '').trim();
+            const existing = await prisma.customer.findFirst({
+                where: {
+                    OR: [
+                        { phone: identifier },
+                        { email: identifier.toLowerCase() }
+                    ]
+                }
+            });
             if (existing) {
-                return NextResponse.json({ error: 'El teléfono ya está registrado' }, { status: 400 });
+                return NextResponse.json({ error: 'El teléfono o correo ya está registrado' }, { status: 400 });
             }
 
+            const isEmail = identifier.includes('@');
             const newCustomer = await prisma.customer.create({
-                data: { phone, pin, name }
+                data: {
+                    phone: isEmail ? `55${Date.now().toString().slice(-8)}` : identifier,
+                    email: isEmail ? identifier.toLowerCase() : undefined,
+                    pin,
+                    name
+                }
             });
 
             const token = await new SignJWT({ 
@@ -111,13 +125,21 @@ export async function POST(req: NextRequest) {
         // ------------------------------------------------------
 
         // Login de Clientes Normal
-        const customer = await prisma.customer.findFirst({ where: { phone } });
+        const identifier = (phone || '').trim();
+        const customer = await prisma.customer.findFirst({
+            where: {
+                OR: [
+                    { phone: identifier },
+                    { email: identifier.toLowerCase() }
+                ]
+            }
+        });
         if (!customer) {
             return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 });
         }
 
         if (customer.pin !== pin) {
-            return NextResponse.json({ error: 'PIN incorrecto' }, { status: 401 });
+            return NextResponse.json({ error: 'PIN o contraseña incorrecta' }, { status: 401 });
         }
 
         const token = await new SignJWT({ 
