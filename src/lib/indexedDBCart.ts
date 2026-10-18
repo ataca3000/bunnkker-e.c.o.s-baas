@@ -338,9 +338,12 @@ export async function flushOfflineOrderQueue(onOrderSynced?: (orderId: string) =
 
         for (const entry of queue) {
             try {
+                const { getCustomerAuthHeaders } = await import('@/lib/customerAuth');
+                const authHeaders = getCustomerAuthHeaders();
                 const res = await fetch('/api/orders', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', ...authHeaders },
+                    credentials: 'include',
                     body: JSON.stringify(entry.payload),
                 });
 
@@ -349,11 +352,11 @@ export async function flushOfflineOrderQueue(onOrderSynced?: (orderId: string) =
                     syncedCount++;
                     if (onOrderSynced) onOrderSynced(entry.orderId);
                 } else if (res.status >= 400 && res.status < 500 && res.status !== 408 && res.status !== 429) {
-                    // Si es un error de validación definitivo o duplicado ya procesado, verificar si es idempotente
+                    // Si es un error de validación definitivo o duplicado ya procesado
                     const errData = await res.json().catch(() => ({}));
-                    if (errData?.duplicated) {
+                    if (errData?.duplicated || res.status === 400) {
                         await removeQueuedOfflineOrder(entry.orderId);
-                        syncedCount++;
+                        if (errData?.duplicated) syncedCount++;
                     }
                 }
             } catch {

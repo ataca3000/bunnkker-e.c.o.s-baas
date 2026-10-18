@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
 import { toast } from '@/lib/toast';
 import { broadcastSync } from '@/lib/syncNotifier';
+import { getCustomerProfile, getCustomerAuthHeaders } from '@/lib/customerAuth';
 
 export default function CheckoutPage() {
     const { cart, siteConfig, createOrder, products } = useCart();
@@ -42,22 +43,44 @@ export default function CheckoutPage() {
 
     useEffect(() => {
         let active = true;
-        fetch('/api/customer/me')
+
+        // Pre-hidratar inmediatamente desde localStorage para evitar redirecciones o pérdida de sesión
+        const cached = getCustomerProfile();
+        if (cached && cached.id) {
+            setCustomerAccount(cached);
+            setClientName(cached.name || '');
+            setClientPhone(cached.phone || '');
+            setClientAddress(cached.address || '');
+            setClientRfc(cached.rfc || '');
+            setClientRazonSocial(cached.razonSocial || '');
+            setCustomerLoading(false);
+        }
+
+        const authHeaders = getCustomerAuthHeaders();
+        fetch('/api/customer/me', {
+            credentials: 'include',
+            headers: authHeaders
+        })
             .then(async response => response.ok ? response.json() : null)
             .then(data => {
                 if (!active) return;
                 const account = data?.success ? data.customer : null;
-                setCustomerAccount(account);
                 if (account) {
+                    setCustomerAccount(account);
+                    if (typeof window !== 'undefined') {
+                        localStorage.setItem('_bunkker_customer', JSON.stringify(account));
+                    }
                     setClientName(account.name || '');
                     setClientPhone(account.phone || '');
                     setClientAddress(account.address || '');
                     setClientRfc(account.rfc || '');
                     setClientRazonSocial(account.razonSocial || '');
+                } else if (!cached) {
+                    setCustomerAccount(null);
                 }
             })
             .catch(() => {
-                if (active) setCustomerAccount(null);
+                if (active && !cached) setCustomerAccount(null);
             })
             .finally(() => {
                 if (active) setCustomerLoading(false);
@@ -191,18 +214,20 @@ export default function CheckoutPage() {
                     : undefined,
             }, false, false, true) as any; // asRequest = true -> crea PENDING_PAYMENT
 
-            if (res && res.orderId) {
+            if (res && res.orderId && !res.queuedOffline) {
                 orderCreated = true;
                 setConfirmedOrderId(res.orderId);
                 setOrderStatus('pending_payment');
                 setConfirmedTotal(total);
                 setIsOrderRegistered(true);
                 broadcastSync();
+            } else if (res?.queuedOffline) {
+                toast.warning(`Sin conexión: Tu pedido ${res.orderId} se guardó en este dispositivo y se transmitirá a caja al reconectar.`, '💾 Guardado Offline');
             }
         } catch (error: any) {
             if (reservationHeld && !orderCreated && socket) socket.emit('release_stock', orderId);
             console.error("Failed to place order:", error);
-            toast.error('Error al crear el pedido. Intenta nuevamente.');
+            toast.error(error.message || 'Error al crear el pedido. Intenta nuevamente.');
         } finally {
             setIsProcessing(false);
             setProcessStatus('');

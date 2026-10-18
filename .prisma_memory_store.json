@@ -159,10 +159,74 @@
       "createdAt": "2026-10-14T17:17:08.419Z"
     }
   ],
-  "customer": [],
-  "order": [],
-  "orderItem": [],
-  "orderEvent": [],
+  "customer": [
+    {
+      "id": "76e05753-1d92-4c38-8588-794abfcc2acf",
+      "tenantId": "default",
+      "createdAt": "2026-10-18T02:05:15.882Z",
+      "name": "Juan Perez",
+      "phone": "5512345678",
+      "address": null,
+      "references": null,
+      "gpsCoords": null
+    },
+    {
+      "id": "5509f274-8e4c-4fe7-86fc-d1e20071b9b8",
+      "tenantId": "default",
+      "createdAt": "2026-10-18T02:07:13.879Z",
+      "phone": "5599887766",
+      "pin": "1234",
+      "name": "Test User"
+    }
+  ],
+  "order": [
+    {
+      "id": "ORD-TEST-1",
+      "tenantId": "default",
+      "createdAt": "2026-10-18T02:05:15.884Z",
+      "date": "2026-10-18T02:05:15.884Z",
+      "status": "pending_payment",
+      "deliveryType": "LOCAL",
+      "offline": true,
+      "synced": false,
+      "isLoaded": false,
+      "total": 100,
+      "paymentMethod": "pago_caja",
+      "vendedorId": null,
+      "vendedorName": null,
+      "confirmedAt": null,
+      "expiresAt": "2026-10-18T02:35:15.884Z",
+      "deliveryPin": null,
+      "deliveryLat": null,
+      "deliveryLng": null,
+      "deliveryAddress": null,
+      "customerId": "76e05753-1d92-4c38-8588-794abfcc2acf"
+    }
+  ],
+  "orderItem": [
+    {
+      "id": "b914003d-8695-4fe5-a7e4-5feed9939fc5",
+      "tenantId": "default",
+      "orderId": "ORD-TEST-1",
+      "productId": "PROD-101",
+      "cantidad": 1,
+      "precio": 100
+    }
+  ],
+  "orderEvent": [
+    {
+      "id": "67b6c918-8a2c-4756-81da-0675651bf96d",
+      "tenantId": "default",
+      "createdAt": "2026-10-18T02:05:15.885Z",
+      "orderId": "ORD-TEST-1",
+      "eventType": "ORDER_CREATED",
+      "toStatus": "pending_payment",
+      "actorId": "SYSTEM",
+      "actorName": "Personal",
+      "actorRole": "system",
+      "details": "{\"deliveryType\":\"LOCAL\",\"itemCount\":1,\"total\":100}"
+    }
+  ],
   "syncQueue": [],
   "auditLog": [],
   "supportTicket": [],

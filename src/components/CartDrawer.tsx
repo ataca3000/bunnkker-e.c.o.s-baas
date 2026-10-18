@@ -20,6 +20,7 @@ import { toast } from "@/lib/toast";
 import { CartHeader, CartItemList, CartEmptyState } from "./cart/CartItems";
 import { CheckoutForm, CartFooter, type CheckoutFormData } from "./cart/CheckoutForm";
 import { loadCheckoutDraftFromIDB, saveCheckoutDraftToIDB } from "@/lib/indexedDBCart";
+import { getCustomerProfile, getCustomerAuthHeaders } from "@/lib/customerAuth";
 
 const DEFAULT_FORM: CheckoutFormData = {
     name: '',
@@ -94,13 +95,33 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
     useEffect(() => {
         if (!isOpen) return;
         let active = true;
-        fetch('/api/customer/me')
+
+        const cached = getCustomerProfile();
+        if (cached && cached.id) {
+            setCustomerAccount(cached);
+            setCustomerAccountLoaded(true);
+        }
+
+        const authHeaders = getCustomerAuthHeaders();
+        fetch('/api/customer/me', {
+            credentials: 'include',
+            headers: authHeaders
+        })
             .then(async response => response.ok ? response.json() : null)
             .then(data => {
-                if (active) setCustomerAccount(data?.success ? data.customer : null);
+                if (!active) return;
+                const account = data?.success ? data.customer : null;
+                if (account) {
+                    setCustomerAccount(account);
+                    if (typeof window !== 'undefined') {
+                        localStorage.setItem('_bunkker_customer', JSON.stringify(account));
+                    }
+                } else if (!cached) {
+                    setCustomerAccount(null);
+                }
             })
             .catch(() => {
-                if (active) setCustomerAccount(null);
+                if (active && !cached) setCustomerAccount(null);
             })
             .finally(() => {
                 if (active) setCustomerAccountLoaded(true);

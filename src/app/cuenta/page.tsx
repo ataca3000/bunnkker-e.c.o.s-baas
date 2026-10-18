@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/lib/toast';
+import { saveCustomerSession, clearCustomerSession, getCustomerAuthHeaders, getCustomerProfile } from '@/lib/customerAuth';
 
 export default function UserAccount() {
     const router = useRouter();
@@ -48,8 +49,31 @@ export default function UserAccount() {
     const [savingProfile, setSavingProfile] = useState(false);
 
     const fetchProfile = useCallback(async () => {
+        // Pre-hidratar inmediatamente desde almacenamiento local
+        const cached = getCustomerProfile();
+        if (cached && cached.id) {
+            setCustomer(cached);
+            setOrders(cached.orders || []);
+            setProfileData({
+                name: cached.name || '',
+                phone: cached.phone || '',
+                address: cached.address || '',
+                references: cached.references || '',
+                rfc: cached.rfc || '',
+                razonSocial: cached.razonSocial || '',
+                regimenFiscal: cached.regimenFiscal || '',
+                usoCFDI: cached.usoCFDI || '',
+                codigoPostal: cached.codigoPostal || ''
+            });
+            setLoading(false);
+        }
+
         try {
-            const res = await fetch('/api/customer/me');
+            const authHeaders = getCustomerAuthHeaders();
+            const res = await fetch('/api/customer/me', {
+                credentials: 'include',
+                headers: authHeaders
+            });
             const data = await res.json();
             if (data.success && data.customer) {
                 setCustomer(data.customer);
@@ -65,7 +89,10 @@ export default function UserAccount() {
                     usoCFDI: data.customer.usoCFDI || '',
                     codigoPostal: data.customer.codigoPostal || ''
                 });
-            } else {
+                if (typeof window !== 'undefined') {
+                    localStorage.setItem('_bunkker_customer', JSON.stringify(data.customer));
+                }
+            } else if (!cached) {
                 setCustomer(null);
             }
         } catch (error) {
@@ -87,6 +114,7 @@ export default function UserAccount() {
             const res = await fetch('/api/customer/auth', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({ 
                     phone, 
                     pin, 
@@ -96,6 +124,16 @@ export default function UserAccount() {
             });
             const data = await res.json();
             if (data.success) {
+                // Guardar sesión y perfil de forma persistente y dual (localStorage + cookies)
+                if (data.customer) {
+                    saveCustomerSession({
+                        uid: data.uid || data.customer.id,
+                        role: data.role || 'client',
+                        signature: data.signature,
+                        token: data.token
+                    }, data.customer);
+                }
+
                 const searchParams = new URLSearchParams(window.location.search);
                 const redirectParam = searchParams.get('redirect');
                 if (redirectParam) {
@@ -123,6 +161,7 @@ export default function UserAccount() {
             const res = await fetch('/api/customer/reset-password', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({ phone: resetPhone })
             });
             const data = await res.json();
@@ -142,12 +181,9 @@ export default function UserAccount() {
 
     const handleLogout = async () => {
         try {
-            await fetch('/api/customer/logout', { method: 'POST' });
+            await fetch('/api/customer/logout', { method: 'POST', credentials: 'include' });
         } catch { }
-        document.cookie = "admincom_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-        document.cookie = "msj-session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-        document.cookie = "msj-role=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-        document.cookie = "msj-role-sig=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        clearCustomerSession();
         setCustomer(null);
         setOrders([]);
         window.location.href = '/catalogo';
@@ -157,9 +193,14 @@ export default function UserAccount() {
         e.preventDefault();
         setSavingProfile(true);
         try {
+            const authHeaders = getCustomerAuthHeaders();
             const res = await fetch('/api/customer/me', {
                 method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    ...authHeaders
+                },
+                credentials: 'include',
                 body: JSON.stringify(profileData)
             });
             const data = await res.json();

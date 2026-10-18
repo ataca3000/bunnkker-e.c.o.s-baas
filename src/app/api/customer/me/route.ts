@@ -6,12 +6,18 @@ import { verifyRoleSignature } from '@/lib/apiAuth';
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'super_secret_local_key');
 
 async function resolveCustomerId(req: NextRequest): Promise<string | null> {
-    const jwtCookie = req.cookies.get('admincom_session')?.value;
-    const msjSession = req.cookies.get('msj-session')?.value;
-    const msjRole = req.cookies.get('msj-role')?.value;
-    const msjSig = req.cookies.get('msj-role-sig')?.value;
+    const authHeader = req.headers.get('authorization');
+    const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7).trim() : null;
+    const headerSession = req.headers.get('x-msj-session');
+    const headerRole = req.headers.get('x-msj-role');
+    const headerSig = req.headers.get('x-msj-role-sig');
 
-    for (const candidate of [jwtCookie, msjSession]) {
+    const jwtCookie = req.cookies.get('admincom_session')?.value;
+    const msjSession = req.cookies.get('msj-session')?.value || headerSession;
+    const msjRole = req.cookies.get('msj-role')?.value || headerRole;
+    const msjSig = req.cookies.get('msj-role-sig')?.value || headerSig;
+
+    for (const candidate of [jwtCookie, bearerToken, msjSession]) {
         if (!candidate) continue;
         try {
             const { payload } = await jwtVerify(candidate, JWT_SECRET);

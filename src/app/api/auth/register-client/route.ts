@@ -79,7 +79,8 @@ export async function POST(req: NextRequest) {
             customer,
             uid: customer.id,
             role: 'client',
-            signature: sig
+            signature: sig,
+            token
         });
 
         response.cookies.set('admincom_session', token, cookieOpts);

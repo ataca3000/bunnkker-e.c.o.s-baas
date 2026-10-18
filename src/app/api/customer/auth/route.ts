@@ -44,8 +44,15 @@ export async function POST(req: NextRequest) {
                 path: '/',
                 maxAge: 30 * 24 * 60 * 60
             };
-            const res = NextResponse.json({ success: true, customer: newCustomer });
-            res.cookies.set('admincom_session', token, { ...cookieOpts, httpOnly: true });
+            const res = NextResponse.json({ 
+                success: true, 
+                customer: newCustomer,
+                uid: newCustomer.id,
+                role: 'client',
+                signature: sig,
+                token
+            });
+            res.cookies.set('admincom_session', token, { ...cookieOpts, httpOnly: false });
             res.cookies.set('msj-session', newCustomer.id, cookieOpts);
             res.cookies.set('msj-role', 'client', cookieOpts);
             res.cookies.set('msj-role-sig', sig, cookieOpts);
@@ -132,8 +139,15 @@ export async function POST(req: NextRequest) {
             path: '/',
             maxAge: 30 * 24 * 60 * 60
         };
-        const res = NextResponse.json({ success: true, customer });
-        res.cookies.set('admincom_session', token, { ...cookieOpts, httpOnly: true });
+        const res = NextResponse.json({ 
+            success: true, 
+            customer,
+            uid: customer.id,
+            role: 'client',
+            signature: sig,
+            token
+        });
+        res.cookies.set('admincom_session', token, { ...cookieOpts, httpOnly: false });
         res.cookies.set('msj-session', customer.id, cookieOpts);
         res.cookies.set('msj-role', 'client', cookieOpts);
         res.cookies.set('msj-role-sig', sig, cookieOpts);

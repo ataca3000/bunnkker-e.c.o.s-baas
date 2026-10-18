@@ -9,6 +9,7 @@ import type { Product, CartItem, Order } from '@/lib/types';
 import { toast } from '@/lib/toast';
 import { checkLicenseStatus } from '@/lib/license';
 import { enqueueOfflineOrder, flushOfflineOrderQueue, getQueuedOfflineOrders } from '@/lib/indexedDBCart';
+import { getCustomerAuthHeaders } from '@/lib/customerAuth';
 
 export type { Product, CartItem, Order };
 
@@ -472,19 +473,20 @@ export const useCart = () => {
                 throw new TypeError('Failed to fetch (Offline)');
             }
 
+            const authHeaders = getCustomerAuthHeaders();
             const res = await fetch('/api/orders', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    ...authHeaders
+                },
+                credentials: 'include',
                 body: JSON.stringify(apiPayload)
             });
 
             if (!res.ok) {
                 const errData = await res.json().catch(() => ({}));
-                // Si el servidor falla con 5xx, mantener en IndexedDB para auto-sincronización
-                if (res.status >= 500) {
-                    throw new TypeError(`Server error ${res.status}`);
-                }
-                // Si fue rechazo de validación o negocio (400/401/403), remover de la cola offline
+                // Si el servidor respondió (cualquier código 4xx o 5xx), eliminar de IndexedDB porque fue un rechazo activo del servidor
                 const { removeQueuedOfflineOrder } = await import('@/lib/indexedDBCart');
                 await removeQueuedOfflineOrder(orderId);
                 const detail = errData.error || errData.message || (res.status === 401 ? 'Acceso denegado (Inicia sesión como cliente o personal)' : `Error en servidor local (HTTP ${res.status})`);
@@ -512,18 +514,19 @@ export const useCart = () => {
             return { orderId, deliveryPin, queuedOffline: false };
         } catch (err: any) {
             const isNetworkFailure =
-                err instanceof TypeError ||
                 (typeof navigator !== 'undefined' && navigator.onLine === false) ||
-                String(err?.message || '').includes('Failed to fetch') ||
-                String(err?.message || '').includes('NetworkError') ||
-                String(err?.message || '').includes('Server error');
+                (err instanceof TypeError && (
+                    String(err.message).includes('Failed to fetch') ||
+                    String(err.message).includes('NetworkError') ||
+                    String(err.message).includes('fetch failed')
+                ));
 
             if (isNetworkFailure) {
                 // Mantener en IndexedDB, agregar optimísticamente al store local y limpiar el carrito
                 state.setOrders([{ ...newOrder, offlineQueued: true } as any, ...state.orders]);
                 state.clearCart();
                 toast.warning(
-                    `Conexión inestable: Tu pedido ${orderId} se guardó de forma segura en IndexedDB y se enviará automáticamente al reconectar.`,
+                    `Sin conexión: Tu pedido ${orderId} se guardó de forma segura en tu dispositivo (IndexedDB) y se enviará al reconectar.`,
                     '💾 Guardado Offline (IndexedDB)',
                     8000
                 );

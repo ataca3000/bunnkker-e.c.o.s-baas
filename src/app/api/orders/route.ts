@@ -148,9 +148,17 @@ export async function POST(request: NextRequest) {
                 select: { name: true }
             });
         } else {
+            const authHeader = request.headers.get('authorization');
+            const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7).trim() : null;
+            const headerSession = request.headers.get('x-msj-session');
+            const headerRole = request.headers.get('x-msj-role');
+            const headerSig = request.headers.get('x-msj-role-sig');
+
             const jwtCandidates = [
                 request.cookies.get('admincom_session')?.value,
-                request.cookies.get('msj-session')?.value
+                bearerToken,
+                request.cookies.get('msj-session')?.value,
+                headerSession
             ];
             for (const cand of jwtCandidates) {
                 if (!cand) continue;
@@ -166,9 +174,9 @@ export async function POST(request: NextRequest) {
             }
 
             if (!authenticatedCustomerId) {
-                const sessionVal = request.cookies.get('msj-session')?.value;
-                const roleVal = request.cookies.get('msj-role')?.value;
-                const sigVal = request.cookies.get('msj-role-sig')?.value;
+                const sessionVal = request.cookies.get('msj-session')?.value || headerSession;
+                const roleVal = request.cookies.get('msj-role')?.value || headerRole;
+                const sigVal = request.cookies.get('msj-role-sig')?.value || headerSig;
                 if (sessionVal && roleVal === 'client' && sigVal && verifyRoleSignature(roleVal, sessionVal, sigVal)) {
                     authenticatedCustomerId = sessionVal;
                 }
@@ -303,6 +311,8 @@ export async function POST(request: NextRequest) {
             }
 
             // 2. Validación de Productos e Inventario (con auto-resolución resiliente)
+            const resolvedOrderItems: Array<{ productId: string; cantidad: number; precio: number }> = [];
+
             for (const item of items) {
                 const prodId = item.productId || item.id;
                 if (!prodId) {
@@ -347,7 +357,7 @@ export async function POST(request: NextRequest) {
 
                 const availableStock = current.stock - current.reservedStock;
                 if (availableStock < qty) {
-                    throw new Error(`Inventario insuficiente para el producto "${current.name || prodId}". Disponible: ${availableStock}, solicitado: ${qty}.`);
+                    throw new Error(`INSUFFICIENT_STOCK: Inventario insuficiente para el producto "${current.name || prodId}". Disponible: ${availableStock}, solicitado: ${qty}.`);
                 }
                 if (!isCashierRequest) {
                     await tx.product.update({
@@ -355,6 +365,12 @@ export async function POST(request: NextRequest) {
                         data: { stock: { decrement: qty } }
                     });
                 }
+
+                resolvedOrderItems.push({
+                    productId: current.id,
+                    cantidad: qty,
+                    precio: roundMoney(Number(item.price ?? item.precio ?? 0))
+                });
             }
 
             const isClientOrder = Boolean(authenticatedCustomerId || body.asRequest || !staffSession.ok || paymentMethod === 'pago_caja');
@@ -383,11 +399,7 @@ export async function POST(request: NextRequest) {
                     deliveryAddress: clientData?.address || null,
                     customerId: customerId,
                     items: {
-                        create: items.map((item: any) => ({
-                            productId: item.productId || item.id,
-                            cantidad: Math.max(1, Math.round(Number(item.quantity ?? item.cantidad ?? 1))),
-                            precio: roundMoney(Number(item.price ?? item.precio ?? 0))
-                        }))
+                        create: resolvedOrderItems
                     }
                 },
                 include: { customer: true, items: true }
@@ -467,6 +479,11 @@ export async function POST(request: NextRequest) {
                 error: 'Conflicto de concurrencia en base de datos. Por favor reintente la operación.',
                 retryable: true
             }, { status: 409 });
+        }
+
+        if (typeof error.message === 'string' && error.message.startsWith('INSUFFICIENT_STOCK:')) {
+            const cleanMsg = error.message.replace('INSUFFICIENT_STOCK:', '').trim();
+            return NextResponse.json({ success: false, error: cleanMsg }, { status: 400 });
         }
 
         console.error(`[ACID Transaction Error]: ${error.message}`);
