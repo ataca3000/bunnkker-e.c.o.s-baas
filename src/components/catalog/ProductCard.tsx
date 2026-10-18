@@ -26,8 +26,8 @@ export function ProductCard({ p, onOpenDetails }: ProductCardProps) {
     const cartItem = (cart || []).find((item: any) => item.id === p.id);
     const inCartQty = cartItem ? cartItem.quantity : 0;
     const floatHold = floatingStock[p.id] || 0;
-    // Stock real disponible para agregar descontando lo ya apartado en carrito
-    const availableStock = Math.max(0, p.stock - floatHold - inCartQty);
+    // Stock real disponible en anaquel
+    const availableStock = Math.max(0, p.stock - floatHold);
     const [qty, setQty] = useState(availableStock > 0 ? 1 : 0);
 
     const [prevStock, setPrevStock] = useState(availableStock);
@@ -52,12 +52,12 @@ export function ProductCard({ p, onOpenDetails }: ProductCardProps) {
     };
 
     const handleIncrementToCart = () => {
-        if (availableStock <= 0) {
-            toast.warning('No hay más stock disponible para apartar.', '⚠️ Stock Límite');
+        if (inCartQty >= availableStock) {
+            toast.warning('Has alcanzado el límite de stock disponible.', '⚠️ Stock Límite');
             return;
         }
         addToCart(p, 1);
-        toast.success(`+1 pz apartada en tu carrito (${inCartQty + 1} total).`, '🛒 Carrito');
+        toast.success(`+1 en tu carrito (${inCartQty + 1} total).`, '🛒 Carrito');
     };
 
     return (
@@ -66,9 +66,7 @@ export function ProductCard({ p, onOpenDetails }: ProductCardProps) {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
-            className={`flex flex-col bg-[#050505] rounded-[24px] overflow-hidden border transition-all duration-300 group ${
-                inCartQty > 0 ? 'border-cyan-500/50 shadow-[0_0_20px_rgba(6,182,212,0.15)] ring-1 ring-cyan-500/30' : 'border-white/5 hover:border-white/20'
-            }`}
+            className="flex flex-col bg-[#050505] rounded-[24px] overflow-hidden border border-white/5 hover:border-white/20 transition-all duration-300 group"
         >
             {/* Imagen */}
             <button
@@ -91,17 +89,10 @@ export function ProductCard({ p, onOpenDetails }: ProductCardProps) {
                 <div className={`absolute inset-0 flex items-center justify-center bg-slate-900/50 ${p.image ? 'hidden' : 'flex'}`}>
                     <Package size={48} className="text-slate-700/50" />
                 </div>
-                {availableStock === 0 && inCartQty === 0 && (
+                {availableStock === 0 && (
                     <div className="absolute inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center text-red-500 font-black text-xl tracking-widest z-10 border-2 border-red-500/50 m-4 rounded-xl flex-col">
                         AGOTADO
                         {floatHold > 0 && <span className="text-xs text-yellow-400 mt-2 font-normal">({floatHold} en reserva)</span>}
-                    </div>
-                )}
-                {availableStock === 0 && inCartQty > 0 && (
-                    <div className="absolute inset-0 bg-cyan-950/80 backdrop-blur-sm flex items-center justify-center text-cyan-300 font-black text-sm tracking-wider z-10 border-2 border-cyan-400/50 m-4 rounded-xl flex-col p-2 text-center">
-                        <span className="text-xs uppercase tracking-widest text-cyan-400">TODO EL STOCK APARTADO</span>
-                        <span className="text-base font-black text-white mt-1">({inCartQty} pz en tu carrito)</span>
-                        <span className="text-[10px] text-cyan-200 mt-1 font-semibold underline">Toca para ver / pagar</span>
                     </div>
                 )}
             </button>
@@ -113,8 +104,8 @@ export function ProductCard({ p, onOpenDetails }: ProductCardProps) {
                         {p.category || 'General'}
                     </span>
                     {inCartQty > 0 && (
-                        <span className="text-[10px] font-black uppercase tracking-wider text-cyan-300 bg-cyan-500/20 border border-cyan-400/40 px-2.5 py-1 rounded-full shadow-[0_0_12px_rgba(6,182,212,0.35)] flex items-center gap-1.5 animate-pulse">
-                            🛒 {inCartQty} pz apartadas
+                        <span className="text-[10px] font-semibold text-sky-400 bg-sky-500/10 border border-sky-400/20 px-2 py-0.5 rounded-full">
+                            🛒 {inCartQty} en carrito
                         </span>
                     )}
                 </div>
@@ -248,7 +239,7 @@ export function ProductDetailDrawer({ product, onClose }: ProductDetailDrawerPro
     const cartItem = product ? (cart || []).find((item: any) => item.id === product.id) : null;
     const inCartQty = cartItem ? cartItem.quantity : 0;
     const floatHold = product ? (floatingStock[product.id] || 0) : 0;
-    const availableStock = product ? Math.max(0, product.stock - floatHold - inCartQty) : 0;
+    const availableStock = product ? Math.max(0, product.stock - floatHold) : 0;
 
     useEffect(() => {
         if (!product) return;

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { jwtVerify } from 'jose';
 
-import { validateApiSession, validateActiveDbUser } from '@/lib/apiAuth';
+import { validateApiSession, validateActiveDbUser, verifyRoleSignature } from '@/lib/apiAuth';
 import { roundMoney } from '@/lib/financial';
 import { getSalesTrialStatus, recordPersistentSale } from '@/lib/salesCounter';
 const CUSTOMER_JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'super_secret_local_key');
@@ -148,15 +148,29 @@ export async function POST(request: NextRequest) {
                 select: { name: true }
             });
         } else {
-            const customerToken = request.cookies.get('msj-session')?.value || request.cookies.get('admincom_session')?.value;
-            if (customerToken) {
+            const jwtCandidates = [
+                request.cookies.get('admincom_session')?.value,
+                request.cookies.get('msj-session')?.value
+            ];
+            for (const cand of jwtCandidates) {
+                if (!cand) continue;
                 try {
-                    const { payload } = await jwtVerify(customerToken, CUSTOMER_JWT_SECRET);
+                    const { payload } = await jwtVerify(cand, CUSTOMER_JWT_SECRET);
                     if (payload.role === 'customer' && typeof payload.uid === 'string') {
                         authenticatedCustomerId = payload.uid;
+                        break;
                     }
                 } catch {
-                    // Token inválido o vencido
+                    // Token inválido o no es JWT
+                }
+            }
+
+            if (!authenticatedCustomerId) {
+                const sessionVal = request.cookies.get('msj-session')?.value;
+                const roleVal = request.cookies.get('msj-role')?.value;
+                const sigVal = request.cookies.get('msj-role-sig')?.value;
+                if (sessionVal && roleVal === 'client' && sigVal && verifyRoleSignature(roleVal, sessionVal, sigVal)) {
+                    authenticatedCustomerId = sessionVal;
                 }
             }
 
@@ -343,9 +357,10 @@ export async function POST(request: NextRequest) {
                 }
             }
 
-            const initialStatus = staffSession.ok
-                ? (isCashierRequest ? (authenticatedCustomerId ? 'pending_payment' : body.status || 'pending_payment') : body.status || 'paid')
-                : 'pending_payment';
+            const isClientOrder = Boolean(authenticatedCustomerId || body.asRequest || !staffSession.ok || paymentMethod === 'pago_caja');
+            const initialStatus = isClientOrder
+                ? 'pending_payment'
+                : (body.status || 'paid');
 
                     const isPending = ['pending_payment', 'pending_confirmation'].includes(initialStatus);
 

@@ -52,12 +52,6 @@ export default function UserAccount() {
             const res = await fetch('/api/customer/me');
             const data = await res.json();
             if (data.success && data.customer) {
-                const searchParams = new URLSearchParams(window.location.search);
-                const redirectParam = searchParams.get('redirect');
-                if (redirectParam) {
-                    window.location.href = redirectParam;
-                    return;
-                }
                 setCustomer(data.customer);
                 setOrders(data.customer.orders || []);
                 setProfileData({
@@ -147,8 +141,15 @@ export default function UserAccount() {
     };
 
     const handleLogout = async () => {
+        try {
+            await fetch('/api/customer/logout', { method: 'POST' });
+        } catch { }
         document.cookie = "admincom_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
         document.cookie = "msj-session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        document.cookie = "msj-role=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        document.cookie = "msj-role-sig=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        setCustomer(null);
+        setOrders([]);
         window.location.href = '/catalogo';
     };
 

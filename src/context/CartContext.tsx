@@ -426,7 +426,9 @@ export const useCart = () => {
             }
         }
 
-        let finalStatus = asRequest ? 'pending_payment' : 'paid';
+        const isStaff = ['sales', 'billing', 'admin', 'superadmin'].includes(profile?.role || '');
+        const shouldBePending = asRequest || !isStaff || customerData.paymentMethod === 'pago_caja';
+        let finalStatus = shouldBePending ? 'pending_payment' : 'paid';
         const expiresAt = asRequest ? new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString() : null;
 
         // BUG-7 FIX: Usar crypto.getRandomValues en lugar de Math.random() para el PIN de entrega.

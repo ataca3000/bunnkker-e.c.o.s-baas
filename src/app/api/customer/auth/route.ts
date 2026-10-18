@@ -35,17 +35,20 @@ export async function POST(req: NextRequest) {
                 .setExpirationTime('30d')
                 .sign(JWT_SECRET);
 
+            const sig = signRole('client', newCustomer.id);
             const isHttps = req.url.startsWith('https://') || req.headers.get('x-forwarded-proto') === 'https';
             const cookieOpts = {
-                httpOnly: true,
+                httpOnly: false,
                 secure: isHttps,
                 sameSite: (isHttps ? 'none' : 'lax') as 'none' | 'lax',
                 path: '/',
                 maxAge: 30 * 24 * 60 * 60
             };
             const res = NextResponse.json({ success: true, customer: newCustomer });
-            res.cookies.set('admincom_session', token, cookieOpts);
-            res.cookies.set('msj-session', token, cookieOpts);
+            res.cookies.set('admincom_session', token, { ...cookieOpts, httpOnly: true });
+            res.cookies.set('msj-session', newCustomer.id, cookieOpts);
+            res.cookies.set('msj-role', 'client', cookieOpts);
+            res.cookies.set('msj-role-sig', sig, cookieOpts);
             return res;
         }
 
@@ -120,17 +123,20 @@ export async function POST(req: NextRequest) {
             .setExpirationTime('30d')
             .sign(JWT_SECRET);
 
+        const sig = signRole('client', customer.id);
         const isHttps = req.url.startsWith('https://') || req.headers.get('x-forwarded-proto') === 'https';
         const cookieOpts = {
-            httpOnly: true,
+            httpOnly: false,
             secure: isHttps,
-            sameSite: 'lax' as const,
+            sameSite: (isHttps ? 'none' : 'lax') as 'none' | 'lax',
             path: '/',
             maxAge: 30 * 24 * 60 * 60
         };
         const res = NextResponse.json({ success: true, customer });
-        res.cookies.set('admincom_session', token, cookieOpts);
-        res.cookies.set('msj-session', token, cookieOpts);
+        res.cookies.set('admincom_session', token, { ...cookieOpts, httpOnly: true });
+        res.cookies.set('msj-session', customer.id, cookieOpts);
+        res.cookies.set('msj-role', 'client', cookieOpts);
+        res.cookies.set('msj-role-sig', sig, cookieOpts);
         
         return res;
     } catch (error: any) {
