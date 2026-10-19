@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Truck, MapPin, CheckCircle2, ShieldCheck, Loader2, RefreshCw } from 'lucide-react';
 import AdvancedMap from '@/components/AdvancedMap';
@@ -12,6 +13,7 @@ import { broadcastSync } from '@/lib/syncNotifier';
 import { getCustomerProfile, getCustomerAuthHeaders } from '@/lib/customerAuth';
 
 export default function CheckoutPage() {
+    const router = useRouter();
     const { cart, siteConfig, createOrder, products } = useCart();
     const [method, setMethod] = useState<'delivery' | 'pickup' | 'patio'>('pickup');
     
@@ -87,6 +89,12 @@ export default function CheckoutPage() {
             });
         return () => { active = false; };
     }, []);
+
+    useEffect(() => {
+        if (!customerLoading && !customerAccount) {
+            router.push('/cuenta?redirect=/carrito/checkout');
+        }
+    }, [customerLoading, customerAccount, router]);
 
     const handleGetLocation = () => {
         setGpsLoading(true);
@@ -348,9 +356,6 @@ export default function CheckoutPage() {
     }
 
     if (!customerAccount) {
-        if (typeof window !== 'undefined') {
-            window.location.href = '/cuenta?redirect=/carrito/checkout';
-        }
         return <div className="min-h-[70vh] flex items-center justify-center"><Loader2 className="animate-spin text-sky-500" size={32} /></div>;
     }
 

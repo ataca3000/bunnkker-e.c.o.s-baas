@@ -4,6 +4,7 @@ import React, { useEffect, useState, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle2, Loader2, ArrowRight } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 
 const Github = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -122,12 +123,12 @@ function GitHubSetupContent() {
             <p className="text-gray-400 text-sm">
               No se detectó una instalación válida de GitHub. Por favor, instala la app directamente desde el Marketplace.
             </p>
-            <a
+            <Link
               href="/github"
               className="inline-block mt-4 text-blue-400 hover:text-blue-300 text-sm font-medium"
             >
               Volver al inicio
-            </a>
+            </Link>
           </div>
         )}
       </motion.div>

@@ -112,7 +112,7 @@ export default function PricingPage() {
 
             if (data.url) {
                 // Redirigir a Stripe Checkout (ventana del banco)
-                window.location.href = data.url;
+                window.location.assign(data.url);
             }
         } catch (error: any) {
             toast.error(error.message || 'No se pudo iniciar el pago. Intenta de nuevo.');
