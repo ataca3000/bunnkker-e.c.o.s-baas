@@ -1,0 +1,199 @@
+{
+  "title": "مرتجعات الموردين",
+  "subtitle": "إدارة طلبات الإرجاع إلى الموردين وإشعارات الدائنية.",
+  "search": "بحث بالرقم أو المورد أو أمر الشراء…",
+  "actions": {
+    "new": "مرتجع جديد",
+    "submit": "إرسال للمورد",
+    "approve": "اعتماد المرتجع",
+    "reject": "رفض",
+    "cancel": "إلغاء المرتجع"
+  },
+  "columns": {
+    "number": "رقم المرتجع",
+    "supplier": "المورد",
+    "purchaseOrder": "مرجع أمر الشراء",
+    "returnDate": "تاريخ الإرجاع",
+    "reason": "السبب",
+    "amount": "المبلغ",
+    "status": "الحالة"
+  },
+  "status": {
+    "draft": "مسودة",
+    "submitted": "مُرسَل",
+    "approved": "معتمد",
+    "rejected": "مرفوض",
+    "completed": "مكتمل",
+    "cancelled": "ملغى",
+    "waiting_approval": "في انتظار الموافقة",
+    "sent": "تم الإرسال إلى المورد",
+    "credit_pending": "في انتظار الإشعار الدائن"
+  },
+  "reason": {
+    "damaged": "بضائع تالفة",
+    "wrong_item": "صنف خاطئ",
+    "excess_quantity": "كمية زائدة",
+    "quality_issue": "مشكلة في الجودة",
+    "expired": "منتج منتهي الصلاحية",
+    "other": "سبب آخر"
+  },
+  "form": {
+    "supplier": {
+      "label": "المورد",
+      "placeholder": "اختر مورداً…"
+    },
+    "purchaseOrder": {
+      "label": "أمر الشراء",
+      "placeholder": "اختر أمر شراء…"
+    },
+    "returnDate": "تاريخ الإرجاع",
+    "reason": {
+      "label": "سبب الإرجاع",
+      "placeholder": "اختر السبب…"
+    },
+    "notes": {
+      "label": "ملاحظات",
+      "placeholder": "وصف المشكلة…"
+    }
+  },
+  "lines": {
+    "title": "بنود المرتجع",
+    "addLine": "إضافة صنف",
+    "columns": {
+      "product": "المنتج",
+      "sku": "الرمز",
+      "receivedQty": "الكمية المستلمة",
+      "returnQty": "كمية الإرجاع",
+      "unit": "الوحدة",
+      "unitCost": "تكلفة الوحدة",
+      "totalCost": "الإجمالي"
+    },
+    "selectProduct": "اختر منتجاً…",
+    "noLines": "لم تُضف أصناف بعد."
+  },
+  "creditNote": {
+    "title": "إشعار دائنية",
+    "number": "رقم الإشعار",
+    "date": "تاريخ الإشعار",
+    "amount": "مبلغ الإشعار",
+    "applied": "مُطبَّق على الفواتير",
+    "balance": "الرصيد المتاح"
+  },
+  "drawer": {
+    "createTitle": "مرتجع مورد جديد",
+    "editTitle": "تعديل المرتجع",
+    "createSubtitle": "إنشاء طلب إرجاع بضائع للمورد.",
+    "submitCreate": "إنشاء المرتجع",
+    "submitEdit": "حفظ التغييرات",
+    "saving": "جارٍ الحفظ…",
+    "errorTitle": "تعذر الحفظ"
+  },
+  "page": {
+    "title": "مرتجعات الموردين",
+    "subtitle": "إدارة طلبات الإرجاع إلى الموردين بسبب العيوب أو الكميات الزائدة أو مشاكل الجودة.",
+    "newReturn": "مرتجع جديد",
+    "statusChips": {
+      "all": "الكل",
+      "draft": "مسودة",
+      "waiting": "في الانتظار",
+      "credit_pending": "الدائنية معلقة",
+      "completed": "مكتمل"
+    },
+    "search": "بحث في المرتجعات…",
+    "columns": {
+      "returnNo": "رقم المرتجع",
+      "supplier": "المورد",
+      "warehouse": "المستودع",
+      "returnDate": "تاريخ الإرجاع",
+      "reason": "السبب",
+      "totalValue": "القيمة الإجمالية",
+      "creditMethod": "طريقة الدائنية",
+      "status": "الحالة"
+    },
+    "empty": "لا توجد مرتجعات للموردين.",
+    "actions": {
+      "viewDetails": "عرض التفاصيل",
+      "submit": "إرسال للاعتماد",
+      "approve": "اعتماد",
+      "cancel": "إلغاء",
+      "delete": "حذف"
+    },
+    "confirmCancel": {
+      "title": "إلغاء المرتجع",
+      "description": "هل تريد إلغاء هذا المرتجع؟",
+      "confirm": "إلغاء المرتجع"
+    },
+    "confirmDelete": {
+      "title": "حذف المرتجع",
+      "description": "هل تريد حذف هذا المرتجع؟",
+      "confirm": "حذف"
+    },
+    "toast": {
+      "submitted": "تم إرسال المرتجع للاعتماد.",
+      "submitFailed": "فشل إرسال المرتجع.",
+      "approved": "تم اعتماد المرتجع.",
+      "approveFailed": "فشل اعتماد المرتجع.",
+      "cancelled": "تم إلغاء المرتجع.",
+      "cancelFailed": "فشل إلغاء المرتجع.",
+      "deleted": "تم حذف المرتجع.",
+      "deleteFailed": "فشل حذف المرتجع."
+    },
+    "pagination": {
+      "total": "{{count}} مرتجع",
+      "previous": "السابق",
+      "next": "التالي",
+      "page": "صفحة {{current}} من {{last}}"
+    }
+  },
+  "returnDrawer": {
+    "createTitle": "مرتجع مورد جديد",
+    "createHint": "أنشئ المرتجعات عبر نقطة النهاية POST /supplier-returns.",
+    "reasonLabel": "السبب",
+    "loading": "جارٍ التحميل…",
+    "tabs": {
+      "overview": "نظرة عامة",
+      "items": "الأصناف",
+      "timeline": "الجدول الزمني"
+    },
+    "overview": {
+      "fields": {
+        "supplier": "المورد",
+        "warehouse": "المستودع",
+        "returnDate": "تاريخ الإرجاع",
+        "reason": "السبب",
+        "creditMethod": "طريقة الدائنية",
+        "expectedCredit": "الدائنية المتوقعة"
+      },
+      "totalReturnValue": "إجمالي قيمة المرتجع",
+      "notes": "ملاحظات"
+    },
+    "items": {
+      "empty": "لا أصناف في هذا المرتجع."
+    },
+    "timeline": {
+      "events": {
+        "created": "تم الإنشاء",
+        "submitted": "تم الإرسال",
+        "approved": "معتمد",
+        "completed": "مكتمل"
+      }
+    },
+    "actions": {
+      "submit": "إرسال",
+      "approve": "اعتماد",
+      "cancel": "إلغاء"
+    },
+    "toast": {
+      "submitted": "تم إرسال المرتجع.",
+      "approved": "تم اعتماد المرتجع.",
+      "cancelled": "تم إلغاء المرتجع.",
+      "failed": "فشل الإجراء."
+    }
+  },
+  "statusTab": {
+    "draft": "مسودة",
+    "waiting": "في الانتظار",
+    "credit_pending": "في انتظار الإشعار الدائن",
+    "completed": "مكتمل"
+  }
+}

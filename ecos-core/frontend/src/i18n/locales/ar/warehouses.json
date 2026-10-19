@@ -1,0 +1,43 @@
+{
+  "title": "المستودعات",
+  "subtitle": "إدارة مواقع التخزين لمخزونك.",
+  "search": "بحث في المستودعات…",
+  "actions": {
+    "new": "مستودع جديد",
+    "create": "إنشاء مستودع",
+    "edit": "تعديل المستودع"
+  },
+  "columns": {
+    "code": "الرمز",
+    "name": "الاسم",
+    "company": "الشركة",
+    "branch": "الفرع",
+    "city": "المدينة",
+    "status": "الحالة"
+  },
+  "form": {
+    "code": { "label": "الرمز", "placeholder": "WH-01" },
+    "name": { "label": "الاسم", "placeholder": "المستودع الرئيسي" },
+    "company": { "label": "الشركة", "placeholder": "اختر شركة…" },
+    "branch": { "label": "الفرع", "placeholder": "اختر فرعاً…" },
+    "phone": "الهاتف",
+    "country": "الدولة",
+    "city": "المدينة",
+    "address": "العنوان",
+    "active": "نشط"
+  },
+  "drawer": {
+    "createTitle": "إنشاء مستودع",
+    "editTitle": "تعديل المستودع",
+    "createSubtitle": "إضافة مستودع جديد إلى مؤسستك.",
+    "editSubtitle": "تحديث تفاصيل المستودع أدناه.",
+    "submitCreate": "إنشاء مستودع",
+    "submitEdit": "حفظ التغييرات",
+    "saving": "جارٍ الحفظ…",
+    "errorTitle": "تعذر الحفظ"
+  },
+  "delete": {
+    "title": "حذف المستودع",
+    "confirm": "حذف"
+  }
+}

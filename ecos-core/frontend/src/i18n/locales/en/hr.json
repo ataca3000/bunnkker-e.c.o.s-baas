@@ -1,0 +1,299 @@
+{
+  "common": {
+    "cancel": "Cancel",
+    "save": "Save",
+    "saveChanges": "Save Changes",
+    "saving": "Saving…",
+    "creating": "Creating…",
+    "clear": "Clear",
+    "search": "Search",
+    "loading": "Loading…",
+    "notAssigned": "Not assigned",
+    "system": "system",
+    "department": "Department",
+    "allDepartments": "All Departments",
+    "employee": "Employee",
+    "status": "Status",
+    "notes": "Notes",
+    "date": "Date",
+    "actions": "Actions"
+  },
+  "employees": {
+    "title": "Employees",
+    "subtitle": "The single source of truth for workforce identity — referenced by every other module.",
+    "newEmployee": "New Employee",
+    "searchPlaceholder": "Search by name, number or email…",
+    "stats": {
+      "total": "Total Employees",
+      "activeOnPage": "Active (this page)",
+      "onLeaveOnPage": "On Leave (this page)"
+    },
+    "filters": {
+      "department": "Department",
+      "allDepartments": "All Departments",
+      "status": "Status",
+      "allStatuses": "All"
+    },
+    "status": {
+      "active": "Active",
+      "probation": "Probation",
+      "onLeave": "On Leave",
+      "suspended": "Suspended",
+      "resigned": "Resigned",
+      "terminated": "Terminated"
+    },
+    "table": {
+      "number": "Number",
+      "name": "Name",
+      "department": "Department",
+      "position": "Position",
+      "workEmail": "Work Email",
+      "hired": "Hired",
+      "status": "Status"
+    },
+    "actions": {
+      "menuLabel": "Actions for {{name}}",
+      "view360": "Employee 360",
+      "endEmployment": "End Employment"
+    },
+    "terminate": {
+      "title": "End Employment",
+      "description": "End {{name}}'s employment? This is final — a returning employee is rehired, not restored.",
+      "confirm": "End Employment"
+    }
+  },
+  "employeeForm": {
+    "title": "New Employee",
+    "description": "Creates the workforce identity every other module will reference.",
+    "submit": "Create Employee",
+    "positionFull": "(full)",
+    "fields": {
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "workEmail": "Work Email",
+      "mobile": "Mobile",
+      "nationalId": "National ID",
+      "hireDate": "Hire Date",
+      "department": "Department",
+      "position": "Position",
+      "jobGrade": "Job Grade",
+      "employmentType": "Employment Type"
+    },
+    "errors": {
+      "nameRequired": "A first and last name are required.",
+      "createFailed": "The employee could not be created."
+    }
+  },
+  "orgChart": {
+    "title": "Organization Chart",
+    "subtitle": "Reporting lines across the company. Click a name to open their Employee 360.",
+    "noPosition": "No position",
+    "empty": "No employees yet. Once people are added they appear here, and assigning managers nests them.",
+    "stats": {
+      "employees": "Employees",
+      "topLevel": "Top-level",
+      "outsideChart": "Outside the chart"
+    }
+  },
+  "tags": {
+    "title": "Applicant Tags",
+    "subtitle": "A company catalogue, not typed words — which is why filtering by one actually finds everybody.",
+    "catalogue": "Catalogue",
+    "matchAll": "Matching ALL selected tags",
+    "matchAny": "Matching ANY selected tag",
+    "applicantCount_one": "{{count}} applicant",
+    "applicantCount_other": "{{count}} applicants",
+    "matchingApplicants": "Matching applicants",
+    "selectTagHint": "Select a tag above to filter the pool.",
+    "emptyAll": "Nobody carries all of these tags.",
+    "emptyAny": "Nobody carries any of these tags.",
+    "talentPool": "talent pool",
+    "timeline": "Timeline",
+    "pickApplicantHint": "Pick an applicant to read their whole story in order.",
+    "timelineEmpty": "Nothing recorded yet.",
+    "applicantCount": "{{count}} applicants"
+  },
+  "attendance": {
+    "title": "Attendance",
+    "subtitle": "Register the day for your team. Re-registering a day corrects it — it never duplicates.",
+    "saveRegister": "Save Register",
+    "savedSummary": "Registered {{registered}} of {{total}}.",
+    "holidayNotice": "— the company is closed, so every row defaults to holiday.",
+    "nonWorkingDayNotice": "This is not a working day under the company calendar — rows default to rest day.",
+    "markAll": "Mark all",
+    "emptySheet": "No employees to register for this date.",
+    "recorded": "Recorded",
+    "notYet": "Not yet",
+    "status": {
+      "present": "Present",
+      "absent": "Absent",
+      "leave": "Leave",
+      "holiday": "Holiday",
+      "restDay": "Rest Day"
+    },
+    "table": {
+      "number": "Number",
+      "employee": "Employee",
+      "department": "Department",
+      "recorded": "Recorded",
+      "status": "Status"
+    }
+  },
+  "careers": {
+    "portal": {
+      "eyebrow": "Careers",
+      "heading": "Open roles",
+      "intro": "Every role we are currently hiring for. Apply directly — you will get a reference number straight away.",
+      "searchPlaceholder": "Search roles or locations…",
+      "searchLabel": "Search roles",
+      "loading": "Loading roles…",
+      "loadError": "We could not load the roles just now. Please try again shortly.",
+      "emptyTitle": "No open roles right now",
+      "emptySearch": "Nothing matched that search.",
+      "emptyHint": "Please check back soon.",
+      "openings_one": "{{count}} position",
+      "openings_other": "{{count}} positions",
+      "viewAndApply": "View & Apply",
+      "openings": "{{count}} openings"
+    },
+    "apply": {
+      "allRoles": "All roles",
+      "backToRoles": "Back to all roles",
+      "unavailableTitle": "This role is not available",
+      "unavailableHint": "It may have closed since you followed the link.",
+      "receiptBody": "Your reference for <title>{{jobTitle}}</title> is <ref>{{reference}}</ref>. Please keep it for your records.",
+      "aboutRole": "About the role",
+      "responsibilities": "Responsibilities",
+      "requirements": "Requirements",
+      "applyHeading": "Apply",
+      "closed": "This role is no longer accepting applications.",
+      "yourDetails": "Your details",
+      "yourExperience": "Your experience",
+      "submitting": "Submitting…",
+      "submitButton": "Submit application",
+      "submitFailed": "Your application could not be submitted.",
+      "fields": {
+        "fullName": "Full name",
+        "mobile": "Mobile number",
+        "email": "Email",
+        "birthDate": "Date of birth",
+        "yearsExperience": "Years of experience",
+        "currentEmployer": "Current or previous employer",
+        "expectedSalary": "Expected salary",
+        "availableFrom": "Available from",
+        "cv": "CV / Resume (PDF or Word, up to 5 MB)",
+        "additionalNotes": "Anything else you would like us to know"
+      }
+    }
+  },
+  "employee360": {
+    "breadcrumbWorkforce": "Workforce",
+    "stats": {
+      "tenure": "Tenure",
+      "tenureDays": "Days of service",
+      "present30d": "Present (30 days)",
+      "absent30d": "Absent (30 days)",
+      "attendanceRate": "Attendance Rate"
+    },
+    "expiringDocuments": "Expiring Documents",
+    "placement": {
+      "title": "Placement",
+      "department": "Department",
+      "position": "Position",
+      "jobGrade": "Job Grade",
+      "employmentType": "Employment Type",
+      "hireDate": "Hire Date",
+      "terminationDate": "Termination Date"
+    },
+    "contract": {
+      "title": "Contract",
+      "none": "No active contract",
+      "number": "Contract #",
+      "type": "Contract Type",
+      "status": "Status",
+      "start": "Start Date",
+      "end": "End Date",
+      "openEnded": "Open-ended",
+      "weeklyHours": "Weekly Hours",
+      "daysUntilExpiry": "Days Until Expiry"
+    },
+    "reporting": {
+      "title": "Reporting Line",
+      "manager": "Manager",
+      "chain": "Reporting Chain",
+      "directReports": "Direct Reports"
+    },
+    "contact": {
+      "title": "Contact Details",
+      "workEmail": "Work Email",
+      "personalEmail": "Personal Email",
+      "mobile": "Mobile",
+      "phone": "Phone",
+      "city": "City",
+      "country": "Country",
+      "emergencyContact": "Emergency Contact",
+      "emergencyPhone": "Emergency Phone"
+    },
+    "documents": {
+      "title": "Documents",
+      "none": "No documents",
+      "expires": "Expires",
+      "noExpiry": "No expiry"
+    }
+  },
+  "leave": {
+    "errors": {
+      "employeeRequired": "Select an employee",
+      "submitFailed": "Could not submit the leave request"
+    },
+    "title": "Leave Requests",
+    "subtitle": "Review and decide employee leave requests.",
+    "newRequest": "New Request",
+    "stats": {
+      "showing": "Showing",
+      "awaitingApproval": "Awaiting Approval",
+      "daysRequested": "Days Requested"
+    },
+    "status": {
+      "all": "All",
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "cancelled": "Cancelled"
+    },
+    "empty": "No leave requests",
+    "table": {
+      "number": "Request #",
+      "employee": "Employee",
+      "dates": "Dates",
+      "days": "Days",
+      "payroll": "Payroll",
+      "status": "Status",
+      "decision": "Decision"
+    },
+    "approve": "Approve",
+    "reject": "Reject",
+    "form": {
+      "title": "New Leave Request",
+      "description": "Submit a leave request for an employee.",
+      "submitting": "Submitting…",
+      "submit": "Submit Request",
+      "chooseEmployee": "Choose an employee",
+      "from": "From",
+      "to": "To",
+      "payrollTreatment": "Payroll Treatment",
+      "deductSalary": "Deduct from salary",
+      "doNotDeductSalary": "Do not deduct from salary",
+      "payrollHint": "Determines whether the leave days are deducted from the employee salary.",
+      "reason": "Reason",
+      "optional": "Optional"
+    },
+    "decide": {
+      "approveTitle": "Approve leave request",
+      "rejectTitle": "Reject leave request",
+      "approveDescription": "Approve this leave request?",
+      "thisEmployee": "this employee",
+      "rejectDescription": "Reject this leave request?"
+    }
+  }
+}

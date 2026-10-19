@@ -1,0 +1,22 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Modules\Logistics\Dispatch\Domain\Events;
+
+use Illuminate\Foundation\Events\Dispatchable;
+use Illuminate\Queue\SerializesModels;
+use Modules\Logistics\Dispatch\Domain\Models\DispatchProposal;
+
+/**
+ * Resources were committed in V1. Partial success is normal.
+ */
+class DispatchReleased
+{
+    use Dispatchable, SerializesModels;
+
+    public function __construct(
+        public readonly DispatchProposal $proposal,
+        public readonly ?string $actor = null,
+    ) {}
+}

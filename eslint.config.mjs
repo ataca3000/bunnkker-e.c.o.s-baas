@@ -20,6 +20,7 @@ export default [
       "src/__tests__/**",
       "tests/**",
       "lfeds/**",
+      "ecos-core/**",
     ],
   },
 

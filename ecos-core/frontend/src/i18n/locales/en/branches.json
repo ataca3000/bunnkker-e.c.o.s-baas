@@ -1,0 +1,53 @@
+{
+  "title": "Branches",
+  "subtitle": "Manage branches within your companies.",
+  "search": "Search branches…",
+  "actions": {
+    "new": "New Branch",
+    "create": "Create branch",
+    "edit": "Edit Branch",
+    "deactivate": "Deactivate"
+  },
+  "columns": {
+    "code": "Code",
+    "name": "Name",
+    "company": "Company",
+    "phone": "Phone",
+    "city": "City",
+    "headOffice": "Head Office",
+    "status": "Status",
+    "createdAt": "Created At"
+  },
+  "form": {
+    "code": { "label": "Code", "placeholder": "HQ" },
+    "name": { "label": "Name", "placeholder": "Headquarters" },
+    "company": { "label": "Company", "placeholder": "Select company…" },
+    "email": { "label": "Email", "placeholder": "branch@example.com" },
+    "phone": "Phone",
+    "mobile": "Mobile",
+    "country": "Country",
+    "city": "City",
+    "address": "Address",
+    "headOffice": "Head office",
+    "active": "Active"
+  },
+  "drawer": {
+    "createTitle": "Create Branch",
+    "editTitle": "Edit Branch",
+    "createSubtitle": "Add a new branch to a company.",
+    "editSubtitle": "Update the branch details below.",
+    "submitCreate": "Create branch",
+    "submitEdit": "Save changes",
+    "saving": "Saving…",
+    "errorTitle": "Unable to save"
+  },
+  "delete": {
+    "title": "Delete branch",
+    "confirm": "Delete"
+  },
+  "deactivate": {
+    "title": "Deactivate Branch",
+    "description": "This will mark \"{{name}}\" as inactive. You can re-activate it later by editing the branch.",
+    "confirm": "Deactivate"
+  }
+}

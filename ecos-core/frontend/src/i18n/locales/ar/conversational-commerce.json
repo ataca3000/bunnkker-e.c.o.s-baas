@@ -1,0 +1,57 @@
+{
+  "title": "التجارة الحوارية",
+  "subtitle": "البيع والدعم عبر واتساب وقنوات المراسلة.",
+  "inbox": {
+    "title": "صندوق الوارد الموحد",
+    "subtitle": "جميع المحادثات في مكان واحد.",
+    "search": "بحث في المحادثات…",
+    "noConversations": "لا توجد محادثات بعد.",
+    "newMessage": "رسالة جديدة",
+    "filters": {
+      "all": "الكل",
+      "unread": "غير مقروءة",
+      "open": "مفتوحة",
+      "resolved": "مُحلَّة",
+      "assigned": "مُسنَدة إليّ"
+    }
+  },
+  "conversation": {
+    "resolve": "تحديد كـ: مُحلَّة",
+    "reopen": "إعادة فتح",
+    "assign": "إسناد",
+    "createOrder": "إنشاء طلب",
+    "viewCustomer": "عرض ملف العميل",
+    "attachProduct": "إرفاق منتج",
+    "sendCatalog": "إرسال الكتالوج",
+    "typeMessage": "اكتب رسالة…",
+    "send": "إرسال",
+    "uploadFile": "رفع ملف"
+  },
+  "templates": {
+    "title": "قوالب الرسائل",
+    "subtitle": "قوالب رسائل WhatsApp Business المعتمدة.",
+    "search": "بحث في القوالب…",
+    "actions": {
+      "new": "قالب جديد",
+      "preview": "معاينة",
+      "send": "إرسال القالب"
+    },
+    "columns": {
+      "name": "اسم القالب",
+      "category": "الفئة",
+      "language": "اللغة",
+      "status": "الحالة"
+    },
+    "status": {
+      "approved": "معتمد",
+      "pending": "بانتظار الاعتماد",
+      "rejected": "مرفوض"
+    }
+  },
+  "catalog": {
+    "title": "كتالوج المنتجات",
+    "subtitle": "مشاركة المنتجات مباشرة في محادثات واتساب.",
+    "search": "بحث في المنتجات…",
+    "sendToCustomer": "إرسال إلى العميل"
+  }
+}

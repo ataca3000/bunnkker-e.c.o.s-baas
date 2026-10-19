@@ -1,0 +1,145 @@
+{
+  "title": "مراقبة المخزون",
+  "dashboard": {
+    "title": "لوحة تحكم المخزون",
+    "subtitle": "صحة المخزون الفعلية وتحليلات الجرد.",
+    "breadcrumb": {
+      "home": "الرئيسية",
+      "page": "لوحة التحكم"
+    },
+    "sections": {
+      "inventoryValue": "قيمة المخزون",
+      "countHealth": "صحة جلسات الجرد",
+      "variances": "أعلى الفروقات"
+    },
+    "kpis": {
+      "accuracy": "دقة المخزون",
+      "openSessions": "جلسات الجرد المفتوحة",
+      "productsWithVariance": "منتجات بها فرق",
+      "adjustmentValue": "قيمة التسوية (الشهر)",
+      "shrinkage": "الانكماش (الشهر)",
+      "lastCountDate": "آخر تاريخ جرد",
+      "never": "لم يُجرد",
+      "notAvailable": "غير متاح",
+      "totalValue": "إجمالي قيمة المخزون",
+      "rawMaterials": "قيمة المواد الخام",
+      "finishedGoods": "قيمة المنتجات التامة",
+      "packagingMaterials": "قيمة مواد التغليف",
+      "availableUnits": "الوحدات المتاحة",
+      "unitsOnHand": "وحدة في المخزون",
+      "reserved": "محجوز",
+      "sku": "رمز",
+      "matched": "متطابق"
+    },
+    "health": {
+      "excellent": "ممتاز",
+      "good": "جيد",
+      "warning": "تحذير",
+      "critical": "حرج",
+      "unknown": "لا بيانات"
+    },
+    "noData": "لا توجد بيانات",
+    "topVariances": {
+      "negativeTitle": "أعلى الفروقات السالبة (نقص)",
+      "positiveTitle": "أعلى الفروقات الموجبة (زيادة)",
+      "product": "المنتج",
+      "sku": "الرمز",
+      "varianceQty": "الفرق (الكمية)",
+      "varianceValue": "الفرق (القيمة)"
+    },
+    "recentSessions": {
+      "title": "جلسات الجرد الأخيرة",
+      "session": "الجلسة",
+      "warehouse": "المستودع",
+      "completedAt": "اكتملت",
+      "completionDate": "تاريخ الاكتمال",
+      "accuracy": "الدقة",
+      "status": "الحالة",
+      "noSessions": "لا توجد جلسات بعد.",
+      "createSession": "إنشاء جلسة"
+    }
+  },
+  "abc": {
+    "title": "تصنيف ABC",
+    "description": "تصنيف المنتجات حسب قيمة الاستهلاك السنوي — A (أعلى 70%)، B (20% التالية)، C (آخر 10%)",
+    "recalculate": "إعادة الحساب",
+    "recalculating": "جارٍ الحساب…",
+    "recalculatedAt": "آخر حساب:",
+    "filterAll": "الكل",
+    "filterA": "الفئة A",
+    "filterB": "الفئة B",
+    "filterC": "الفئة C",
+    "table": {
+      "product": "المنتج",
+      "sku": "الرمز",
+      "class": "الفئة",
+      "annualValue": "قيمة الاستهلاك السنوي",
+      "cumulativePct": "النسبة التراكمية %",
+      "calculatedAt": "تاريخ الحساب"
+    },
+    "classLabels": {
+      "A": "A — شهري",
+      "B": "B — ربع سنوي",
+      "C": "C — نصف سنوي"
+    }
+  },
+  "cyclePlanner": {
+    "title": "مخطط الجرد الدوري",
+    "overdueAlert": "{{count}} منتج(ات) متأخر(ة) في الجرد",
+    "filterAll": "الكل",
+    "filterOverdue": "المتأخرة فقط",
+    "table": {
+      "product": "المنتج",
+      "sku": "الرمز",
+      "class": "فئة ABC",
+      "frequency": "التكرار",
+      "lastCounted": "آخر جرد",
+      "nextDue": "الموعد القادم",
+      "status": "الحالة"
+    },
+    "status": {
+      "overdue": "متأخر",
+      "upcoming": "في الموعد"
+    },
+    "frequencies": {
+      "30": "شهري (30 يوم)",
+      "90": "ربع سنوي (90 يوم)",
+      "180": "نصف سنوي (180 يوم)"
+    },
+    "neverCounted": "لم يُجرد مطلقاً"
+  },
+  "variance": {
+    "title": "تحليلات الفروقات",
+    "frequentlyMissing": "الأكثر نقصاً",
+    "frequentlyOvercounted": "الأكثر زيادة",
+    "byWarehouse": "حسب المستودع",
+    "byCategory": "حسب الفئة",
+    "monthlyTrend": "الاتجاه لـ 12 شهراً",
+    "table": {
+      "product": "المنتج",
+      "sku": "الرمز",
+      "warehouse": "المستودع",
+      "category": "الفئة",
+      "count": "مرات الحدوث",
+      "totalQty": "إجمالي الكمية",
+      "totalValue": "إجمالي القيمة",
+      "adjIn": "إضافة",
+      "adjOut": "خصم",
+      "netVariance": "صافي الفرق",
+      "month": "الشهر"
+    }
+  },
+  "warehousePerformance": {
+    "title": "أداء المستودعات",
+    "table": {
+      "warehouse": "المستودع",
+      "accuracy": "دقة %",
+      "avgVariance": "متوسط الفرق %",
+      "adjIn": "إضافة",
+      "adjOut": "خصم",
+      "completionRate": "معدل الإنجاز",
+      "openCounts": "جرد مفتوح",
+      "totalSessions": "إجمالي الجلسات"
+    }
+  }
+}

@@ -1,0 +1,235 @@
+{
+  "title": "العملاء",
+  "subtitle": "البحث بالهاتف، الاسم، رقم الطلب أو العنوان.",
+  "search": "البحث بالهاتف، الاسم، العنوان أو رقم الطلب…",
+  "actions": {
+    "new": "عميل جديد",
+    "create": "إنشاء عميل",
+    "edit": "تعديل العميل",
+    "export": "تصدير",
+    "merge": "دمج",
+    "import": "استيراد"
+  },
+  "quickStats": {
+    "total": "إجمالي العملاء",
+    "active": "نشط",
+    "inactive": "غير نشط (90 يوم)",
+    "vip": "مميز"
+  },
+  "quickCard": {
+    "openCustomer": "فتح الملف",
+    "openActiveOrder": "فتح الطلب النشط",
+    "createOrder": "طلب جديد",
+    "call": "اتصال",
+    "whatsapp": "واتساب",
+    "copyPhone": "نسخ الرقم",
+    "copyAddress": "نسخ العنوان",
+    "openMap": "فتح الخريطة",
+    "addNote": "إضافة ملاحظة",
+    "editAddress": "تعديل العنوان",
+    "noActiveOrder": "لا توجد طلبات نشطة",
+    "lastOrder": "آخر طلب",
+    "totalOrders": "إجمالي الطلبات",
+    "customerMemory": "ذاكرة العميل",
+    "noMemory": "لا توجد ملاحظات مثبتة.",
+    "viewAllNotes": "عرض جميع الملاحظات",
+    "returning": "عميل متكرر",
+    "vip": "مميز",
+    "editCustomer": "تعديل العميل",
+    "activeOrder": "طلب نشط",
+    "goToOrders": "الذهاب للطلبات",
+    "loadingOrders": "جارٍ تحميل الطلبات…"
+  },
+  "noResults": {
+    "title": "العميل غير موجود",
+    "description": "لا يوجد عميل يطابق هذا الرقم أو الاسم.",
+    "createWithPhone": "إنشاء عميل بهذا الرقم"
+  },
+  "smartOps": {
+    "newCustomer": "عميل جديد",
+    "export": "تصدير",
+    "merge": "دمج",
+    "print": "طباعة",
+    "more": "المزيد"
+  },
+  "columns": {
+    "customer": "العميل",
+    "phones": "الهواتف",
+    "address": "العنوان",
+    "defaultAddress": "العنوان الافتراضي",
+    "lastOrder": "آخر طلب",
+    "previousOrders": "الطلبات السابقة",
+    "intelligence": "ذكاء",
+    "status": "الحالة",
+    "createdAt": "تاريخ الإنشاء",
+    "actions": "الإجراءات",
+    "code": "الكود",
+    "name": "الاسم",
+    "contactPerson": "جهة الاتصال",
+    "email": "البريد الإلكتروني",
+    "phone": "الهاتف",
+    "country": "الدولة",
+    "city": "المدينة"
+  },
+  "intelligence": {
+    "hasNotes": "ملاحظات",
+    "returning": "متكرر"
+  },
+  "table": {
+    "empty": "لا يوجد عملاء.",
+    "error": "فشل تحميل العملاء. يرجى المحاولة مجدداً.",
+    "selectAll": "تحديد الكل",
+    "viewOrders": "عرض الطلبات"
+  },
+  "phone": {
+    "call": "اتصال",
+    "whatsapp": "واتساب",
+    "copy": "نسخ الرقم",
+    "copied": "تم النسخ!",
+    "primary": "رئيسي",
+    "secondary": "ثانوي",
+    "more": "+{{count}} أكثر"
+  },
+  "tags": {
+    "vip": "مميز",
+    "wholesale": "جملة",
+    "inactive": "غير نشط"
+  },
+  "form": {
+    "code": {
+      "label": "الكود",
+      "placeholder": "CUST-001"
+    },
+    "name": {
+      "label": "اسم العميل",
+      "placeholder": "مثال: أحمد محمد"
+    },
+    "phone": "الهاتف الرئيسي",
+    "phonePlaceholder": "أدخل رقم الهاتف…",
+    "mobile": "هاتف ثانوي",
+    "contactPerson": "جهة الاتصال",
+    "email": {
+      "label": "البريد الإلكتروني",
+      "placeholder": "customer@example.com"
+    },
+    "country": "الدولة",
+    "city": "المدينة",
+    "address": "العنوان",
+    "notes": {
+      "label": "ملاحظات",
+      "placeholder": "ملاحظات اختيارية…"
+    },
+    "active": "نشط",
+    "brand": {
+      "label": "العلامة التجارية",
+      "placeholder": "اختر علامة تجارية"
+    }
+  },
+  "drawer": {
+    "createTitle": "عميل جديد",
+    "editTitle": "تعديل العميل",
+    "createSubtitle": "إضافة عميل جديد. الاسم والهاتف مطلوبان فقط.",
+    "editSubtitle": "قم بتحديث بيانات العميل أدناه.",
+    "submitCreate": "إنشاء العميل",
+    "submitEdit": "حفظ التغييرات",
+    "saving": "جارٍ الحفظ…",
+    "errorTitle": "تعذّر الحفظ",
+    "savedMessage": "تم حفظ التغييرات بنجاح.",
+    "phoneStep": {
+      "title": "أدخل الهاتف الرئيسي",
+      "description": "سنتحقق من وجود العميل في النظام.",
+      "label": "رقم الهاتف الرئيسي",
+      "placeholder": "01012345678",
+      "continue": "متابعة",
+      "checking": "جارٍ التحقق…"
+    },
+    "foundCustomer": {
+      "title": "العميل موجود بالفعل",
+      "description": "تم العثور على عميل بهذا الرقم.",
+      "open": "فتح العميل الموجود",
+      "cancel": "إلغاء"
+    },
+    "tabs": {
+      "summary": "ملخص",
+      "phones": "الهواتف",
+      "addresses": "العناوين",
+      "orders": "الطلبات",
+      "activity": "النشاط",
+      "memory": "الذاكرة",
+      "audit": "السجل"
+    },
+    "summary": {
+      "code": "كود العميل",
+      "contactPerson": "جهة الاتصال",
+      "email": "البريد الإلكتروني",
+      "status": "الحالة",
+      "memberSince": "عضو منذ",
+      "lastUpdated": "آخر تحديث",
+      "totalOrders": "إجمالي الطلبات",
+      "lastOrder": "آخر طلب",
+      "totalSpend": "إجمالي الإنفاق",
+      "noOrders": "لا توجد طلبات بعد.",
+      "brands": "العلامات التجارية",
+      "brandOrders": "الطلبات حسب العلامة التجارية"
+    },
+    "phonesTab": {
+      "title": "أرقام الهاتف",
+      "noPhone": "لا توجد أرقام هاتف مسجلة.",
+      "primary": "رئيسي",
+      "secondary": "ثانوي"
+    },
+    "addresses": {
+      "title": "دفتر العناوين",
+      "default": "العنوان الافتراضي",
+      "noAddress": "لا يوجد عنوان مسجل.",
+      "copyAddress": "نسخ العنوان",
+      "openMap": "فتح الخريطة",
+      "city": "المدينة",
+      "country": "الدولة"
+    },
+    "memory": {
+      "title": "ذاكرة العميل",
+      "empty": "لا توجد ملاحظات بعد.",
+      "edit": "تعديل الملاحظات",
+      "note": "ملاحظة مثبتة"
+    },
+    "activity": {
+      "title": "النشاط",
+      "empty": "سجل النشاط غير متاح بعد.",
+      "comingSoon": "قريباً"
+    },
+    "orders": {
+      "empty": "لا توجد طلبات لهذا العميل.",
+      "more": "+{{count}} أكثر"
+    }
+  },
+  "detail": {
+    "tabs": {
+      "overview": "نظرة عامة",
+      "contact": "التواصل",
+      "notes": "الملاحظات",
+      "orders": "الطلبات"
+    },
+    "contactPerson": "جهة الاتصال",
+    "email": "البريد الإلكتروني",
+    "createdAt": "تاريخ الإنشاء",
+    "updatedAt": "تاريخ التحديث",
+    "phones": "الهواتف",
+    "noPhone": "لا توجد أرقام هاتف مسجلة.",
+    "address": "العنوان",
+    "copyAddress": "نسخ العنوان",
+    "openMap": "فتح الخريطة",
+    "noAddress": "لا يوجد عنوان مسجل.",
+    "noNotes": "لا توجد ملاحظات بعد.",
+    "noOrders": "لا توجد طلبات لهذا العميل.",
+    "moreOrders": "+{{count}} طلب إضافي"
+  },
+  "delete": {
+    "title": "حذف العميل",
+    "confirm": "حذف"
+  },
+  "profile": {
+    "notFound": "العميل غير موجود",
+    "backToCustomers": "العودة إلى العملاء"
+  }
+}

@@ -1,0 +1,124 @@
+{
+  "title": "Purchase Orders",
+  "subtitle": "Manage procurement from your suppliers.",
+  "search": "Search purchase orders…",
+  "actions": {
+    "new": "New Purchase Order",
+    "create": "Create purchase order",
+    "submit": "Submit for Approval",
+    "approve": "Approve",
+    "cancel": "Cancel"
+  },
+  "filters": {
+    "status": "Status",
+    "allStatuses": "All statuses",
+    "warehouse": "Warehouse",
+    "supplier": "Supplier",
+    "dateFrom": "From Date",
+    "dateTo": "To Date"
+  },
+  "status": {
+    "draft": "Draft",
+    "submitted": "Submitted",
+    "approved": "Approved",
+    "partially_received": "Partially Received",
+    "received": "Received",
+    "cancelled": "Cancelled"
+  },
+  "columns": {
+    "number": "Number",
+    "supplier": "Supplier",
+    "warehouse": "Warehouse",
+    "orderDate": "Order Date",
+    "expectedDate": "Expected Date",
+    "total": "Total",
+    "receivedPct": "Received",
+    "status": "Status"
+  },
+  "form": {
+    "supplier": { "label": "Supplier", "placeholder": "Select supplier…" },
+    "orderDate": "Order Date",
+    "expectedDate": "Expected Date",
+    "notes": { "label": "Notes", "placeholder": "Optional notes…" }
+  },
+  "lines": {
+    "title": "Order Lines",
+    "addLine": "Add line",
+    "columns": {
+      "product": "Product",
+      "quantity": "Quantity",
+      "unitPrice": "Unit Price",
+      "total": "Total"
+    },
+    "selectProduct": "Select product…",
+    "noLines": "No lines added yet."
+  },
+  "totals": {
+    "subtotal": "Subtotal",
+    "total": "Total"
+  },
+  "detail": {
+    "title": "Purchase Order",
+    "orderInfo": "Order Information",
+    "orderDetails": "Order Details",
+    "lineItems": "Line Items",
+    "supplier": "Supplier",
+    "warehouse": "Warehouse",
+    "orderDate": "Order Date",
+    "expectedDate": "Expected Date",
+    "status": "Status",
+    "notes": "Notes",
+    "product": "Product",
+    "qty": "Qty",
+    "receivedQty": "Received",
+    "remainingQty": "Remaining",
+    "unitPrice": "Unit Price",
+    "lineTotal": "Line Total",
+    "financials": "Financial Summary",
+    "subtotal": "Subtotal",
+    "discount": "Discount",
+    "shipping": "Shipping",
+    "additionalCosts": "Additional Costs",
+    "grandTotal": "Grand Total",
+    "loading": "Loading…",
+    "notFound": "Not Found",
+    "notFoundMessage": "This purchase order does not exist."
+  },
+  "create": {
+    "title": "New Purchase Order",
+    "new": "New",
+    "subtitle": "Create a draft purchase order.",
+    "orderDetails": "Order Details",
+    "submitCreate": "Create Order",
+    "creating": "Creating…",
+    "errorTitle": "Unable to create order"
+  },
+  "edit": {
+    "title": "Edit Purchase Order",
+    "subtitle": "Update the purchase order details.",
+    "submitEdit": "Save changes",
+    "saving": "Saving…",
+    "errorTitle": "Unable to save"
+  },
+  "dialogs": {
+    "submit": {
+      "title": "Submit purchase order",
+      "description": "Submit {{number}} for approval?",
+      "confirm": "Submit"
+    },
+    "approve": {
+      "title": "Approve purchase order",
+      "description": "Approve {{number}}? The order will become read-only after approval.",
+      "confirm": "Approve"
+    },
+    "cancel": {
+      "title": "Cancel purchase order",
+      "description": "Cancel {{number}}? This cannot be undone.",
+      "confirm": "Cancel Order"
+    }
+  },
+  "delete": {
+    "title": "Delete purchase order",
+    "confirm": "Delete"
+  }
+}

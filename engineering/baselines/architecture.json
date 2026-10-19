@@ -1,0 +1,11 @@
+{
+  "totals": {
+    "files": 1019,
+    "features": 49,
+    "crossFeatureEdges": 118,
+    "crossFeatureImports": 228,
+    "layerViolations": 16,
+    "graphNodes": 42,
+    "largestCycle": 23
+  }
+}

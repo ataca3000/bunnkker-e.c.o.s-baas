@@ -1,0 +1,51 @@
+{
+  "title": "النواة الأساسية",
+  "permissions": {
+    "title": "الصلاحيات",
+    "denied": "ليس لديك صلاحية تنفيذ هذا الإجراء.",
+    "contactAdmin": "تواصل مع مسؤول النظام."
+  },
+  "errors": {
+    "unexpected": "حدث خطأ غير متوقع.",
+    "networkError": "خطأ في الشبكة. تحقق من اتصالك وحاول مجدداً.",
+    "serverError": "خطأ في الخادم. يرجى المحاولة لاحقاً.",
+    "notFound": "المورد المطلوب غير موجود.",
+    "forbidden": "الوصول مرفوض.",
+    "validationFailed": "يرجى تصحيح الأخطاء أدناه."
+  },
+  "session": {
+    "expired": "انتهت جلستك. يرجى تسجيل الدخول مجدداً.",
+    "expiringSoon": "ستنتهي جلستك خلال {{minutes}} دقيقة.",
+    "refresh": "البقاء مسجل الدخول"
+  },
+  "notifications": {
+    "title": "الإشعارات",
+    "markAllRead": "تعليم الكل كمقروء",
+    "noNotifications": "لا توجد إشعارات.",
+    "viewAll": "عرض الكل"
+  },
+  "search": {
+    "placeholder": "ابحث عن أي شيء…",
+    "noResults": "لا نتائج لـ \"{{query}}\".",
+    "recentSearches": "عمليات البحث الأخيرة",
+    "clearRecent": "مسح"
+  },
+  "preferences": {
+    "title": "التفضيلات",
+    "language": "اللغة",
+    "theme": "المظهر",
+    "themes": {
+      "light": "فاتح",
+      "dark": "داكن",
+      "system": "إعداد النظام"
+    },
+    "timezone": "المنطقة الزمنية",
+    "dateFormat": "تنسيق التاريخ",
+    "currency": "العملة"
+  },
+  "version": {
+    "current": "الإصدار {{version}}",
+    "updateAvailable": "تحديث متاح",
+    "upToDate": "محدَّث"
+  }
+}

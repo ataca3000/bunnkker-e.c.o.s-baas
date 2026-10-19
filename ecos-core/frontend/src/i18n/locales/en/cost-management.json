@@ -1,0 +1,463 @@
+{
+  "title": "Cost Management",
+  "subtitle": "FIFO cost intelligence, pricing decisions, and margin analysis.",
+  "dashboard": {
+    "title": "Cost Management Dashboard",
+    "subtitle": "Live overview of cost changes and pricing review status",
+    "kpi": {
+      "pendingReviews": {
+        "label": "Pending Reviews",
+        "description": "Awaiting management decision"
+      },
+      "belowTargetMargin": {
+        "label": "Below Target Margin",
+        "description": "Products below target margin"
+      },
+      "costsIncreasedToday": {
+        "label": "Costs Increased Today",
+        "description": "Material costs increased since midnight"
+      },
+      "costsDecreasedToday": {
+        "label": "Costs Decreased Today",
+        "description": "Material costs decreased since midnight"
+      },
+      "expectedProfitImpact": {
+        "label": "Expected Profit Impact",
+        "description": "Sum of pending cost differences"
+      },
+      "averageMargin": {
+        "label": "Average Margin",
+        "description": "Across pending reviews"
+      },
+      "awaitingApproval": {
+        "label": "Awaiting Approval",
+        "description": "Assigned reviews awaiting sign-off"
+      }
+    },
+    "actions": {
+      "pricingReviewCenter": "Pricing Review Center",
+      "viewCostHistory": "View Cost History"
+    }
+  },
+  "history": {
+    "title": "Material Cost History",
+    "subtitle": "Every material cost change, in reverse chronological order",
+    "search": "Search by material name or SKU…",
+    "filters": {
+      "allSources": "All Sources",
+      "manualAdjustment": "Manual Adjustment",
+      "purchaseInvoice": "Purchase Invoice"
+    },
+    "columns": {
+      "material": "Material",
+      "previousCost": "Previous Cost",
+      "newCost": "New Cost",
+      "difference": "Difference",
+      "changePct": "Change %",
+      "source": "Source",
+      "affected": "Affected",
+      "date": "Date"
+    },
+    "empty": "No cost history",
+    "pagination": {
+      "total": "{{total}} total entries"
+    },
+    "affected": {
+      "products": "{{count}} products",
+      "recipes": "{{count}} recipes"
+    }
+  },
+  "priceReview": {
+    "pageTitle": "Pricing Decision Center",
+    "pageSubtitle": "Manage product pricing policy, review cost changes, and set selling prices across all brands",
+    "breadcrumb": {
+      "inventory": "Inventory",
+      "pricingDecisionCenter": "Pricing Decision Center"
+    },
+    "actions": {
+      "export": "Export",
+      "viewCostAnalysis": "View Cost Analysis",
+      "setCustomPrice": "Set Custom Price",
+      "revertToBrandPolicy": "Revert to Brand Policy",
+      "switchToCustomPolicy": "Switch to Custom Policy",
+      "assignReviewer": "Assign Reviewer",
+      "approveSuggestedTitle": "Approve suggested price",
+      "keepCurrentPriceTitle": "Keep current price",
+      "rejectReviewTitle": "Reject review",
+      "snoozeReviewTitle": "Snooze review",
+      "publishPricesToCatalogTitle": "Publish prices to catalog"
+    },
+    "kpi": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "priceKept": "Price Kept",
+      "customPrice": "Custom Price",
+      "snoozed": "Snoozed",
+      "belowBrandMargin": "Below Brand Margin",
+      "belowBrandMarginSub": "vs. brand policy"
+    },
+    "status": {
+      "allStatuses": "All Statuses",
+      "pending": "Pending",
+      "approved": "Approved",
+      "priceKept": "Price Kept",
+      "customPrice": "Custom Price",
+      "snoozed": "Snoozed",
+      "rejected": "Rejected"
+    },
+    "statusLabel": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "kept": "Kept",
+      "custom": "Custom",
+      "snoozed": "Snoozed",
+      "rejected": "Rejected"
+    },
+    "impact": {
+      "allImpacts": "All Impacts",
+      "belowTarget": "Below Target",
+      "costIncreased": "Cost Increased",
+      "costDecreased": "Cost Decreased",
+      "recipeChanged": "Recipe Changed",
+      "packagingChanged": "Packaging Changed"
+    },
+    "impactReason": {
+      "recipeChanged": "Recipe changed",
+      "costIncreased": "Cost increased",
+      "costDecreased": "Cost decreased",
+      "belowMarginTarget": "Below margin target",
+      "packagingChanged": "Packaging changed"
+    },
+    "impactTitle": {
+      "belowTargetMargin": "Below target margin",
+      "costIncreased": "Cost increased",
+      "costDecreased": "Cost decreased",
+      "recipeChanged": "Recipe changed",
+      "recipeBadge": "Recipe"
+    },
+    "policy": {
+      "custom": "Custom",
+      "brandPolicy": "Brand Policy",
+      "belowBrand": "Below Brand ↓",
+      "lowSaleMargin": "Low Sale Margin",
+      "costIncreased": "Cost ↑"
+    },
+    "pricingStrategy": {
+      "margin": "Margin",
+      "markup": "Markup",
+      "targetMarginPct": "Target Margin %",
+      "markupPct": "Markup %",
+      "actual": "Actual {{value}}"
+    },
+    "bulk": {
+      "selected": "{{count}} selected",
+      "approveSuggested": "Approve Suggested",
+      "keepPrices": "Keep Prices",
+      "reject": "Reject",
+      "applyBrandPolicy": "Apply Brand Policy",
+      "setTargetMargin": "Set Target Margin",
+      "setMarkup": "Set Markup",
+      "snooze": "Snooze",
+      "clear": "Clear"
+    },
+    "search": "Search by product name or SKU…",
+    "columns": {
+      "product": "Product",
+      "brand": "Brand",
+      "productCost": "Product Cost",
+      "pricingStrategy": "Pricing Strategy",
+      "regularPrice": "Regular Price",
+      "salePrice": "Sale Price",
+      "suggestedRegular": "Suggested Regular",
+      "suggestedSale": "Suggested Sale",
+      "grossProfit": "Gross Profit",
+      "finalMargin": "Final Margin",
+      "impacts": "Impacts",
+      "policy": "Policy",
+      "status": "Status",
+      "updated": "Updated"
+    },
+    "table": {
+      "failedToLoad": "Failed to load reviews.",
+      "retry": "Retry",
+      "noReviews": "No pending reviews — all prices are up to date."
+    },
+    "pagination": {
+      "summary": "{{total}} total · page {{currentPage}} of {{lastPage}}",
+      "previous": "Previous",
+      "next": "Next"
+    },
+    "statusBadge": {
+      "pendingPublish": "Pending Publish",
+      "until": "Until {{date}}"
+    },
+    "brandInfo": {
+      "margin": "Margin {{value}}%",
+      "discount": "Disc. {{value}}%"
+    },
+    "inlineEditor": {
+      "save": "Save"
+    },
+    "dialog": {
+      "cancel": "Cancel",
+      "applyToSelected": "Apply to Selected",
+      "customPrice": {
+        "title": "Set Custom Price",
+        "label": "Custom Selling Price",
+        "margin": "Margin",
+        "profitUnit": "Profit/Unit",
+        "target": "Target",
+        "reason": "Reason",
+        "reasonPlaceholder": "Why is this price appropriate?",
+        "refCurrent": "Current",
+        "refSuggested": "Suggested",
+        "confirm": "Confirm Price"
+      },
+      "keepCurrent": {
+        "title": "Keep Current Price",
+        "description": "{{name}} — Current price {{price}}",
+        "reason": "Reason",
+        "placeholder": "Why keep the current price?",
+        "confirm": "Confirm"
+      },
+      "snooze": {
+        "title": "Snooze Review",
+        "presets": {
+          "tomorrow": "Tomorrow",
+          "threeDays": "3 Days",
+          "oneWeek": "1 Week"
+        },
+        "custom": "Custom:",
+        "confirm": "Snooze until {{date}}"
+      },
+      "assign": {
+        "title": "Assign Reviewer",
+        "label": "Reviewer Name",
+        "placeholder": "Enter reviewer name",
+        "confirm": "Assign"
+      },
+      "bulkMargin": {
+        "title": "Set Target Margin for Selected",
+        "label": "Gross Margin %",
+        "placeholder": "e.g. 35"
+      },
+      "bulkMarkup": {
+        "title": "Set Markup for Selected",
+        "label": "Markup %",
+        "placeholder": "e.g. 53.85"
+      },
+      "bulkSnooze": {
+        "title": "Snooze Selected Reviews",
+        "confirm": "Snooze until {{date}}"
+      },
+      "reject": {
+        "title": "Reject Pricing Review",
+        "description": "{{name}} — Current price {{price}}",
+        "label": "Rejection Reason",
+        "placeholder": "Why is this pricing review being rejected?",
+        "note": "No price changes will be applied. The review will be closed.",
+        "confirm": "Reject Review"
+      },
+      "bulkReject": {
+        "title": "Reject {{count}} Reviews",
+        "description": "No price changes will be applied to any of these items.",
+        "reason": "Reason",
+        "placeholder": "Rejection reason",
+        "confirm": "Reject {{count}} Reviews"
+      }
+    },
+    "toast": {
+      "updated": "Updated",
+      "updatedDesc": "Pricing policy saved.",
+      "updateFailed": "Update failed",
+      "approved": "Approved",
+      "approvedDesc": "Suggested price applied for {{name}}",
+      "customPriceSet": "Custom price set",
+      "keptCurrent": "Current price kept",
+      "snoozed": "Review snoozed",
+      "snoozedDesc": "{{name}} until {{date}}",
+      "reviewerAssigned": "Reviewer assigned",
+      "bulkApproved": "Bulk approved",
+      "bulkApprovedDesc": "{{count}} reviews updated",
+      "keptCurrentBulk": "Kept current",
+      "keptCurrentBulkDesc": "{{count}} reviews",
+      "brandPolicyApplied": "Brand policy applied",
+      "brandPolicyAppliedDesc": "{{count}} reviews updated",
+      "targetMarginSet": "Target margin set",
+      "targetMarginSetDesc": "{{count}} reviews updated",
+      "markupSet": "Markup set",
+      "markupSetDesc": "{{count}} reviews updated",
+      "snoozedBulk": "Snoozed",
+      "snoozedBulkDesc": "{{count}} reviews snoozed until {{date}}",
+      "reviewRejected": "Review rejected",
+      "rejected": "Rejected",
+      "rejectedDesc": "{{count}} reviews rejected",
+      "published": "Published",
+      "publishedDesc": "{{name}} is now active."
+    },
+    "exportHeaders": {
+      "product": "Product",
+      "sku": "SKU",
+      "brand": "Brand",
+      "productCost": "Product Cost",
+      "previousCost": "Previous Cost",
+      "changePct": "Change%",
+      "targetMarginPct": "Target Margin%",
+      "markupPct": "Markup%",
+      "regularPrice": "Regular Price",
+      "salePrice": "Sale Price",
+      "suggestedRegular": "Suggested Regular",
+      "suggestedSale": "Suggested Sale",
+      "currentMarginPct": "Current Margin%",
+      "grossProfitPct": "Gross Profit%",
+      "finalMarginPct": "Final Margin%",
+      "status": "Status"
+    }
+  },
+  "drawer": {
+    "header": {
+      "productCost": "Product Cost"
+    },
+    "tabs": {
+      "costBreakdown": "Cost Breakdown",
+      "recipeChanges": "Recipe Changes",
+      "priceHistory": "Price History",
+      "marginSimulation": "Margin Simulation",
+      "approvalHistory": "Approval History"
+    },
+    "costBreakdown": {
+      "title": "Component Breakdown",
+      "columns": {
+        "component": "Component",
+        "previous": "Previous",
+        "current": "Current",
+        "change": "Change",
+        "pctOfTotal": "% of Total"
+      },
+      "rows": {
+        "rawMaterials": "Raw Materials",
+        "packaging": "Packaging",
+        "otherCosts": "Other Costs"
+      },
+      "footer": {
+        "recipeTotal": "Recipe Total"
+      },
+      "cards": {
+        "previousProductCost": "Previous Product Cost",
+        "productCost": "Product Cost",
+        "netChange": "Net Change"
+      }
+    },
+    "recipeChanges": {
+      "title": "Materials with Price Changes",
+      "empty": "No recipe changes for this product.",
+      "previous": "Previous",
+      "new": "New"
+    },
+    "priceHistory": {
+      "title": "Selling Price Timeline",
+      "columns": {
+        "date": "Date",
+        "sellingPrice": "Selling Price",
+        "cost": "Cost",
+        "margin": "Margin",
+        "by": "By"
+      }
+    },
+    "marginSimulation": {
+      "title": "Interactive Margin Calculator",
+      "description": "Adjust the selling price to see the impact on margin and profit without saving.",
+      "label": "Target Selling Price",
+      "cards": {
+        "expectedMargin": "Expected Margin",
+        "expectedMarginSub": "{{delta}} vs current",
+        "profitPerUnit": "Profit per Unit",
+        "profitPerUnitSub": "Cost: {{cost}}",
+        "vsTargetMargin": "vs Target Margin",
+        "vsTargetMarginSub": "Target: {{target}}%"
+      },
+      "refPoints": {
+        "title": "Reference Points",
+        "currentSellingPrice": "Current Selling Price",
+        "currentSellingPriceSub": "Margin {{margin}}%",
+        "suggestedPrice": "Suggested Price",
+        "suggestedPriceSub": "Maintains target margin",
+        "breakEven": "Break-even Price",
+        "breakEvenSub": "Margin 0%"
+      }
+    },
+    "approvalHistory": {
+      "title": "Approval History",
+      "empty": "No approval history yet. This review is pending.",
+      "price": "Price: {{old}} → {{new}}",
+      "actions": {
+        "approved": "Approved Suggested Price",
+        "kept": "Kept Current Price",
+        "customPrice": "Set Custom Price",
+        "snoozed": "Snoozed Review",
+        "assigned": "Assigned Reviewer"
+      }
+    }
+  },
+  "pricingCenter": {
+    "title": "Pricing Decision Center",
+    "subtitle": "Review and approve product price changes.",
+    "search": "Search products…",
+    "actions": {
+      "approve": "Approve",
+      "reject": "Reject",
+      "bulkApprove": "Approve Selected",
+      "publishPrices": "Publish to Channels"
+    },
+    "columns": {
+      "product": "Product",
+      "sku": "SKU",
+      "currentCost": "Current Cost",
+      "newCost": "New Cost",
+      "currentPrice": "Current Price",
+      "suggestedPrice": "Suggested Price",
+      "margin": "Margin %",
+      "status": "Status"
+    },
+    "status": {
+      "pending": "Pending Review",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "published": "Published"
+    }
+  },
+  "costLayers": {
+    "title": "Cost Layers (FIFO)",
+    "subtitle": "Inventory cost layers by FIFO method.",
+    "search": "Search by product or warehouse…",
+    "columns": {
+      "product": "Product",
+      "warehouse": "Warehouse",
+      "quantity": "Quantity",
+      "unitCost": "Unit Cost",
+      "totalCost": "Total Cost",
+      "receiptDate": "Receipt Date",
+      "reference": "Reference"
+    }
+  },
+  "profitability": {
+    "title": "Profitability Analysis",
+    "subtitle": "Revenue, cost, and margin by product and period.",
+    "columns": {
+      "product": "Product",
+      "revenue": "Revenue",
+      "cogs": "COGS",
+      "grossProfit": "Gross Profit",
+      "margin": "Margin %",
+      "unitsSold": "Units Sold"
+    }
+  },
+  "filters": {
+    "dateFrom": "From Date",
+    "dateTo": "To Date",
+    "warehouse": "Warehouse",
+    "allWarehouses": "All Warehouses",
+    "category": "Category",
+    "allCategories": "All Categories"
+  }
+}

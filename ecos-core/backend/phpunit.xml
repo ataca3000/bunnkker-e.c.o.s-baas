@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true"
+>
+    <testsuites>
+        <testsuite name="Unit">
+            <directory>tests/Unit</directory>
+        </testsuite>
+        <testsuite name="Feature">
+            <directory>tests/Feature</directory>
+        </testsuite>
+    </testsuites>
+    <source>
+        <include>
+            <directory>app</directory>
+        </include>
+    </source>
+    <php>
+        <env name="APP_ENV" value="testing"/>
+        <env name="APP_MAINTENANCE_DRIVER" value="file"/>
+        <env name="BCRYPT_ROUNDS" value="4"/>
+        <env name="CACHE_STORE" value="array"/>
+        <!--
+            The test database is pinned, not inherited.
+
+            DB_CONNECTION and DB_DATABASE are forced: the platform runs MySQL 8.4
+            (docker-compose.yml defines no other engine), and forcing the database
+            name is what stops a RefreshDatabase run from truncating ecos_erp.
+            Neither may be overridden by a developer's environment.
+
+            DB_HOST and DB_PORT are defaults, not forced, so a real environment
+            variable wins — that is how CI points the suite at its own service
+            container. They are pinned here because they were the ambiguous pair:
+            .env carries DB_HOST=mysql (resolvable only inside the container
+            network) and .env.testing carries 127.0.0.1, so where the suite
+            connected depended on which file happened to load.
+
+            Credentials are deliberately NOT restated here. They already live in
+            .env.testing; duplicating them into a second tracked file would spread
+            a credential without adding determinism.
+        -->
+        <env name="DB_CONNECTION" value="mysql" force="true"/>
+        <env name="DB_DATABASE" value="ecos_erp_test" force="true"/>
+        <env name="DB_HOST" value="127.0.0.1"/>
+        <env name="DB_PORT" value="3306"/>
+        <env name="MAIL_MAILER" value="array"/>
+        <env name="PULSE_ENABLED" value="false"/>
+        <env name="QUEUE_CONNECTION" value="sync"/>
+        <env name="SESSION_DRIVER" value="array"/>
+        <env name="TELESCOPE_ENABLED" value="false"/>
+    </php>
+</phpunit>

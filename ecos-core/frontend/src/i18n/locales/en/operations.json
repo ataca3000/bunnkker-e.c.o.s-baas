@@ -1,0 +1,1099 @@
+{
+  "wave": {
+    "status": {
+      "draft": "Draft",
+      "collecting": "Collecting",
+      "planning": "Planning",
+      "shortage_blocked": "Shortage Blocked",
+      "preparing": "Preparing",
+      "completed": "Completed",
+      "closed": "Closed",
+      "cancelled": "Cancelled"
+    },
+    "columns": {
+      "name": "Wave Name",
+      "status": "Status",
+      "planningDate": "Planning Date",
+      "warehouse": "Warehouse",
+      "orders": "Orders",
+      "completion": "Completion",
+      "actions": "Actions"
+    },
+    "stageLabels": {
+      "draft": "Draft",
+      "collecting": "Collecting",
+      "planning": "Planning",
+      "shortage_blocked": "Shortage Review",
+      "preparing": "Preparing",
+      "completed": "Completed",
+      "closed": "Closed",
+      "cancelled": "Cancelled"
+    },
+    "picker": {
+      "loading": "Loading waves…",
+      "placeholder": "Select a wave…",
+      "noWaves": "No waves found"
+    },
+    "noWaveSelected": {
+      "title": "No wave selected",
+      "hint": "Use the wave picker above to load a fulfillment wave."
+    },
+    "loading": "Loading…",
+    "loadingWave": "Loading wave…",
+    "waveNotFound": "Wave not found.",
+    "unzoned": "Unzoned",
+    "workspace": {
+      "title": "Wave Workspace",
+      "shortage": "Shortage",
+      "syncing": "Syncing",
+      "startPreparation": "Start Preparation",
+      "prepStartsIn": "Prep Starts In",
+      "tabs": {
+        "dashboard": "Dashboard",
+        "products": "Product Demand",
+        "materials": "Raw Materials",
+        "missing": "Missing Materials",
+        "orders": "Wave Orders",
+        "settings": "Settings"
+      },
+      "kpis": {
+        "orders": "Orders",
+        "products": "Products",
+        "required": "Required",
+        "missing": "Missing",
+        "complete": "Complete"
+      },
+      "summary": {
+        "orders": "Orders",
+        "products": "Products",
+        "required": "Required",
+        "prepared": "Prepared",
+        "remaining": "Remaining",
+        "missing": "Missing",
+        "stage": "Stage"
+      }
+    },
+    "dashboard": {
+      "kpis": {
+        "orders": "Orders",
+        "products": "Products",
+        "completion": "Completion",
+        "rawMaterials": "Raw Materials",
+        "missingMaterials": "Missing Materials",
+        "productsRequired": "Products Required",
+        "completed": "Completed",
+        "activeMfg": "Active Mfg",
+        "waiting": "Waiting"
+      },
+      "waveCompletion": "Wave Completion",
+      "mfgProgress": {
+        "title": "Manufacturing Progress",
+        "overallProgress": "Overall Progress"
+      },
+      "sections": {
+        "productDemand": "Product Demand",
+        "rawMaterialDemand": "Raw Material Demand",
+        "missingMaterials": "Missing Materials",
+        "ordersByZone": "Orders by Zone",
+        "recentOrders": "Recently Added Orders"
+      },
+      "productTable": {
+        "product": "Product",
+        "req": "Req",
+        "prep": "Prep",
+        "rem": "Rem",
+        "progress": "Progress",
+        "more": "+{{count}} more products — open Product Demand for the full list."
+      },
+      "materialTable": {
+        "material": "Material",
+        "required": "Required",
+        "available": "Available",
+        "missing": "Missing",
+        "more": "+{{count}} more materials — open Raw Material Demand for the full list.",
+        "reserved": "Reserved",
+        "coverage": "Coverage"
+      },
+      "missingTable": {
+        "material": "Material",
+        "missing": "Missing",
+        "priority": "Priority",
+        "orders": "Orders"
+      },
+      "ordersTable": {
+        "orderNo": "Order #",
+        "customer": "Customer",
+        "deliveryZone": "Delivery Zone",
+        "added": "Added"
+      },
+      "noOrdersInZone": "No orders in this wave.",
+      "openProcurementQueue": "Open Procurement Queue",
+      "statusBar": {
+        "lastUpdated": "Last updated",
+        "ordersInWave": "{{count}} orders in wave",
+        "shortage": "{{count}} material shortages",
+        "shortageDetected": "Shortage detected",
+        "updating": "Updating…",
+        "live": "Live"
+      },
+      "mfgTable": {
+        "product": "Product",
+        "planned": "Planned",
+        "manufacturing": "Manufacturing",
+        "completed": "Completed",
+        "remaining": "Remaining"
+      }
+    },
+    "productDemand": {
+      "filters": {
+        "all": "All",
+        "notStarted": "Not Started",
+        "inProgress": "In Progress",
+        "completed": "Completed"
+      },
+      "columns": {
+        "product": "Product",
+        "required": "Required",
+        "prepared": "Prepared",
+        "remaining": "Remaining",
+        "orders": "Orders",
+        "progress": "Progress",
+        "action": "Action"
+      },
+      "kpis": {
+        "products": "Products",
+        "required": "Required",
+        "prepared": "Prepared",
+        "remaining": "Remaining",
+        "completion": "Completion"
+      },
+      "searchPlaceholder": "Search product / SKU…",
+      "noWave": "Select a wave to view product demand.",
+      "emptyNoDemand": "No product demand data yet. Generate demand first.",
+      "emptyNoMatch": "No products match the current filter.",
+      "manufactureNow": "Manufacture Now"
+    },
+    "rawMaterials": {
+      "filters": {
+        "all": "All",
+        "shortage": "Shortage",
+        "ok": "Sufficient"
+      },
+      "columns": {
+        "material": "Material",
+        "status": "Status",
+        "required": "Required",
+        "available": "Available",
+        "missing": "Missing",
+        "expectedToday": "Expected Today",
+        "inTransit": "In Transit",
+        "coverage": "Coverage",
+        "reserved": "Reserved"
+      },
+      "statusShortage": "Shortage",
+      "statusSufficient": "Sufficient",
+      "searchPlaceholder": "Search material…",
+      "noWave": "Select a wave to view raw material demand.",
+      "emptyNoDemand": "No material demand data yet. Generate demand first.",
+      "emptyNoMatch": "No materials match the current filter."
+    },
+    "missingMaterials": {
+      "filters": {
+        "all": "All Shortages",
+        "critical": "Critical",
+        "high": "High",
+        "medium": "Medium",
+        "low": "Low"
+      },
+      "columns": {
+        "material": "Material",
+        "priority": "Priority",
+        "missingQty": "Missing Qty",
+        "affectedOrders": "Affected Orders",
+        "procurement": "Procurement",
+        "action": "Action"
+      },
+      "priority": {
+        "critical": "Critical",
+        "high": "High",
+        "medium": "Medium",
+        "low": "Low"
+      },
+      "openProcurementQueue": "Open Procurement Queue",
+      "noWave": "Select a wave to view missing materials.",
+      "emptyAllMet": "No material shortages — all requirements are met!",
+      "emptyPriorityFilter": "No shortages at this priority level.",
+      "shortagesNote": "Shortages appear here once Demand Generation runs."
+    },
+    "orders": {
+      "columns": {
+        "orderNo": "Order #",
+        "customer": "Customer",
+        "deliveryZone": "Delivery Zone",
+        "governorate": "Governorate",
+        "payment": "Payment",
+        "priority": "Priority",
+        "addedAt": "Added At"
+      },
+      "payment": {
+        "paid": "Paid",
+        "unpaid": "Unpaid"
+      },
+      "allZones": "All Zones",
+      "kpis": {
+        "totalOrders": "Total Orders",
+        "deliveryZones": "Delivery Zones",
+        "paid": "Paid",
+        "completion": "Completion",
+        "missingMaterials": "Missing Matls"
+      },
+      "searchPlaceholder": "Search order / customer…",
+      "noWave": "Select a wave to view its orders.",
+      "emptyNoOrders": "No orders attached to this wave yet.",
+      "emptyNoMatch": "No orders match the current filter."
+    },
+    "drawer": {
+      "loading": "Loading…",
+      "issueTypes": {
+        "missing_material": "Missing Material",
+        "damaged_material": "Damaged Material",
+        "quality_issue": "Quality Issue",
+        "recipe_mismatch": "Recipe Mismatch",
+        "negative_stock": "Negative Stock",
+        "manual_adjustment": "Manual Adjustment"
+      },
+      "tabs": {
+        "overview": "Overview",
+        "recipe": "Recipe",
+        "orders": "Orders",
+        "issues": "Issues"
+      },
+      "overview": {
+        "required": "Required",
+        "prepared": "Prepared",
+        "short": "{{qty}} {{unit}} short",
+        "markPreparedQty": "Mark Prepared Quantity",
+        "maxPlaceholder": "Max {{qty}}…",
+        "markButton": "Mark",
+        "materialsHeader": "Materials",
+        "shortBadge": "Short {{qty}}"
+      },
+      "recipe": {
+        "noRecipe": "No recipe found for this product",
+        "recipeCost": "Recipe Cost",
+        "wastePercentage": "+{{pct}}% waste"
+      },
+      "orders": {
+        "empty": "No orders for this product in this wave"
+      },
+      "issues": {
+        "issueTypeLabel": "Issue Type",
+        "issueTypePlaceholder": "Select issue type…",
+        "descriptionLabel": "Description",
+        "descriptionPlaceholder": "Describe the issue in detail (min 10 chars)…",
+        "reportButton": "Report Issue"
+      },
+      "toast": {
+        "invalidQty": "Invalid quantity",
+        "itemPrepared": "Item marked prepared",
+        "error": "Error",
+        "failedUpdate": "Failed to update item.",
+        "fillIssue": "Fill in issue type and description (min 10 chars)",
+        "issueReported": "Issue reported",
+        "failedReport": "Failed to report issue."
+      }
+    }
+  },
+  "demandAnalysis": {
+    "title": "Demand Analysis",
+    "subtitle": "Daily Demand Matrix — Operational Day",
+    "generatedAt": "Generated at",
+    "exportCsv": "Export CSV",
+    "refresh": "Refresh",
+    "search": "Search product or SKU…",
+    "filterAll": "All",
+    "filterReady": "Ready",
+    "filterShortage": "Shortage",
+    "filterOutOfStock": "Out of Stock",
+    "filterUnknown": "Unknown",
+    "summary": {
+      "totalOrders": "Total Orders",
+      "totalProducts": "Products",
+      "ready": "Ready",
+      "shortage": "Shortage",
+      "outOfStock": "Out of Stock"
+    },
+    "table": {
+      "product": "Product",
+      "sku": "SKU",
+      "ordered": "Ordered",
+      "reserved": "Reserved",
+      "available": "Available",
+      "required": "Required",
+      "shortage": "Shortage",
+      "status": "Status",
+      "orders": "Orders",
+      "warehouses": "WH",
+      "empty": "No products match the current demand criteria.",
+      "noInventory": "—"
+    },
+    "status": {
+      "READY": "Ready",
+      "SHORTAGE": "Shortage",
+      "OUT_OF_STOCK": "Out of Stock",
+      "UNKNOWN": "Unknown"
+    }
+  },
+  "actions": {
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "add": "Add",
+    "open": "Open",
+    "saving": "Saving…",
+    "loading": "Loading…"
+  },
+  "trip": {
+    "type": {
+      "company_vehicle": "Company Vehicle",
+      "personal_vehicle": "Personal Vehicle",
+      "external_carrier": "External Carrier"
+    },
+    "status": {
+      "planning": "Planning",
+      "loading": "Loading",
+      "loading_completed": "Loading Completed",
+      "driver_accepted": "Driver Accepted",
+      "dispatch_blocked": "Dispatch Blocked",
+      "ready_for_dispatch": "Ready for Dispatch",
+      "out_for_delivery": "Out for Delivery",
+      "dispatched": "Dispatched",
+      "completed": "Completed",
+      "settlement_pending": "Settlement Pending",
+      "closed": "Closed",
+      "cancelled": "Cancelled"
+    }
+  },
+  "custody": {
+    "label": "Custody",
+    "types": {
+      "cash_float": "Cash Float",
+      "pos_device": "POS Device",
+      "ice_boxes": "Ice Boxes",
+      "ice_packs": "Ice Packs",
+      "thermal_bags": "Thermal Bags",
+      "delivery_bags": "Delivery Bags",
+      "other": "Other"
+    }
+  },
+  "distribution": {
+    "board": {
+      "errorLoad": "Failed to load distribution board. Please refresh the page.",
+      "noActiveWave": {
+        "title": "No Active Wave",
+        "hint": "No active preparation wave found. Create a wave in the preparation system to start distribution planning."
+      },
+      "todaysTrips": "Today's Trips",
+      "addTrip": "Add Trip",
+      "emptyTrips": "No trips yet",
+      "emptyTripsHint": "Create a trip and orders from this zone will be added automatically.",
+      "createFirstTrip": "Create First Trip",
+      "selectedZone": "Selected Zone",
+      "finalizeDialog": {
+        "title": "Finalize All Remaining Trips?",
+        "description": "All planning trips will be moved to the loading system at once. You can also approve each trip individually using the Approve button.",
+        "confirm": "Yes, Finalize All"
+      }
+    },
+    "waveHeader": {
+      "wave": "Wave {{number}}",
+      "total": "Total",
+      "unassigned": "Unassigned",
+      "trips": "Trips",
+      "collection": "Collection",
+      "finalizePlan": "Finalize Plan"
+    },
+    "zoneTabs": {
+      "empty": "No distribution zones found in this wave. Assign zones to orders to enable planning."
+    },
+    "ordersPool": {
+      "title": "Unassigned Orders",
+      "allAssigned": "All orders assigned"
+    },
+    "tripCard": {
+      "autoFill": "Auto-fill",
+      "autoFillTitle": "Auto-fill from zone orders",
+      "approve": "Approve",
+      "approveTitle": "Approve Trip — Create Loading Manifest",
+      "approveConfirm": "Approve trip \"{{name}}\" for loading? A loading manifest will be created automatically.",
+      "workspace": "Workspace",
+      "workspaceTitle": "Open Loading Workspace",
+      "editTrip": "Edit Trip",
+      "deleteTrip": "Delete Trip",
+      "deleteConfirm": "Delete trip \"{{name}}\"? All orders will be unassigned.",
+      "collection": "Collection:",
+      "moveTitle": "Move / Return to Wave",
+      "unassignTitle": "Unassign from Trip",
+      "ordersAssigned_one": "{{count}} order assigned",
+      "ordersAssigned_other": "{{count}} orders assigned"
+    },
+    "tripForm": {
+      "editTitle": "Edit Trip",
+      "createTitle": "Create Trip",
+      "name": "Trip Name",
+      "namePlaceholder": "e.g. East Cairo Van A",
+      "nameRequired": "Name is required",
+      "type": "Trip Type",
+      "zone": "Zone",
+      "zonePlaceholder": "Select zone…",
+      "noZone": "— No Zone —",
+      "zoneOption": "{{name}} ({{count}} unassigned)",
+      "capacity": "Capacity (orders)",
+      "notes": "Notes",
+      "notesPlaceholder": "Optional notes…",
+      "saveChanges": "Save Changes",
+      "create": "Create Trip"
+    },
+    "moveOrder": {
+      "title": "Move Order #{{number}}",
+      "description": "Choose where to send this order.",
+      "modeMove": "Move to Another Trip",
+      "modeReturn": "Return to Wave",
+      "noOtherTrips": "No other planning trips available.",
+      "selectDestination": "Select destination trip:",
+      "tripCapacity": "{{current}}/{{capacity}} orders",
+      "returnWarning": "This order will be removed from its current trip and placed in the Wave Exception list. A supervisor will need to reassign it to another trip.",
+      "submitMove": "Move Order",
+      "submitReturn": "Return to Wave"
+    },
+    "resources": {
+      "driver": "Driver",
+      "driverNamePlaceholder": "Driver name",
+      "phonePlaceholder": "Phone",
+      "selectDriver": "Select driver…",
+      "unassigned": "— Unassigned —",
+      "vehicle": "Vehicle",
+      "selectVehicle": "Select vehicle…",
+      "carrier": "Carrier",
+      "selectCarrier": "Select carrier…",
+      "carrierRate": "({{rate}}/order)"
+    },
+    "custodyPanel": {
+      "empty": "No custody items"
+    },
+    "coverageMap": {
+      "button": "Map",
+      "buttonTitle": "View Coverage Map",
+      "title": "Coverage Map — Trip {{number}}",
+      "loading": "Loading order locations…",
+      "noOrders": "No orders in this trip.",
+      "noCoordinates": "No GPS coordinates stored for these orders. Showing list view instead.",
+      "legendNormal": "Normal",
+      "legendOutlier": "Outlier",
+      "tooltipOutlier": "Outlier ({{km}} km from center)",
+      "outlierSection": "Outlier Orders — Outside Normal Delivery Range",
+      "distanceFromCenter": "{{km}} km from center",
+      "totalOrders": "{{count}} total orders",
+      "withGps": "{{count}} with GPS coordinates",
+      "outliers_one": "{{count}} outlier",
+      "outliers_other": "{{count}} outliers"
+    },
+    "validation": {
+      "ready": "Distribution plan is ready to finalize.",
+      "errors_one": "{{count}} error blocking finalization",
+      "errors_other": "{{count}} errors blocking finalization",
+      "warnings_one": "{{count}} warning",
+      "warnings_other": "{{count}} warnings"
+    },
+    "exceptions": {
+      "title": "Wave Exceptions",
+      "hint": "Orders returned to the wave — need reassignment",
+      "reason": {
+        "supervisor_return": "Supervisor Return",
+        "zone_mismatch": "Zone Mismatch",
+        "outlier": "Geographic Outlier",
+        "capacity_exceeded": "Capacity Exceeded",
+        "other": "Other"
+      }
+    },
+    "toast": {
+      "tripCreated": "Trip created.",
+      "tripUpdated": "Trip updated.",
+      "tripDeleted": "Trip deleted.",
+      "autoAssigned": "{{count}} orders auto-assigned.",
+      "driverAssigned": "Driver assigned.",
+      "vehicleAssigned": "Vehicle assigned.",
+      "carrierAssigned": "Carrier assigned.",
+      "custodyAdded": "Custody item added.",
+      "custodyRemoved": "Custody item removed.",
+      "orderReturned": "Order returned to wave exception list."
+    }
+  },
+  "loading": {
+    "status": {
+      "waiting_for_loading": "Waiting for Loading",
+      "loading": "Loading",
+      "loaded": "Loaded — Driver Handover",
+      "ready_for_dispatch": "Ready for Dispatch"
+    },
+    "dashboard": {
+      "title": "Loading System Dashboard",
+      "subtitle": "All active warehouse loading trips",
+      "errorLoad": "Failed to load loading system dashboard. Please refresh the page.",
+      "tripsBadge": "{{count}} trips",
+      "empty": {
+        "title": "No Active Loading Trips",
+        "hint": "Approved trips will appear here for loading. Approve a trip on the distribution board to get started."
+      },
+      "stats": {
+        "waitingForLoading": "Waiting for Loading",
+        "loading": "Loading",
+        "driverHandover": "Driver Handover",
+        "readyToDispatch": "Ready to Dispatch"
+      },
+      "card": {
+        "orders": "Orders",
+        "collection": "Collection",
+        "products": "Products",
+        "warehouseLoading": "Warehouse Loading",
+        "driverConfirmation": "Driver Confirmation",
+        "custody": "Custody: {{confirmed}}/{{total}} confirmed",
+        "discrepancies_one": "{{count}} discrepancy needs review",
+        "discrepancies_other": "{{count}} discrepancies need review"
+      }
+    },
+    "workspace": {
+      "title": "Loading Workspace",
+      "manifestNumber": "Manifest #{{id}}",
+      "driverHandover": "Driver Handover",
+      "notCreated": "Loading manifest has not been created yet.",
+      "notCreatedHint": "Approve the trip on the distribution board first.",
+      "backToBoard": "Back to Distribution Board",
+      "notFound": "Loading manifest not found or access denied.",
+      "products": "Products",
+      "loaded": "Loaded",
+      "driver": "Driver",
+      "completeLoading": "Complete Loading",
+      "manifestStatus": {
+        "pending": "Pending",
+        "in_progress": "Loading",
+        "completed": "Loaded",
+        "cancelled": "Cancelled"
+      },
+      "indicators": {
+        "productsConfirmed": "Products Confirmed",
+        "noPendingShortages": "No Pending Shortages",
+        "readyToComplete": "Ready to Complete"
+      },
+      "pending_one": "{{count}} product still pending",
+      "pending_other": "{{count}} products still pending",
+      "needResolution_one": "{{count}} shortage needs resolution",
+      "needResolution_other": "{{count}} shortages need resolution",
+      "noProducts": "No products in this manifest.",
+      "sectionAwaiting": "Awaiting Confirmation",
+      "sectionShortages": "Shortages",
+      "sectionConfirmed": "Confirmed ({{count}})",
+      "tabReceiveProducts": "Receive Products",
+      "tabCustodyHandover": "Custody Handover",
+      "gateBannerTitle": "Loading Complete",
+      "gateBannerHint": "Proceed to the Dispatch Gate for official driver acceptance and vehicle dispatch authorization.",
+      "gateBannerCta": "Dispatch Gate",
+      "completeDialog": {
+        "title": "Complete Loading?",
+        "description": "All {{count}} products have been processed. The trip will move to the Dispatch Gate for official driver acceptance and vehicle dispatch authorization.",
+        "confirm": "Complete Loading"
+      }
+    },
+    "productCard": {
+      "status": {
+        "pending": "Pending",
+        "confirmed": "Confirmed",
+        "shortage": "Shortage",
+        "skipped": "Skipped"
+      },
+      "required": "Required:",
+      "loaded": "Loaded:",
+      "shortage": "Shortage: {{qty}} {{unit}}",
+      "confirm": "Confirm",
+      "resolveShortage": "Resolve Shortage",
+      "breakdownTitle": "View order breakdown",
+      "orderBreakdown": "Order Breakdown",
+      "noLineItems": "No order line items.",
+      "totalRequired": "Total Required"
+    },
+    "shortage": {
+      "resolution": {
+        "priority_allocation": "Priority Allocation",
+        "manual_selection": "Manual Selection",
+        "return_preparation": "Return to Preparation",
+        "send_manufacturing": "Send to Manufacturing",
+        "delay_orders": "Delay Affected Orders"
+      },
+      "description": {
+        "priority_allocation": "Redistribute from another order according to priority rules.",
+        "manual_selection": "Supervisor manually selects which orders will receive the product.",
+        "return_preparation": "Return to the preparation system to cover the shortage.",
+        "send_manufacturing": "Send a production order to manufacturing.",
+        "delay_orders": "Mark affected orders as delayed and notify customers."
+      },
+      "dialog": {
+        "title": "Resolve Shortage",
+        "subtitle": "shortage of",
+        "selectPrompt": "Select how to resolve this shortage:",
+        "notes": "Notes (optional)",
+        "notesPlaceholder": "Additional context or instructions…",
+        "apply": "Apply Resolution"
+      }
+    },
+    "handover": {
+      "productsProgress": "Driver Confirmations",
+      "custodyProgress": "Custody Handover",
+      "awaitingDriver": "Awaiting Driver Confirmation",
+      "discrepancies": "Discrepancies ({{count}})",
+      "confirmed": "Confirmed ({{count}})",
+      "awaitingConfirmation": "Awaiting Confirmation",
+      "noCustody": "No custody items assigned to this trip.",
+      "assigned": "Assigned:",
+      "received": "Received:",
+      "loadedQty": "Loaded:",
+      "shortageQty": "Shortage: {{qty}}",
+      "badgeDiscrepancy": "Discrepancy",
+      "badgeAccepted": "Accepted",
+      "receivedPlaceholder": "Received quantity",
+      "confirmReceipt": "Confirm Receipt",
+      "supervisorAccept": "Supervisor Accept Discrepancy",
+      "discrepancyNotes": "Discrepancy notes (optional)…",
+      "acceptAndAllow": "Accept and Allow Dispatch",
+      "confirmedLabel": "Confirmed"
+    },
+    "toast": {
+      "shortageResolved": "Shortage resolution recorded.",
+      "discrepancyAccepted": "Discrepancy accepted."
+    }
+  },
+  "dispatch": {
+    "gate": {
+      "title": "Dispatch Gate",
+      "subtitle": "Official driver acceptance and vehicle dispatch authorization",
+      "errorLoad": "Failed to load dispatch gate. Please refresh the page.",
+      "tripsBadge": "{{count}} trips",
+      "empty": {
+        "title": "Dispatch Gate Empty",
+        "hint": "No trips are awaiting dispatch gate authorization. Trips will appear here after warehouse loading is complete."
+      },
+      "stats": {
+        "awaitingAcceptance": "Awaiting Acceptance",
+        "driverAccepted": "Driver Accepted",
+        "dispatchBlocked": "Dispatch Blocked"
+      },
+      "sections": {
+        "dispatch_blocked": "Dispatch Blocked — Needs Resolution",
+        "driver_accepted": "Driver Accepted — Ready to Dispatch",
+        "loading_completed": "Awaiting Driver Acceptance"
+      },
+      "card": {
+        "resolve": "Resolve",
+        "dispatch": "Dispatch",
+        "review": "Review",
+        "orders": "Orders",
+        "collection": "Collection",
+        "products": "Products",
+        "discrepancyReported": "Discrepancy Reported",
+        "driverAccepted": "Driver Accepted",
+        "awaitingAcceptance": "Awaiting Driver Acceptance",
+        "loadedAt": "Loaded at {{time}}"
+      }
+    },
+    "workspace": {
+      "notFound": "Trip not found or access denied.",
+      "backToGate": "Back to Dispatch Gate",
+      "orders": "Orders",
+      "dispatchVehicle": "Dispatch Vehicle",
+      "outForDelivery": "Out for Delivery",
+      "tabs": {
+        "review": "Trip Review",
+        "acceptance": "Driver Acceptance",
+        "dispatch": "Dispatch",
+        "history": "Audit Log"
+      },
+      "dispatched": {
+        "title": "Vehicle Dispatched",
+        "departureTime": "Departure Time",
+        "odometer": "Odometer",
+        "fuelLevel": "Fuel Level",
+        "gps": "GPS",
+        "gpsActive": "Active",
+        "gpsNotStarted": "Not Started"
+      }
+    },
+    "review": {
+      "loadedProducts": "Loaded Products",
+      "confirmedBadge": "{{confirmed}}/{{total}} confirmed",
+      "noManifest": "No manifest created.",
+      "noProducts": "No products in the manifest.",
+      "colProduct": "Product",
+      "colRequired": "Required",
+      "colLoaded": "Loaded",
+      "colShortage": "Shortage",
+      "colStatus": "Status",
+      "custody": "Custody",
+      "noCustody": "No custody items assigned to this trip.",
+      "custodyMeta": "{{type}} · Qty: {{qty}}",
+      "custodyReceived": " · Received: {{qty}}",
+      "itemStatus": {
+        "confirmed": "Confirmed",
+        "shortage": "Shortage",
+        "pending": "Pending",
+        "skipped": "Skipped"
+      }
+    },
+    "acceptance": {
+      "intro": "The driver must explicitly confirm receipt of products, custody items, and operational equipment. All three confirmations are required before obtaining dispatch authorization.",
+      "items": {
+        "products": {
+          "label": "Products",
+          "description": "I confirm I received the loaded products."
+        },
+        "custody": {
+          "label": "Custody",
+          "description": "I confirm I received all assigned custody items."
+        },
+        "equipment": {
+          "label": "Equipment",
+          "description": "I confirm I received all operational equipment."
+        }
+      },
+      "blockedTitle": "Discrepancy Reported — Dispatch Blocked",
+      "confirmedTitle": "Driver Acceptance Confirmed",
+      "confirmed": "Confirmed",
+      "notConfirmed": "Not Confirmed",
+      "tripStatus": "Trip Status:",
+      "reportDiscrepancy": "Report Discrepancy (blocks dispatch until resolved)",
+      "discrepancyDetails": "Discrepancy Details",
+      "discrepancyPlaceholder": "Describe the discrepancy in detail...",
+      "submitWithDiscrepancy": "Submit with Discrepancy",
+      "confirmAcceptance": "Confirm Driver Acceptance",
+      "confirmDialog": {
+        "title": "Confirm Driver Acceptance?",
+        "description": "The driver has confirmed receipt of all products, custody items, and equipment. The trip will move to Driver Accepted status and become ready for dispatch."
+      },
+      "discrepancyDialog": {
+        "title": "Report Discrepancy?",
+        "description": "The trip will be marked as Dispatch Blocked. A supervisor must review and resolve the discrepancy before the vehicle can be dispatched.",
+        "confirm": "Report and Block Dispatch"
+      }
+    },
+    "checklist": {
+      "title": "Dispatch Conditions",
+      "met": "{{passed}}/{{total}} met",
+      "items": {
+        "loading_completed": "Loading Completed",
+        "driver_accepted_products": "Driver Accepted Products",
+        "driver_accepted_custody": "Driver Accepted Custody",
+        "driver_accepted_equipment": "Driver Accepted Equipment",
+        "no_outstanding_shortages": "No Outstanding Shortages",
+        "no_outstanding_discrepancies": "No Outstanding Discrepancies"
+      }
+    },
+    "authorization": {
+      "dispatchedTitle": "Trip Dispatched",
+      "dispatchedHint": "Driver is on the way.",
+      "conditions": "Dispatch Conditions",
+      "receivedProducts": "Driver received all products",
+      "noDiscrepancies": "No pending product discrepancies",
+      "custodyHandedOver": "All custody items handed over",
+      "allConditionsMet": "All conditions met — Ready to dispatch",
+      "authorize": "Authorize Dispatch",
+      "dialogTitle": "Authorize Dispatch?",
+      "dialogDescription": "Trip {{number}} will be dispatched. The driver has confirmed receipt of all products and custody items. This action cannot be undone.",
+      "dialogConfirm": "Yes, Dispatch Now"
+    },
+    "departure": {
+      "title": "Dispatch Vehicle",
+      "description": "Record departure information. GPS tracking will start automatically upon dispatch.",
+      "odometer": "Odometer Reading (km)",
+      "odometerPlaceholder": "e.g. 45320",
+      "fuel": "Fuel Level (%)",
+      "fuelPlaceholder": "e.g. 85",
+      "notes": "Notes (optional)",
+      "notesPlaceholder": "Any additional notes at departure...",
+      "warning": "Dispatching will set the trip status to Out for Delivery and start GPS tracking. This action cannot be undone.",
+      "dispatching": "Dispatching…"
+    },
+    "audit": {
+      "empty": "No audit events recorded yet.",
+      "action": {
+        "loading_completed": "Loading Completed",
+        "driver_accepted": "Driver Accepted",
+        "dispatch_blocked": "Dispatch Blocked",
+        "vehicle_dispatched": "Vehicle Dispatched",
+        "manifest_regenerated": "Manifest Regenerated"
+      }
+    },
+    "toast": {
+      "dispatchBlocked": "Dispatch Blocked",
+      "driverAccepted": "Driver Accepted",
+      "error": "Error",
+      "vehicleDispatched": "Vehicle Dispatched",
+      "dispatchFailed": "Dispatch Failed"
+    }
+  },
+  "driver": {
+    "stopStatus": {
+      "pending": "Pending",
+      "in_progress": "In Progress",
+      "delivered": "Delivered",
+      "partial": "Partial",
+      "failed": "Failed",
+      "returned": "Returned",
+      "skipped": "Skipped"
+    },
+    "actionType": {
+      "completed": "Delivered",
+      "partial": "Partial Delivery",
+      "refused": "Customer Refused",
+      "not_available": "Not Available",
+      "delay": "Delay Requested",
+      "wrong_address": "Wrong Address",
+      "unreachable": "Unreachable"
+    },
+    "exceptionType": {
+      "damaged": "Damaged Item",
+      "missing": "Missing Item",
+      "wrong_product": "Wrong Product",
+      "complaint": "Customer Complaint",
+      "packaging": "Packaging Issue",
+      "other": "Other"
+    },
+    "paymentType": {
+      "cash": "Cash",
+      "bank_transfer": "Bank Transfer",
+      "already_paid": "Pre-Paid"
+    },
+    "settlementStatus": {
+      "draft": "Draft",
+      "submitted": "Submitted",
+      "verified": "Verified",
+      "closed": "Closed"
+    },
+    "home": {
+      "title": "Driver Mobile",
+      "activeTrips": "Active Trips",
+      "totalOrders": "Total Orders",
+      "collected": "Collected",
+      "empty": "No active trips",
+      "emptyHint": "Trips will appear here once dispatched."
+    },
+    "tripCard": {
+      "outForDelivery": "Out for Delivery",
+      "inProgress": "In Progress",
+      "orders": "{{count}} orders",
+      "openTrip": "Open Trip"
+    },
+    "trip": {
+      "notFound": "Trip not found.",
+      "remainingStops": "Remaining Stops",
+      "startTrip": "Start Trip",
+      "starting": "Starting…",
+      "viewStops": "View Stops ({{count}} remaining)",
+      "finishTrip": "Finish Trip",
+      "finishing": "Finishing…",
+      "settlement": "Settlement",
+      "returns": "Returns",
+      "custody": "Custody",
+      "startDialog": {
+        "title": "Start Trip?",
+        "description": "This will update the trip to in-progress and log your current GPS location.",
+        "confirm": "Start Now"
+      },
+      "finishDialog": {
+        "title": "Finish Trip?",
+        "description": "All stops must be processed before finishing. This action logs the trip end location."
+      }
+    },
+    "kpis": {
+      "totalOrders": "Total Orders",
+      "pending": "Pending",
+      "delivered": "Delivered",
+      "partial": "Partial",
+      "failed": "Failed",
+      "collections": "Collections"
+    },
+    "stops": {
+      "title": "Stop List",
+      "searchPlaceholder": "Search by order number or customer name...",
+      "filterAll": "All",
+      "empty": "No stops match the filter.",
+      "stopNumber": "Stop #{{sequence}}"
+    },
+    "stopDetail": {
+      "title": "Stop #{{sequence}}",
+      "notFound": "Stop not found.",
+      "noName": "No Name",
+      "products": "Products ({{count}})",
+      "payment": "Payment",
+      "paymentMethod": "Payment Method",
+      "total": "Total",
+      "depositPaid": "Deposit Paid",
+      "balanceDue": "Balance Due",
+      "recordedAction": "Recorded Action",
+      "collectedAmount": "Collected: {{amount}}",
+      "recordDelivery": "Record Delivery",
+      "recordPayment": "Record Payment",
+      "proofOfDelivery": "Proof of Delivery",
+      "deliveryAction": "Delivery Action",
+      "actions": {
+        "completed": "Delivered",
+        "partial": "Partial",
+        "refused": "Refused",
+        "not_available": "Not Available",
+        "delay": "Delay Requested",
+        "wrong_address": "Wrong Address",
+        "unreachable": "Unreachable"
+      }
+    },
+    "collections": {
+      "title": "Collections",
+      "cash": "Cash",
+      "bankTransfer": "Bank Transfer",
+      "prePaid": "Pre-Paid",
+      "reference": "Ref: {{reference}}",
+      "empty": "No collections recorded yet."
+    },
+    "exceptions": {
+      "title": "Exceptions",
+      "resolved": "Resolved",
+      "open": "Open",
+      "empty": "No exceptions reported.",
+      "addTitle": "Add Exception",
+      "addHint": "To report an exception, open the relevant delivery stop and use the exception button.",
+      "goToStops": "Go to Stops"
+    },
+    "returns": {
+      "title": "Returns",
+      "qty": "Qty: {{qty}}",
+      "pending": "Pending",
+      "warehouseConfirmed": "Warehouse Confirmed: {{qty}}",
+      "confirmReceipt": "Confirm Receipt",
+      "empty": "No returns recorded yet.",
+      "recordTitle": "Record Return"
+    },
+    "settlement": {
+      "title": "Settlement",
+      "submitTitle": "Submit Settlement",
+      "cashSubmitted": "Cash Submitted",
+      "notes": "Notes",
+      "notesPlaceholder": "Notes about any discrepancy...",
+      "submitting": "Submitting…",
+      "submit": "Submit Settlement",
+      "closing": "Closing…",
+      "closeTrip": "Close Trip",
+      "custodyReturns": "Custody Returns",
+      "productReturns": "Product Returns",
+      "summaryTitle": "Settlement Summary",
+      "rows": {
+        "cashCollected": "Cash Collected",
+        "bankTransfersPending": "Bank Transfers (Pending Verification)",
+        "alreadyPaid": "Pre-Paid (Excluded)",
+        "totalCollected": "Total Collected",
+        "cashExpected": "Expected Cash",
+        "driverCashSubmitted": "Driver Cash Submitted",
+        "discrepancy": "Discrepancy"
+      }
+    },
+    "custodyReturns": {
+      "title": "Custody Returns",
+      "recordTitle": "Record Custody Return",
+      "custodyType": "Custody Type *",
+      "custodyTypePlaceholder": "e.g. cash bag, tablet...",
+      "dispatchedQty": "Dispatched Qty *",
+      "returnedQty": "Returned Qty *",
+      "notes": "Notes",
+      "notesPlaceholder": "Optional notes...",
+      "record": "Record",
+      "empty": "No custody items recorded yet.",
+      "meta": "Dispatched: {{dispatched}} · Returned: {{returned}}",
+      "confirmedQtyPlaceholder": "Confirmed Qty",
+      "driverLiable": "Driver is liable for the shortage"
+    },
+    "map": {
+      "title": "Route Map",
+      "yourLocation": "Your location: {{lat}}, {{lng}}",
+      "placeholder": "Interactive map requires GPS integration",
+      "deliveryStops": "Delivery Stops",
+      "googleMaps": "Google Maps",
+      "waze": "Waze",
+      "empty": "No stops found."
+    },
+    "timeline": {
+      "title": "Trip Timeline",
+      "empty": "No events yet"
+    },
+    "forms": {
+      "amount": "Amount *",
+      "amountOptional": "Amount",
+      "amountPlaceholder": "0.00",
+      "referenceRequired": "Reference Number *",
+      "reference": "Reference Number",
+      "referencePlaceholder": "Transaction reference...",
+      "bankReferencePlaceholder": "Bank transaction reference...",
+      "receiptImageUrl": "Receipt Image URL",
+      "uploadPlaceholder": "https://... (upload link)",
+      "receiptHint": "Enter the URL of the uploaded receipt image.",
+      "notes": "Notes",
+      "notesPlaceholder": "Optional notes...",
+      "recordTransfer": "Record Transfer",
+      "paymentMethod": "Payment Method",
+      "recordPayment": "Record Payment",
+      "reason": "Reason *",
+      "reasonPlaceholder": "Brief reason...",
+      "newDeliveryDate": "New Delivery Date *",
+      "collectPayment": "Collect Payment",
+      "exceptionType": "Exception Type *",
+      "description": "Description *",
+      "descriptionPlaceholder": "Exception description...",
+      "photoUrls": "Photos (URLs)",
+      "photos": "Photos",
+      "photoPlaceholder": "Photo URL {{index}}...",
+      "addPhoto": "Add Photo",
+      "reportException": "Report Exception",
+      "signatureUrl": "Signature Image URL",
+      "deliveryNotesPlaceholder": "Delivery notes...",
+      "saveProof": "Save Proof of Delivery",
+      "productId": "Product ID *",
+      "productIdPlaceholder": "Product ID...",
+      "productName": "Product Name *",
+      "productNamePlaceholder": "Product name...",
+      "returnType": "Return Type *",
+      "returnFull": "Full Return",
+      "returnPartial": "Partial Return",
+      "quantity": "Quantity *",
+      "reasonLabel": "Reason",
+      "returnReasonPlaceholder": "Return reason...",
+      "recordReturn": "Record Return",
+      "confirmedQty": "Confirmed Qty"
+    },
+    "toast": {
+      "tripStarted": "Trip started",
+      "tripStartedHint": "Delivery stops are now active.",
+      "startFailed": "Failed to start trip",
+      "tripFinished": "Trip finished",
+      "tripFinishedHint": "Proceed to settlement.",
+      "finishFailed": "Cannot finish trip",
+      "deliveryRecorded": "Delivery recorded",
+      "deliveryAction": "Action: {{action}}",
+      "deliveryFailed": "Failed to record delivery",
+      "paymentRecorded": "Payment recorded",
+      "paymentFailed": "Payment failed",
+      "returnRecorded": "Return recorded",
+      "returnFailed": "Failed to record return",
+      "settlementSubmitted": "Settlement submitted",
+      "settlementFailed": "Settlement failed",
+      "custodyReturnRecorded": "Custody return recorded",
+      "tripClosed": "Trip closed",
+      "closeFailed": "Cannot close trip",
+      "exceptionRecorded": "Exception recorded",
+      "returnConfirmed": "Return confirmed",
+      "failed": "Failed"
+    }
+  }
+}

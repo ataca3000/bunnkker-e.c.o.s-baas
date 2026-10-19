@@ -1,0 +1,78 @@
+{
+  "title": "الشركات",
+  "subtitle": "إدارة المنظمات في مستأجرك.",
+  "search": "بحث في الشركات…",
+  "actions": {
+    "new": "شركة جديدة",
+    "create": "إنشاء شركة",
+    "edit": "تعديل الشركة"
+  },
+  "columns": {
+    "code": "الرمز",
+    "name": "الاسم",
+    "phone": "الهاتف",
+    "email": "البريد الإلكتروني",
+    "country": "الدولة",
+    "status": "الحالة"
+  },
+  "form": {
+    "code": { "label": "الرمز", "placeholder": "ECOS" },
+    "name": { "label": "الاسم", "placeholder": "ECOS Holding" },
+    "legalName": "الاسم القانوني",
+    "taxNumber": "الرقم الضريبي",
+    "commercialRegistration": "السجل التجاري",
+    "email": { "label": "البريد الإلكتروني", "placeholder": "info@example.com" },
+    "phone": "الهاتف",
+    "mobile": "المحمول",
+    "website": { "label": "الموقع الإلكتروني", "placeholder": "https://example.com" },
+    "currency": { "label": "العملة", "placeholder": "EGP" },
+    "timezone": { "label": "المنطقة الزمنية", "placeholder": "Africa/Cairo" },
+    "country": { "label": "الدولة", "placeholder": "مصر" },
+    "city": "المدينة",
+    "postalCode": "الرمز البريدي",
+    "address": "العنوان",
+    "active": "نشط"
+  },
+  "drawer": {
+    "createTitle": "إنشاء شركة",
+    "editTitle": "تعديل الشركة",
+    "createSubtitle": "إضافة شركة جديدة إلى مؤسستك.",
+    "editSubtitle": "تحديث تفاصيل الشركة أدناه.",
+    "submitCreate": "إنشاء شركة",
+    "submitEdit": "حفظ التغييرات",
+    "saving": "جارٍ الحفظ…",
+    "errorTitle": "تعذر الحفظ"
+  },
+  "delete": {
+    "title": "حذف الشركة",
+    "confirm": "حذف"
+  },
+  "workspace": {
+    "tabs": {
+      "general": "المعلومات العامة",
+      "branches": "الفروع",
+      "activity": "النشاط"
+    },
+    "backToList": "العودة إلى الشركات",
+    "fields": {
+      "code": "الرمز",
+      "legalName": "الاسم القانوني",
+      "taxNumber": "الرقم الضريبي",
+      "commercialRegistration": "السجل التجاري",
+      "email": "البريد الإلكتروني",
+      "phone": "الهاتف",
+      "mobile": "المحمول",
+      "website": "الموقع الإلكتروني",
+      "currency": "العملة",
+      "timezone": "المنطقة الزمنية",
+      "country": "الدولة",
+      "city": "المدينة",
+      "postalCode": "الرمز البريدي",
+      "address": "العنوان",
+      "status": "الحالة"
+    },
+    "activity": {
+      "placeholder": "سجل النشاط قادم قريباً."
+    }
+  }
+}

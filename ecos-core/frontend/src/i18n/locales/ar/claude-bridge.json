@@ -1,0 +1,52 @@
+{
+  "title": "مساعد كلود الذكي",
+  "subtitle": "مساعد العمليات المدعوم بالذكاء الاصطناعي المدمج مع ECOS.",
+  "status": {
+    "connected": "متصل",
+    "disconnected": "غير متصل",
+    "connecting": "جارٍ الاتصال…",
+    "error": "خطأ في الاتصال"
+  },
+  "assistant": {
+    "placeholder": "اسأل كلود أي شيء عن عملياتك…",
+    "thinking": "جارٍ التفكير…",
+    "errorResponse": "حدث خطأ. يرجى المحاولة مجدداً.",
+    "clearChat": "مسح المحادثة",
+    "newSession": "جلسة جديدة",
+    "copyResponse": "نسخ",
+    "copied": "تم النسخ!"
+  },
+  "capabilities": {
+    "title": "القدرات",
+    "orderAnalysis": "تحليل الطلبات",
+    "inventoryInsights": "رؤى المخزون",
+    "demandForecasting": "توقع الطلب",
+    "operationsPlanning": "تخطيط العمليات",
+    "dataExport": "تصدير البيانات",
+    "reportGeneration": "إنشاء التقارير"
+  },
+  "sessions": {
+    "title": "الجلسات الأخيرة",
+    "noSessions": "لا توجد جلسات سابقة.",
+    "deleteSession": "حذف",
+    "columns": {
+      "title": "الجلسة",
+      "date": "التاريخ",
+      "messages": "الرسائل"
+    }
+  },
+  "settings": {
+    "title": "إعدادات الجسر",
+    "apiKey": "مفتاح API",
+    "model": "النموذج",
+    "temperature": "إبداعية الإجابات",
+    "maxTokens": "الحد الأقصى لطول الإجابة",
+    "systemContext": "السياق الافتراضي",
+    "save": "حفظ الإعدادات"
+  },
+  "errors": {
+    "notConfigured": "لم يتم إعداد جسر كلود. تواصل مع المسؤول.",
+    "rateLimited": "طلبات كثيرة جداً. انتظر لحظة.",
+    "contextTooLong": "المحادثة طويلة جداً. ابدأ جلسة جديدة."
+  }
+}

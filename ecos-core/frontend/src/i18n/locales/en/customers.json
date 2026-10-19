@@ -1,0 +1,235 @@
+{
+  "title": "Customers",
+  "subtitle": "Search by phone, name, order number or address.",
+  "search": "Search by phone, name, address or order number…",
+  "actions": {
+    "new": "New Customer",
+    "create": "Create customer",
+    "edit": "Edit Customer",
+    "export": "Export",
+    "merge": "Merge",
+    "import": "Import"
+  },
+  "quickStats": {
+    "total": "Total Customers",
+    "active": "Active",
+    "inactive": "Inactive (90d)",
+    "vip": "VIP"
+  },
+  "quickCard": {
+    "openCustomer": "Open Profile",
+    "openActiveOrder": "Open Active Order",
+    "createOrder": "New Order",
+    "call": "Call",
+    "whatsapp": "WhatsApp",
+    "copyPhone": "Copy Phone",
+    "copyAddress": "Copy Address",
+    "openMap": "Open Map",
+    "addNote": "Add Note",
+    "editAddress": "Edit Address",
+    "noActiveOrder": "No active orders",
+    "lastOrder": "Last Order",
+    "totalOrders": "Total Orders",
+    "customerMemory": "Customer Memory",
+    "noMemory": "No pinned notes yet.",
+    "viewAllNotes": "View All Notes",
+    "returning": "Returning",
+    "vip": "VIP",
+    "editCustomer": "Edit Customer",
+    "activeOrder": "Active Order",
+    "goToOrders": "Go to Orders",
+    "loadingOrders": "Loading orders…"
+  },
+  "noResults": {
+    "title": "Customer not found",
+    "description": "No customer matches this phone number or name.",
+    "createWithPhone": "Create customer with this number"
+  },
+  "smartOps": {
+    "newCustomer": "New Customer",
+    "export": "Export",
+    "merge": "Merge",
+    "print": "Print",
+    "more": "More"
+  },
+  "columns": {
+    "customer": "Customer",
+    "phones": "Phones",
+    "address": "Address",
+    "defaultAddress": "Default Address",
+    "lastOrder": "Last Order",
+    "previousOrders": "Previous Orders",
+    "intelligence": "Intel",
+    "status": "Status",
+    "createdAt": "Created",
+    "actions": "Actions",
+    "code": "Code",
+    "name": "Name",
+    "contactPerson": "Contact Person",
+    "email": "Email",
+    "phone": "Phone",
+    "country": "Country",
+    "city": "City"
+  },
+  "intelligence": {
+    "hasNotes": "Notes",
+    "returning": "Returning"
+  },
+  "table": {
+    "empty": "No customers found.",
+    "error": "Failed to load customers. Please try again.",
+    "selectAll": "Select all",
+    "viewOrders": "View Orders"
+  },
+  "phone": {
+    "call": "Call",
+    "whatsapp": "WhatsApp",
+    "copy": "Copy number",
+    "copied": "Copied!",
+    "primary": "Primary",
+    "secondary": "Secondary",
+    "more": "+{{count}} more"
+  },
+  "tags": {
+    "vip": "VIP",
+    "wholesale": "Wholesale",
+    "inactive": "Inactive"
+  },
+  "form": {
+    "code": {
+      "label": "Code",
+      "placeholder": "CUST-001"
+    },
+    "name": {
+      "label": "Customer Name",
+      "placeholder": "e.g. Ahmed Mohamed"
+    },
+    "phone": "Primary Phone",
+    "phonePlaceholder": "Enter phone number…",
+    "mobile": "Secondary Phone",
+    "contactPerson": "Contact Person",
+    "email": {
+      "label": "Email",
+      "placeholder": "customer@example.com"
+    },
+    "country": "Country",
+    "city": "City",
+    "address": "Address",
+    "notes": {
+      "label": "Notes",
+      "placeholder": "Optional notes…"
+    },
+    "active": "Active",
+    "brand": {
+      "label": "Brand",
+      "placeholder": "Select a brand"
+    }
+  },
+  "drawer": {
+    "createTitle": "New Customer",
+    "editTitle": "Edit Customer",
+    "createSubtitle": "Add a new customer. Only name and phone are required.",
+    "editSubtitle": "Update the customer details below.",
+    "submitCreate": "Create customer",
+    "submitEdit": "Save changes",
+    "saving": "Saving…",
+    "errorTitle": "Unable to save",
+    "savedMessage": "Changes saved successfully.",
+    "phoneStep": {
+      "title": "Enter Primary Phone",
+      "description": "We'll check if this customer already exists.",
+      "label": "Primary Phone Number",
+      "placeholder": "01012345678",
+      "continue": "Continue",
+      "checking": "Checking…"
+    },
+    "foundCustomer": {
+      "title": "Customer already exists",
+      "description": "A customer with this phone number was found.",
+      "open": "Open Existing Customer",
+      "cancel": "Cancel"
+    },
+    "tabs": {
+      "summary": "Summary",
+      "phones": "Phones",
+      "addresses": "Addresses",
+      "orders": "Orders",
+      "activity": "Activity",
+      "memory": "Memory",
+      "audit": "Audit"
+    },
+    "summary": {
+      "code": "Customer Code",
+      "contactPerson": "Contact Person",
+      "email": "Email",
+      "status": "Status",
+      "memberSince": "Member since",
+      "lastUpdated": "Last updated",
+      "totalOrders": "Total Orders",
+      "lastOrder": "Last Order",
+      "totalSpend": "Total Spend",
+      "noOrders": "No orders yet.",
+      "brands": "Brands",
+      "brandOrders": "Orders by Brand"
+    },
+    "phonesTab": {
+      "title": "Phone Numbers",
+      "noPhone": "No phone numbers on file.",
+      "primary": "Primary",
+      "secondary": "Secondary"
+    },
+    "addresses": {
+      "title": "Address Book",
+      "default": "Default Address",
+      "noAddress": "No address on file.",
+      "copyAddress": "Copy Address",
+      "openMap": "Open Map",
+      "city": "City",
+      "country": "Country"
+    },
+    "memory": {
+      "title": "Customer Memory",
+      "empty": "No notes saved yet.",
+      "edit": "Edit Notes",
+      "note": "Pinned Note"
+    },
+    "activity": {
+      "title": "Activity",
+      "empty": "Activity timeline is not yet available.",
+      "comingSoon": "Coming soon"
+    },
+    "orders": {
+      "empty": "No orders found for this customer.",
+      "more": "+{{count}} more"
+    }
+  },
+  "detail": {
+    "tabs": {
+      "overview": "Overview",
+      "contact": "Contact",
+      "notes": "Notes",
+      "orders": "Orders"
+    },
+    "contactPerson": "Contact person",
+    "email": "Email",
+    "createdAt": "Created",
+    "updatedAt": "Updated",
+    "phones": "Phones",
+    "noPhone": "No phone numbers on file.",
+    "address": "Address",
+    "copyAddress": "Copy address",
+    "openMap": "Open map",
+    "noAddress": "No address on file.",
+    "noNotes": "No notes yet.",
+    "noOrders": "No orders found for this customer.",
+    "moreOrders": "+{{count}} more orders"
+  },
+  "delete": {
+    "title": "Delete customer",
+    "confirm": "Delete"
+  },
+  "profile": {
+    "notFound": "Customer not found",
+    "backToCustomers": "Back to Customers"
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "title": "System Core",
+  "permissions": {
+    "title": "Permissions",
+    "denied": "You do not have permission to perform this action.",
+    "contactAdmin": "Contact your system administrator."
+  },
+  "errors": {
+    "unexpected": "An unexpected error occurred.",
+    "networkError": "Network error. Check your connection and try again.",
+    "serverError": "Server error. Please try again later.",
+    "notFound": "The requested resource was not found.",
+    "forbidden": "Access denied.",
+    "validationFailed": "Please correct the errors below."
+  },
+  "session": {
+    "expired": "Your session has expired. Please log in again.",
+    "expiringSoon": "Your session will expire in {{minutes}} minutes.",
+    "refresh": "Stay Logged In"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markAllRead": "Mark All as Read",
+    "noNotifications": "No notifications.",
+    "viewAll": "View All"
+  },
+  "search": {
+    "placeholder": "Search anything…",
+    "noResults": "No results for \"{{query}}\".",
+    "recentSearches": "Recent Searches",
+    "clearRecent": "Clear"
+  },
+  "preferences": {
+    "title": "Preferences",
+    "language": "Language",
+    "theme": "Theme",
+    "themes": {
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System Default"
+    },
+    "timezone": "Time Zone",
+    "dateFormat": "Date Format",
+    "currency": "Currency"
+  },
+  "version": {
+    "current": "Version {{version}}",
+    "updateAvailable": "Update available",
+    "upToDate": "Up to date"
+  }
+}

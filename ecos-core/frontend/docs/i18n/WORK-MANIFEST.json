@@ -1,0 +1,1704 @@
+[
+ {
+  "group": "feature:logistics",
+  "files": 48,
+  "strings": 1194,
+  "list": [
+   {
+    "f": "src/features/logistics/drivers/components/driver-drawer.tsx",
+    "n": 70
+   },
+   {
+    "f": "src/features/logistics/vehicles/components/vehicle-drawer.tsx",
+    "n": 67
+   },
+   {
+    "f": "src/features/logistics/operations/pages/operational-dashboards-page.tsx",
+    "n": 58
+   },
+   {
+    "f": "src/features/logistics/distribution-planning/pages/distribution-planning-page.tsx",
+    "n": 55
+   },
+   {
+    "f": "src/features/logistics/shipping-companies/components/shipping-company-drawer.tsx",
+    "n": 55
+   },
+   {
+    "f": "src/features/logistics/operations/components/exception-drawer.tsx",
+    "n": 52
+   },
+   {
+    "f": "src/features/logistics/delivery/components/delivery-drawer.tsx",
+    "n": 42
+   },
+   {
+    "f": "src/features/logistics/operations/pages/enterprise-readiness-page.tsx",
+    "n": 36
+   },
+   {
+    "f": "src/features/logistics/drivers/pages/drivers-page.tsx",
+    "n": 35
+   },
+   {
+    "f": "src/features/logistics/operations/pages/enterprise-workspace-page.tsx",
+    "n": 34
+   },
+   {
+    "f": "src/features/logistics/shipping-companies/pages/shipping-companies-page.tsx",
+    "n": 33
+   },
+   {
+    "f": "src/features/logistics/vehicles/pages/vehicles-page.tsx",
+    "n": 33
+   },
+   {
+    "f": "src/features/logistics/distribution-zones/pages/distribution-zones-page.tsx",
+    "n": 32
+   },
+   {
+    "f": "src/features/logistics/operations/pages/activity-center-page.tsx",
+    "n": 31
+   },
+   {
+    "f": "src/features/logistics/fleet/components/fleet-unit-drawer.tsx",
+    "n": 30
+   },
+   {
+    "f": "src/features/logistics/dispatch/pages/dispatch-execution-page.tsx",
+    "n": 29
+   },
+   {
+    "f": "src/features/logistics/dispatch/components/dispatch-monitoring-panel.tsx",
+    "n": 28
+   },
+   {
+    "f": "src/features/logistics/distribution-zones/components/distribution-zone-drawer.tsx",
+    "n": 28
+   },
+   {
+    "f": "src/features/logistics/delivery/pages/delivery-page.tsx",
+    "n": 27
+   },
+   {
+    "f": "src/features/logistics/distribution-planning/components/zone-detail-drawer.tsx",
+    "n": 24
+   },
+   {
+    "f": "src/features/logistics/operations/components/capacity-panel.tsx",
+    "n": 24
+   },
+   {
+    "f": "src/features/logistics/dispatch/components/dispatch-conflicts-panel.tsx",
+    "n": 23
+   },
+   {
+    "f": "src/features/logistics/dispatch/components/dispatch-sessions-panel.tsx",
+    "n": 23
+   },
+   {
+    "f": "src/features/logistics/dispatch/components/queue-item-drawer.tsx",
+    "n": 23
+   },
+   {
+    "f": "src/features/logistics/operations/components/reservation-drawer.tsx",
+    "n": 23
+   },
+   {
+    "f": "src/features/logistics/fleet/pages/fleet-dashboard-page.tsx",
+    "n": 22
+   },
+   {
+    "f": "src/features/logistics/operations/components/pool-drawer.tsx",
+    "n": 22
+   },
+   {
+    "f": "src/features/logistics/operations/pages/alert-center-page.tsx",
+    "n": 22
+   },
+   {
+    "f": "src/features/logistics/dispatch/pages/dispatch-command-center-page.tsx",
+    "n": 19
+   },
+   {
+    "f": "src/features/logistics/network/pages/service-areas-page.tsx",
+    "n": 18
+   },
+   {
+    "f": "src/features/logistics/operations/components/operations-badges.tsx",
+    "n": 18
+   },
+   {
+    "f": "src/features/logistics/dispatch/components/dispatch-queue-panel.tsx",
+    "n": 17
+   },
+   {
+    "f": "src/features/logistics/network/components/service-area-drawer.tsx",
+    "n": 17
+   },
+   {
+    "f": "src/features/logistics/dispatch/components/dispatch-status-badges.tsx",
+    "n": 16
+   },
+   {
+    "f": "src/features/logistics/distribution-zones/components/area-selector.tsx",
+    "n": 14
+   },
+   {
+    "f": "src/features/logistics/operations/pages/operations-center-page.tsx",
+    "n": 13
+   },
+   {
+    "f": "src/features/logistics/delivery/components/delivery-status-badge.tsx",
+    "n": 12
+   },
+   {
+    "f": "src/features/logistics/distribution-planning/components/zone-planning-card.tsx",
+    "n": 11
+   },
+   {
+    "f": "src/features/logistics/fleet/components/fitness-badge.tsx",
+    "n": 9
+   },
+   {
+    "f": "src/features/logistics/operations/components/resource-pools-panel.tsx",
+    "n": 8
+   },
+   {
+    "f": "src/features/logistics/distribution-zones/components/transfer-list.tsx",
+    "n": 7
+   },
+   {
+    "f": "src/features/logistics/operations/components/utilisation-panel.tsx",
+    "n": 7
+   },
+   {
+    "f": "src/features/logistics/operations/components/exceptions-panel.tsx",
+    "n": 6
+   },
+   {
+    "f": "src/features/logistics/vehicles/components/vehicle-status-badge.tsx",
+    "n": 6
+   },
+   {
+    "f": "src/features/logistics/geography/components/governorate-drawer.tsx",
+    "n": 5
+   },
+   {
+    "f": "src/features/logistics/drivers/components/license-status-badge.tsx",
+    "n": 4
+   },
+   {
+    "f": "src/features/logistics/network/components/area-status-badge.tsx",
+    "n": 4
+   },
+   {
+    "f": "src/features/logistics/dispatch/components/dispatch-timeline-panel.tsx",
+    "n": 2
+   }
+  ]
+ },
+ {
+  "group": "feature:marketing",
+  "files": 36,
+  "strings": 693,
+  "list": [
+   {
+    "f": "src/features/marketing/drawers/initiative-drawer.tsx",
+    "n": 71
+   },
+   {
+    "f": "src/features/marketing/drawers/campaign-drawer.tsx",
+    "n": 50
+   },
+   {
+    "f": "src/features/marketing/pages/meta-connection-page.tsx",
+    "n": 44
+   },
+   {
+    "f": "src/features/marketing/intelligence/pages/executive-dashboard-page.tsx",
+    "n": 27
+   },
+   {
+    "f": "src/features/marketing/intelligence/pages/campaign-analytics-page.tsx",
+    "n": 26
+   },
+   {
+    "f": "src/features/marketing/campaign-studio/drawers/campaign-draft-drawer.tsx",
+    "n": 25
+   },
+   {
+    "f": "src/features/marketing/components/MetaConfigWizard.tsx",
+    "n": 25
+   },
+   {
+    "f": "src/features/marketing/intelligence/pages/creative-analytics-page.tsx",
+    "n": 25
+   },
+   {
+    "f": "src/features/marketing/pages/campaigns-workspace-page.tsx",
+    "n": 25
+   },
+   {
+    "f": "src/features/marketing/pages/initiatives-workspace-page.tsx",
+    "n": 24
+   },
+   {
+    "f": "src/features/marketing/campaign-studio/pages/studio-executive-dashboard-page.tsx",
+    "n": 22
+   },
+   {
+    "f": "src/features/marketing/intelligence/pages/ad-analytics-page.tsx",
+    "n": 22
+   },
+   {
+    "f": "src/features/marketing/pages/campaign-executive-dashboard-page.tsx",
+    "n": 22
+   },
+   {
+    "f": "src/features/marketing/pages/marketing-assets-page.tsx",
+    "n": 22
+   },
+   {
+    "f": "src/features/marketing/automation/pages/automation-workspace-page.tsx",
+    "n": 21
+   },
+   {
+    "f": "src/features/marketing/intelligence/pages/performance-trends-page.tsx",
+    "n": 20
+   },
+   {
+    "f": "src/features/marketing/automation/pages/automation-dashboard-page.tsx",
+    "n": 18
+   },
+   {
+    "f": "src/features/marketing/pages/initiative-executive-view-page.tsx",
+    "n": 17
+   },
+   {
+    "f": "src/features/marketing/pages/marketing-dashboard-page.tsx",
+    "n": 17
+   },
+   {
+    "f": "src/features/marketing/automation/drawers/segment-drawer.tsx",
+    "n": 15
+   },
+   {
+    "f": "src/features/marketing/automation/pages/workflow-builder-page.tsx",
+    "n": 14
+   },
+   {
+    "f": "src/features/marketing/campaign-studio/pages/campaign-studio-page.tsx",
+    "n": 14
+   },
+   {
+    "f": "src/features/marketing/automation/pages/automation-governance-page.tsx",
+    "n": 13
+   },
+   {
+    "f": "src/features/marketing/drawers/asset-detail-drawer.tsx",
+    "n": 13
+   },
+   {
+    "f": "src/features/marketing/pages/meta-connect-page.tsx",
+    "n": 13
+   },
+   {
+    "f": "src/features/marketing/intelligence/pages/reports-page.tsx",
+    "n": 12
+   },
+   {
+    "f": "src/features/marketing/automation/drawers/workflow-drawer.tsx",
+    "n": 11
+   },
+   {
+    "f": "src/features/marketing/components/provider-status-badge.tsx",
+    "n": 11
+   },
+   {
+    "f": "src/features/marketing/intelligence/pages/budget-analysis-page.tsx",
+    "n": 11
+   },
+   {
+    "f": "src/features/marketing/components/connector-health-card.tsx",
+    "n": 9
+   },
+   {
+    "f": "src/features/marketing/intelligence/components/intelligence-filter-bar.tsx",
+    "n": 9
+   },
+   {
+    "f": "src/features/marketing/campaign-studio/pages/campaign-governance-page.tsx",
+    "n": 8
+   },
+   {
+    "f": "src/features/marketing/automation/pages/audience-segments-page.tsx",
+    "n": 7
+   },
+   {
+    "f": "src/features/marketing/automation/drawers/workflow-template-picker.tsx",
+    "n": 5
+   },
+   {
+    "f": "src/features/marketing/components/relationship-graph.tsx",
+    "n": 3
+   },
+   {
+    "f": "src/features/marketing/intelligence/components/line-chart.tsx",
+    "n": 2
+   }
+  ]
+ },
+ {
+  "group": "feature:hr",
+  "files": 25,
+  "strings": 503,
+  "list": [
+   {
+    "f": "src/features/hr/pages/application-detail-page.tsx",
+    "n": 51
+   },
+   {
+    "f": "src/features/hr/pages/recruitment-workspace-page.tsx",
+    "n": 39
+   },
+   {
+    "f": "src/features/hr/pages/hr-executive-page.tsx",
+    "n": 34
+   },
+   {
+    "f": "src/features/hr/pages/employee-360-page.tsx",
+    "n": 31
+   },
+   {
+    "f": "src/features/hr/pages/leave-requests-page.tsx",
+    "n": 29
+   },
+   {
+    "f": "src/features/hr/pages/workforce-structure-page.tsx",
+    "n": 26
+   },
+   {
+    "f": "src/features/hr/pages/commission-rules-page.tsx",
+    "n": 25
+   },
+   {
+    "f": "src/features/hr/pages/careers-apply-page.tsx",
+    "n": 21
+   },
+   {
+    "f": "src/features/hr/pages/offers-workspace-page.tsx",
+    "n": 21
+   },
+   {
+    "f": "src/features/hr/pages/workforce-dashboard-page.tsx",
+    "n": 21
+   },
+   {
+    "f": "src/features/hr/pages/compensation-workspace-page.tsx",
+    "n": 20
+   },
+   {
+    "f": "src/features/hr/pages/compensation-360-page.tsx",
+    "n": 19
+   },
+   {
+    "f": "src/features/hr/pages/hr-analytics-page.tsx",
+    "n": 19
+   },
+   {
+    "f": "src/features/hr/pages/performance-workspace-page.tsx",
+    "n": 19
+   },
+   {
+    "f": "src/features/hr/components/employee-form-drawer.tsx",
+    "n": 16
+   },
+   {
+    "f": "src/features/hr/pages/attendance-workspace-page.tsx",
+    "n": 16
+   },
+   {
+    "f": "src/features/hr/pages/department-performance-page.tsx",
+    "n": 16
+   },
+   {
+    "f": "src/features/hr/pages/employees-page.tsx",
+    "n": 16
+   },
+   {
+    "f": "src/features/hr/pages/recruitment-analytics-page.tsx",
+    "n": 14
+   },
+   {
+    "f": "src/features/hr/pages/employee-performance-page.tsx",
+    "n": 13
+   },
+   {
+    "f": "src/features/hr/pages/compensation-explainability-page.tsx",
+    "n": 12
+   },
+   {
+    "f": "src/features/hr/pages/exit-management-page.tsx",
+    "n": 11
+   },
+   {
+    "f": "src/features/hr/pages/careers-portal-page.tsx",
+    "n": 6
+   },
+   {
+    "f": "src/features/hr/pages/applicant-tags-page.tsx",
+    "n": 5
+   },
+   {
+    "f": "src/features/hr/pages/organization-chart-page.tsx",
+    "n": 3
+   }
+  ]
+ },
+ {
+  "group": "feature:engineering",
+  "files": 35,
+  "strings": 448,
+  "list": [
+   {
+    "f": "src/features/engineering/pages/InboxPage.tsx",
+    "n": 44
+   },
+   {
+    "f": "src/features/engineering/components/inbox/TaskDrawer.tsx",
+    "n": 41
+   },
+   {
+    "f": "src/features/engineering/pages/engineering-pipeline-page.tsx",
+    "n": 38
+   },
+   {
+    "f": "src/features/engineering/pages/RepairSessionsPage.tsx",
+    "n": 36
+   },
+   {
+    "f": "src/features/engineering/pages/AgentWorkspacePage.tsx",
+    "n": 34
+   },
+   {
+    "f": "src/features/engineering/pages/ReleaseDashboardPage.tsx",
+    "n": 28
+   },
+   {
+    "f": "src/features/engineering/components/repair/RepairSessionDrawer.tsx",
+    "n": 22
+   },
+   {
+    "f": "src/features/engineering/pages/EnterpriseWorkspacePage.tsx",
+    "n": 21
+   },
+   {
+    "f": "src/features/engineering/pages/ClusterDashboardPage.tsx",
+    "n": 19
+   },
+   {
+    "f": "src/features/engineering/pages/AIEngineeringWorkspacePage.tsx",
+    "n": 16
+   },
+   {
+    "f": "src/features/engineering/components/RunDetailDrawer.tsx",
+    "n": 14
+   },
+   {
+    "f": "src/features/engineering/pages/engineering-dashboard-page.tsx",
+    "n": 14
+   },
+   {
+    "f": "src/features/engineering/pages/engineering-analytics-page.tsx",
+    "n": 13
+   },
+   {
+    "f": "src/features/engineering/pages/engineering-findings-page.tsx",
+    "n": 13
+   },
+   {
+    "f": "src/features/engineering/components/cluster/WorkerGrid.tsx",
+    "n": 11
+   },
+   {
+    "f": "src/features/engineering/components/repair/RepairPromptViewer.tsx",
+    "n": 11
+   },
+   {
+    "f": "src/features/engineering/pages/engineering-runs-page.tsx",
+    "n": 9
+   },
+   {
+    "f": "src/features/engineering/components/PipelineStageTimeline.tsx",
+    "n": 7
+   },
+   {
+    "f": "src/features/engineering/components/cluster/ClusterKPIRow.tsx",
+    "n": 6
+   },
+   {
+    "f": "src/features/engineering/components/release/ReleaseKPIRow.tsx",
+    "n": 6
+   },
+   {
+    "f": "src/features/engineering/components/workspace/GlobalSearchBar.tsx",
+    "n": 6
+   },
+   {
+    "f": "src/features/engineering/components/inbox/InboxKPIRow.tsx",
+    "n": 5
+   },
+   {
+    "f": "src/features/engineering/components/ai-supervisor/AIRiskViewer.tsx",
+    "n": 4
+   },
+   {
+    "f": "src/features/engineering/components/release/ApprovalPanel.tsx",
+    "n": 4
+   },
+   {
+    "f": "src/features/engineering/components/SeverityBadge.tsx",
+    "n": 4
+   },
+   {
+    "f": "src/features/engineering/components/workspace/EngineeringTimeline.tsx",
+    "n": 4
+   },
+   {
+    "f": "src/features/engineering/pages/engineering-pipeline-history-page.tsx",
+    "n": 4
+   },
+   {
+    "f": "src/features/engineering/components/cluster/WorkerDetailDrawer.tsx",
+    "n": 3
+   },
+   {
+    "f": "src/features/engineering/pages/engineering-notifications-page.tsx",
+    "n": 3
+   },
+   {
+    "f": "src/features/engineering/components/ai-supervisor/AIRecommendationList.tsx",
+    "n": 2
+   },
+   {
+    "f": "src/features/engineering/components/release/ValidationPanel.tsx",
+    "n": 2
+   },
+   {
+    "f": "src/features/engineering/components/ai-supervisor/AITrendChart.tsx",
+    "n": 1
+   },
+   {
+    "f": "src/features/engineering/components/ai-supervisor/EngineeringScoreCard.tsx",
+    "n": 1
+   },
+   {
+    "f": "src/features/engineering/components/release/PipelineTimeline.tsx",
+    "n": 1
+   },
+   {
+    "f": "src/features/engineering/components/ScoreTrendChart.tsx",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "group": "feature:operations",
+  "files": 46,
+  "strings": 302,
+  "list": [
+   {
+    "f": "src/features/operations/distribution-board/pages/loading-workspace-page.tsx",
+    "n": 23
+   },
+   {
+    "f": "src/features/operations/distribution-board/components/driver-acceptance-form.tsx",
+    "n": 20
+   },
+   {
+    "f": "src/features/operations/driver-mobile/pages/driver-stop-detail-page.tsx",
+    "n": 18
+   },
+   {
+    "f": "src/features/operations/distribution-board/pages/dispatch-gate-page.tsx",
+    "n": 15
+   },
+   {
+    "f": "src/features/operations/distribution-board/pages/dispatch-gate-workspace-page.tsx",
+    "n": 15
+   },
+   {
+    "f": "src/features/operations/distribution-board/pages/loading-dashboard-page.tsx",
+    "n": 13
+   },
+   {
+    "f": "src/features/operations/distribution-board/components/trip-review-panel.tsx",
+    "n": 9
+   },
+   {
+    "f": "src/features/operations/distribution-board/components/dispatch-authorization-panel.tsx",
+    "n": 8
+   },
+   {
+    "f": "src/features/operations/distribution-board/components/loading-product-card.tsx",
+    "n": 8
+   },
+   {
+    "f": "src/features/operations/distribution-board/components/resource-assignment-panel.tsx",
+    "n": 8
+   },
+   {
+    "f": "src/features/operations/distribution-board/components/trip-card.tsx",
+    "n": 8
+   },
+   {
+    "f": "src/features/operations/driver-mobile/components/delivery-action-form.tsx",
+    "n": 8
+   },
+   {
+    "f": "src/features/operations/driver-mobile/components/settlement-summary.tsx",
+    "n": 8
+   },
+   {
+    "f": "src/features/operations/distribution-board/components/dispatch-checklist-panel.tsx",
+    "n": 7
+   },
+   {
+    "f": "src/features/operations/distribution-board/components/trip-form-drawer.tsx",
+    "n": 7
+   },
+   {
+    "f": "src/features/operations/driver-mobile/components/return-form.tsx",
+    "n": 7
+   },
+   {
+    "f": "src/features/operations/driver-mobile/pages/driver-trip-dashboard-page.tsx",
+    "n": 7
+   },
+   {
+    "f": "src/features/operations/distribution-board/components/driver-product-confirmation.tsx",
+    "n": 6
+   },
+   {
+    "f": "src/features/operations/distribution-board/pages/distribution-board-page.tsx",
+    "n": 6
+   },
+   {
+    "f": "src/features/operations/driver-mobile/components/payment-collection-form.tsx",
+    "n": 6
+   },
+   {
+    "f": "src/features/operations/driver-mobile/components/proof-of-delivery-form.tsx",
+    "n": 6
+   },
+   {
+    "f": "src/features/operations/driver-mobile/components/trip-kpi-grid.tsx",
+    "n": 6
+   },
+   {
+    "f": "src/features/operations/driver-mobile/pages/driver-custody-return-page.tsx",
+    "n": 6
+   },
+   {
+    "f": "src/features/operations/driver-mobile/pages/driver-exceptions-page.tsx",
+    "n": 6
+   },
+   {
+    "f": "src/features/operations/driver-mobile/pages/driver-settlement-page.tsx",
+    "n": 6
+   },
+   {
+    "f": "src/features/operations/distribution-board/components/departure-dialog.tsx",
+    "n": 5
+   },
+   {
+    "f": "src/features/operations/driver-mobile/components/bank-transfer-form.tsx",
+    "n": 5
+   },
+   {
+    "f": "src/features/operations/driver-mobile/pages/driver-map-page.tsx",
+    "n": 5
+   },
+   {
+    "f": "src/features/operations/driver-mobile/pages/driver-returns-page.tsx",
+    "n": 5
+   },
+   {
+    "f": "src/features/operations/distribution-board/components/coverage-map.tsx",
+    "n": 4
+   },
+   {
+    "f": "src/features/operations/distribution-board/components/custody-panel.tsx",
+    "n": 4
+   },
+   {
+    "f": "src/features/operations/distribution-board/components/shortage-resolution-dialog.tsx",
+    "n": 4
+   },
+   {
+    "f": "src/features/operations/distribution-board/components/wave-header.tsx",
+    "n": 4
+   },
+   {
+    "f": "src/features/operations/driver-mobile/pages/driver-collections-page.tsx",
+    "n": 4
+   },
+   {
+    "f": "src/features/operations/driver-mobile/pages/driver-home-page.tsx",
+    "n": 4
+   },
+   {
+    "f": "src/features/operations/distribution-board/components/driver-custody-confirmation.tsx",
+    "n": 3
+   },
+   {
+    "f": "src/features/operations/distribution-board/components/move-order-dialog.tsx",
+    "n": 3
+   },
+   {
+    "f": "src/features/operations/driver-mobile/components/custody-return-list.tsx",
+    "n": 3
+   },
+   {
+    "f": "src/features/operations/driver-mobile/pages/driver-stop-list-page.tsx",
+    "n": 3
+   },
+   {
+    "f": "src/features/operations/distribution-board/components/orders-pool.tsx",
+    "n": 2
+   },
+   {
+    "f": "src/features/operations/driver-mobile/components/exception-form.tsx",
+    "n": 2
+   },
+   {
+    "f": "src/features/operations/components/wave-workspace-layout.tsx",
+    "n": 1
+   },
+   {
+    "f": "src/features/operations/distribution-board/components/wave-exceptions-panel.tsx",
+    "n": 1
+   },
+   {
+    "f": "src/features/operations/driver-mobile/components/driver-trip-card.tsx",
+    "n": 1
+   },
+   {
+    "f": "src/features/operations/driver-mobile/components/driver-trip-timeline.tsx",
+    "n": 1
+   },
+   {
+    "f": "src/features/operations/driver-mobile/pages/driver-trip-timeline-page.tsx",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "group": "components",
+  "files": 59,
+  "strings": 239,
+  "list": [
+   {
+    "f": "src/components/ui/media-viewer.tsx",
+    "n": 31
+   },
+   {
+    "f": "src/components/layout/header/create/smart-create.tsx",
+    "n": 30
+   },
+   {
+    "f": "src/components/command-center/command-palette.tsx",
+    "n": 12
+   },
+   {
+    "f": "src/components/layout/header/notifications/notification-center.tsx",
+    "n": 9
+   },
+   {
+    "f": "src/components/layout/header/search/search-command-dialog.tsx",
+    "n": 9
+   },
+   {
+    "f": "src/components/layout/header/user/user-menu.tsx",
+    "n": 9
+   },
+   {
+    "f": "src/components/layout/header/brand/brand-switcher.tsx",
+    "n": 7
+   },
+   {
+    "f": "src/components/layout/header/company/company-switcher.tsx",
+    "n": 7
+   },
+   {
+    "f": "src/components/layout/mobile-bottom-nav.tsx",
+    "n": 7
+   },
+   {
+    "f": "src/components/form/drawer/page-form-drawer.tsx",
+    "n": 6
+   },
+   {
+    "f": "src/components/layout/header/warehouse/warehouse-switcher.tsx",
+    "n": 6
+   },
+   {
+    "f": "src/components/entity/entity-workspace.tsx",
+    "n": 5
+   },
+   {
+    "f": "src/components/common/theme-toggle.tsx",
+    "n": 4
+   },
+   {
+    "f": "src/components/crud/status-badge/index.tsx",
+    "n": 4
+   },
+   {
+    "f": "src/components/ecos/sync-badge.tsx",
+    "n": 4
+   },
+   {
+    "f": "src/components/form/fields/form-field-wrapper.tsx",
+    "n": 4
+   },
+   {
+    "f": "src/components/form/layout/form-section.tsx",
+    "n": 4
+   },
+   {
+    "f": "src/components/form/tabs/drawer-tabs.tsx",
+    "n": 4
+   },
+   {
+    "f": "src/components/workspace/saved-views/workspace-saved-views.tsx",
+    "n": 4
+   },
+   {
+    "f": "src/components/data-grid/universal-data-grid.tsx",
+    "n": 3
+   },
+   {
+    "f": "src/components/form/layout/form-grid.tsx",
+    "n": 3
+   },
+   {
+    "f": "src/components/layout/mobile-menu.tsx",
+    "n": 3
+   },
+   {
+    "f": "src/components/page/filters/quick-filter-chips.tsx",
+    "n": 3
+   },
+   {
+    "f": "src/components/page/pagination/page-pagination.tsx",
+    "n": 3
+   },
+   {
+    "f": "src/components/page/states/page-empty-state.tsx",
+    "n": 3
+   },
+   {
+    "f": "src/components/page/states/page-error-state.tsx",
+    "n": 3
+   },
+   {
+    "f": "src/components/ui/forms/ecos-file-upload.tsx",
+    "n": 3
+   },
+   {
+    "f": "src/components/workspace/context-actions/workspace-context-actions.tsx",
+    "n": 3
+   },
+   {
+    "f": "src/components/common/coming-soon-page.tsx",
+    "n": 2
+   },
+   {
+    "f": "src/components/crud/filter-panel/index.tsx",
+    "n": 2
+   },
+   {
+    "f": "src/components/crud/search-input/index.tsx",
+    "n": 2
+   },
+   {
+    "f": "src/components/data-grid/saved-views-menu.tsx",
+    "n": 2
+   },
+   {
+    "f": "src/components/ds/toast-provider.tsx",
+    "n": 2
+   },
+   {
+    "f": "src/components/form/drawer/drawer-footer.tsx",
+    "n": 2
+   },
+   {
+    "f": "src/components/layout/app-sidebar.tsx",
+    "n": 2
+   },
+   {
+    "f": "src/components/layout/header/search/global-search.tsx",
+    "n": 2
+   },
+   {
+    "f": "src/components/page/dialog/page-confirm-dialog.tsx",
+    "n": 2
+   },
+   {
+    "f": "src/components/page/states/page-no-results-state.tsx",
+    "n": 2
+   },
+   {
+    "f": "src/components/ui/ecos-combobox.tsx",
+    "n": 2
+   },
+   {
+    "f": "src/components/ui/forms/ecos-image-upload.tsx",
+    "n": 2
+   },
+   {
+    "f": "src/components/ui/image-upload-field.tsx",
+    "n": 2
+   },
+   {
+    "f": "src/components/ui/live-cost-badge.tsx",
+    "n": 2
+   },
+   {
+    "f": "src/components/workspace/breadcrumbs/workspace-breadcrumbs.tsx",
+    "n": 2
+   },
+   {
+    "f": "src/components/crud/action-menu/index.tsx",
+    "n": 1
+   },
+   {
+    "f": "src/components/crud/loading-state/index.tsx",
+    "n": 1
+   },
+   {
+    "f": "src/components/data-grid/bulk-action-bar.tsx",
+    "n": 1
+   },
+   {
+    "f": "src/components/ds/tabs.tsx",
+    "n": 1
+   },
+   {
+    "f": "src/components/form/dialogs/unsaved-changes-dialog.tsx",
+    "n": 1
+   },
+   {
+    "f": "src/components/layout/app-breadcrumbs.tsx",
+    "n": 1
+   },
+   {
+    "f": "src/components/layout/app-shell.tsx",
+    "n": 1
+   },
+   {
+    "f": "src/components/layout/app-topbar.tsx",
+    "n": 1
+   },
+   {
+    "f": "src/components/layout/module-rail.tsx",
+    "n": 1
+   },
+   {
+    "f": "src/components/layout/workspace-card.tsx",
+    "n": 1
+   },
+   {
+    "f": "src/components/page/drawer/page-drawer.tsx",
+    "n": 1
+   },
+   {
+    "f": "src/components/page/states/page-loading-state.tsx",
+    "n": 1
+   },
+   {
+    "f": "src/components/ui/dialog.tsx",
+    "n": 1
+   },
+   {
+    "f": "src/components/ui/forms/ecos-tags-input.tsx",
+    "n": 1
+   },
+   {
+    "f": "src/components/ui/forms/form-field.tsx",
+    "n": 1
+   },
+   {
+    "f": "src/components/ui/sheet.tsx",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "group": "feature:admin",
+  "files": 4,
+  "strings": 237,
+  "list": [
+   {
+    "f": "src/features/admin/configuration/components/policy-workspace.tsx",
+    "n": 182
+   },
+   {
+    "f": "src/features/admin/configuration/pages/egypt-geography-page.tsx",
+    "n": 49
+   },
+   {
+    "f": "src/features/admin/configuration/components/delivery-shipping-workspace.tsx",
+    "n": 4
+   },
+   {
+    "f": "src/features/admin/configuration/components/delivery-coverage-workspace.tsx",
+    "n": 2
+   }
+  ]
+ },
+ {
+  "group": "feature:pos",
+  "files": 20,
+  "strings": 186,
+  "list": [
+   {
+    "f": "src/features/pos/components/keyboard-help.tsx",
+    "n": 26
+   },
+   {
+    "f": "src/features/pos/components/pos-workspace.tsx",
+    "n": 25
+   },
+   {
+    "f": "src/features/pos/components/cart-panel.tsx",
+    "n": 24
+   },
+   {
+    "f": "src/features/pos/components/receipt-panel.tsx",
+    "n": 14
+   },
+   {
+    "f": "src/features/pos/components/exchange-panel.tsx",
+    "n": 13
+   },
+   {
+    "f": "src/features/pos/components/payment-panel.tsx",
+    "n": 12
+   },
+   {
+    "f": "src/features/pos/components/return-panel.tsx",
+    "n": 12
+   },
+   {
+    "f": "src/features/pos/components/session-dialog.tsx",
+    "n": 12
+   },
+   {
+    "f": "src/features/pos/components/shift-dialog.tsx",
+    "n": 11
+   },
+   {
+    "f": "src/features/pos/components/manager-panel.tsx",
+    "n": 10
+   },
+   {
+    "f": "src/features/pos/components/held-carts-panel.tsx",
+    "n": 6
+   },
+   {
+    "f": "src/features/pos/pages/pos-page.tsx",
+    "n": 5
+   },
+   {
+    "f": "src/features/pos/components/customer-panel.tsx",
+    "n": 4
+   },
+   {
+    "f": "src/features/pos/components/product-card.tsx",
+    "n": 3
+   },
+   {
+    "f": "src/features/pos/components/cart-recovery-dialog.tsx",
+    "n": 2
+   },
+   {
+    "f": "src/features/pos/components/pos-error-boundary.tsx",
+    "n": 2
+   },
+   {
+    "f": "src/features/pos/components/product-search.tsx",
+    "n": 2
+   },
+   {
+    "f": "src/features/pos/components/cart-line.tsx",
+    "n": 1
+   },
+   {
+    "f": "src/features/pos/components/pos-header.tsx",
+    "n": 1
+   },
+   {
+    "f": "src/features/pos/components/product-grid.tsx",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "group": "feature:brands",
+  "files": 7,
+  "strings": 151,
+  "list": [
+   {
+    "f": "src/features/brands/components/brand-shipping-tab.tsx",
+    "n": 37
+   },
+   {
+    "f": "src/features/brands/components/brand-delivery-windows-tab.tsx",
+    "n": 26
+   },
+   {
+    "f": "src/features/brands/pages/brands-page.tsx",
+    "n": 26
+   },
+   {
+    "f": "src/features/brands/components/brand-detail-drawer.tsx",
+    "n": 23
+   },
+   {
+    "f": "src/features/brands/components/brand-form-drawer.tsx",
+    "n": 19
+   },
+   {
+    "f": "src/features/brands/components/brand-form.tsx",
+    "n": 19
+   },
+   {
+    "f": "src/features/brands/components/brand-select.tsx",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "group": "feature:business-accounts",
+  "files": 4,
+  "strings": 76,
+  "list": [
+   {
+    "f": "src/features/business-accounts/components/business-account-detail-drawer.tsx",
+    "n": 32
+   },
+   {
+    "f": "src/features/business-accounts/pages/business-accounts-page.tsx",
+    "n": 30
+   },
+   {
+    "f": "src/features/business-accounts/components/business-account-form.tsx",
+    "n": 12
+   },
+   {
+    "f": "src/features/business-accounts/components/business-account-form-drawer.tsx",
+    "n": 2
+   }
+  ]
+ },
+ {
+  "group": "feature:customer-engagement",
+  "files": 4,
+  "strings": 76,
+  "list": [
+   {
+    "f": "src/features/customer-engagement/pages/unified-inbox-page.tsx",
+    "n": 27
+   },
+   {
+    "f": "src/features/customer-engagement/pages/cep-dashboard-page.tsx",
+    "n": 21
+   },
+   {
+    "f": "src/features/customer-engagement/pages/cep-leads-page.tsx",
+    "n": 15
+   },
+   {
+    "f": "src/features/customer-engagement/drawers/conversation-drawer.tsx",
+    "n": 13
+   }
+  ]
+ },
+ {
+  "group": "feature:companies",
+  "files": 4,
+  "strings": 70,
+  "list": [
+   {
+    "f": "src/features/companies/pages/companies-page.tsx",
+    "n": 26
+   },
+   {
+    "f": "src/features/companies/components/company-detail-drawer.tsx",
+    "n": 22
+   },
+   {
+    "f": "src/features/companies/components/company-form.tsx",
+    "n": 20
+   },
+   {
+    "f": "src/features/companies/components/company-form-drawer.tsx",
+    "n": 2
+   }
+  ]
+ },
+ {
+  "group": "feature:purchase-materials",
+  "files": 3,
+  "strings": 67,
+  "list": [
+   {
+    "f": "src/features/purchase-materials/components/enterprise-demand-panel.tsx",
+    "n": 53
+   },
+   {
+    "f": "src/features/purchase-materials/components/purchase-material-status-badge.tsx",
+    "n": 10
+   },
+   {
+    "f": "src/features/purchase-materials/components/purchase-material-priority-badge.tsx",
+    "n": 4
+   }
+  ]
+ },
+ {
+  "group": "feature:core",
+  "files": 7,
+  "strings": 66,
+  "list": [
+   {
+    "f": "src/features/core/business-attribution/drawers/business-dna-drawer.tsx",
+    "n": 26
+   },
+   {
+    "f": "src/features/core/business-attribution/pages/journey-explorer-page.tsx",
+    "n": 18
+   },
+   {
+    "f": "src/features/core/business-attribution/pages/bae-timeline-page.tsx",
+    "n": 9
+   },
+   {
+    "f": "src/features/core/business-attribution/components/replay-controls-placeholder.tsx",
+    "n": 4
+   },
+   {
+    "f": "src/features/core/business-attribution/drawers/replay-drawer-placeholder.tsx",
+    "n": 4
+   },
+   {
+    "f": "src/features/core/pages/not-found-page.tsx",
+    "n": 3
+   },
+   {
+    "f": "src/features/core/business-attribution/components/replay-timeline-placeholder.tsx",
+    "n": 2
+   }
+  ]
+ },
+ {
+  "group": "feature:orders",
+  "files": 14,
+  "strings": 58,
+  "list": [
+   {
+    "f": "src/features/orders/components/order-confirm-customer-dialog.tsx",
+    "n": 8
+   },
+   {
+    "f": "src/features/orders/components/brand-config-health-card.tsx",
+    "n": 7
+   },
+   {
+    "f": "src/features/orders/components/order-payment-badge.tsx",
+    "n": 7
+   },
+   {
+    "f": "src/features/orders/components/order-payment-cell.tsx",
+    "n": 7
+   },
+   {
+    "f": "src/features/orders/components/order-workflow-actions-panel.tsx",
+    "n": 5
+   },
+   {
+    "f": "src/features/orders/components/order-customer-alerts.tsx",
+    "n": 4
+   },
+   {
+    "f": "src/features/orders/pages/orders-page.tsx",
+    "n": 4
+   },
+   {
+    "f": "src/features/orders/components/order-area-cell.tsx",
+    "n": 3
+   },
+   {
+    "f": "src/features/orders/components/order-column-defs.tsx",
+    "n": 3
+   },
+   {
+    "f": "src/features/orders/components/order-detail-drawer.tsx",
+    "n": 3
+   },
+   {
+    "f": "src/features/orders/components/manual-order-form.tsx",
+    "n": 2
+   },
+   {
+    "f": "src/features/orders/components/order-distribution-stage-banner.tsx",
+    "n": 2
+   },
+   {
+    "f": "src/features/orders/pages/order-detail-page.tsx",
+    "n": 2
+   },
+   {
+    "f": "src/features/orders/components/order-customer-lookup-field.tsx",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "group": "feature:teams",
+  "files": 4,
+  "strings": 55,
+  "list": [
+   {
+    "f": "src/features/teams/pages/teams-page.tsx",
+    "n": 23
+   },
+   {
+    "f": "src/features/teams/components/team-detail-drawer.tsx",
+    "n": 21
+   },
+   {
+    "f": "src/features/teams/components/team-form.tsx",
+    "n": 9
+   },
+   {
+    "f": "src/features/teams/components/team-form-drawer.tsx",
+    "n": 2
+   }
+  ]
+ },
+ {
+  "group": "feature:channels",
+  "files": 7,
+  "strings": 54,
+  "list": [
+   {
+    "f": "src/features/channels/pages/channels-page.tsx",
+    "n": 15
+   },
+   {
+    "f": "src/features/channels/components/import-orders-result-dialog.tsx",
+    "n": 9
+   },
+   {
+    "f": "src/features/channels/components/import-result-dialog.tsx",
+    "n": 9
+   },
+   {
+    "f": "src/features/channels/components/channel-form.tsx",
+    "n": 6
+   },
+   {
+    "f": "src/features/channels/components/channels-content.tsx",
+    "n": 6
+   },
+   {
+    "f": "src/features/channels/components/platform-badge.tsx",
+    "n": 6
+   },
+   {
+    "f": "src/features/channels/components/connection-status-badge.tsx",
+    "n": 3
+   }
+  ]
+ },
+ {
+  "group": "feature:dashboard",
+  "files": 3,
+  "strings": 51,
+  "list": [
+   {
+    "f": "src/features/dashboard/components/activity-feed.tsx",
+    "n": 28
+   },
+   {
+    "f": "src/features/dashboard/components/dashboard-activity-timeline.tsx",
+    "n": 16
+   },
+   {
+    "f": "src/features/dashboard/components/quick-actions.tsx",
+    "n": 7
+   }
+  ]
+ },
+ {
+  "group": "feature:organization",
+  "files": 2,
+  "strings": 50,
+  "list": [
+   {
+    "f": "src/features/organization/pages/organization-workspace.tsx",
+    "n": 35
+   },
+   {
+    "f": "src/features/organization/pages/org-search-page.tsx",
+    "n": 15
+   }
+  ]
+ },
+ {
+  "group": "feature:claude-bridge",
+  "files": 5,
+  "strings": 41,
+  "list": [
+   {
+    "f": "src/features/claude-bridge/pages/bridge-create-task-page.tsx",
+    "n": 13
+   },
+   {
+    "f": "src/features/claude-bridge/pages/bridge-task-detail-page.tsx",
+    "n": 13
+   },
+   {
+    "f": "src/features/claude-bridge/pages/bridge-dashboard-page.tsx",
+    "n": 10
+   },
+   {
+    "f": "src/features/claude-bridge/pages/bridge-tasks-page.tsx",
+    "n": 4
+   },
+   {
+    "f": "src/features/claude-bridge/pages/bridge-settings-page.tsx",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "group": "feature:conversational-commerce",
+  "files": 5,
+  "strings": 36,
+  "list": [
+   {
+    "f": "src/features/conversational-commerce/pages/conversations-dashboard-page.tsx",
+    "n": 9
+   },
+   {
+    "f": "src/features/conversational-commerce/pages/macros-page.tsx",
+    "n": 8
+   },
+   {
+    "f": "src/features/conversational-commerce/pages/omnichannel-inbox-page.tsx",
+    "n": 8
+   },
+   {
+    "f": "src/features/conversational-commerce/pages/channel-providers-page.tsx",
+    "n": 6
+   },
+   {
+    "f": "src/features/conversational-commerce/pages/routing-rules-page.tsx",
+    "n": 5
+   }
+  ]
+ },
+ {
+  "group": "feature:branches",
+  "files": 4,
+  "strings": 35,
+  "list": [
+   {
+    "f": "src/features/branches/pages/branch-coverage-page.tsx",
+    "n": 31
+   },
+   {
+    "f": "src/features/branches/components/coverage-area-dialog.tsx",
+    "n": 2
+   },
+   {
+    "f": "src/features/branches/components/company-select.tsx",
+    "n": 1
+   },
+   {
+    "f": "src/features/branches/pages/branches-page.tsx",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "group": "feature:warehouses",
+  "files": 4,
+  "strings": 23,
+  "list": [
+   {
+    "f": "src/features/warehouses/components/warehouse-detail-drawer.tsx",
+    "n": 12
+   },
+   {
+    "f": "src/features/warehouses/pages/warehouses-page.tsx",
+    "n": 9
+   },
+   {
+    "f": "src/features/warehouses/components/branch-select.tsx",
+    "n": 1
+   },
+   {
+    "f": "src/features/warehouses/components/warehouse-form.tsx",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "group": "feature:suppliers",
+  "files": 2,
+  "strings": 11,
+  "list": [
+   {
+    "f": "src/features/suppliers/components/supplier-360-drawer.tsx",
+    "n": 6
+   },
+   {
+    "f": "src/features/suppliers/components/procurement-health-badge.tsx",
+    "n": 5
+   }
+  ]
+ },
+ {
+  "group": "feature:purchase-orders",
+  "files": 1,
+  "strings": 7,
+  "list": [
+   {
+    "f": "src/features/purchase-orders/components/purchase-order-lines-editor.tsx",
+    "n": 7
+   }
+  ]
+ },
+ {
+  "group": "feature:products",
+  "files": 3,
+  "strings": 6,
+  "list": [
+   {
+    "f": "src/features/products/components/product-pricing-section.tsx",
+    "n": 4
+   },
+   {
+    "f": "src/features/products/components/product-column-defs.tsx",
+    "n": 1
+   },
+   {
+    "f": "src/features/products/components/product-form.tsx",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "group": "feature:stock-transfers",
+  "files": 1,
+  "strings": 5,
+  "list": [
+   {
+    "f": "src/features/stock-transfers/pages/stock-transfers-page.tsx",
+    "n": 5
+   }
+  ]
+ },
+ {
+  "group": "feature:auth",
+  "files": 1,
+  "strings": 4,
+  "list": [
+   {
+    "f": "src/features/auth/pages/login-page.tsx",
+    "n": 4
+   }
+  ]
+ },
+ {
+  "group": "feature:cost-management",
+  "files": 2,
+  "strings": 3,
+  "list": [
+   {
+    "f": "src/features/cost-management/pages/cost-history-page.tsx",
+    "n": 2
+   },
+   {
+    "f": "src/features/cost-management/pages/cost-pricing-center-page.tsx",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "group": "feature:home",
+  "files": 1,
+  "strings": 3,
+  "list": [
+   {
+    "f": "src/features/home/pages/home-page.tsx",
+    "n": 3
+   }
+  ]
+ },
+ {
+  "group": "feature:inventory-count",
+  "files": 2,
+  "strings": 2,
+  "list": [
+   {
+    "f": "src/features/inventory-count/components/count-session-drawer.tsx",
+    "n": 1
+   },
+   {
+    "f": "src/features/inventory-count/components/new-count-dialog.test.tsx",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "group": "feature:customers",
+  "files": 1,
+  "strings": 1,
+  "list": [
+   {
+    "f": "src/features/customers/components/customer-quick-action-card.tsx",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "group": "feature:goods-receipts",
+  "files": 1,
+  "strings": 1,
+  "list": [
+   {
+    "f": "src/features/goods-receipts/components/goods-receipt-header-fields.tsx",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "group": "feature:raw-materials",
+  "files": 1,
+  "strings": 1,
+  "list": [
+   {
+    "f": "src/features/raw-materials/components/raw-material-form-drawer.tsx",
+    "n": 1
+   }
+  ]
+ }
+]

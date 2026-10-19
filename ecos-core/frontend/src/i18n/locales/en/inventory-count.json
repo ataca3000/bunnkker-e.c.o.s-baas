@@ -1,0 +1,450 @@
+{
+  "title": "Inventory Count",
+  "subtitle": "Conduct blind counts and reconcile physical inventory.",
+  "sessions": {
+    "title": "Count Sessions",
+    "pageTitle": "Inventory Count",
+    "pageSubtitle": "Manage physical inventory count sessions.",
+    "breadcrumb": {
+      "home": "Home",
+      "page": "Inventory Count"
+    },
+    "search": "Search sessions…",
+    "searchPlaceholder": "Search by session number or warehouse…",
+    "actions": {
+      "new": "New Count Session",
+      "open": "Open Session",
+      "freeze": "Freeze",
+      "finalize": "Finalize Count",
+      "exportReport": "Export Report",
+      "refresh": "Refresh",
+      "delete": "Delete"
+    },
+    "totalCount": "{{count}} sessions",
+    "pagination": "Page {{page}} of {{total}} — {{count}} total",
+    "paginationPrev": "Previous",
+    "paginationNext": "Next",
+    "columns": {
+      "session": "Session",
+      "sessionNo": "Session #",
+      "warehouse": "Warehouse",
+      "status": "Status",
+      "products": "Products",
+      "accuracy": "Accuracy",
+      "startedAt": "Started",
+      "startDate": "Start Date",
+      "finalizedAt": "Finalized",
+      "completionDate": "Completion Date",
+      "createdBy": "Created By",
+      "shortageValue": "Shortage Value",
+      "wasteValue": "Waste Value",
+      "attachments": "Attachments"
+    },
+    "status": {
+      "all":         "All",
+      "draft":       "Draft",
+      "in_progress": "In Progress",
+      "completed":   "Pending Approval",
+      "approved":    "Approved",
+      "cancelled":   "Cancelled"
+    },
+    "loading": "Loading…",
+    "noMatches": "No matching sessions.",
+    "empty": "No count sessions yet. Create a session to get started.",
+    "toast": {
+      "deleted": "Session deleted.",
+      "deleteFail": "Failed to delete session.",
+      "confirmDelete": "Delete count session {{number}}?",
+      "created": "Count session created.",
+      "createFailed": "Failed to create count session."
+    },
+    "form": {
+      "name": { "label": "Session Name", "placeholder": "Monthly Count — July 2026" },
+      "warehouse": { "label": "Warehouse", "placeholder": "Select warehouse…" },
+      "category": { "label": "Category (optional)", "placeholder": "All categories" },
+      "countMethod": { "label": "Count Method" },
+      "methods": {
+        "blind": "Blind Count (recommended)",
+        "standard": "Standard Count"
+      }
+    },
+    "newDialog": {
+      "title": "New Count Session",
+      "description": "Create a new physical inventory count session. All active products in the selected warehouse will be included.",
+      "companyLabel": "Company",
+      "warehouseLabel": "Warehouse",
+      "selectCompanyFirst": "Select a company first.",
+      "loadingWarehouses": "Loading warehouses…",
+      "noWarehouses": "No active warehouses for this company.",
+      "warehousePlaceholder": "Select warehouse…",
+      "notesLabel": "Notes",
+      "notesPlaceholder": "Optional notes for this session…",
+      "cancel": "Cancel",
+      "submit": "Create Session"
+    }
+  },
+  "counting": {
+    "title": "Enter Count",
+    "subtitle": "Enter the physical count for each product. System quantities are hidden during blind count.",
+    "search": "Search products to count…",
+    "columns": {
+      "product": "Product",
+      "sku": "SKU",
+      "unit": "Unit",
+      "counted": "Counted Qty",
+      "systemQty": "System Qty",
+      "variance": "Variance",
+      "varianceValue": "Variance Value"
+    },
+    "saveCount": "Save Count",
+    "saving": "Saving…"
+  },
+  "report": {
+    "title": "Final Count Report",
+    "subtitle": "Variance reconciliation between physical and system quantities.",
+    "accuracy": "Count Accuracy",
+    "totalProducts": "Total Products",
+    "matched": "Matched",
+    "variances": "Variances",
+    "totalVarianceValue": "Total Variance Value",
+    "adjIn": "Stock Added",
+    "adjOut": "Stock Removed",
+    "approve": "Approve & Post Adjustments",
+    "approving": "Posting…"
+  },
+  "drawer": {
+    "viewCount": "Count",
+    "viewReport": "Report",
+    "blindCountActive": "Blind Count Active",
+    "blindCountDesc": "System quantities, variances, and financial impact are hidden until the session is approved to minimize bias during the actual count.",
+    "meta": {
+      "started": "Started",
+      "completed": "Completed",
+      "lines": "Lines",
+      "approvedBy": "Approved By"
+    },
+    "summary": {
+      "accuracy": "Accuracy",
+      "shortageLines": "Shortage Lines",
+      "shortageValue": "Shortage Value",
+      "wasteValue": "Waste Value"
+    },
+    "alerts": {
+      "liabilities": "{{count}} warehouse liabilities created from shortages.",
+      "wasteLines": "{{count}} damaged lines require waste investigation."
+    },
+    "lines": {
+      "empty": "No lines in this session.",
+      "product": "Product",
+      "systemQty": "System Qty",
+      "countedQty": "Counted Qty",
+      "damagedQty": "Damaged Qty",
+      "damageReason": "Damage Reason",
+      "shortage": "Shortage",
+      "variance": "Variance",
+      "attachments": "Attachments",
+      "reasonRequired": "Required ▾",
+      "reasonHint": "Required when damaged qty > 0",
+      "damageNotesPlaceholder": "Damage description…",
+      "attachTitle": "Attach image / PDF / video",
+      "removeAttachment": "Remove Attachment",
+      "attachAdded": "Attachment added.",
+      "attachFailed": "Upload failed.",
+      "attachRemoved": "Attachment removed.",
+      "attachRemoveFailed": "Remove failed."
+    },
+    "variance": {
+      "match": "✓ Match"
+    },
+    "timeline": {
+      "title": "Timeline",
+      "pending": "Pending",
+      "sessionCreated": "Session created",
+      "countStarted": "Count started",
+      "countCompleted": "Count completed",
+      "approvedPosted": "Approved & posted"
+    },
+    "actions": {
+      "saveCount": "Save Count",
+      "startCount": "Start Count",
+      "completeCount": "Complete Count",
+      "approvePost": "Approve & Post",
+      "cancel": "Cancel",
+      "approved": "Approved — adjustments posted",
+      "cancelled": "This session was cancelled"
+    },
+    "toast": {
+      "saved": "Count saved.",
+      "saveFailed": "Save failed. Please try again.",
+      "started": "Count session started.",
+      "startFailed": "Failed to start session.",
+      "completed": "Count session completed.",
+      "completeFailed": "Failed to complete session.",
+      "approved": "Count session approved.",
+      "approveFailed": "Failed to approve session.",
+      "cancelled": "Count session cancelled.",
+      "cancelFailed": "Failed to cancel session."
+    },
+    "report": {
+      "title": "Inventory Count Report",
+      "sessionNo": "Session #",
+      "warehouse": "Warehouse",
+      "started": "Started",
+      "completed": "Completed",
+      "approvedBy": "Approved By",
+      "approvalDate": "Approval Date",
+      "inventorySummary": "Inventory Summary",
+      "financialSummary": "Financial Summary",
+      "investigationSummary": "Waste Investigations",
+      "liabilitySummary": "Warehouse Liabilities",
+      "productDetails": "Product Details",
+      "kpis": {
+        "systemQty": "System Qty",
+        "countedQty": "Counted Qty",
+        "damagedQty": "Damaged Qty",
+        "shortageQty": "Shortage Qty",
+        "lines": "Lines",
+        "accuracy": "Accuracy",
+        "shortageValue": "Shortage Value",
+        "wasteValue": "Waste Value",
+        "totalAdjustment": "Total Adjustment"
+      },
+      "investigationKpis": {
+        "pending": "Pending",
+        "resolved": "Resolved",
+        "pendingValue": "Pending Value"
+      },
+      "liabilityKpis": {
+        "pending": "Pending",
+        "approved": "Approved",
+        "pendingValue": "Pending Value"
+      },
+      "cols": {
+        "product": "Product",
+        "system": "System",
+        "counted": "Counted",
+        "damaged": "Damaged",
+        "shortage": "Shortage",
+        "unitCost": "Unit Cost",
+        "totalValue": "Total Value",
+        "reason": "Reason",
+        "decision": "Decision"
+      },
+      "decisions": {
+        "match": "✓ Match",
+        "overstock": "↑ Overstock",
+        "shortage": "↓ Shortage",
+        "waste": "⚠ Waste",
+        "shortageAndWaste": "Shortage + Waste"
+      }
+    }
+  },
+  "waste": {
+    "pageTitle": "Waste Investigations",
+    "subtitle": "Review and resolve damaged inventory items from count sessions",
+    "kpis": {
+      "pending": "Pending",
+      "overdue3": "Overdue 3+ Days",
+      "overdue7": "Overdue 7+ Days",
+      "resolved": "Resolved",
+      "month": "Month"
+    },
+    "filters": {
+      "all": "All",
+      "pending": "Pending",
+      "resolved": "Resolved"
+    },
+    "sla": {
+      "overdue7": "7+ days",
+      "overdue3": "3+ days"
+    },
+    "status": {
+      "resolved": "Resolved",
+      "pending": "Pending"
+    },
+    "outcomes": {
+      "operational": "Operational",
+      "warehouse": "Warehouse",
+      "supplier": "Supplier",
+      "preparation": "Preparation"
+    },
+    "table": {
+      "product": "Product",
+      "quantity": "Quantity",
+      "value": "Value",
+      "damageReason": "Damage Reason",
+      "warehouse": "Warehouse",
+      "status": "Status",
+      "outcome": "Outcome",
+      "actions": "Actions"
+    },
+    "empty": "No waste investigations",
+    "viewDetails": "View Details",
+    "resolve": "Resolve",
+    "dialog": {
+      "title": "Resolve Waste Investigation",
+      "quantity": "Quantity:",
+      "reason": "Reason:",
+      "outcomeLabel": "Outcome",
+      "resolvedBy": "Resolved By",
+      "resolvedByPlaceholder": "Investigator name",
+      "notesLabel": "Investigator Notes (optional)",
+      "notesPlaceholder": "Investigation findings, evidence, etc…",
+      "cancel": "Cancel",
+      "confirm": "Confirm Resolution"
+    },
+    "outcomeOptions": {
+      "operational_waste": {
+        "label": "Operational Waste",
+        "description": "Natural loss — deduct from inventory, no liability"
+      },
+      "warehouse_responsibility": {
+        "label": "Warehouse Responsibility",
+        "description": "Attributed to warehouse manager as liability + deduct from inventory"
+      },
+      "supplier_responsibility": {
+        "label": "Supplier Responsibility",
+        "description": "Supplier-caused damage — create supplier claim, no deduction"
+      },
+      "preparation_responsibility": {
+        "label": "Preparation Responsibility",
+        "description": "Damage during preparation — route to prep system, no deduction now"
+      }
+    },
+    "toast": {
+      "resolved": "Investigation resolved.",
+      "failed": "Failed to resolve investigation."
+    },
+    "detail": {
+      "tabs": {
+        "summary": "Summary",
+        "timeline": "Timeline",
+        "attachments": "Attachments"
+      },
+      "header": {
+        "fallbackTitle": "Waste Investigation",
+        "resolved": "Resolved",
+        "pending": "Pending",
+        "daysOpen": "Open {{days}} day(s)"
+      },
+      "summary": {
+        "product": "Product",
+        "quantity": "Quantity",
+        "unitCost": "Unit Cost",
+        "totalValue": "Total Value",
+        "fifoSnapshot": "FIFO Cost Snapshot",
+        "fifoSnapshotFull": "FIFO Cost Snapshot at {{date}} · Method: {{method}} · Currency: {{currency}}",
+        "damageReason": "Damage Reason",
+        "warehouse": "Warehouse",
+        "status": "Status",
+        "outcome": "Outcome",
+        "resolvedBy": "Resolved By",
+        "resolutionDate": "Resolution Date",
+        "month": "Month",
+        "daysOpen": "Days Open",
+        "investigatorNotes": "Investigator Notes",
+        "integrationRefs": "Integration References",
+        "statusResolved": "Resolved",
+        "statusPending": "Pending"
+      },
+      "outcomes": {
+        "operational_waste": "Operational Waste",
+        "warehouse_responsibility": "Warehouse Responsibility",
+        "supplier_responsibility": "Supplier Responsibility",
+        "preparation_responsibility": "Preparation Responsibility"
+      },
+      "timeline": {
+        "noEvents": "No events yet",
+        "events": {
+          "created": "Investigation created",
+          "resolved": "Investigation resolved",
+          "attachment_added": "Attachment added",
+          "attachment_removed": "Attachment removed",
+          "notes_edited": "Notes edited",
+          "damage_reason_changed": "Damage reason updated",
+          "outcome_decided": "Outcome decided",
+          "liability_created": "Warehouse liability created",
+          "value_changed": "Value changed"
+        }
+      },
+      "attachments": {
+        "descriptionPlaceholder": "Description (optional)",
+        "uploading": "Uploading…",
+        "upload": "Upload File",
+        "fileTypes": "PDF, images, video — up to 20 MB",
+        "empty": "No attachments",
+        "toast": {
+          "uploaded": "Attachment uploaded.",
+          "uploadFailed": "Upload failed.",
+          "removed": "{{fileName}} removed.",
+          "removeFailed": "Delete failed."
+        }
+      }
+    }
+  },
+  "liability": {
+    "pageTitle": "Warehouse Liability Register",
+    "subtitle": "Track and approve inventory shortages and waste transfers attributed to warehouses",
+    "kpis": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "pendingValue": "Pending Value",
+      "approvedFifo": "Approved (FIFO)",
+      "month": "Month"
+    },
+    "filters": {
+      "all": "All",
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected"
+    },
+    "status": {
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "pending": "Pending"
+    },
+    "types": {
+      "waste_transferred": "Waste Transfer",
+      "shortage": "Shortage"
+    },
+    "table": {
+      "product": "Product",
+      "type": "Type",
+      "quantity": "Quantity",
+      "totalCost": "Total Cost",
+      "warehouse": "Warehouse",
+      "manager": "Manager",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "fifoSnapshot": "FIFO Snapshot",
+    "empty": "No warehouse liabilities",
+    "actions": {
+      "approve": "Approve",
+      "reject": "Reject"
+    },
+    "dialog": {
+      "approveTitle": "Approve Liability",
+      "rejectTitle": "Reject Liability",
+      "quantity": "Quantity:",
+      "cost": "Cost:",
+      "approveWarning": "Approving will deduct {{qty}} units from inventory.",
+      "approvedBy": "Approved By",
+      "rejectedBy": "Rejected By",
+      "yourName": "Your name",
+      "notesOptional": "Notes (optional)",
+      "rejectionReason": "Rejection reason (optional)",
+      "approveNotes": "Add approval notes…",
+      "rejectNotes": "Why is this being rejected?",
+      "cancel": "Cancel",
+      "approveConfirm": "Approve & Adjust Inventory",
+      "rejectConfirm": "Reject"
+    },
+    "toast": {
+      "approved": "Liability approved and inventory adjusted.",
+      "rejected": "Liability rejected.",
+      "failed": "Action failed. Please try again."
+    }
+  }
+}

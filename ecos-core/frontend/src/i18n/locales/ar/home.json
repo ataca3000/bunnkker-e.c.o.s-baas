@@ -1,0 +1,31 @@
+{
+  "title": "الرئيسية",
+  "welcome": "أهلاً بعودتك، {{name}}",
+  "quickStats": {
+    "title": "ملخص اليوم",
+    "ordersToday": "طلبات اليوم",
+    "revenueToday": "إيرادات اليوم",
+    "pendingOrders": "الطلبات المعلقة",
+    "lowStockItems": "مواد منخفضة المخزون",
+    "activeWaves": "موجات نشطة",
+    "driversOnRoad": "سائقون في الطريق"
+  },
+  "recentOrders": {
+    "title": "أحدث الطلبات",
+    "viewAll": "عرض جميع الطلبات"
+  },
+  "quickActions": {
+    "title": "إجراءات سريعة",
+    "newOrder": "طلب جديد",
+    "newPurchaseOrder": "أمر شراء جديد",
+    "stockCount": "بدء الجرد",
+    "newCustomer": "عميل جديد"
+  },
+  "alerts": {
+    "title": "التنبيهات",
+    "noAlerts": "لا توجد تنبيهات حالياً.",
+    "lowStock": "{{count}} منتج تحت الحد الأدنى للمخزون",
+    "pendingApprovals": "{{count}} أمر شراء بانتظار الاعتماد",
+    "scheduledOrders": "{{count}} طلب مجدول موعده اليوم"
+  }
+}

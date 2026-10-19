@@ -1,0 +1,54 @@
+{
+  "title": "العلامات التجارية",
+  "subtitle": "إدارة علاماتك التجارية وسياساتها.",
+  "search": "بحث في العلامات التجارية…",
+  "actions": {
+    "new": "علامة تجارية جديدة",
+    "create": "إنشاء علامة تجارية",
+    "edit": "تعديل العلامة التجارية",
+    "viewChannels": "عرض القنوات",
+    "viewPolicies": "عرض السياسات"
+  },
+  "columns": {
+    "name": "اسم العلامة",
+    "code": "الرمز",
+    "channels": "القنوات",
+    "currency": "العملة",
+    "status": "الحالة",
+    "createdAt": "تاريخ الإنشاء"
+  },
+  "form": {
+    "name": { "label": "اسم العلامة التجارية", "placeholder": "مثال: ECOS Premium" },
+    "code": { "label": "الرمز", "placeholder": "BRAND-01" },
+    "currency": { "label": "العملة الافتراضية", "placeholder": "اختر عملة…" },
+    "description": { "label": "الوصف", "placeholder": "وصف اختياري للعلامة التجارية…" },
+    "active": "نشطة"
+  },
+  "drawer": {
+    "createTitle": "إنشاء علامة تجارية",
+    "editTitle": "تعديل العلامة التجارية",
+    "createSubtitle": "إضافة علامة تجارية جديدة إلى مؤسستك.",
+    "editSubtitle": "تحديث تفاصيل العلامة التجارية أدناه.",
+    "submitCreate": "إنشاء علامة تجارية",
+    "submitEdit": "حفظ التغييرات",
+    "saving": "جارٍ الحفظ…",
+    "errorTitle": "تعذر الحفظ"
+  },
+  "tabs": {
+    "overview": "نظرة عامة",
+    "channels": "القنوات",
+    "shipping": "الشحن",
+    "policies": "السياسات"
+  },
+  "policies": {
+    "title": "سياسات العلامة التجارية",
+    "orderPolicy": "سياسة الطلبات",
+    "pricingPolicy": "سياسة التسعير",
+    "noPolicy": "لم يتم تكوين سياسة بعد."
+  },
+  "delete": {
+    "title": "حذف العلامة التجارية",
+    "description": "حذف {{name}}؟ لا يمكن التراجع عن هذا الإجراء.",
+    "confirm": "حذف"
+  }
+}

@@ -1,0 +1,76 @@
+{
+  "title": "تحويلات المخزون",
+  "subtitle": "نقل المخزون بين المستودعات.",
+  "search": "بحث بالرقم أو المستودع…",
+  "actions": {
+    "new": "تحويل جديد",
+    "edit": "تعديل التحويل",
+    "dispatch": "صرف",
+    "receive": "تأكيد الاستلام",
+    "cancel": "إلغاء التحويل"
+  },
+  "columns": {
+    "number": "رقم التحويل",
+    "fromWarehouse": "من",
+    "toWarehouse": "إلى",
+    "status": "الحالة",
+    "products": "المنتجات",
+    "requestedDate": "تاريخ الطلب",
+    "dispatchedDate": "تاريخ الصرف",
+    "receivedDate": "تاريخ الاستلام",
+    "createdBy": "أنشأه"
+  },
+  "status": {
+    "draft": "مسودة",
+    "dispatched": "مصروف",
+    "received": "مستلم",
+    "cancelled": "ملغى"
+  },
+  "form": {
+    "fromWarehouse": { "label": "من مستودع", "placeholder": "اختر المستودع المصدر…" },
+    "toWarehouse": { "label": "إلى مستودع", "placeholder": "اختر المستودع الوجهة…" },
+    "requestedDate": "تاريخ التحويل المطلوب",
+    "notes": { "label": "ملاحظات", "placeholder": "ملاحظات اختيارية…" }
+  },
+  "lines": {
+    "title": "بنود التحويل",
+    "addLine": "إضافة منتج",
+    "columns": {
+      "product": "المنتج",
+      "sku": "الرمز",
+      "requestedQty": "الكمية المطلوبة",
+      "dispatchedQty": "الكمية المصروفة",
+      "receivedQty": "الكمية المستلمة",
+      "unit": "الوحدة"
+    },
+    "selectProduct": "اختر منتجاً…",
+    "noLines": "لم تُضف منتجات بعد."
+  },
+  "dialogs": {
+    "dispatch": {
+      "title": "صرف التحويل",
+      "description": "صرف التحويل {{number}}؟ سيُخصم المخزون من {{warehouse}}.",
+      "confirm": "صرف"
+    },
+    "receive": {
+      "title": "استلام التحويل",
+      "description": "تأكيد استلام التحويل {{number}}؟ سيُضاف المخزون إلى {{warehouse}}.",
+      "confirm": "تأكيد الاستلام"
+    },
+    "cancel": {
+      "title": "إلغاء التحويل",
+      "description": "إلغاء التحويل {{number}}؟ لا يمكن التراجع عن هذا الإجراء.",
+      "confirm": "إلغاء التحويل"
+    }
+  },
+  "drawer": {
+    "createTitle": "تحويل جديد",
+    "editTitle": "تعديل التحويل",
+    "createSubtitle": "إنشاء تحويل مخزون بين المستودعات.",
+    "editSubtitle": "تحديث تفاصيل التحويل.",
+    "submitCreate": "إنشاء التحويل",
+    "submitEdit": "حفظ التغييرات",
+    "saving": "جارٍ الحفظ…",
+    "errorTitle": "تعذر الحفظ"
+  }
+}

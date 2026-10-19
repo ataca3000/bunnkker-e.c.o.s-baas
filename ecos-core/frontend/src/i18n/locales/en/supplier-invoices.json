@@ -1,0 +1,213 @@
+{
+  "title": "Supplier Invoices",
+  "subtitle": "Manage payables and supplier invoice reconciliation.",
+  "search": "Search invoices by number, supplier, or reference…",
+  "actions": {
+    "new": "New Invoice",
+    "post": "Post Invoice",
+    "pay": "Record Payment",
+    "cancel": "Cancel"
+  },
+  "columns": {
+    "number": "Invoice No.",
+    "supplier": "Supplier",
+    "purchaseOrder": "PO Reference",
+    "invoiceDate": "Invoice Date",
+    "dueDate": "Due Date",
+    "amount": "Amount",
+    "paid": "Paid",
+    "balance": "Balance",
+    "status": "Status"
+  },
+  "status": {
+    "draft": "Draft",
+    "posted": "Posted",
+    "partially_paid": "Partially Paid",
+    "paid": "Paid",
+    "overdue": "Overdue",
+    "cancelled": "Cancelled"
+  },
+  "form": {
+    "supplier": { "label": "Supplier", "placeholder": "Select supplier…" },
+    "purchaseOrder": { "label": "Purchase Order (optional)", "placeholder": "Select PO…" },
+    "invoiceNumber": { "label": "Supplier Invoice Number", "placeholder": "INV-2026-001" },
+    "invoiceDate": "Invoice Date",
+    "dueDate": "Due Date",
+    "notes": { "label": "Notes", "placeholder": "Optional notes…" }
+  },
+  "payment": {
+    "title": "Record Payment",
+    "amount": "Payment Amount",
+    "paymentDate": "Payment Date",
+    "paymentMethod": "Payment Method",
+    "reference": "Bank Reference",
+    "methods": {
+      "bank_transfer": "Bank Transfer",
+      "cheque": "Cheque",
+      "cash": "Cash"
+    },
+    "submit": "Record Payment",
+    "submitting": "Recording…"
+  },
+  "totals": {
+    "subtotal": "Subtotal",
+    "tax": "Tax",
+    "total": "Invoice Total",
+    "paid": "Amount Paid",
+    "balance": "Outstanding Balance"
+  },
+  "drawer": {
+    "createTitle": "New Supplier Invoice",
+    "editTitle": "Edit Invoice",
+    "createSubtitle": "Record a supplier invoice for payment processing.",
+    "submitCreate": "Create Invoice",
+    "submitEdit": "Save Changes",
+    "saving": "Saving…",
+    "errorTitle": "Unable to save"
+  },
+  "page": {
+    "title": "Supplier Invoices",
+    "subtitle": "Mode 3 Purchasing — supplier invoices post directly to inventory",
+    "newInvoice": "New Invoice",
+    "stats": {
+      "draft": "Draft",
+      "validated": "Validated",
+      "posted": "Posted",
+      "failed": "Failed",
+      "postedValue": "Posted Value",
+      "cancelled": "Cancelled"
+    },
+    "columns": {
+      "invoiceNo": "Invoice No.",
+      "supplier": "Supplier",
+      "warehouse": "Warehouse",
+      "invoiceDate": "Invoice Date",
+      "dueDate": "Due Date",
+      "grandTotal": "Grand Total",
+      "status": "Status",
+      "ref": "Ref"
+    },
+    "filters": {
+      "search": "Search invoices…",
+      "allStatuses": "All Statuses",
+      "status": "Status",
+      "processing": "Processing"
+    },
+    "empty": "No invoices found.",
+    "actions": {
+      "view": "View Details",
+      "validate": "Validate",
+      "post": "Post to Inventory",
+      "postShort": "Post",
+      "actionsFor": "Actions for {{invoiceNumber}}",
+      "cancel": "Cancel",
+      "delete": "Delete"
+    },
+    "confirmCancel": {
+      "title": "Cancel Invoice",
+      "description": "Are you sure you want to cancel this invoice?",
+      "confirm": "Cancel Invoice"
+    },
+    "confirmDelete": {
+      "title": "Delete Invoice",
+      "description": "Are you sure you want to delete this invoice?",
+      "confirm": "Delete"
+    },
+    "toast": {
+      "validated": "Invoice validated.",
+      "validateFailed": "Failed to validate invoice.",
+      "posted": "Invoice posted to inventory.",
+      "postFailed": "Failed to post invoice.",
+      "cancelled": "Invoice cancelled.",
+      "cancelFailed": "Failed to cancel invoice.",
+      "deleted": "Invoice deleted.",
+      "deleteFailed": "Failed to delete invoice."
+    },
+    "pagination": {
+      "total": "{{count}} invoices",
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page {{current}} of {{last}}"
+    }
+  },
+  "detail": {
+    "validate": "Validate",
+    "postToInventory": "Post to Inventory",
+    "cancel": "Cancel",
+    "postingError": "Posting Error",
+    "landedCostFormat": "Landed cost: {{value}}/unit",
+    "purchaseRecordCreated": "Purchase record created",
+    "goodsReceiptCreated": "Goods receipt created",
+    "financial": {
+      "subtotal": "Subtotal",
+      "tax": "Tax",
+      "freight": "Freight",
+      "additionalCosts": "Additional Costs",
+      "grandTotal": "Grand Total"
+    },
+    "itemsTitle": "Items",
+    "autoDocuments": "Auto-Generated Documents",
+    "postingLog": "Posting Log",
+    "columns": {
+      "product": "Product",
+      "qty": "Qty",
+      "unitPrice": "Unit Price",
+      "vatPct": "VAT %",
+      "total": "Total"
+    }
+  },
+  "editor": {
+    "title": "New Supplier Invoice",
+    "subtitle": "Direct supplier invoice — posts to inventory on confirmation",
+    "fields": {
+      "supplier": "Supplier *",
+      "warehouse": "Warehouse *",
+      "invoiceDate": "Invoice Date *",
+      "dueDate": "Due Date",
+      "supplierRef": "Supplier Invoice Ref",
+      "notes": "Notes",
+      "notesPlaceholder": "Optional notes…"
+    },
+    "placeholders": {
+      "selectSupplier": "Select supplier…",
+      "selectWarehouse": "Select warehouse…",
+      "selectProduct": "Select product…",
+      "supplierRef": "e.g. SUP-2026-001"
+    },
+    "items": {
+      "title": "Items",
+      "addItem": "Add Item",
+      "columns": {
+        "product": "Product",
+        "qty": "Qty",
+        "unitPrice": "Unit Price",
+        "vatPct": "VAT %",
+        "total": "Total"
+      }
+    },
+    "additionalCosts": {
+      "freight": "Freight",
+      "additionalCosts": "Additional Costs"
+    },
+    "summary": {
+      "subtotal": "Subtotal",
+      "tax": "Tax",
+      "freight": "Freight",
+      "additionalCosts": "Additional Costs",
+      "grandTotal": "Grand Total"
+    },
+    "buttons": {
+      "cancel": "Cancel",
+      "create": "Create Invoice",
+      "creating": "Creating…"
+    },
+    "toast": {
+      "supplierRequired": "Supplier is required",
+      "warehouseRequired": "Warehouse is required",
+      "invoiceDateRequired": "Invoice date is required",
+      "atLeastOneItem": "At least one item is required",
+      "created": "Invoice created.",
+      "failed": "Failed to create invoice."
+    }
+  }
+}

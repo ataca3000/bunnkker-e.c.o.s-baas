@@ -1,0 +1,31 @@
+{
+  "title": "Home",
+  "welcome": "Welcome back, {{name}}",
+  "quickStats": {
+    "title": "Today at a Glance",
+    "ordersToday": "Orders Today",
+    "revenueToday": "Revenue Today",
+    "pendingOrders": "Pending Orders",
+    "lowStockItems": "Low Stock Items",
+    "activeWaves": "Active Waves",
+    "driversOnRoad": "Drivers on Road"
+  },
+  "recentOrders": {
+    "title": "Recent Orders",
+    "viewAll": "View All Orders"
+  },
+  "quickActions": {
+    "title": "Quick Actions",
+    "newOrder": "New Order",
+    "newPurchaseOrder": "New Purchase Order",
+    "stockCount": "Start Count",
+    "newCustomer": "New Customer"
+  },
+  "alerts": {
+    "title": "Alerts",
+    "noAlerts": "No alerts at this time.",
+    "lowStock": "{{count}} products below minimum stock level",
+    "pendingApprovals": "{{count}} purchase orders pending approval",
+    "scheduledOrders": "{{count}} scheduled orders due today"
+  }
+}

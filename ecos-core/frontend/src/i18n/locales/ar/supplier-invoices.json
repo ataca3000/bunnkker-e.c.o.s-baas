@@ -1,0 +1,213 @@
+{
+  "title": "فواتير الموردين",
+  "subtitle": "إدارة المستحقات ومطابقة فواتير الموردين.",
+  "search": "بحث بالرقم أو المورد أو المرجع…",
+  "actions": {
+    "new": "فاتورة جديدة",
+    "post": "ترحيل الفاتورة",
+    "pay": "تسجيل دفعة",
+    "cancel": "إلغاء"
+  },
+  "columns": {
+    "number": "رقم الفاتورة",
+    "supplier": "المورد",
+    "purchaseOrder": "مرجع أمر الشراء",
+    "invoiceDate": "تاريخ الفاتورة",
+    "dueDate": "تاريخ الاستحقاق",
+    "amount": "المبلغ",
+    "paid": "المدفوع",
+    "balance": "الرصيد",
+    "status": "الحالة"
+  },
+  "status": {
+    "draft": "مسودة",
+    "posted": "مرحَّلة",
+    "partially_paid": "مدفوعة جزئياً",
+    "paid": "مدفوعة",
+    "overdue": "متأخرة",
+    "cancelled": "ملغاة"
+  },
+  "form": {
+    "supplier": { "label": "المورد", "placeholder": "اختر مورداً…" },
+    "purchaseOrder": { "label": "أمر الشراء (اختياري)", "placeholder": "اختر أمر شراء…" },
+    "invoiceNumber": { "label": "رقم فاتورة المورد", "placeholder": "INV-2026-001" },
+    "invoiceDate": "تاريخ الفاتورة",
+    "dueDate": "تاريخ الاستحقاق",
+    "notes": { "label": "ملاحظات", "placeholder": "ملاحظات اختيارية…" }
+  },
+  "payment": {
+    "title": "تسجيل دفعة",
+    "amount": "مبلغ الدفعة",
+    "paymentDate": "تاريخ الدفع",
+    "paymentMethod": "طريقة الدفع",
+    "reference": "مرجع البنك",
+    "methods": {
+      "bank_transfer": "تحويل بنكي",
+      "cheque": "شيك",
+      "cash": "نقداً"
+    },
+    "submit": "تسجيل الدفعة",
+    "submitting": "جارٍ التسجيل…"
+  },
+  "totals": {
+    "subtotal": "المجموع الفرعي",
+    "tax": "الضريبة",
+    "total": "إجمالي الفاتورة",
+    "paid": "المبلغ المدفوع",
+    "balance": "الرصيد المستحق"
+  },
+  "drawer": {
+    "createTitle": "فاتورة مورد جديدة",
+    "editTitle": "تعديل الفاتورة",
+    "createSubtitle": "تسجيل فاتورة مورد لمعالجة الدفع.",
+    "submitCreate": "إنشاء الفاتورة",
+    "submitEdit": "حفظ التغييرات",
+    "saving": "جارٍ الحفظ…",
+    "errorTitle": "تعذر الحفظ"
+  },
+  "page": {
+    "title": "فواتير الموردين",
+    "subtitle": "شراء النمط 3 — فواتير الموردين تُرحَّل مباشرة للمخزون",
+    "newInvoice": "فاتورة جديدة",
+    "stats": {
+      "draft": "مسودة",
+      "validated": "محققة",
+      "posted": "مرحَّلة",
+      "failed": "فاشل",
+      "postedValue": "قيمة المرحَّل",
+      "cancelled": "ملغاة"
+    },
+    "columns": {
+      "invoiceNo": "رقم الفاتورة",
+      "supplier": "المورد",
+      "warehouse": "المستودع",
+      "invoiceDate": "تاريخ الفاتورة",
+      "dueDate": "تاريخ الاستحقاق",
+      "grandTotal": "الإجمالي الكلي",
+      "status": "الحالة",
+      "ref": "مرجع"
+    },
+    "filters": {
+      "search": "بحث في الفواتير…",
+      "allStatuses": "جميع الحالات",
+      "status": "الحالة",
+      "processing": "قيد المعالجة"
+    },
+    "empty": "لا توجد فواتير.",
+    "actions": {
+      "view": "عرض التفاصيل",
+      "validate": "تحقق",
+      "post": "ترحيل للمخزون",
+      "postShort": "ترحيل",
+      "actionsFor": "إجراءات {{invoiceNumber}}",
+      "cancel": "إلغاء",
+      "delete": "حذف"
+    },
+    "confirmCancel": {
+      "title": "إلغاء الفاتورة",
+      "description": "هل أنت متأكد من إلغاء هذه الفاتورة؟",
+      "confirm": "إلغاء الفاتورة"
+    },
+    "confirmDelete": {
+      "title": "حذف الفاتورة",
+      "description": "هل أنت متأكد من حذف هذه الفاتورة؟",
+      "confirm": "حذف"
+    },
+    "toast": {
+      "validated": "تم التحقق من الفاتورة.",
+      "validateFailed": "فشل التحقق من الفاتورة.",
+      "posted": "تم ترحيل الفاتورة للمخزون.",
+      "postFailed": "فشل ترحيل الفاتورة.",
+      "cancelled": "تم إلغاء الفاتورة.",
+      "cancelFailed": "فشل إلغاء الفاتورة.",
+      "deleted": "تم حذف الفاتورة.",
+      "deleteFailed": "فشل حذف الفاتورة."
+    },
+    "pagination": {
+      "total": "{{count}} فاتورة",
+      "previous": "السابق",
+      "next": "التالي",
+      "page": "صفحة {{current}} من {{last}}"
+    }
+  },
+  "detail": {
+    "validate": "تحقق",
+    "postToInventory": "ترحيل للمخزون",
+    "cancel": "إلغاء",
+    "postingError": "خطأ في الترحيل",
+    "landedCostFormat": "التكلفة الشاملة: {{value}}/وحدة",
+    "purchaseRecordCreated": "تم إنشاء سجل الشراء",
+    "goodsReceiptCreated": "تم إنشاء إيصال البضاعة",
+    "financial": {
+      "subtotal": "المجموع الفرعي",
+      "tax": "الضريبة",
+      "freight": "الشحن",
+      "additionalCosts": "تكاليف إضافية",
+      "grandTotal": "الإجمالي الكلي"
+    },
+    "itemsTitle": "الأصناف",
+    "autoDocuments": "مستندات مُولَّدة تلقائياً",
+    "postingLog": "سجل الترحيل",
+    "columns": {
+      "product": "المنتج",
+      "qty": "الكمية",
+      "unitPrice": "سعر الوحدة",
+      "vatPct": "نسبة ضريبة القيمة المضافة",
+      "total": "الإجمالي"
+    }
+  },
+  "editor": {
+    "title": "فاتورة مورد جديدة",
+    "subtitle": "فاتورة مورد مباشرة — تُرحَّل للمخزون عند التأكيد",
+    "fields": {
+      "supplier": "المورد *",
+      "warehouse": "المستودع *",
+      "invoiceDate": "تاريخ الفاتورة *",
+      "dueDate": "تاريخ الاستحقاق",
+      "supplierRef": "مرجع فاتورة المورد",
+      "notes": "ملاحظات",
+      "notesPlaceholder": "ملاحظات اختيارية…"
+    },
+    "placeholders": {
+      "selectSupplier": "اختر مورداً…",
+      "selectWarehouse": "اختر مستودعاً…",
+      "selectProduct": "اختر منتجاً…",
+      "supplierRef": "مثل: SUP-2026-001"
+    },
+    "items": {
+      "title": "الأصناف",
+      "addItem": "إضافة صنف",
+      "columns": {
+        "product": "المنتج",
+        "qty": "الكمية",
+        "unitPrice": "سعر الوحدة",
+        "vatPct": "نسبة ضريبة القيمة المضافة",
+        "total": "الإجمالي"
+      }
+    },
+    "additionalCosts": {
+      "freight": "الشحن",
+      "additionalCosts": "تكاليف إضافية"
+    },
+    "summary": {
+      "subtotal": "المجموع الفرعي",
+      "tax": "الضريبة",
+      "freight": "الشحن",
+      "additionalCosts": "تكاليف إضافية",
+      "grandTotal": "الإجمالي الكلي"
+    },
+    "buttons": {
+      "cancel": "إلغاء",
+      "create": "إنشاء الفاتورة",
+      "creating": "جارٍ الإنشاء…"
+    },
+    "toast": {
+      "supplierRequired": "المورد مطلوب",
+      "warehouseRequired": "المستودع مطلوب",
+      "invoiceDateRequired": "تاريخ الفاتورة مطلوب",
+      "atLeastOneItem": "يجب إضافة صنف واحد على الأقل",
+      "created": "تم إنشاء الفاتورة.",
+      "failed": "فشل إنشاء الفاتورة."
+    }
+  }
+}

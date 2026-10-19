@@ -1,0 +1,69 @@
+{
+  "title": "دفتر المخزون",
+  "subtitle": "سجل تدقيق كامل لجميع حركات المخزون.",
+  "breadcrumb": {
+    "home": "الرئيسية",
+    "page": "دفتر المخزون"
+  },
+  "search": "بحث باسم المنتج أو الرمز أو المستودع…",
+  "actions": {
+    "exportCsv": "تصدير CSV",
+    "refresh": "تحديث",
+    "clear": "مسح"
+  },
+  "filters": {
+    "searchLabel": "بحث",
+    "searchPlaceholder": "اسم المنتج أو الرمز…",
+    "type": "نوع الحركة",
+    "typeLabel": "نوع الحركة",
+    "allTypes": "جميع الأنواع",
+    "fromLabel": "من",
+    "toLabel": "إلى",
+    "dateFrom": "من تاريخ",
+    "dateTo": "إلى تاريخ",
+    "warehouse": "المستودع",
+    "allWarehouses": "جميع المستودعات",
+    "product": "المنتج",
+    "allProducts": "جميع المنتجات"
+  },
+  "movementTypes": {
+    "all": "جميع الأنواع",
+    "purchase_receipt": "إيصال شراء",
+    "sales_issue": "إصدار مبيعات",
+    "adjustment_in": "تسوية واردة",
+    "adjustment_out": "تسوية صادرة",
+    "transfer_in": "نقل وارد",
+    "transfer_out": "نقل صادر"
+  },
+  "columns": {
+    "date": "التاريخ",
+    "type": "النوع",
+    "productMaterial": "المنتج / المادة",
+    "product": "المنتج",
+    "warehouse": "المستودع",
+    "in": "وارد",
+    "out": "صادر",
+    "balance": "الرصيد",
+    "quantity": "الكمية",
+    "before": "قبل",
+    "after": "بعد",
+    "refType": "نوع المرجع",
+    "reference": "المرجع"
+  },
+  "table": {
+    "loading": "جارٍ التحميل…",
+    "error": "فشل التحميل. حاول التحديث.",
+    "empty": "لا توجد حركات."
+  },
+  "csv": {
+    "date": "التاريخ",
+    "type": "النوع",
+    "product": "المنتج",
+    "sku": "الرمز",
+    "warehouse": "المستودع",
+    "in": "وارد",
+    "out": "صادر",
+    "balance": "الرصيد",
+    "reference": "المرجع"
+  }
+}

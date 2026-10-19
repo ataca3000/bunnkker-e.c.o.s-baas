@@ -1,0 +1,68 @@
+{
+  "title": "نقطة البيع",
+  "subtitle": "مبيعات المتجر والكاونتر.",
+  "session": {
+    "title": "جلسة نقطة البيع",
+    "open": "فتح الجلسة",
+    "close": "إغلاق الجلسة",
+    "openingBalance": "رصيد النقد الافتتاحي",
+    "closingBalance": "رصيد النقد الختامي",
+    "totalSales": "إجمالي المبيعات",
+    "totalReturns": "إجمالي المرتجعات",
+    "netSales": "صافي المبيعات",
+    "cashdrawer": "درج النقدية",
+    "opening": "جارٍ فتح الجلسة…",
+    "closing": "جارٍ إغلاق الجلسة…"
+  },
+  "sale": {
+    "title": "بيع جديد",
+    "searchProduct": "امسح الباركود أو ابحث عن منتج…",
+    "cart": "سلة المشتريات",
+    "emptyCart": "السلة فارغة. أضف منتجات للبدء.",
+    "customer": "العميل (اختياري)",
+    "searchCustomer": "بحث عن عميل بالاسم أو الهاتف…",
+    "discount": "الخصم",
+    "subtotal": "المجموع الفرعي",
+    "tax": "الضريبة",
+    "total": "الإجمالي",
+    "payment": "الدفع",
+    "charge": "تحصيل {{amount}}",
+    "cash": "نقداً",
+    "card": "بطاقة",
+    "amountReceived": "المبلغ المستلم",
+    "change": "الباقي",
+    "completeSale": "إتمام البيع",
+    "completing": "جارٍ المعالجة…",
+    "printReceipt": "طباعة الإيصال",
+    "newSale": "بيع جديد"
+  },
+  "return": {
+    "title": "معالجة المرتجع",
+    "searchOrder": "بحث برقم الطلب…",
+    "selectItems": "اختر العناصر المراد إرجاعها",
+    "reason": "سبب الإرجاع",
+    "refundMethod": "طريقة الاسترداد",
+    "processReturn": "معالجة المرتجع",
+    "processing": "جارٍ المعالجة…"
+  },
+  "reports": {
+    "title": "تقارير نقطة البيع",
+    "salesSummary": "ملخص المبيعات",
+    "cashFlow": "التدفق النقدي",
+    "topProducts": "أعلى المنتجات مبيعاً",
+    "byPaymentMethod": "حسب طريقة الدفع"
+  },
+  "receipts": {
+    "title": "الإيصالات",
+    "search": "بحث في الإيصالات…",
+    "columns": {
+      "receiptNo": "رقم الإيصال",
+      "customer": "العميل",
+      "items": "العناصر",
+      "total": "الإجمالي",
+      "paymentMethod": "الدفع",
+      "cashier": "الكاشير",
+      "date": "التاريخ"
+    }
+  }
+}

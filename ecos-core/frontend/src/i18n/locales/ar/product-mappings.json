@@ -1,0 +1,70 @@
+{
+  "title": "ربط المنتجات",
+  "subtitle": "ربط المنتجات الداخلية بأكواد القنوات الخارجية ومعرفاتها.",
+  "search": "بحث بالمنتج أو الرمز أو القناة…",
+  "actions": {
+    "new": "ربط جديد",
+    "sync": "مزامنة الآن",
+    "import": "استيراد روابط",
+    "export": "تصدير"
+  },
+  "columns": {
+    "product": "المنتج الداخلي",
+    "sku": "الرمز الداخلي",
+    "channel": "قناة البيع",
+    "externalId": "المعرف الخارجي",
+    "externalSku": "رمز القناة",
+    "syncStatus": "حالة المزامنة",
+    "lastSyncedAt": "آخر مزامنة"
+  },
+  "syncStatus": {
+    "synced": "متزامن",
+    "pending": "معلق",
+    "failed": "فشل",
+    "not_mapped": "غير مربوط"
+  },
+  "form": {
+    "product": { "label": "المنتج", "placeholder": "بحث عن منتج…" },
+    "channel": { "label": "قناة البيع", "placeholder": "اختر قناة…" },
+    "externalId": { "label": "معرف المنتج الخارجي", "placeholder": "معرف المنتج على القناة" },
+    "externalSku": { "label": "رمز القناة", "placeholder": "الرمز على القناة" },
+    "variantMappings": "ربط المتغيرات"
+  },
+  "variants": {
+    "title": "ربط المتغيرات",
+    "addVariant": "إضافة متغير",
+    "columns": {
+      "variant": "المتغير",
+      "externalVariantId": "معرف المتغير الخارجي",
+      "externalSku": "رمز القناة"
+    }
+  },
+  "sync": {
+    "title": "مزامنة المنتجات",
+    "description": "رفع بيانات المنتجات إلى القناة المحددة. قد يستغرق ذلك بضع دقائق.",
+    "channel": "القناة المستهدفة",
+    "confirm": "بدء المزامنة",
+    "running": "جارٍ المزامنة…",
+    "success": "اكتملت المزامنة بنجاح.",
+    "failed": "فشلت المزامنة. راجع السجلات للتفاصيل."
+  },
+  "filters": {
+    "syncStatus": "حالة المزامنة",
+    "allStatuses": "جميع الحالات"
+  },
+  "delete": {
+    "title": "حذف ربط المنتج",
+    "description": "سيتم حذف الربط لـ {{name}}. يمكن استعادته لاحقاً.",
+    "confirm": "حذف"
+  },
+  "drawer": {
+    "createTitle": "ربط منتج جديد",
+    "editTitle": "تعديل الربط",
+    "createSubtitle": "ربط منتج داخلي بمعرف قناة خارجية.",
+    "editSubtitle": "تحديث تفاصيل الربط أدناه.",
+    "submitCreate": "إنشاء الربط",
+    "submitEdit": "حفظ التغييرات",
+    "saving": "جارٍ الحفظ…",
+    "errorTitle": "تعذر الحفظ"
+  }
+}

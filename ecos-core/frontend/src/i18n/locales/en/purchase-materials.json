@@ -1,0 +1,527 @@
+{
+  "title": "Purchase Materials",
+  "subtitle": "Manage raw material purchase orders and supplier deliveries.",
+  "search": "Search by material, supplier, or PO number…",
+  "actions": {
+    "new": "New Material PO",
+    "receive": "Receive Delivery",
+    "cancel": "Cancel"
+  },
+  "columns": {
+    "number": "PO Number",
+    "material": "Material",
+    "supplier": "Supplier",
+    "orderedQty": "Ordered Qty",
+    "receivedQty": "Received Qty",
+    "unit": "Unit",
+    "unitCost": "Unit Cost",
+    "total": "Total",
+    "expectedDate": "Expected",
+    "status": "Status"
+  },
+  "status": {
+    "draft": "Draft",
+    "sent": "Sent",
+    "partially_received": "Partially Received",
+    "received": "Fully Received",
+    "cancelled": "Cancelled"
+  },
+  "form": {
+    "material": { "label": "Raw Material", "placeholder": "Select material…" },
+    "supplier": { "label": "Supplier", "placeholder": "Select supplier…" },
+    "quantity": { "label": "Quantity" },
+    "unit": { "label": "Unit", "placeholder": "Select unit…" },
+    "unitCost": { "label": "Unit Cost" },
+    "expectedDate": "Expected Delivery Date",
+    "warehouse": { "label": "Receiving Warehouse", "placeholder": "Select warehouse…" },
+    "notes": { "label": "Notes", "placeholder": "Optional notes…" }
+  },
+  "receipt": {
+    "title": "Receive Delivery",
+    "receivedQty": "Received Quantity",
+    "receivedDate": "Receipt Date",
+    "lotNumber": "Lot / Batch Number",
+    "expiryDate": "Expiry Date",
+    "notes": "Inspection Notes",
+    "submit": "Record Receipt",
+    "submitting": "Recording…"
+  },
+  "drawer": {
+    "createTitle": "New Material Purchase Order",
+    "editTitle": "Edit Purchase Order",
+    "createSubtitle": "Order raw materials from a supplier.",
+    "submitCreate": "Create PO",
+    "submitEdit": "Save Changes",
+    "saving": "Saving…",
+    "errorTitle": "Unable to save"
+  },
+  "requestsPage": {
+    "title": "Material Requests",
+    "subtitle": "Manage supply requests, supplier selection, and purchasing decisions.",
+    "newRequest": "New Request",
+    "operations": "OPERATIONS",
+    "financial": "FINANCIAL",
+    "kpis": {
+      "draft": "Draft",
+      "underReview": "Under Review",
+      "awaitingSupplier": "Awaiting Supplier",
+      "approved": "Approved",
+      "purchasing": "Purchasing",
+      "receiving": "Receiving",
+      "totalRequested": "Total Requested",
+      "approvedValue": "Approved Value",
+      "purchasedValue": "Purchased Value",
+      "outstanding": "Outstanding"
+    },
+    "statusChips": {
+      "all": "All",
+      "draft": "Draft",
+      "under_review": "Under Review",
+      "waiting_supplier_selection": "Awaiting Supplier",
+      "approved": "Approved",
+      "purchasing": "Purchasing",
+      "receiving": "Receiving",
+      "completed": "Completed",
+      "on_hold": "On Hold",
+      "rejected": "Rejected",
+      "cancelled": "Cancelled"
+    },
+    "filters": {
+      "search": "Search by request no. or notes…",
+      "allWarehouses": "All Warehouses",
+      "allPriorities": "All Priorities",
+      "buyer": "Buyer…",
+      "requiredBy": "Required by:",
+      "clearFilters": "Clear Filters"
+    },
+    "priority": {
+      "urgent": "Urgent",
+      "high": "High",
+      "normal": "Normal",
+      "low": "Low"
+    },
+    "columns": {
+      "requestNo": "Request No.",
+      "company": "Company",
+      "channel": "Channel",
+      "warehouse": "Warehouse",
+      "requestedBy": "Requested By",
+      "items": "Items",
+      "requestedQty": "Requested Qty",
+      "estValue": "Est. Value",
+      "priority": "Priority",
+      "requiredBy": "Required By",
+      "status": "Status",
+      "assignedBuyer": "Assigned Buyer",
+      "lastUpdated": "Last Updated"
+    },
+    "loading": "Loading requests…",
+    "empty": {
+      "noMatch": "No requests match the current filters.",
+      "none": "No material requests yet."
+    },
+    "pagination": {
+      "total": "{{count}} total requests",
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page {{current}} of {{last}}"
+    },
+    "delete": {
+      "confirm": "Delete request {{number}}?",
+      "button": "Delete"
+    },
+    "toast": {
+      "deleted": "Request deleted.",
+      "deleteFailed": "Failed to delete request."
+    }
+  },
+  "materialRequestsPage": {
+    "title": "Material Requests",
+    "subtitle": "Submit procurement needs from warehouse and operations teams",
+    "newRequest": "New Request",
+    "searchPlaceholder": "Search requests...",
+    "statusChips": {
+      "all": "All",
+      "draft": "Draft",
+      "under_review": "Under Review",
+      "on_hold": "On Hold",
+      "cancelled": "Cancelled"
+    },
+    "columns": {
+      "requestNo": "Request No.",
+      "warehouse": "Warehouse",
+      "products": "Products",
+      "priority": "Priority",
+      "requiredDate": "Required Date",
+      "status": "Status",
+      "requestedBy": "Requested By",
+      "createdAt": "Created At"
+    },
+    "items": "{{count}} items",
+    "empty": {
+      "title": "No material requests",
+      "description": "Create a new request to get started"
+    },
+    "pagination": {
+      "total": "{{count}} total requests",
+      "previous": "Previous",
+      "next": "Next"
+    },
+    "createPanel": {
+      "title": "New Material Request",
+      "company": "Company",
+      "warehouse": "Warehouse",
+      "warehouseRequired": "Warehouse *",
+      "selectWarehouse": "Select Warehouse",
+      "priority": "Priority",
+      "requiredDate": "Required Date",
+      "notes": "Notes",
+      "notesPlaceholder": "Additional context for the procurement team...",
+      "enterKey": "Press Enter in the quantity field to add a new line",
+      "products": "Products",
+      "searching": "Searching...",
+      "noProducts": "No products found",
+      "noProductsFound": "No products found",
+      "available": "{{count}} available",
+      "coverage": "{{days}}d coverage",
+      "loadingHint": "Loading...",
+      "availableSuffix": " available",
+      "daysCoverage": "d coverage",
+      "table": {
+        "product": "Product",
+        "qty": "Qty",
+        "unit": "Unit",
+        "notes": "Notes",
+        "searchProduct": "Search product...",
+        "qtyPlaceholder": "Qty",
+        "unitPlaceholder": "Unit",
+        "notesPlaceholder": "Notes (optional)"
+      },
+      "addProduct": "Add Product",
+      "cancel": "Cancel",
+      "saveAsDraft": "Save as Draft",
+      "submitToProcurement": "Submit to Procurement",
+      "priorityOptions": {
+        "low": "Low",
+        "normal": "Normal",
+        "high": "High",
+        "urgent": "Urgent"
+      },
+      "toast": {
+        "createdAndSubmitted": "Request created and submitted",
+        "savedAsDraft": "Request saved as draft",
+        "warehouseRequired": "Warehouse is required",
+        "addAtLeastOne": "Add at least one product with a quantity",
+        "failed": "Failed to save request"
+      }
+    }
+  },
+  "purchasesPage": {
+    "title": "Purchases",
+    "subtitle": "Manage purchase records, supplier selection, and delivery tracking.",
+    "newPurchase": "New Purchase",
+    "sourceSelector": {
+      "title": "Select Purchase Source",
+      "sources": {
+        "material_request": {
+          "label": "From Request",
+          "title": "From Material Request",
+          "description": "Convert an approved material request into a purchase"
+        },
+        "direct": {
+          "label": "Direct",
+          "title": "Direct Purchase",
+          "description": "Create a purchase directly without a prior request"
+        },
+        "reorder": {
+          "label": "Reorder",
+          "title": "Reorder",
+          "description": "Reorder based on inventory reorder points"
+        },
+        "ai": {
+          "label": "AI",
+          "title": "AI-Suggested",
+          "description": "Purchase suggestions from AI demand forecasting"
+        },
+        "manual": {
+          "label": "Manual",
+          "title": "Manual Entry",
+          "description": "Enter purchase details manually"
+        }
+      }
+    },
+    "statusChips": {
+      "all": "All",
+      "draft": "Draft",
+      "under_review": "Under Review",
+      "waiting_supplier_selection": "Awaiting Supplier",
+      "approved": "Approved",
+      "purchasing": "Purchasing",
+      "receiving": "Receiving",
+      "completed": "Completed",
+      "on_hold": "On Hold",
+      "rejected": "Rejected",
+      "cancelled": "Cancelled"
+    },
+    "operations": "OPERATIONS",
+    "financial": "FINANCIAL",
+    "kpis": {
+      "draft": "Draft",
+      "underReview": "Under Review",
+      "awaitingSupplier": "Awaiting Supplier",
+      "approved": "Approved",
+      "purchasing": "Purchasing",
+      "receiving": "Receiving",
+      "totalRequested": "Total Requested",
+      "approvedValue": "Approved Value",
+      "purchasedValue": "Purchased Value",
+      "outstanding": "Outstanding"
+    },
+    "columns": {
+      "requestNo": "Purchase No.",
+      "source": "Source",
+      "company": "Company",
+      "channel": "Channel",
+      "warehouse": "Warehouse",
+      "requestedBy": "Requested By",
+      "buyer": "Buyer",
+      "items": "Items",
+      "requestedQty": "Requested Qty",
+      "estValue": "Est. Value",
+      "approvedValue": "Approved Value",
+      "priority": "Priority",
+      "requiredBy": "Required By",
+      "status": "Status",
+      "assignedBuyer": "Assigned Buyer",
+      "lastUpdated": "Last Updated"
+    },
+    "priority": {
+      "urgent": "Urgent",
+      "high": "High",
+      "normal": "Normal",
+      "low": "Low"
+    },
+    "filters": {
+      "search": "Search by purchase no. or notes…",
+      "allWarehouses": "All Warehouses",
+      "allPriorities": "All Priorities",
+      "buyer": "Buyer…",
+      "requiredBy": "Required by:",
+      "clearFilters": "Clear Filters"
+    },
+    "loading": "Loading purchases…",
+    "empty": {
+      "noMatch": "No purchases match the current filters.",
+      "none": "No purchases yet.",
+      "createHint": "Click \"New Purchase\" to create the first purchase order."
+    },
+    "pagination": {
+      "total": "{{count}} total purchases",
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page {{current}} of {{last}}"
+    },
+    "delete": {
+      "confirm": "Delete purchase {{number}}?",
+      "button": "Delete"
+    },
+    "toast": {
+      "deleted": "Purchase deleted.",
+      "deleteFailed": "Failed to delete purchase."
+    }
+  },
+  "wizard": {
+    "title": "New Purchase Request",
+    "stepOf": "Step {{step}} of {{total}} —",
+    "steps": {
+      "generalInfo": "General Information",
+      "requestedMaterials": "Requested Materials",
+      "reviewSubmit": "Review & Submit"
+    },
+    "step1": {
+      "company": "Company",
+      "channel": "Channel",
+      "channelPlaceholder": "Channel ID (optional)",
+      "warehouse": "Warehouse",
+      "warehouseRequired": "Warehouse *",
+      "selectWarehouse": "Select warehouse…",
+      "loadingWarehouses": "Loading warehouses…",
+      "priority": "Priority",
+      "requiredBy": "Required By",
+      "notes": "Notes",
+      "notesPlaceholder": "Optional context for the procurement team…"
+    },
+    "step2": {
+      "searchProducts": "Search Products",
+      "searchPlaceholder": "Search by name or SKU…",
+      "searching": "Searching…",
+      "noProducts": "No products found",
+      "add": "Add",
+      "remove": "Remove",
+      "selected": "Selected ({{count}})",
+      "material": "Material",
+      "qty": "Qty",
+      "demandIntelligence": "Demand Intelligence",
+      "addAtLeastOne": "Add at least one material to continue."
+    },
+    "step3": {
+      "warehouse": "Warehouse",
+      "priority": "Priority",
+      "channel": "Channel",
+      "requiredBy": "Required By",
+      "notes": "Notes",
+      "material": "Material",
+      "requestedQty": "Requested Qty"
+    },
+    "priority": {
+      "low": "Low",
+      "normal": "Normal",
+      "high": "High",
+      "urgent": "Urgent"
+    },
+    "buttons": {
+      "previous": "Previous",
+      "cancel": "Cancel",
+      "next": "Next",
+      "create": "Create Request",
+      "creating": "Creating…"
+    },
+    "toast": {
+      "success": "Purchase request created.",
+      "failed": "Failed to create request. Please try again."
+    }
+  },
+  "purchaseDrawer": {
+    "title": "Purchase Request",
+    "tabs": {
+      "overview": "Overview",
+      "items": "Lines",
+      "demand": "Demand",
+      "review": "Review",
+      "supplier": "Supplier",
+      "purchasing": "Purchasing",
+      "receipt": "Receiving",
+      "financial": "Financial",
+      "documents": "Documents",
+      "timeline": "Timeline",
+      "activity": "Activity"
+    },
+    "itemsTabLabel": "Lines ({{count}})",
+    "loading": "Loading request…",
+    "loadFailed": "Failed to load request.",
+    "overview": {
+      "notes": "Notes",
+      "rejectionReason": "Rejection Reason",
+      "quickStats": "Quick Stats",
+      "fields": {
+        "requestNo": "Request No.",
+        "status": "Status",
+        "company": "Company",
+        "channel": "Channel",
+        "warehouse": "Warehouse",
+        "priority": "Priority",
+        "requiredBy": "Required By",
+        "requestedBy": "Requested By",
+        "assignedBuyer": "Assigned Buyer",
+        "createdDate": "Created Date"
+      },
+      "stats": {
+        "lines": "Lines",
+        "totalQty": "Total Qty",
+        "estimatedValue": "Estimated Value"
+      }
+    },
+    "requestedItems": {
+      "empty": "No lines in this request.",
+      "material": "Material",
+      "requestedQty": "Requested Qty",
+      "notes": "Notes"
+    },
+    "demandAnalysis": {
+      "empty": "No lines to analyze.",
+      "loading": "Loading…",
+      "noData": "No procurement data available.",
+      "available": "Available: ",
+      "dailyAvg": "Daily Avg: ",
+      "coverage": "Coverage: ",
+      "days": "days",
+      "trend": "Trend: "
+    },
+    "review": {
+      "assignBuyer": "Assign Buyer",
+      "reviewNotes": "Review Notes",
+      "clarificationRequested": "Clarification Requested",
+      "buyerPlaceholder": "Buyer name…",
+      "currentlyAssigned": "Currently assigned to: ",
+      "assignButton": "Assign",
+      "fields": {
+        "submittedDate": "Submitted Date",
+        "approvedDate": "Approved Date",
+        "approvedBy": "Approved By",
+        "rejectionReason": "Rejection Reason"
+      }
+    },
+    "supplierSelection": {
+      "unavailableTitle": "Supplier selection is available once the request moves to Awaiting Supplier or Approved.",
+      "currentStatus": "Current status: ",
+      "empty": "No lines in this request.",
+      "hint": "Select a supplier for each material line. Warehouse managers cannot see this tab.",
+      "refKnownSuppliers": "Ref: Known Suppliers",
+      "supplierId": "Supplier ID",
+      "supplierUuidPlaceholder": "Supplier UUID…",
+      "agreedPrice": "Agreed Price",
+      "agreedQty": "Agreed Qty",
+      "leadTimeDays": "Lead Time (days)",
+      "confirmSupplier": "Confirm Supplier"
+    },
+    "financial": {
+      "kpis": {
+        "estimatedValue": "Estimated Value",
+        "approvedValue": "Approved Value",
+        "purchasedValue": "Purchased Value",
+        "outstanding": "Outstanding"
+      },
+      "lineValues": "Line Values",
+      "columns": {
+        "material": "Material",
+        "requestedQty": "Requested Qty",
+        "unitCost": "Unit Cost",
+        "lineValue": "Line Value"
+      }
+    },
+    "timeline": {
+      "empty": "No timeline events.",
+      "events": {
+        "created": "Created",
+        "submitted": "Submitted",
+        "approved": "Approved",
+        "completed": "Completed",
+        "rejected": "Rejected",
+        "onHold": "On Hold",
+        "cancelled": "Cancelled"
+      }
+    },
+    "placeholder": "{{label}} is not yet implemented in this version.",
+    "actions": {
+      "submitForReview": "Submit for Review",
+      "approve": "Approve",
+      "reject": "Reject",
+      "hold": "Hold",
+      "cancel": "Cancel",
+      "rejectReasonPlaceholder": "Rejection reason (optional)…",
+      "confirmRejection": "Confirm Rejection"
+    },
+    "toast": {
+      "submitted": "Request submitted for review.",
+      "approved": "Request approved.",
+      "rejected": "Request rejected.",
+      "hold": "Request put on hold.",
+      "cancelled": "Request cancelled.",
+      "actionFailed": "Action failed.",
+      "buyerAssigned": "Buyer assigned.",
+      "buyerFailed": "Failed to assign buyer.",
+      "supplierSelected": "Supplier selected for line.",
+      "supplierFailed": "Failed to select supplier."
+    }
+  }
+}

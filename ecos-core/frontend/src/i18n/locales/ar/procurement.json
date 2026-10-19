@@ -1,0 +1,146 @@
+{
+  "title": "المشتريات",
+  "subtitle": "أوامر الشراء وإدارة الموردين واستلام البضائع.",
+  "overview": {
+    "title": "نظرة عامة على المشتريات",
+    "pendingOrders": "الطلبات المعلقة",
+    "overdueOrders": "الطلبات المتأخرة",
+    "pendingReceipts": "استلام بضائع معلق",
+    "totalSpend": "إجمالي الإنفاق (الشهر الحالي)",
+    "openInvoices": "فواتير مفتوحة"
+  },
+  "purchaseOrders": {
+    "title": "أوامر الشراء",
+    "search": "بحث برقم الأمر أو المورد أو المنتج…",
+    "new": "أمر شراء جديد",
+    "columns": {
+      "number": "رقم الأمر",
+      "supplier": "المورد",
+      "warehouse": "مستودع الوجهة",
+      "orderDate": "تاريخ الأمر",
+      "expectedDate": "تاريخ الاستلام المتوقع",
+      "total": "الإجمالي",
+      "status": "الحالة"
+    },
+    "status": {
+      "draft": "مسودة",
+      "sent": "مُرسَل",
+      "confirmed": "مؤكد",
+      "partially_received": "مستلم جزئياً",
+      "received": "مستلم",
+      "cancelled": "ملغى"
+    }
+  },
+  "suppliers": {
+    "title": "الموردون",
+    "search": "بحث في الموردين…",
+    "new": "مورد جديد",
+    "columns": {
+      "name": "اسم المورد",
+      "code": "الرمز",
+      "contactName": "جهة الاتصال",
+      "phone": "الهاتف",
+      "email": "البريد الإلكتروني",
+      "paymentTerms": "شروط الدفع",
+      "balance": "الرصيد",
+      "status": "الحالة"
+    },
+    "status": {
+      "active": "نشط",
+      "inactive": "غير نشط",
+      "blocked": "محظور"
+    }
+  },
+  "actions": {
+    "send": "إرسال للمورد",
+    "confirm": "تأكيد الأمر",
+    "receive": "استلام البضائع",
+    "cancel": "إلغاء",
+    "duplicate": "تكرار"
+  },
+  "tabs": {
+    "orders": "أوامر الشراء",
+    "suppliers": "الموردون",
+    "receipts": "استلام البضائع",
+    "invoices": "الفواتير",
+    "returns": "المرتجعات"
+  },
+  "hub": {
+    "title": "مركز المشتريات",
+    "subtitle": "نظرة عامة وتنبيهات ووصول سريع لجميع سير عمل المشتريات",
+    "newPurchase": "شراء جديد",
+    "workQueue": {
+      "title": "قائمة الأعمال",
+      "materialRequests": "طلبات المواد",
+      "awaitingAction": "في انتظار الإجراء",
+      "purchases": "المشتريات",
+      "pendingApproval": "في انتظار الاعتماد",
+      "receiving": "الاستلام",
+      "goodsToReceive": "بضائع للاستلام",
+      "returns": "المرتجعات",
+      "waitingApproval": "في انتظار الاعتماد"
+    },
+    "financialOverview": "النظرة المالية العامة",
+    "kpis": {
+      "approvedPurchases": "المشتريات المعتمدة",
+      "readyToExecute": "جاهزة للتنفيذ",
+      "invoiceValuePosted": "قيمة الفواتير (مرحَّلة)",
+      "thisPeriod": "الفترة الحالية",
+      "pendingInvoiceValue": "قيمة الفواتير المعلقة",
+      "draftValidated": "مسودة + محققة",
+      "returnsValue": "قيمة المرتجعات",
+      "activeReturns": "مرتجعات نشطة"
+    },
+    "alertsTitle": "تنبيهات ومسائل تستلزم الانتباه",
+    "noAlerts": "لا تنبيهات — كل شيء على ما يرام",
+    "alertMessages": {
+      "awaitingApproval": "{{count}} مشتريات في انتظار الاعتماد",
+      "awaitingApprovalDesc": "هذه المشتريات جاهزة لمراجعتك",
+      "underReview": "{{count}} طلب مواد قيد المراجعة",
+      "underReviewDesc": "فريق المشتريات يراجع هذه الطلبات",
+      "returnsNeedApproval": "{{count}} مرتجع يحتاج اعتماداً",
+      "returnsNeedApprovalDesc": "راجع واعتمد طلبات الإرجاع المعلقة",
+      "invoicesFailed": "{{count}} فاتورة فشل ترحيلها",
+      "invoicesFailedDesc": "أخطاء الترحيل تحتاج مراجعة يدوية",
+      "creditPending": "{{count}} مرتجع في انتظار الدائنية",
+      "creditPendingDesc": "تابع مع الموردين بشأن إشعارات الدائنية"
+    },
+    "moduleStatus": "حالة الوحدة",
+    "supplierInvoicesModule": "فواتير الموردين",
+    "supplierReturnsModule": "مرتجعات الموردين",
+    "invoiceStatus": {
+      "draft": "مسودة",
+      "validatedReady": "محققة (جاهزة)",
+      "posted": "مرحَّلة",
+      "viewAll": "عرض جميع الفواتير"
+    },
+    "returnStatus": {
+      "draft": "مسودة",
+      "waitingApproval": "في انتظار الاعتماد",
+      "creditPending": "الدائنية معلقة",
+      "viewAll": "عرض جميع المرتجعات"
+    },
+    "quickActions": "إجراءات سريعة",
+    "actions2": {
+      "newSupplierInvoice": "فاتورة مورد جديدة",
+      "newSupplierInvoiceDesc": "فاتورة مورد مباشرة ← ترحيل تلقائي للمخزون",
+      "newMaterialRequest": "طلب مواد جديد",
+      "newMaterialRequestDesc": "يقدم فريق المستودع احتياجات الشراء",
+      "newPurchase": "شراء جديد",
+      "newPurchaseDesc": "يُنشئ المشتري سجل شراء",
+      "receiveGoods": "استلام البضائع",
+      "receiveGoodsDesc": "تسجيل الشحنة الواردة مقابل شراء",
+      "newSupplierReturn": "مرتجع مورد جديد",
+      "newSupplierReturnDesc": "إطلاق مرتجع للمورد بسبب عيوب أو تسليم زائد",
+      "supplierDirectory": "دليل الموردين",
+      "supplierDirectoryDesc": "عرض وإدارة ملفات الموردين"
+    },
+    "performance": {
+      "title": "لقطة الأداء",
+      "totalPurchases": "إجمالي المشتريات",
+      "approved": "معتمدة",
+      "invoicesPosted": "فواتير مرحَّلة",
+      "returnsCompleted": "مرتجعات مكتملة"
+    }
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "title": "الفرق",
+  "subtitle": "إدارة الفرق التشغيلية والأدوار وتعيينات الأعضاء.",
+  "search": "بحث في الفرق أو الأعضاء…",
+  "actions": {
+    "new": "فريق جديد",
+    "edit": "تعديل الفريق",
+    "addMember": "إضافة عضو",
+    "removeMember": "إزالة عضو",
+    "deactivate": "تعطيل الفريق"
+  },
+  "columns": {
+    "name": "اسم الفريق",
+    "type": "النوع",
+    "lead": "قائد الفريق",
+    "members": "الأعضاء",
+    "branch": "الفرع",
+    "status": "الحالة"
+  },
+  "type": {
+    "sales": "المبيعات",
+    "operations": "العمليات",
+    "delivery": "التوصيل",
+    "customer_service": "خدمة العملاء",
+    "warehouse": "المستودع",
+    "other": "أخرى"
+  },
+  "status": {
+    "active": "نشط",
+    "inactive": "غير نشط"
+  },
+  "form": {
+    "name": { "label": "اسم الفريق", "placeholder": "مثال: فريق مبيعات القاهرة أ" },
+    "type": { "label": "نوع الفريق", "placeholder": "اختر النوع…" },
+    "lead": { "label": "قائد الفريق", "placeholder": "اختر قائد الفريق…" },
+    "branch": { "label": "الفرع", "placeholder": "اختر فرعاً…" },
+    "description": { "label": "الوصف", "placeholder": "وصف اختياري…" }
+  },
+  "members": {
+    "title": "أعضاء الفريق",
+    "addMember": "إضافة عضو",
+    "columns": {
+      "member": "العضو",
+      "role": "الدور",
+      "joinedAt": "تاريخ الانضمام"
+    },
+    "noMembers": "لا يوجد أعضاء بعد.",
+    "roles": {
+      "lead": "قائد",
+      "member": "عضو",
+      "trainee": "متدرب"
+    }
+  },
+  "drawer": {
+    "createTitle": "فريق جديد",
+    "editTitle": "تعديل الفريق",
+    "createSubtitle": "إنشاء فريق تشغيلي وتعيين الأعضاء.",
+    "submitCreate": "إنشاء الفريق",
+    "submitEdit": "حفظ التغييرات",
+    "saving": "جارٍ الحفظ…",
+    "errorTitle": "تعذر الحفظ"
+  }
+}

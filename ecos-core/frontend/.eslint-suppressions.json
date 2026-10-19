@@ -1,0 +1,359 @@
+{
+  "src/components/data-grid/hooks/use-saved-views.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 4
+    }
+  },
+  "src/components/layout/header/brand/brand-switcher.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 2
+    }
+  },
+  "src/components/layout/header/company/company-switcher.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 2
+    }
+  },
+  "src/components/layout/header/header-context.tsx": {
+    "react-refresh/only-export-components": {
+      "count": 1
+    }
+  },
+  "src/components/layout/header/search/search-command-dialog.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 2
+    }
+  },
+  "src/components/layout/header/warehouse/warehouse-switcher.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 2
+    }
+  },
+  "src/components/ui/ecos-combobox.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 2
+    }
+  },
+  "src/components/ui/image-upload-field.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/components/ui/media-viewer.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/admin/configuration/components/policy-workspace.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/brands/components/brand-detail-drawer.tsx": {
+    "react-hooks/rules-of-hooks": {
+      "count": 3
+    }
+  },
+  "src/features/brands/components/brand-form-drawer.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 2
+    }
+  },
+  "src/features/business-accounts/components/business-account-detail-drawer.tsx": {
+    "react-hooks/rules-of-hooks": {
+      "count": 1
+    }
+  },
+  "src/features/business-accounts/components/business-account-form-drawer.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/categories/pages/categories-page.tsx": {
+    "react-hooks/static-components": {
+      "count": 4
+    }
+  },
+  "src/features/channels/pages/channels-page.tsx": {
+    "react-hooks/immutability": {
+      "count": 2
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/companies/components/company-detail-drawer.tsx": {
+    "react-hooks/rules-of-hooks": {
+      "count": 3
+    }
+  },
+  "src/features/companies/components/company-form-drawer.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/cost-management/pages/cost-history-page.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/cost-management/pages/cost-pricing-center-page.tsx": {
+    "@typescript-eslint/no-unused-expressions": {
+      "count": 1
+    },
+    "react-hooks/static-components": {
+      "count": 4
+    }
+  },
+  "src/features/customers/components/customer-drawer.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/customers/components/customer-form-drawer.tsx": {
+    "react-hooks/immutability": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/customers/pages/customers-page.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/dashboard/hooks/use-workspace-layout.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/logistics/distribution-zones/components/area-selector.tsx": {
+    "@typescript-eslint/no-unused-expressions": {
+      "count": 1
+    },
+    "react-hooks/refs": {
+      "count": 2
+    }
+  },
+  "src/features/logistics/distribution-zones/components/distribution-zone-drawer.tsx": {
+    "no-constant-binary-expression": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/logistics/distribution-zones/components/transfer-list.tsx": {
+    "@typescript-eslint/no-unused-expressions": {
+      "count": 2
+    }
+  },
+  "src/features/logistics/distribution-zones/pages/distribution-zones-page.tsx": {
+    "@typescript-eslint/no-unused-expressions": {
+      "count": 1
+    }
+  },
+  "src/features/logistics/geography/pages/egypt-geography-page.tsx": {
+    "react-hooks/refs": {
+      "count": 2
+    }
+  },
+  "src/features/operations/components/wave-picker.tsx": {
+    "react-refresh/only-export-components": {
+      "count": 1
+    }
+  },
+  "src/features/operations/components/wave-workspace-layout.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/orders/components/order-address-cell.tsx": {
+    "react-refresh/only-export-components": {
+      "count": 3
+    }
+  },
+  "src/features/orders/components/order-column-defs.tsx": {
+    "react-refresh/only-export-components": {
+      "count": 2
+    }
+  },
+  "src/features/orders/components/order-customer-lookup-field.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/orders/components/order-list-toolbar.tsx": {
+    "react-refresh/only-export-components": {
+      "count": 3
+    }
+  },
+  "src/features/orders/components/order-location-cell.tsx": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/orders/components/order-payment-cell.tsx": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "src/features/orders/components/order-quick-actions.tsx": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "src/features/orders/components/order-zone-editor.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/orders/pages/orders-page.tsx": {
+    "no-empty": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/organization/context/company-context.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    },
+    "react-refresh/only-export-components": {
+      "count": 1
+    }
+  },
+  "src/features/organization/context/organization-context.tsx": {
+    "react-refresh/only-export-components": {
+      "count": 1
+    }
+  },
+  "src/features/pos/components/customer-panel.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 2
+    }
+  },
+  "src/features/pos/components/pos-workspace.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/pos/components/product-grid.tsx": {
+    "no-empty": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/pos/components/session-dialog.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 4
+    }
+  },
+  "src/features/pos/hooks/use-barcode-scanner.ts": {
+    "react-hooks/refs": {
+      "count": 2
+    }
+  },
+  "src/features/pos/hooks/use-keyboard-shortcuts.ts": {
+    "react-hooks/refs": {
+      "count": 2
+    }
+  },
+  "src/features/products/components/product-column-defs.tsx": {
+    "react-refresh/only-export-components": {
+      "count": 3
+    }
+  },
+  "src/features/products/components/product-detail-drawer.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/products/components/product-filter-bar.tsx": {
+    "react-refresh/only-export-components": {
+      "count": 1
+    }
+  },
+  "src/features/products/components/product-form-drawer.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/products/components/product-table.tsx": {
+    "react-refresh/only-export-components": {
+      "count": 1
+    }
+  },
+  "src/features/products/pages/products-page.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 2
+    }
+  },
+  "src/features/purchase-materials/components/create-purchase-material-wizard.tsx": {
+    "@typescript-eslint/no-unused-expressions": {
+      "count": 1
+    }
+  },
+  "src/features/raw-materials/components/inline-cost-editor.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/raw-materials/components/raw-material-detail-drawer.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/raw-materials/components/raw-material-form-drawer.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 2
+    }
+  },
+  "src/features/raw-materials/components/raw-material-table.tsx": {
+    "@typescript-eslint/no-unused-expressions": {
+      "count": 1
+    }
+  },
+  "src/features/recipes/components/recipe-detail-drawer.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/recipes/pages/recipe-workspace-page.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/stock-ledger/pages/stock-ledger-page.tsx": {
+    "react-hooks/static-components": {
+      "count": 3
+    }
+  },
+  "src/features/supplier-invoices/components/supplier-invoice-editor.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/suppliers/components/supplier-360-drawer.tsx": {
+    "react-hooks/purity": {
+      "count": 1
+    }
+  },
+  "src/features/teams/components/team-form-drawer.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/providers/language-provider.tsx": {
+    "react-refresh/only-export-components": {
+      "count": 1
+    }
+  }
+}

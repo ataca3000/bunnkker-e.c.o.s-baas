@@ -1,0 +1,458 @@
+{
+  "title": "Suppliers",
+  "subtitle": "Manage your supplier relationships.",
+  "search": "Search suppliers…",
+  "actions": {
+    "new": "New Supplier",
+    "create": "Create supplier",
+    "edit": "Edit Supplier"
+  },
+  "status": {
+    "draft": "Draft",
+    "active": "Active",
+    "preferred": "Preferred",
+    "on_hold": "On Hold",
+    "blocked": "Blocked",
+    "archived": "Archived"
+  },
+  "columns": {
+    "code": "Code",
+    "name": "Name",
+    "contactPerson": "Contact Person",
+    "email": "Email",
+    "phone": "Phone",
+    "country": "Country",
+    "city": "City",
+    "status": "Status"
+  },
+  "form": {
+    "code": {
+      "label": "Code",
+      "placeholder": "SUP-001"
+    },
+    "name": {
+      "label": "Name",
+      "placeholder": "Delta Trading"
+    },
+    "contactPerson": "Contact person",
+    "email": {
+      "label": "Email",
+      "placeholder": "supplier@example.com"
+    },
+    "phone": "Phone",
+    "mobile": "Mobile",
+    "website": {
+      "label": "Website",
+      "placeholder": "https://supplier.com"
+    },
+    "country": "Country",
+    "state": "State / Governorate",
+    "city": "City",
+    "district": "District / Area",
+    "address": "Full address",
+    "googleMapsUrl": "Google Maps URL",
+    "openingBalanceAmount": "Opening balance",
+    "openingBalanceType": "Balance type",
+    "openingBalanceDebit": "Debit (prepaid / they owe us)",
+    "openingBalanceCredit": "Credit (we owe them)",
+    "sectionContact": "Contact",
+    "sectionLocation": "Location",
+    "sectionFinancial": "Opening balance",
+    "sectionFinancialHint": "For companies operating before ECOS — the balance carried into the system.",
+    "notes": {
+      "label": "Notes",
+      "placeholder": "Optional notes…"
+    },
+    "active": "Active"
+  },
+  "drawer": {
+    "createTitle": "Create Supplier",
+    "editTitle": "Edit Supplier",
+    "createSubtitle": "Add a new supplier to your records.",
+    "editSubtitle": "Update the supplier details below.",
+    "submitCreate": "Create supplier",
+    "submitEdit": "Save changes",
+    "saving": "Saving…",
+    "errorTitle": "Unable to save"
+  },
+  "delete": {
+    "title": "Delete supplier",
+    "confirm": "Delete"
+  },
+  "detail": {
+    "loading": "Loading supplier…",
+    "notFound": "Supplier not found.",
+    "overview": "Overview",
+    "purchasing": "Purchasing Summary",
+    "inventory": "Current Inventory",
+    "inventoryBreakdown": "Inventory Breakdown",
+    "totalPurchases": "Total Receipts",
+    "totalInvoiced": "Total Invoiced",
+    "totalPaid": "Total Paid",
+    "outstandingBalance": "Outstanding Balance",
+    "lastPurchaseDate": "Last Purchase",
+    "currentQty": "Inventory Units",
+    "costValue": "Cost Value",
+    "saleValue": "Sale Value",
+    "grossProfit": "Gross Profit",
+    "product": "Product",
+    "qty": "Qty",
+    "avgCost": "Avg Cost",
+    "salePrice": "Sale Price",
+    "receipts": "Receipts",
+    "noInventory": "No current inventory from this supplier."
+  },
+  "kpis": {
+    "totalSuppliers": "Total Suppliers",
+    "active": "Active Suppliers",
+    "newThisMonth": "New This Month",
+    "openPOs": "Open Purchase Orders",
+    "outstandingBalance": "Outstanding Balance",
+    "inventoryValue": "Supplier Inventory Value",
+    "delayedOrders": "Delayed Orders",
+    "needsReview": "Needs Review"
+  },
+  "page": {
+    "breadcrumbs": {
+      "procurement": "Procurement",
+      "suppliers": "Suppliers"
+    },
+    "description": "Manage your procurement supplier network.",
+    "savedViews": {
+      "all": "All Suppliers",
+      "active": "Active",
+      "preferred": "Preferred"
+    }
+  },
+  "columnsExtra": {
+    "code": "Supplier Code",
+    "name": "Supplier Name",
+    "category": "Category",
+    "actions": "Actions",
+    "openingBalance": "Opening Balance",
+    "purchaseBalance": "Purchase Balance",
+    "currentSupplierBalance": "Current Supplier Balance",
+    "totalPaid": "Total Paid",
+    "totalOutstanding": "Total Outstanding",
+    "totalPurchasedValue": "Total Purchased Value",
+    "totalPurchases": "Total Purchases",
+    "totalPayments": "Total Payments",
+    "outstandingBalance": "Outstanding Balance",
+    "inventoryValue": "Inventory Value",
+    "stockCoverage": "Stock Coverage",
+    "activePOs": "Active POs",
+    "lastPurchase": "Last Purchase",
+    "procurementHealth": "Procurement Health"
+  },
+  "actionMenu": {
+    "view": "View",
+    "edit": "Edit",
+    "activity": "Activity",
+    "notes": "Notes",
+    "archive": "Archive",
+    "delete": "Delete"
+  },
+  "filters": {
+    "all": "All",
+    "active": "Active",
+    "inactive": "Inactive"
+  },
+  "confirmDelete": {
+    "title": "Delete Supplier",
+    "description": "Are you sure you want to delete {{name}}? This action cannot be undone.",
+    "confirm": "Delete"
+  },
+  "exportCsv": "Export CSV",
+  "edit": "Edit",
+  "deleteSelected": "Delete {{count}} selected",
+  "toast": {
+    "deleted": "Supplier deleted.",
+    "archived": "Supplier archived.",
+    "archiveFailed": "Failed to archive supplier."
+  },
+  "emptyState": {
+    "title": "No suppliers yet",
+    "description": "Add your first supplier to start managing your procurement network."
+  },
+  "pagination": {
+    "totalSuppliers": "{{total}} suppliers",
+    "selected": "{{count}} selected",
+    "previous": "Previous",
+    "next": "Next",
+    "page": "Page {{current}} of {{last}}"
+  },
+  "wizard": {
+    "title": "New Supplier",
+    "subtitle": "Add a new supplier to your procurement network.",
+    "steps": {
+      "basicInfo": "Basic Info",
+      "contact": "Contact",
+      "review": "Review"
+    },
+    "fields": {
+      "name": "Supplier Name",
+      "namePlaceholder": "e.g. Al Futtaim Trading",
+      "code": "Supplier Code",
+      "codePlaceholder": "e.g. SUP-001",
+      "category": "Category",
+      "categoryPlaceholder": "Coming soon",
+      "status": "Status",
+      "activeSupplier": "Active supplier",
+      "contactPerson": "Contact Person",
+      "contactPersonPlaceholder": "Full name",
+      "phone": "Phone",
+      "phonePlaceholder": "+971 X XXX XXXX",
+      "mobile": "Mobile",
+      "mobilePlaceholder": "+971 5X XXX XXXX",
+      "email": "Email",
+      "country": "Country",
+      "countryPlaceholder": "e.g. UAE",
+      "city": "City",
+      "cityPlaceholder": "e.g. Dubai",
+      "address": "Address",
+      "addressPlaceholder": "Street address",
+      "notes": "Notes (optional)",
+      "notesPlaceholder": "Any notes about this supplier…"
+    },
+    "review": {
+      "name": "Name",
+      "code": "Code",
+      "contact": "Contact",
+      "phone": "Phone",
+      "email": "Email",
+      "country": "Country",
+      "city": "City",
+      "status": "Status",
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "buttons": {
+      "back": "Back",
+      "cancel": "Cancel",
+      "next": "Next",
+      "creating": "Creating…",
+      "create": "Create Supplier"
+    },
+    "toast": {
+      "success": "Supplier created successfully.",
+      "error": "Failed to create supplier. Please try again."
+    },
+    "documentsNote": "Document attachments — available in PKG-PROC-004"
+  },
+  "drawer360": {
+    "editSupplier": "Edit Supplier",
+    "tabs": {
+      "overview": "Overview",
+      "products": "Products",
+      "purchaseOrders": "Purchase Orders",
+      "goodsReceipts": "Goods Receipts",
+      "financial": "Financial",
+      "inventory": "Inventory",
+      "priceHistory": "Price History",
+      "performance": "Performance",
+      "documents": "Documents",
+      "timeline": "Timeline",
+      "ai": "AI Ready"
+    },
+    "smartInsights": "Smart Insights",
+    "overview": {
+      "supplierInfo": "Supplier Information",
+      "location": "Location",
+      "openInMaps": "Open in Google Maps",
+      "financialPosition": "Financial Position",
+      "openingBalance": "Opening Balance",
+      "previousBalance": "Previous Balance",
+      "currentBalance": "Current Supplier Balance",
+      "contactDetails": "Contact Details",
+      "quickSummary": "Quick Summary",
+      "procurementHealth": "Procurement Health",
+      "notes": "Notes",
+      "fields": {
+        "supplierCode": "Supplier Code",
+        "name": "Name",
+        "country": "Country",
+        "city": "City",
+        "address": "Address",
+        "contactPerson": "Contact Person",
+        "phone": "Phone",
+        "mobile": "Mobile",
+        "email": "Email"
+      },
+      "kpis": {
+        "totalPurchases": "Total Purchases",
+        "totalPaid": "Total Paid",
+        "outstanding": "Outstanding",
+        "lastPurchase": "Last Purchase"
+      },
+      "outOf100": "out of 100",
+      "loadingAnalytics": "Loading analytics…"
+    },
+    "products": {
+      "empty": "No products from this supplier yet.",
+      "export": "Export",
+      "columns": {
+        "product": "Product",
+        "onHand": "On Hand",
+        "avgCost": "Avg Cost",
+        "costValue": "Cost Value",
+        "saleValue": "Sale Value",
+        "lastReceipt": "Last Receipt",
+        "receipts": "Receipts",
+        "salePrice": "Sale Price",
+        "grossProfit": "Gross Profit",
+        "oldestReceipt": "Oldest Receipt"
+      }
+    },
+    "purchaseOrders": {
+      "empty": "No purchase orders for this supplier.",
+      "columns": {
+        "poNo": "PO #",
+        "date": "Date",
+        "expected": "Expected",
+        "status": "Status",
+        "total": "Total"
+      }
+    },
+    "goodsReceipts": {
+      "empty": "No goods receipts for this supplier.",
+      "columns": {
+        "receiptNo": "Receipt #",
+        "date": "Date",
+        "poNo": "PO #",
+        "status": "Status",
+        "invoiceTotal": "Invoice Total",
+        "outstanding": "Outstanding"
+      }
+    },
+    "financial": {
+      "export": "Export",
+      "kpis": {
+        "totalPurchases": "Total Purchases",
+        "totalPurchasesSub": "Posted GRs",
+        "totalInvoiced": "Total Invoiced",
+        "totalPaid": "Total Paid",
+        "outstandingBalance": "Outstanding Balance",
+        "outstandingBalanceSub": "Payable",
+        "paymentCompletion": "Payment Completion",
+        "avgPoValue": "Avg PO Value"
+      },
+      "lastPurchase": "Last Purchase"
+    },
+    "inventory": {
+      "kpis": {
+        "totalProducts": "Total Products",
+        "inventoryValue": "Inventory Value",
+        "totalQuantity": "Total Quantity",
+        "lowStock": "Low Stock",
+        "lowStockSub": "< 10 units",
+        "outOfStock": "Out of Stock",
+        "overstock": "Overstock",
+        "overstockSub": "> 1000 units"
+      },
+      "valueBreakdown": "Value Breakdown",
+      "costValue": "Cost Value",
+      "saleValue": "Sale Value",
+      "potentialProfit": "Potential Profit",
+      "margin": "margin"
+    },
+    "priceHistory": {
+      "empty": "No purchase history yet.",
+      "records": "{{count}} records",
+      "export": "Export",
+      "columns": {
+        "date": "Date",
+        "poNo": "PO #",
+        "product": "Product",
+        "warehouse": "Warehouse",
+        "qty": "Qty",
+        "unitCost": "Unit Cost",
+        "landed": "Landed",
+        "vsPrevious": "vs Previous",
+        "pctChange": "% Change"
+      }
+    },
+    "performance": {
+      "overallHealth": "Overall Procurement Health",
+      "export": "Export",
+      "scoreComponents": "Score Components",
+      "scoreWeight": "Score · Weight (per component)",
+      "components": {
+        "delivery_performance": "On-Time Delivery",
+        "fill_rate": "Fill Rate",
+        "price_stability": "Price Stability",
+        "activity": "Purchase Activity",
+        "financial_standing": "Financial Standing",
+        "inventory_impact": "Inventory Impact"
+      },
+      "kpis": {
+        "onTimeDelivery": "On-Time Delivery",
+        "fillRate": "Fill Rate",
+        "avgLeadTime": "Avg Lead Time",
+        "avgLeadTimeSuffix": "days",
+        "activePOs": "Active POs",
+        "pendingGRs": "Pending GRs",
+        "productsSupplied": "Products Supplied"
+      }
+    },
+    "documents": {
+      "empty": "No documents uploaded yet.",
+      "uploadArea": {
+        "documentType": "Document Type",
+        "uploadFile": "Upload File",
+        "uploading": "Uploading…"
+      },
+      "docTypes": {
+        "commercial_registration": "Commercial Registration",
+        "tax_card": "Tax Card",
+        "contract": "Contract",
+        "certificate": "Certificate",
+        "attachment": "Attachment"
+      },
+      "toast": {
+        "uploaded": "Document uploaded.",
+        "uploadFailed": "Upload failed.",
+        "downloadFailed": "Download failed.",
+        "deleted": "Document deleted.",
+        "deleteFailed": "Delete failed."
+      }
+    },
+    "timeline": {
+      "empty": "No timeline events yet.",
+      "events": {
+        "supplier_created": "Supplier Created",
+        "supplier_updated": "Updated",
+        "po_created": "PO Created",
+        "po_approved": "PO Approved",
+        "gr_posted": "GR Posted",
+        "price_change": "Price Change"
+      }
+    },
+    "ai": {
+      "title": "Procurement AI — Coming Soon",
+      "description": "AI-powered procurement insights will appear here. Each alert type is listed below — implementation will be integrated with the Procurement AI engine in a future release.",
+      "soon": "Soon",
+      "alerts": {
+        "priceIncrease": {
+          "label": "Price Increase Alert",
+          "desc": "Detect significant unit price changes across POs."
+        },
+        "alternativeSupplier": {
+          "label": "Alternative Supplier",
+          "desc": "Suggest suppliers with similar products and better lead times."
+        },
+        "lowCoverage": {
+          "label": "Low Coverage Alert",
+          "desc": "Warn when estimated stock coverage drops below threshold."
+        },
+        "deliveryDelay": {
+          "label": "Delivery Delay Alert",
+          "desc": "Flag POs past expected delivery with no goods receipt."
+        },
+        "purchaseRec": {
+          "label": "Purchase Recommendation",
+          "desc": "Suggest reorder quantities based on consumption rate."
+        }
+      }
+    }
+  }
+}

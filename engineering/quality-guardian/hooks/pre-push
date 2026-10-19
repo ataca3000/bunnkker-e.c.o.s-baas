@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# ECOS Engineering Guardian — pre-push hook
+# Installed by: engineering/quality-guardian/setup.sh
+#
+# Runs full backend + frontend validation before each push (no Docker build).
+# To bypass in a genuine emergency: git push --no-verify
+GUARDIAN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../engineering/quality-guardian" && pwd)"
+exec "$GUARDIAN_DIR/guardian.sh" pre-push

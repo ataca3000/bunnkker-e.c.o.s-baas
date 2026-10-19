@@ -1,0 +1,47 @@
+{
+  "title": "Organization",
+  "subtitle": "Manage your company structure, branches, and hierarchy.",
+  "hierarchy": {
+    "title": "Organisation Hierarchy",
+    "company": "Company",
+    "brand": "Brand",
+    "branch": "Branch",
+    "warehouse": "Warehouse",
+    "channel": "Sales Channel"
+  },
+  "companyProfile": {
+    "title": "Company Profile",
+    "subtitle": "Core company information and regional settings.",
+    "tabs": {
+      "general": "General",
+      "locale": "Locale & Currency",
+      "fiscal": "Fiscal Year",
+      "contact": "Contact"
+    },
+    "general": {
+      "name": "Company Name",
+      "taxId": "Tax ID / Registration",
+      "website": "Website",
+      "logo": "Company Logo"
+    },
+    "locale": {
+      "currency": "Default Currency",
+      "locale": "Number & Date Locale",
+      "timezone": "Timezone",
+      "dateFormat": "Date Format",
+      "weekStart": "Week Starts On",
+      "numberFormat": "Number Format"
+    },
+    "fiscal": {
+      "fiscalYearStart": "Fiscal Year Start",
+      "fiscalYearEnd": "Fiscal Year End"
+    }
+  },
+  "transfer": {
+    "title": "Brand Transfer",
+    "subtitle": "Reassign a product, order, or resource to a different brand.",
+    "selectBrand": "Select Target Brand",
+    "confirm": "Transfer",
+    "transferring": "Transferring…"
+  }
+}

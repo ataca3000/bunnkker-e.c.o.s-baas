@@ -1,0 +1,79 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Call to an undefined static method App\\Core\\Audit\\AuditLog\:\:create\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: app/Core/Audit/AuditService.php
+
+		-
+			message: '#^Using nullsafe method call on non\-nullable type Illuminate\\Http\\Request\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Core/Audit/AuditService.php
+
+		-
+			message: '#^Access to an undefined property App\\Core\\Documents\\Document\:\:\$file_path\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Core/Documents/DocumentService.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Contracts\\Filesystem\\Filesystem\:\:url\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Core/Documents/DocumentService.php
+
+		-
+			message: '#^Call to an undefined static method App\\Core\\Documents\\Document\:\:create\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: app/Core/Documents/DocumentService.php
+
+		-
+			message: '#^Call to an undefined static method App\\Core\\Documents\\Document\:\:findOrFail\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: app/Core/Documents/DocumentService.php
+
+		-
+			message: '#^Call to an undefined static method App\\Core\\Documents\\Document\:\:where\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: app/Core/Documents/DocumentService.php
+
+		-
+			message: '#^PHPDoc tag @param references unknown parameter\: \$metadata$#'
+			identifier: parameter.notFound
+			count: 1
+			path: app/Core/Documents/DocumentService.php
+
+		-
+			message: '#^Call to an undefined static method App\\Core\\FeatureFlags\\FeatureFlag\:\:updateOrCreate\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: app/Core/FeatureFlags/FeatureFlagService.php
+
+		-
+			message: '#^Call to an undefined static method App\\Core\\FeatureFlags\\FeatureFlag\:\:where\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 2
+			path: app/Core/FeatureFlags/FeatureFlagService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>enabled" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Core/FeatureFlags/FeatureFlagService.php
+
+		-
+			message: '#^Call to an undefined static method App\\Core\\Timeline\\TimelineEvent\:\:create\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: app/Core/Timeline/TimelineService.php
+
+		-
+			message: '#^Call to an undefined static method App\\Core\\Timeline\\TimelineEvent\:\:where\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: app/Core/Timeline/TimelineService.php

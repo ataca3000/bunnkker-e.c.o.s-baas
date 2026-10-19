@@ -1,0 +1,2359 @@
+{
+  "title": "اللوجستيات",
+  "subtitle": "إدارة مناطق التوصيل والمحافظات ومناطق التغطية.",
+  "governorates": {
+    "title": "المحافظات",
+    "subtitle": "إدارة محافظات مصر وإعدادات التوصيل الخاصة بها.",
+    "search": "بحث في المحافظات…",
+    "actions": {
+      "new": "محافظة جديدة",
+      "edit": "تعديل المحافظة"
+    },
+    "columns": {
+      "nameAr": "الاسم بالعربية",
+      "nameEn": "الاسم بالإنجليزية",
+      "code": "الرمز",
+      "cities": "المدن",
+      "zones": "المناطق",
+      "status": "الحالة"
+    },
+    "form": {
+      "nameAr": {
+        "label": "الاسم بالعربية",
+        "placeholder": "القاهرة"
+      },
+      "nameEn": {
+        "label": "الاسم بالإنجليزية",
+        "placeholder": "Cairo"
+      },
+      "code": {
+        "label": "الرمز",
+        "placeholder": "CAI"
+      },
+      "active": "نشطة"
+    }
+  },
+  "cities": {
+    "title": "المدن",
+    "subtitle": "إدارة المدن ومناطق التوصيل الخاصة بها.",
+    "search": "بحث في المدن…",
+    "actions": {
+      "new": "مدينة جديدة",
+      "edit": "تعديل المدينة"
+    },
+    "columns": {
+      "nameAr": "الاسم بالعربية",
+      "nameEn": "الاسم بالإنجليزية",
+      "governorate": "المحافظة",
+      "zones": "المناطق",
+      "status": "الحالة"
+    },
+    "form": {
+      "nameAr": {
+        "label": "الاسم بالعربية",
+        "placeholder": "مدينة نصر"
+      },
+      "nameEn": {
+        "label": "الاسم بالإنجليزية",
+        "placeholder": "Nasr City"
+      },
+      "governorate": {
+        "label": "المحافظة",
+        "placeholder": "اختر محافظة…"
+      },
+      "active": "نشطة"
+    }
+  },
+  "zones": {
+    "title": "مناطق التوصيل",
+    "subtitle": "تحديد مناطق التوصيل وتكاليف الشحن الخاصة بها.",
+    "search": "بحث في المناطق…",
+    "actions": {
+      "new": "منطقة جديدة",
+      "edit": "تعديل المنطقة"
+    },
+    "columns": {
+      "name": "اسم المنطقة",
+      "city": "المدينة",
+      "governorate": "المحافظة",
+      "baseShipping": "تكلفة الشحن الأساسية",
+      "status": "الحالة"
+    },
+    "form": {
+      "name": {
+        "label": "اسم المنطقة",
+        "placeholder": "المنطقة أ — وسط البلد"
+      },
+      "city": {
+        "label": "المدينة",
+        "placeholder": "اختر مدينة…"
+      },
+      "baseShipping": {
+        "label": "تكلفة الشحن الأساسية"
+      },
+      "active": "نشطة"
+    }
+  },
+  "delete": {
+    "title": "حذف",
+    "confirm": "حذف"
+  },
+  "delivery": {
+    "errors": {
+      "actionFailed": "تعذر إتمام الإجراء",
+      "actionRefused": "تم رفض الإجراء",
+      "podValidationFailed": "فشل التحقق من إثبات التسليم",
+      "validationRefused": "تم رفض التحقق",
+      "failureRecordFailed": "تعذر تسجيل الإخفاق"
+    },
+    "field": {
+      "order": "الطلب",
+      "attempts": "المحاولات",
+      "promised": "الموعد المتعهد به",
+      "escalationLevel": "مستوى التصعيد",
+      "arrived": "وقت الوصول",
+      "dwell": "مدة التوقف",
+      "stop": "نقطة التوقف"
+    },
+    "overview": {
+      "attemptsOf": "من",
+      "attemptsLeft": "محاولات متبقية"
+    },
+    "status": {
+      "delivered": "تم التسليم",
+      "outForDelivery": "خرج للتوصيل",
+      "awaitingRetry": "بانتظار إعادة المحاولة",
+      "returning": "قيد الإرجاع",
+      "attempted": "تمت المحاولة",
+      "inTransit": "في الطريق",
+      "partiallyDelivered": "سُلِّمت جزئياً",
+      "returned": "مرتجعة"
+    },
+    "alert": {
+      "slaBreachedBy": "تجاوز اتفاقية مستوى الخدمة بمقدار",
+      "slaBreached": "تم تجاوز اتفاقية مستوى الخدمة",
+      "manualReview": "يتطلب مراجعة يدوية"
+    },
+    "cod": {
+      "title": "الدفع عند الاستلام",
+      "due": "المستحق",
+      "collected": "المحصَّل",
+      "shortfall": "العجز",
+      "note": "تتم تسوية المبالغ عند تصفية حساب السائق."
+    },
+    "retry": {
+      "title": "إعادة المحاولة",
+      "eligible": "مؤهل لإعادة المحاولة",
+      "schedule": "جدولة إعادة المحاولة"
+    },
+    "toast": {
+      "retryScheduled": "تمت جدولة إعادة المحاولة",
+      "addressCorrected": "تم وضع علامة تصحيح العنوان",
+      "cancelled": "تم إلغاء التوصيل",
+      "podValidated": "تم التحقق من إثبات التسليم",
+      "failureRecorded": "تم تسجيل الإخفاق"
+    },
+    "action": {
+      "markAddressCorrected": "وضع علامة تصحيح العنوان"
+    },
+    "cancel": {
+      "title": "إلغاء التوصيل",
+      "reasonPlaceholder": "سبب الإلغاء"
+    },
+    "pod": {
+      "title": "إثبات التسليم",
+      "missing": "لا يوجد إثبات تسليم",
+      "validate": "تحقق"
+    },
+    "attempts": {
+      "empty": "لا توجد محاولات توصيل",
+      "attemptNo": "المحاولة",
+      "dwellMinutes": "دقيقة"
+    },
+    "failure": {
+      "retryable": "قابل لإعادة المحاولة",
+      "notRetryable": "غير قابل لإعادة المحاولة",
+      "recordTitle": "تسجيل إخفاق",
+      "recordHint": "سجّل سبب إخفاق محاولة التوصيل.",
+      "selectReason": "اختر السبب",
+      "final": "إخفاق نهائي",
+      "recordButton": "تسجيل الإخفاق"
+    },
+    "returns": {
+      "discrepancy": "فرق",
+      "colProduct": "المنتج",
+      "colReturned": "المُرتجع",
+      "colCounted": "المجرود",
+      "colDifference": "الفرق",
+      "empty": "لا توجد مرتجعات",
+      "title": "المرتجعات"
+    },
+    "timeline": {
+      "empty": "لا توجد أحداث في الجدول الزمني",
+      "customerVisible": "مرئي للعميل"
+    },
+    "drawer": {
+      "titleWithOrder": "التوصيل",
+      "attemptsUsed": "المحاولات المستخدمة"
+    },
+    "entity": "التوصيل",
+    "empty": {
+      "filteredTitle": "لا توجد عمليات توصيل مطابقة للتصفية",
+      "title": "لا توجد عمليات توصيل",
+      "filteredHint": "جرّب تعديل عوامل التصفية أو مسحها.",
+      "hint": "تظهر عمليات التوصيل هنا بعد الإرسال."
+    },
+    "table": {
+      "lastFailure": "آخر إخفاق",
+      "sla": "اتفاقية مستوى الخدمة",
+      "final": "نهائي"
+    },
+    "sla": {
+      "breached": "متجاوَز",
+      "onTime": "في الموعد"
+    },
+    "stats": {
+      "slaBreached": "تجاوز اتفاقية مستوى الخدمة"
+    },
+    "page": {
+      "breadcrumbRoot": "اللوجستيات",
+      "title": "عمليات التوصيل",
+      "description": "تتبع محاولات التوصيل وإثبات التسليم واتفاقية مستوى الخدمة."
+    },
+    "filter": {
+      "orderIdPlaceholder": "البحث برقم الطلب",
+      "slaBreached": "المتجاوِزة لاتفاقية مستوى الخدمة فقط",
+      "open": "مفتوحة"
+    },
+    "completion": {
+      "flagDiscrepancy": "تسجيل فرق",
+      "flagDiscrepancyTitle": "تسجيل فرق على هذا المرتجع",
+      "flagDiscrepancyDescription": "الفرق ملاحظة وليس رفضًا: يبقى المرتجع مفتوحًا حتى تتم تسويته.",
+      "discrepancyNotes": "ملاحظات",
+      "flagFailed": "تعذّر تسجيل الفرق.",
+      "writeOff": "إعدام التحصيل",
+      "writeOffTitle": "إعدام المبلغ غير المحصّل",
+      "writeOffDescription": "يُسجّل السبب كأثر تدقيقي للمبلغ الذي قرّرت الشركة عدم متابعته.",
+      "writeOffReason": "السبب",
+      "writeOffFailed": "تعذّر إعدام التحصيل.",
+      "reasonRequired": "السبب مطلوب.",
+      "cancel": "إلغاء"
+    }
+  },
+  "common": {
+    "status": "الحالة",
+    "overview": "نظرة عامة",
+    "timeline": "الجدول الزمني",
+    "failed": "فشل",
+    "noDataYet": "لا توجد بيانات بعد",
+    "priority": "الأولوية",
+    "unknown": "غير معروف",
+    "confirm": "تأكيد",
+    "assigned": "مُسند",
+    "close": "إغلاق",
+    "reason": "السبب",
+    "loading": "جارٍ التحميل…",
+    "phone": "الهاتف",
+    "city": "المدينة",
+    "total": "الإجمالي",
+    "cancel": "إلغاء",
+    "export": "تصدير",
+    "refresh": "تحديث",
+    "zone": "المنطقة",
+    "address": "العنوان",
+    "notes": "ملاحظات",
+    "type": "النوع",
+    "delete": "حذف",
+    "assign": "إسناد",
+    "active": "نشط",
+    "inactive": "غير نشط",
+    "driver": "السائق",
+    "vehicle": "المركبة",
+    "history": "السجل",
+    "saveChanges": "حفظ التغييرات",
+    "code": "الرمز",
+    "unassigned": "غير مُسند",
+    "na": "غير متاح",
+    "yes": "نعم",
+    "scheduled": "مجدول",
+    "no": "لا",
+    "actions": "الإجراءات",
+    "viewDetails": "عرض التفاصيل",
+    "required": "مطلوب",
+    "capacity": "السعة",
+    "critical": "حرج",
+    "optional": "اختياري",
+    "date": "التاريخ",
+    "description": "الوصف",
+    "all": "الكل",
+    "available": "المتاح",
+    "cancelled": "ملغاة",
+    "completed": "مكتملة",
+    "high": "مرتفع",
+    "low": "منخفض",
+    "pending": "معلقة"
+  },
+  "dispatch": {
+    "conflicts": {
+      "blocksRelease": "يمنع الإفراج",
+      "openFor": "مفتوح منذ",
+      "ownedByOther": "مملوك لـ {{authority}}",
+      "actionPlaceholder": "ما الذي تم عمله؟",
+      "markResolved": "وضع علامة تم الحل",
+      "override": "تجاوز",
+      "ownedElsewhere": "مملوك لجهة أخرى",
+      "title": "التعارضات",
+      "empty": "لا توجد تعارضات"
+    },
+    "toast": {
+      "conflictClosed": "تم إغلاق التعارض",
+      "conflictCloseFailed": "تعذر إغلاق التعارض",
+      "overrideRecorded": "تم تسجيل التجاوز",
+      "overrideRefused": "تم رفض التجاوز",
+      "approved": "تمت الموافقة",
+      "approveFailed": "تعذرت الموافقة",
+      "rejected": "تم الرفض",
+      "rejectFailed": "تعذر الرفض",
+      "queueNothingNew": "لا جديد لإضافته إلى قائمة الانتظار",
+      "queueBuilt": "تم بناء قائمة الانتظار",
+      "queueBuildFailed": "تعذر بناء قائمة الانتظار",
+      "queueEmpty": "قائمة الانتظار فارغة",
+      "claimFailed": "تعذر استلام العنصر",
+      "lockBroken": "تم فك القفل",
+      "lockBreakFailed": "تعذر فك القفل",
+      "sessionClosedLocksReleased": "تم إغلاق الجلسة وفك الأقفال",
+      "sessionCloseFailed": "تعذر إغلاق الجلسة",
+      "priorityUpdated": "تم تحديث الأولوية",
+      "priorityFailed": "تعذر تحديث الأولوية",
+      "itemDeferred": "تم تأجيل العنصر",
+      "deferFailed": "تعذر تأجيل العنصر"
+    },
+    "reviews": {
+      "empty": "لا توجد مراجعات معلقة",
+      "waitingFor": "بانتظار",
+      "notePlaceholder": "أضف ملاحظة",
+      "approve": "موافقة",
+      "reject": "رفض",
+      "title": "المراجعات المعلقة"
+    },
+    "units": {
+      "minutes": "دقيقة",
+      "minutesShort": "د"
+    },
+    "monitoring": {
+      "dispatch": "الإرسال",
+      "sessionsOpened": "الجلسات المفتوحة",
+      "sessionsActive": "الجلسات النشطة",
+      "sessionsAbandoned": "الجلسات المهجورة",
+      "allocationsAttempted": "محاولات التخصيص",
+      "allocationsConfirmed": "التخصيصات المؤكدة",
+      "allocationsFailed": "التخصيصات الفاشلة",
+      "confirmationRate": "معدل التأكيد",
+      "automaticShare": "نسبة الأتمتة",
+      "avgSessionLength": "متوسط مدة الجلسة",
+      "queue": "قائمة الانتظار",
+      "depth": "العمق",
+      "needsAction": "يتطلب إجراءً",
+      "stuck": "متعثر",
+      "avgWait": "متوسط الانتظار",
+      "longestWait": "أطول انتظار",
+      "assignmentHealth": "سلامة الإسناد",
+      "openConflicts": "التعارضات المفتوحة",
+      "blockingConflicts": "التعارضات المانعة",
+      "oldestConflict": "أقدم تعارض",
+      "pendingReviews": "المراجعات المعلقة",
+      "oldestReview": "أقدم مراجعة",
+      "heldResources": "الموارد المحجوزة",
+      "capacityOwnedByNetwork": "السعة مملوكة للشبكة.",
+      "slots": "الفترات",
+      "avgUtilisation": "متوسط الاستخدام",
+      "nearCapacity": "قاربت الامتلاء",
+      "exhausted": "مستنفدة"
+    },
+    "queue": {
+      "pickBoardTitle": "لوحة الاستلام",
+      "pickBoardHint": "استلم العنصر التالي لبدء الإرسال.",
+      "build": "بناء قائمة الانتظار",
+      "claimNext": "استلام التالي",
+      "openSessionHint": "افتح جلسة لاستلام العناصر.",
+      "emptyTitle": "قائمة الانتظار فارغة",
+      "emptyHint": "ابنِ قائمة الانتظار لتحميل الرحلات المعلقة.",
+      "colTrip": "الرحلة",
+      "colWaiting": "الانتظار",
+      "colAttempts": "المحاولات",
+      "colClaimedBy": "استُلم بواسطة",
+      "repeatedlyFailed": "أخفق مراراً",
+      "itemFallbackTitle": "عنصر قائمة الانتظار",
+      "drawerDescription": "راجع هذه الرحلة وأرسلها.",
+      "rank": "الترتيب",
+      "tripCapacity": "سعة الرحلة",
+      "queuedAt": "أُضيف في",
+      "whyPriority": "سبب هذه الأولوية",
+      "stuckFailed": "المحاولات الفاشلة",
+      "stuckLastReason": "آخر سبب",
+      "stuckAdvice": "عالج السبب المانع قبل إعادة المحاولة.",
+      "notEditable": "غير قابل للتعديل",
+      "changeReasonPlaceholder": "سبب التغيير",
+      "setPriority": "تحديد الأولوية",
+      "defer": "تأجيل",
+      "status": {
+        "blocked": "محظورة",
+        "claimed": "مستلمة",
+        "deferred": "مؤجلة",
+        "waiting": "قيد الانتظار"
+      }
+    },
+    "locks": {
+      "empty": "لا توجد أقفال محجوزة",
+      "heldBy": "محجوز بواسطة",
+      "lapsed": "منتهٍ",
+      "minutesLeft": "دقيقة متبقية",
+      "break": "فك القفل",
+      "reasonPlaceholder": "سبب فك القفل",
+      "title": "أقفال الموارد"
+    },
+    "sessions": {
+      "title": "جلسات الإرسال",
+      "empty": "لا توجد جلسات",
+      "colOperator": "المشغّل",
+      "colMode": "الوضع",
+      "colReleased": "المُفرج عنه",
+      "colConflicts": "التعارضات",
+      "colDuration": "المدة",
+      "idle": "خامل",
+      "mode": {
+        "manual": "يدوي",
+        "automatic": "تلقائي",
+        "hybrid": "مختلط"
+      }
+    },
+    "timeline": {
+      "boardTitle": "الجدول الزمني للإرسال",
+      "pickBoard": "لوحة الاستلام",
+      "empty": "لا توجد أحداث في الجدول الزمني",
+      "overridesTitle": "التجاوزات",
+      "overridesEmpty": "لا توجد تجاوزات"
+    },
+    "authority": {
+      "fleet": "الأسطول",
+      "drivers": "السائقون",
+      "network": "الشبكة",
+      "distribution": "التوزيع",
+      "dispatch": "الإرسال"
+    },
+    "priority": {
+      "normal": "عادية"
+    },
+    "session": {
+      "status": {
+        "abandoned": "متروكة",
+        "closed": "مغلقة",
+        "closing": "جارٍ الإغلاق",
+        "open": "مفتوحة",
+        "paused": "متوقفة مؤقتاً"
+      }
+    },
+    "board": {
+      "title": "لوحة الإرسال",
+      "subtitle": "اللوحات والمقترحات ومجمع الموارد",
+      "notFound": "تعذّر تحميل هذه اللوحة.",
+      "boardDate": "التاريخ",
+      "region": "المنطقة",
+      "status": "الحالة",
+      "reason": "السبب",
+      "plannedAt": "وقت التخطيط",
+      "releasedAt": "وقت الإطلاق",
+      "closedAt": "وقت الإغلاق",
+      "tabs": {
+        "proposals": "المقترحات",
+        "pool": "مجمع الموارد",
+        "lifecycle": "حالة اللوحة"
+      },
+      "lifecycle": {
+        "title": "حالة اللوحة",
+        "change": "تغيير الحالة",
+        "allowed": "الحالات التالية المسموحة",
+        "none": "لا توجد انتقالات متاحة لهذه اللوحة.",
+        "reasonPlaceholder": "سبب اختياري للتغيير",
+        "failed": "تعذّر تغيير حالة اللوحة."
+      },
+      "proposals": {
+        "title": "المقترحات",
+        "empty": "لا توجد مقترحات على هذه اللوحة.",
+        "propose": "توليد مقترح",
+        "proposeDescription": "يولّد مجموعة تعيينات لهذه اللوحة، وتُستخدم سياسة الخادم الافتراضية ما لم تُحدَّد أخرى.",
+        "policy": "السياسة",
+        "policyDefault": "افتراضي الخادم",
+        "assignments": "التعيينات",
+        "blocked": "محظورة",
+        "decided": "تم البت",
+        "decisionReason": "سبب القرار",
+        "accept": "قبول",
+        "reject": "رفض",
+        "release": "إطلاق",
+        "releaseDescription": "الإطلاق يلزِم المركبات والسائقين بالرحلات، وهو قرار منفصل عن القبول وله صلاحيته الخاصة.",
+        "released": "تم إطلاق {{count}} تعيين.",
+        "proposeFailed": "تعذّر توليد المقترح.",
+        "acceptFailed": "تعذّر قبول المقترح.",
+        "rejectFailed": "تعذّر رفض المقترح.",
+        "releaseFailed": "تعذّر إطلاق المقترح.",
+        "rejectReason": "السبب"
+      },
+      "assignments": {
+        "trip": "الرحلة",
+        "vehicle": "المركبة",
+        "driver": "السائق",
+        "score": "الدرجة",
+        "fitness": "اللياقة",
+        "blockers": "الموانع",
+        "releasable": "قابل للإطلاق",
+        "notReleasable": "غير قابل للإطلاق",
+        "none": "لا توجد تعيينات في هذا المقترح.",
+        "scoreNote": "الدرجات والموانع من المحرك الذي ولّد المقترح وتُعرض كما هي.",
+        "override": "تجاوز",
+        "overrideTitle": "تجاوز هذا التعيين",
+        "overrideDescription": "التجاوز يخالف ترتيب المحرك، والسبب مطلوب وهو السجل الذي يجعله قابلاً للمراجعة.",
+        "overrideReason": "السبب",
+        "overrideVehicle": "معرّف المركبة",
+        "overrideDriver": "معرّف السائق",
+        "overrideFailed": "تعذّر تجاوز التعيين.",
+        "reasonRequired": "السبب مطلوب."
+      },
+      "pool": {
+        "title": "مجمع الموارد",
+        "assignableVehicles": "مركبات قابلة للتعيين",
+        "availableDrivers": "سائقون متاحون",
+        "vehicles": "المركبات",
+        "drivers": "السائقون",
+        "plate": "اللوحة",
+        "capacity": "السعة",
+        "fitness": "اللياقة",
+        "assignable": "قابل للتعيين",
+        "driverCode": "الكود",
+        "name": "الاسم",
+        "canStart": "يمكنه بدء التوصيل",
+        "empty": "لا يوجد حاليًا ما يمكن إرساله.",
+        "note": "الإتاحة من الخادم، وهذه الأعداد هي ما يحدد إمكانية توليد مقترح أصلاً."
+      },
+      "empty": "لا توجد لوحات إرسال.",
+      "refresh": "تحديث",
+      "cancel": "إلغاء",
+      "confirm": "تأكيد",
+      "saving": "جارٍ الحفظ...",
+      "boardStatus": {
+        "open": "مفتوحة",
+        "planning": "قيد التخطيط",
+        "proposed": "مُقترحة",
+        "releasing": "قيد الإطلاق",
+        "partially_released": "مُطلقة جزئيًا",
+        "released": "مُطلقة",
+        "closed": "مغلقة",
+        "cancelled": "ملغاة"
+      },
+      "proposalStatus": {
+        "generated": "مولّد",
+        "accepted": "مقبول",
+        "rejected": "مرفوض",
+        "superseded": "مُستبدل"
+      }
+    }
+  },
+  "planning": {
+    "status": {
+      "planned": "مُخطط",
+      "inPlanning": "قيد التخطيط",
+      "ready": "جاهز"
+    },
+    "actions": {
+      "plannedDone": "وضع علامة مُخطط",
+      "continuePlanning": "متابعة التخطيط",
+      "startPlanning": "بدء التخطيط",
+      "viewPlan": "عرض الخطة",
+      "continue": "متابعة"
+    },
+    "metrics": {
+      "orders": "الطلبات",
+      "collection": "التحصيل",
+      "customers": "العملاء",
+      "products": "المنتجات",
+      "stops": "نقاط التوقف",
+      "estimatedStops": "نقاط التوقف المقدَّرة",
+      "expectedCollection": "التحصيل المتوقع",
+      "weight": "الوزن"
+    },
+    "card": {
+      "estSessions": "الجلسات المقدَّرة"
+    },
+    "unassigned": {
+      "title": "الطلبات غير المُسندة",
+      "hint": "هذه الطلبات غير مُسندة إلى أي منطقة.",
+      "empty": "لا توجد طلبات غير مُسندة",
+      "colOrderNumber": "رقم الطلب",
+      "colCustomer": "العميل",
+      "colReason": "السبب",
+      "open": "فتح"
+    },
+    "dialog": {
+      "startTitle": "بدء التخطيط",
+      "startDescription": "هل تريد بدء التخطيط لهذه المنطقة؟",
+      "starting": "جارٍ البدء…"
+    },
+    "toast": {
+      "started": "بدأ التخطيط",
+      "startFailed": "تعذر بدء التخطيط",
+      "markedPlanned": "تم وضع علامة مُخطط",
+      "markFailed": "تعذر تحديث الخطة"
+    },
+    "kpi": {
+      "readyZones": "المناطق الجاهزة",
+      "plannedZones": "المناطق المُخططة",
+      "readyOrders": "الطلبات الجاهزة"
+    },
+    "toolbar": {
+      "cardView": "عرض البطاقات",
+      "tableView": "عرض الجدول",
+      "unassignedCount": "غير مُسندة",
+      "hideEmptyZones": "إخفاء المناطق الفارغة",
+      "showEmptyZones": "إظهار المناطق الفارغة"
+    },
+    "title": "تخطيط التوزيع",
+    "description": "تخطيط عمليات التوصيل اليومية حسب المنطقة.",
+    "breadcrumbRoot": "اللوجستيات",
+    "filters": {
+      "deliveryDate": "تاريخ التوصيل",
+      "planningStatus": "حالة التخطيط",
+      "allStatuses": "كل الحالات",
+      "searchZone": "البحث عن منطقة",
+      "searchZonePlaceholder": "بحث في المناطق…"
+    },
+    "summary": {
+      "readyCount": "جاهزة",
+      "inPlanningCount": "قيد التخطيط",
+      "plannedCount": "مُخططة"
+    },
+    "empty": {
+      "allPlannedTitle": "تم تخطيط كل المناطق",
+      "allPlannedHint": "لا يوجد ما يستدعي التخطيط في هذا التاريخ.",
+      "noMatchTitle": "لا توجد مناطق مطابقة للتصفية",
+      "noOrdersTitle": "لا توجد طلبات للتخطيط",
+      "noMatchHint": "جرّب تعديل عوامل التصفية أو مسحها.",
+      "noOrdersForDate": "لا توجد طلبات في التاريخ المحدد.",
+      "noOrdersAssigned": "لا توجد طلبات مُسندة إلى منطقة.",
+      "needZoneAssignment": "أسند الطلبات إلى منطقة لبدء التخطيط."
+    },
+    "table": {
+      "colAction": "الإجراء",
+      "empty": "لا توجد مناطق",
+      "zoneCount": "المناطق",
+      "customerCount": "العملاء",
+      "productCount": "المنتجات",
+      "totalCollection": "إجمالي التحصيل"
+    },
+    "orderStatus": {
+      "confirmed": "مؤكد",
+      "preparing": "قيد التحضير",
+      "pending": "قيد الانتظار",
+      "processing": "قيد المعالجة"
+    },
+    "missingReason": {
+      "missingCity": "مدينة غير محددة",
+      "unknownCity": "مدينة غير معروفة",
+      "cityNotAssigned": "المدينة غير مخصصة لمنطقة"
+    }
+  },
+  "drivers": {
+    "fields": {
+      "driverCode": "رمز السائق",
+      "fullName": "الاسم الكامل",
+      "mobileNumber": "رقم الهاتف المحمول",
+      "nationalId": "الرقم القومي",
+      "dateOfBirth": "تاريخ الميلاد",
+      "employmentDate": "تاريخ التعيين",
+      "shippingCompany": "شركة الشحن",
+      "shippingCompanyPlaceholder": "اختر شركة الشحن"
+    },
+    "license": {
+      "alert": {
+        "expired": "انتهت صلاحية الرخصة.",
+        "expiringSoon": "الرخصة على وشك الانتهاء.",
+        "expiringToday": "تنتهي الرخصة اليوم.",
+        "expiringInDays": "تنتهي الرخصة قريباً.",
+        "missing": "لا توجد رخصة مسجلة."
+      },
+      "currentStatus": "الحالة الحالية",
+      "number": "رقم الرخصة",
+      "type": "نوع الرخصة",
+      "typePlaceholder": "اختر نوع الرخصة",
+      "issueDate": "تاريخ الإصدار",
+      "expiryDate": "تاريخ الانتهاء",
+      "issuingAuthority": "جهة الإصدار",
+      "issuingAuthorityPlaceholder": "أدخل جهة الإصدار",
+      "status": {
+        "expired": "منتهية",
+        "expiringSoon": "تنتهي قريباً",
+        "missing": "غير متوفرة",
+        "valid": "سارية"
+      },
+      "countdown": {
+        "expiresToday": "تنتهي اليوم",
+        "expiresInDays": "تنتهي خلال",
+        "expiredAgo": "انتهت منذ"
+      }
+    },
+    "toast": {
+      "chooseFile": "اختر ملفاً",
+      "documentUploaded": "تم رفع المستند",
+      "uploadFailed": "تعذر رفع المستند",
+      "downloadFailed": "تعذر تنزيل المستند",
+      "documentDeleted": "تم حذف المستند",
+      "deleteFailed": "تعذر حذف المستند",
+      "vehicleChanged": "تم تغيير المركبة",
+      "vehicleAssigned": "تم إسناد المركبة",
+      "assignmentFailed": "تعذر إسناد المركبة",
+      "vehicleReleased": "تم تحرير المركبة",
+      "releaseFailed": "تعذر تحرير المركبة",
+      "requiredFields": "أكمل الحقول المطلوبة",
+      "created": "تم إنشاء السائق",
+      "saved": "تم حفظ السائق",
+      "saveFailed": "تعذر حفظ السائق",
+      "archived": "تمت أرشفة السائق",
+      "activated": "تم تفعيل السائق",
+      "deactivated": "تم إلغاء تفعيل السائق",
+      "statusFailed": "تعذر تحديث حالة السائق"
+    },
+    "documents": {
+      "archivedNotice": "لا يمكن إضافة مستندات إلى السائقين المؤرشفين.",
+      "uploadHeading": "رفع مستند",
+      "expiresOn": "تنتهي في",
+      "title": "عنوان المستند",
+      "titlePlaceholder": "أدخل عنوان المستند",
+      "file": "الملف",
+      "fileHint": "ملف PDF أو صورة، بحد أقصى ١٠ ميجابايت.",
+      "upload": "رفع",
+      "empty": {
+        "title": "لا توجد مستندات",
+        "hint": "ارفع الرخص ومستندات الهوية."
+      },
+      "expiresMeta": "تنتهي",
+      "deleteDialog": {
+        "title": "حذف المستند",
+        "body": "هل تريد حذف هذا المستند؟"
+      },
+      "types": {
+        "employmentContract": "عقد العمل",
+        "license": "الرخصة",
+        "medicalCertificate": "شهادة صحية",
+        "nationalId": "الرقم القومي",
+        "other": "أخرى"
+      }
+    },
+    "vehicle": {
+      "intro": "المركبة المُسندة حالياً لهذا السائق.",
+      "since": "منذ",
+      "release": "تحرير",
+      "empty": {
+        "title": "لا توجد مركبة مُسندة",
+        "hint": "أسند مركبة لجعل هذا السائق قابلاً للإرسال."
+      },
+      "archivedNotice": "لا يمكن إسناد مركبة إلى سائق مؤرشف.",
+      "changeLabel": "تغيير المركبة",
+      "assignLabel": "إسناد مركبة",
+      "loadingPlaceholder": "جارٍ تحميل المركبات…",
+      "noneAvailable": "لا توجد مركبات متاحة",
+      "selectPlaceholder": "اختر مركبة",
+      "change": "تغيير",
+      "releaseDialog": {
+        "title": "تحرير المركبة",
+        "body": "هل تريد تحرير هذه المركبة من السائق؟"
+      }
+    },
+    "history": {
+      "empty": {
+        "title": "لا يوجد سجل إسناد",
+        "hint": "تظهر إسنادات المركبات هنا."
+      },
+      "count": "الإسنادات",
+      "vehicleFallback": "المركبة",
+      "released": "مُحرَّرة",
+      "durationDays": "يوماً",
+      "present": "حتى الآن",
+      "assignedBy": "أُسندت بواسطة",
+      "releasedBy": "حُرِّرت بواسطة"
+    },
+    "status": {
+      "archived": "مؤرشف"
+    },
+    "page": {
+      "newDriver": "سائق جديد",
+      "breadcrumbModule": "اللوجستيات",
+      "title": "السائقون",
+      "description": "إدارة السائقين والرخص وإسنادات المركبات.",
+      "searchPlaceholder": "بحث في السائقين…"
+    },
+    "drawer": {
+      "descriptionNew": "أضف سائقاً إلى الأسطول.",
+      "descriptionEdit": "تحديث بيانات السائق.",
+      "noVehicle": "بدون مركبة",
+      "licenceSection": "الرخصة",
+      "createDriver": "إنشاء السائق",
+      "tabs": {
+        "details": "التفاصيل",
+        "license": "الرخصة",
+        "documents": "المستندات"
+      },
+      "saveLicence": "حفظ الرخصة"
+    },
+    "actions": {
+      "restoreFromArchive": "استعادة من الأرشيف",
+      "deactivate": "إلغاء التفعيل",
+      "activate": "تفعيل",
+      "archive": "أرشفة"
+    },
+    "empty": {
+      "filtered": {
+        "title": "لا يوجد سائقون مطابقون للتصفية",
+        "hint": "جرّب تعديل عوامل التصفية أو مسحها."
+      },
+      "none": {
+        "title": "لا يوجد سائقون",
+        "hint": "أضف سائقاً لبدء إسناد عمليات التوصيل.",
+        "action": "إضافة سائق"
+      }
+    },
+    "table": {
+      "mobile": "الهاتف المحمول",
+      "license": "الرخصة",
+      "shippingCompany": "شركة الشحن"
+    },
+    "metrics": {
+      "total": "إجمالي السائقين",
+      "active": "النشطون",
+      "inactive": "غير النشطين",
+      "expiredLicense": "رخصة منتهية",
+      "withoutVehicle": "بدون مركبة"
+    },
+    "filters": {
+      "license": {
+        "any": "أي رخصة",
+        "missing": "رخصة غير متوفرة"
+      },
+      "vehicle": {
+        "any": "أي مركبة"
+      }
+    }
+  },
+  "fleet": {
+    "blockers": {
+      "none": "لا توجد معوقات"
+    },
+    "table": {
+      "fitness": "الصلاحية",
+      "lifecycle": "دورة الحياة",
+      "odometer": "عداد المسافة",
+      "why": "السبب"
+    },
+    "unit": {
+      "plate": "رقم اللوحة",
+      "vehicleCode": "رمز المركبة",
+      "commissioned": "تاريخ التشغيل",
+      "readiness": "الجاهزية"
+    },
+    "kmValue": "كم",
+    "health": {
+      "title": "سلامة الأسطول",
+      "band": {
+        "good": "جيد",
+        "critical": "حرج",
+        "fair": "مقبول",
+        "poor": "ضعيف"
+      }
+    },
+    "odometer": {
+      "toastRecorded": "تم تسجيل قراءة عداد المسافة",
+      "toastNotAccepted": "لم تُقبل القراءة",
+      "toastFailed": "تعذر تسجيل القراءة",
+      "newReading": "قراءة جديدة",
+      "record": "تسجيل القراءة",
+      "staleWarning": "قراءة عداد المسافة قديمة.",
+      "colReading": "القراءة",
+      "colSource": "المصدر",
+      "colWhen": "التوقيت",
+      "colAccepted": "مقبولة",
+      "rejected": "مرفوضة"
+    },
+    "maintenance": {
+      "empty": "لا توجد سجلات صيانة",
+      "overdue": "متأخرة",
+      "due": "مستحقة",
+      "nextDueDate": "تاريخ الاستحقاق التالي",
+      "nextDueKm": "الاستحقاق التالي (كم)",
+      "remaining": "المتبقي",
+      "everyInterval": "كل"
+    },
+    "daysShort": "ي",
+    "cost": {
+      "distance": "المسافة",
+      "costPerKm": "التكلفة لكل كم",
+      "notEnoughOdometer": "بيانات عداد المسافة غير كافية لاحتساب التكلفة.",
+      "authorityNote": "تُنسب التكاليف إلى الجهة المالكة."
+    },
+    "drawer": {
+      "titleWithPlate": "وحدة الأسطول",
+      "title": "وحدة الأسطول",
+      "tabMaintenance": "الصيانة",
+      "tabOdometer": "عداد المسافة",
+      "tabCost": "التكلفة"
+    },
+    "empty": {
+      "filteredTitle": "لا توجد وحدات أسطول مطابقة للتصفية",
+      "title": "لا توجد وحدات أسطول",
+      "filteredHint": "جرّب تعديل عوامل التصفية أو مسحها.",
+      "hint": "أضف مركبة لبناء الأسطول."
+    },
+    "metrics": {
+      "criticalDefects": "الأعطال الحرجة",
+      "overdueMaintenance": "الصيانة المتأخرة",
+      "openWorkOrders": "أوامر العمل المفتوحة",
+      "staleOdometer": "عداد مسافة قديم"
+    },
+    "lifecycle": {
+      "suspended": "موقوفة",
+      "commissioning": "قيد التشغيل",
+      "decommissioning": "قيد الإيقاف",
+      "draft": "مسودة",
+      "retired": "مستبعدة"
+    },
+    "breadcrumbRoot": "اللوجستيات",
+    "breadcrumbFleet": "الأسطول",
+    "title": "لوحة تحكم الأسطول",
+    "description": "متابعة جاهزية المركبات والصيانة والتكلفة.",
+    "filters": {
+      "criticalDefects": "الأعطال الحرجة فقط",
+      "inService": "في الخدمة"
+    },
+    "costType": {
+      "fuel": "الوقود",
+      "maintenance": "الصيانة",
+      "inspection": "الفحص",
+      "insurance": "التأمين",
+      "licensing": "الترخيص",
+      "depreciation": "الإهلاك",
+      "tyres": "الإطارات",
+      "other": "أخرى"
+    },
+    "fitness": {
+      "fit": "صالحة",
+      "unfit": "غير صالحة",
+      "warnings": "تحذيرات"
+    },
+    "review": {
+      "title": "مراجعة الوقود",
+      "reject": "رفض",
+      "rejectTitle": "رفض المعاملة",
+      "rejectDescription": "الرفض يعني أن المعاملة ما كان يجب تسجيلها.",
+      "writeOff": "إعدام",
+      "writeOffTitle": "إعدام المعاملة",
+      "writeOffDescription": "الإعدام يقبل المعاملة ويتحمّل التكلفة.",
+      "reason": "السبب",
+      "reasonRequired": "السبب مطلوب.",
+      "rejectFailed": "تعذّر رفض المعاملة.",
+      "writeOffFailed": "تعذّر إعدام المعاملة.",
+      "anomalies": "الشواذ",
+      "noAnomalies": "لا توجد حالات شاذة.",
+      "station": "المحطة",
+      "reference": "المرجع",
+      "litres": "اللترات",
+      "cost": "التكلفة",
+      "pricePerLitre": "سعر اللتر",
+      "odometer": "عداد المسافة",
+      "transactedAt": "وقت المعاملة",
+      "resolutionReason": "سبب المعالجة",
+      "cancel": "إلغاء",
+      "reproject": "إعادة حساب تاريخ الاستحقاق",
+      "reprojectDescription": "يعيد حساب موعد استحقاق الخطة من عداد الوحدة وسجل الصيانة. التقدير من الخادم ولا يُرسل تاريخ من هنا.",
+      "reprojectFailed": "تعذّرت إعادة حساب الخطة.",
+      "nextDueKm": "الاستحقاق التالي (كم)",
+      "nextDueDate": "الاستحقاق التالي (تاريخ)",
+      "inspectionResults": "نتائج الفحص",
+      "item": "البند",
+      "passed": "ناجح",
+      "failureSeverity": "الخطورة",
+      "criticalFailure": "إخفاق حرج",
+      "noResults": "لا توجد بنود فحص مسجلة.",
+      "comment": "تعليق",
+      "subtitle": "معاملات الوقود المعلّمة للمراجعة",
+      "refresh": "تحديث",
+      "anomaliesOnly": "الحالات الشاذة فقط",
+      "anomalyNote": "تُحتسب علامات الشذوذ في الخادم عند تسجيل المعاملة.",
+      "empty": "لا توجد معاملات وقود.",
+      "emptyAnomalies": "لا توجد معاملات بها شذوذ.",
+      "notFound": "تعذّر تحميل هذه المعاملة.",
+      "status": "الحالة",
+      "reconcile": "مطابقة",
+      "dispute": "اعتراض",
+      "reconcileFailed": "تعذّرت مطابقة المعاملة.",
+      "disputeFailed": "تعذّر الاعتراض على المعاملة.",
+      "outcomesNote": "المطابقة تقبل السجل، والاعتراض ينازع المورّد، والرفض يعني أنها ما كان يجب تسجيلها، والإعدام يتحمّل التكلفة. تُعرض الانتقالات المسموح بها لهذه المعاملة فقط."
+    }
+  },
+  "network": {
+    "area": {
+      "dispatchRegion": "منطقة الإرسال",
+      "leadTime": "المهلة الزمنية",
+      "hoursValue": "ساعات",
+      "acceptsCommitments": "يقبل الالتزامات",
+      "noMembersWarning": "منطقة الخدمة هذه لا تضم أي أعضاء.",
+      "coverage": "التغطية",
+      "coverageHint": "المناطق التي تغطيها منطقة الخدمة هذه.",
+      "carvedOut": "مستثناة"
+    },
+    "serviceLevels": {
+      "title": "مستويات الخدمة",
+      "colLevel": "المستوى",
+      "colCutoff": "موعد الإغلاق",
+      "colSurcharge": "رسوم إضافية"
+    },
+    "hoursShort": "س",
+    "capacity": {
+      "empty": "لم تُحدَّد سعة",
+      "published": "منشورة",
+      "allDay": "طوال اليوم",
+      "exhausted": "مستنفدة",
+      "nearCapacity": "قاربت الامتلاء",
+      "remainingUnit": "متبقٍ",
+      "binding": "ملزمة"
+    },
+    "areaStatus": {
+      "draft": "مسودة",
+      "closed": "مغلقة",
+      "paused": "متوقفة مؤقتاً"
+    },
+    "drawer": {
+      "titleWithName": "منطقة الخدمة",
+      "title": "منطقة الخدمة",
+      "tabCapacity": "السعة"
+    },
+    "empty": {
+      "filteredTitle": "لا توجد مناطق خدمة مطابقة للتصفية",
+      "title": "لا توجد مناطق خدمة",
+      "filteredHint": "جرّب تعديل عوامل التصفية أو مسحها.",
+      "hint": "أنشئ منطقة خدمة لتحديد تغطية التوصيل."
+    },
+    "metrics": {
+      "serviceAreas": "مناطق الخدمة",
+      "dispatchRegions": "مناطق الإرسال",
+      "withoutCoverage": "بلا تغطية"
+    },
+    "breadcrumbRoot": "اللوجستيات",
+    "breadcrumbNetwork": "الشبكة",
+    "title": "مناطق الخدمة",
+    "description": "تحديد تغطية التوصيل ومستويات الخدمة عبر المناطق.",
+    "table": {
+      "area": "منطقة الخدمة",
+      "members": "الأعضاء",
+      "noCoverageTooltip": "لم تُحدَّد تغطية لهذه المنطقة."
+    },
+    "capacityUnits": {
+      "orders": "طلبات",
+      "stops": "محطات",
+      "kg": "كجم",
+      "m3": "م³"
+    },
+    "commitments": {
+      "title": "التزامات السعة",
+      "note": "هذه الطبقة الأساسية للشبكة. أمّا سير عمل المشغّل فهو حجز السعة في العمليات، وهو يمتلك أحد هذه الالتزامات.",
+      "slotId": "معرّف الفترة",
+      "slotIdPlaceholder": "معرّف فترة السعة",
+      "slotIdNote": "لا يوجد مسار لقائمة الفترات، لذا يُحدَّد المعرّف مباشرة.",
+      "orders": "الطلبات",
+      "stops": "المحطات",
+      "weightKg": "الوزن (كجم)",
+      "ttlMinutes": "مدة الحجز (دقائق)",
+      "ttlNote": "إذا تُرك فارغًا يُطبّق الخادم مدته الافتراضية.",
+      "reserve": "حجز",
+      "commit": "تثبيت",
+      "release": "إطلاق",
+      "releaseReason": "السبب",
+      "sweep": "تنظيف المنتهية",
+      "sweepNote": "يُطلق الحجوزات التي انتهت مدتها ويُبلّغ بعددها.",
+      "swept": "تم إطلاق {{count}} حجز.",
+      "commitmentId": "معرّف الالتزام",
+      "status": "الحالة",
+      "holdsCapacity": "لا يزال يحجز سعة",
+      "expiresAt": "ينتهي",
+      "reserveFailed": "تعذّر حجز السعة.",
+      "commitFailed": "تعذّر تثبيت الالتزام.",
+      "releaseFailed": "تعذّر إطلاق الالتزام.",
+      "sweepFailed": "تعذّر تنظيف الحجوزات المنتهية.",
+      "slotRequired": "معرّف الفترة مطلوب.",
+      "idRequired": "معرّف الالتزام مطلوب."
+    }
+  },
+  "operations": {
+    "capacity": {
+      "mostCommonRefusal": "أكثر أسباب الرفض شيوعاً",
+      "slotsToday": "فترات اليوم",
+      "slots": "الفترات",
+      "averageUtilisation": "متوسط الاستخدام",
+      "nearCapacity": "قاربت الامتلاء",
+      "exhausted": "مستنفدة",
+      "ourReservations": "حجوزاتنا",
+      "requested": "المطلوبة",
+      "currentlyHolding": "المحجوزة حالياً",
+      "confirmed": "المؤكدة",
+      "refused": "المرفوضة",
+      "refusalRate": "معدل الرفض",
+      "rebalanced": "أُعيد توازنها",
+      "reservationsTitle": "حجوزات السعة",
+      "empty": "لا توجد حجوزات",
+      "colPurpose": "الغرض",
+      "colLedger": "دفتر الأستاذ",
+      "colOrders": "الطلبات",
+      "colWindow": "النافذة الزمنية",
+      "toast": {
+        "confirmed": "تم تأكيد الحجز",
+        "confirmFailed": "تعذر تأكيد الحجز"
+      },
+      "manage": "إدارة السعة"
+    },
+    "exceptionDrawer": {
+      "notes": {
+        "placeholder": "أضف ملاحظة",
+        "toast": {
+          "added": "تمت إضافة الملاحظة",
+          "addFailed": "تعذر إضافة الملاحظة"
+        },
+        "add": "إضافة ملاحظة",
+        "pinsToTop": "يُثبَّت في الأعلى",
+        "empty": "لا توجد ملاحظات",
+        "type": {
+          "note": "ملاحظة",
+          "actionTaken": "إجراء متخذ",
+          "handover": "تسليم"
+        }
+      },
+      "escalations": {
+        "reasonPlaceholder": "سبب التصعيد",
+        "toRole": "إلى الدور",
+        "toast": {
+          "escalated": "تم التصعيد",
+          "refused": "تم رفض التصعيد"
+        },
+        "escalate": "تصعيد",
+        "empty": "لا توجد تصعيدات",
+        "level": "المستوى",
+        "automatic": "تلقائي"
+      },
+      "title": "الاستثناء",
+      "seenTimes": "رُصد",
+      "overdue": "متأخر",
+      "ownedElsewhereNotice": "هذا الاستثناء مملوك لجهة أخرى.",
+      "severity": "الخطورة",
+      "firstSeen": "أول رصد",
+      "lastSeen": "آخر رصد",
+      "age": "العمر",
+      "minutes": "دقيقة",
+      "unacknowledged": "غير مُقر به",
+      "acknowledged": "مُقر به",
+      "escalationLevel": "مستوى التصعيد",
+      "subject": "الموضوع",
+      "tabs": {
+        "act": "الإجراء",
+        "escalations": "التصعيدات"
+      },
+      "toast": {
+        "acknowledged": "تم الإقرار بالاستثناء",
+        "acknowledgeFailed": "تعذر الإقرار بالاستثناء",
+        "closed": "تم إغلاق الاستثناء",
+        "closeFailed": "تعذر إغلاق الاستثناء",
+        "suppressed": "تم كتم الاستثناء",
+        "suppressFailed": "تعذر كتم الاستثناء"
+      },
+      "alreadyAcknowledged": "تم الإقرار به مسبقاً",
+      "acknowledge": "إقرار",
+      "resolution": "الحل",
+      "whatWasDone": "ما الذي تم عمله؟",
+      "closeException": "إغلاق الاستثناء",
+      "suppress": "كتم",
+      "closedAsBy": "أُغلق بواسطة",
+      "closedAs": "أُغلق باعتباره",
+      "resolutions": {
+        "fixed": "تم الإصلاح",
+        "handledElsewhere": "عولج في مكان آخر",
+        "notAProblem": "ليست مشكلة",
+        "accepted": "مقبولة",
+        "resolved": "محلولة"
+      }
+    },
+    "exceptions": {
+      "alertsLive": "التنبيهات الحية",
+      "pastEscalationThreshold": "تجاوز عتبة التصعيد",
+      "ownedElsewhere": "مملوك لجهة أخرى",
+      "emptyTitle": "لا توجد استثناءات",
+      "emptyBody": "تسير العمليات دون استثناءات.",
+      "overdue": "متأخر",
+      "openMinutes": "مفتوح منذ",
+      "unlookedAtMinutes": "دون متابعة منذ",
+      "acknowledged": "مُقر به",
+      "filter": {
+        "info": "معلومة",
+        "warning": "تحذير"
+      }
+    },
+    "activityCenter": {
+      "emptyWindow": "لا يوجد نشاط في هذه الفترة",
+      "truncated": {
+        "showing": "عرض",
+        "cappedSources": "تم تحديد بعض المصادر.",
+        "narrow": "ضيّق النافذة الزمنية للحصول على التفاصيل الكاملة."
+      },
+      "auditIntro": "سجل تدقيق النشاط التشغيلي.",
+      "assignments": {
+        "empty": "لا توجد إسنادات",
+        "colMode": "الوضع",
+        "colFleetVerdict": "قرار الأسطول",
+        "colAllocated": "المخصص"
+      },
+      "sessions": {
+        "empty": "لا توجد جلسات",
+        "colOperator": "المشغّل",
+        "colReleased": "المُفرج عنه",
+        "colConflicts": "التعارضات",
+        "colDuration": "المدة",
+        "colStarted": "البداية",
+        "minutesShort": "د"
+      },
+      "capacity": {
+        "empty": "لا يوجد نشاط سعة",
+        "colPurpose": "الغرض",
+        "colOrders": "الطلبات",
+        "colRequested": "المطلوبة"
+      },
+      "breadcrumbRoot": "اللوجستيات",
+      "breadcrumbSection": "العمليات",
+      "title": "مركز النشاط",
+      "description": "مراجعة النشاط التشغيلي عبر الإرسال والسعة.",
+      "tabs": {
+        "audit": "التدقيق",
+        "assignments": "الإسنادات",
+        "sessions": "الجلسات"
+      },
+      "filter": {
+        "escalations": "التصعيدات",
+        "notes": "ملاحظات"
+      },
+      "source": {
+        "capacityAudit": "تدقيق السعة",
+        "dispatchTimeline": "الجدول الزمني للإرسال",
+        "dispatchAudit": "تدقيق الإرسال",
+        "escalation": "تصعيد",
+        "note": "ملاحظة"
+      }
+    },
+    "alertCenter": {
+      "empty": {
+        "title": "لا توجد تنبيهات",
+        "hint": "تسير العمليات دون تنبيهات."
+      },
+      "overdue": "متأخر",
+      "meta": {
+        "open": "مفتوح",
+        "unacknowledgedFor": "دون إقرار منذ",
+        "acknowledged": "مُقر به",
+        "level": "المستوى"
+      },
+      "toast": {
+        "acknowledged": "تم الإقرار بالتنبيه",
+        "acknowledgeFailed": "تعذر الإقرار بالتنبيه"
+      },
+      "ack": "إقرار",
+      "history": {
+        "empty": "لا يوجد سجل تنبيهات"
+      },
+      "metrics": {
+        "live": "التنبيهات الحية",
+        "unacknowledged": "دون إقرار"
+      },
+      "breadcrumbRoot": "اللوجستيات",
+      "breadcrumbSection": "العمليات",
+      "title": "مركز التنبيهات",
+      "description": "متابعة التنبيهات التشغيلية والإقرار بها.",
+      "tabs": {
+        "live": "الحية"
+      },
+      "historyStatus": {
+        "autoResolved": "حُلَّت تلقائياً",
+        "resolved": "محلولة",
+        "suppressed": "مكتومة"
+      },
+      "severity": {
+        "info": "معلومة",
+        "warning": "تحذير"
+      },
+      "maintenance": {
+        "title": "الصيانة",
+        "note": "كلا العمليتين متكررتا التنفيذ وتُبلّغان عدد السجلات التي تمت معالجتها.",
+        "escalateOverdue": "تصعيد المتأخر",
+        "escalateOverdueDone": "تم تصعيد {{count}} استثناء.",
+        "escalateFailed": "تعذّر تصعيد الاستثناءات المتأخرة.",
+        "reconcile": "مطابقة التعارضات المُعالَجة",
+        "reconcileDone": "تم إغلاق {{count}} سجل تعارض.",
+        "reconcileFailed": "تعذّرت مطابقة سجلات التعارض."
+      }
+    },
+    "readiness": {
+      "gradeValue": "التقدير",
+      "panel": {
+        "healthScore": "مؤشر السلامة",
+        "moduleReadiness": "جاهزية الوحدات",
+        "checklist": "قائمة التحقق",
+        "systemHealth": "سلامة النظام",
+        "dependencyHealth": "سلامة الاعتماديات",
+        "projections": "التوقعات",
+        "executive": "الملخص التنفيذي",
+        "todaysOperations": "عمليات اليوم",
+        "fleet": "الأسطول"
+      },
+      "countReady": "جاهز",
+      "countDegraded": "متدهور",
+      "countNotReady": "غير جاهز",
+      "weightingNote": "تُرجَّح الفحوص حسب الأثر التشغيلي.",
+      "checksWeight": "الوزن",
+      "blockingChecks": "الفحوص المانعة",
+      "projection": {
+        "queue": "قائمة الانتظار",
+        "dispatch": "الإرسال",
+        "exceptions": "الاستثناءات"
+      },
+      "quiet": "هادئ",
+      "stat": {
+        "healthScore": "مؤشر السلامة",
+        "criticalAlerts": "التنبيهات الحرجة",
+        "canFieldToday": "القابل للتشغيل اليوم",
+        "activeSessions": "الجلسات النشطة",
+        "confirmed": "المؤكد",
+        "confirmationRate": "معدل التأكيد",
+        "queueDepth": "عمق قائمة الانتظار",
+        "assignableVehicles": "المركبات القابلة للإسناد",
+        "availableDrivers": "السائقون المتاحون",
+        "fieldableUnits": "الوحدات القابلة للتشغيل",
+        "vehicleUseNow": "المركبات قيد الاستخدام"
+      },
+      "metrics": {
+        "healthScore": "مؤشر السلامة",
+        "overall": "الإجمالي",
+        "grade": "التقدير"
+      },
+      "breadcrumbRoot": "اللوجستيات",
+      "breadcrumbSection": "العمليات",
+      "title": "الجاهزية المؤسسية",
+      "description": "تقييم الجاهزية التشغيلية عبر الوحدات والأسطول.",
+      "status": {
+        "degraded": "متدهورة",
+        "notReady": "غير جاهزة",
+        "ready": "جاهزة"
+      },
+      "modules": {
+        "tab": "الوحدات",
+        "title": "جاهزية الوحدات",
+        "empty": "لا توجد بيانات جاهزية للوحدات.",
+        "module": "الوحدة",
+        "status": "الحالة",
+        "checks": "الفحوص",
+        "headline": "العنوان",
+        "weight": "الوزن",
+        "overall": "الإجمالي",
+        "generatedAt": "وقت التوليد",
+        "summaries": {
+          "capacity": "ملخص السعة",
+          "dispatch": "ملخص الإرسال",
+          "exceptions": "ملخص الاستثناءات",
+          "date": "التاريخ",
+          "slots": "الفترات",
+          "avgUtilisation": "متوسط الاستخدام",
+          "nearCapacity": "قرب الامتلاء",
+          "exhausted": "مستنفدة",
+          "currentlyHolding": "المحجوز حاليًا",
+          "refused": "مرفوض",
+          "refusalRate": "معدل الرفض",
+          "sessionsActive": "جلسات نشطة",
+          "sessionsAbandoned": "جلسات متروكة",
+          "allocationsConfirmed": "تخصيصات مؤكّدة",
+          "allocationsFailed": "تخصيصات فاشلة",
+          "confirmationRate": "معدل التأكيد",
+          "automaticShare": "الحصة التلقائية",
+          "avgSessionMinutes": "متوسط الجلسة (دقيقة)",
+          "outstanding": "معلّقة",
+          "needsAttention": "تحتاج انتباهًا",
+          "critical": "حرجة",
+          "escalated": "مُصعّدة",
+          "recurring": "متكررة",
+          "overdue": "متأخرة عن التصعيد",
+          "bySource": "حسب المصدر",
+          "byCategory": "حسب الفئة"
+        },
+        "diagnosticsNote": "يعيد مركز التشخيص كل الأقسام في طلب واحد، وتعيد المسارات الستة حساب نفس التقرير وتُطلق حدثه مرة أخرى، لذا لا تُستدعى عمدًا."
+      }
+    },
+    "badges": {
+      "authority": {
+        "drivers": "السائقون",
+        "fleet": "الأسطول"
+      },
+      "exception": {
+        "acknowledged": "مُقر به",
+        "autoResolved": "حُل تلقائياً",
+        "escalated": "مُصعَّد",
+        "open": "مفتوح",
+        "resolved": "محلول",
+        "suppressed": "مكتوم"
+      },
+      "member": {
+        "heldOut": "مستبعد مؤقتاً",
+        "inPool": "ضمن المجمع",
+        "removed": "مُزال"
+      },
+      "pool": {
+        "archived": "مؤرشف",
+        "draft": "مسودة",
+        "suspended": "موقوف"
+      },
+      "reservation": {
+        "confirmed": "مؤكد",
+        "held": "محجوز",
+        "refused": "مرفوض",
+        "released": "محرر"
+      }
+    }
+  },
+  "shippingCompanies": {
+    "empty": {
+      "filteredTitle": "لا توجد شركات شحن مطابقة للتصفية",
+      "filteredHint": "جرّب تعديل عوامل التصفية أو مسحها.",
+      "title": "لا توجد شركات شحن",
+      "hint": "أضف شركة شحن لبدء إسناد عمليات التوصيل.",
+      "addFirst": "أضف الشركة الأولى"
+    },
+    "type": {
+      "internal": "داخلية",
+      "external": "خارجية"
+    },
+    "status": {
+      "archived": "مؤرشفة"
+    },
+    "table": {
+      "company": "الشركة",
+      "contact": "جهة الاتصال",
+      "activeContract": "العقد الساري",
+      "contracts": "العقود",
+      "companies": "الشركات",
+      "noActiveContract": "لا يوجد عقد ساري"
+    },
+    "metrics": {
+      "total": "إجمالي الشركات",
+      "active": "النشطة",
+      "internal": "الداخلية",
+      "external": "الخارجية"
+    },
+    "breadcrumbRoot": "اللوجستيات",
+    "title": "شركات الشحن",
+    "description": "إدارة شركات الشحن وعقود التوصيل الخاصة بها.",
+    "newCompany": "شركة جديدة",
+    "searchPlaceholder": "بحث في الشركات…",
+    "filters": {
+      "allTypes": "كل الأنواع"
+    }
+  },
+  "vehicles": {
+    "form": {
+      "vehicleCode": "رمز المركبة",
+      "plateNumber": "رقم اللوحة",
+      "vehicleName": "اسم المركبة",
+      "vehicleNamePlaceholder": "أدخل اسم المركبة",
+      "vehicleType": "نوع المركبة",
+      "selectType": "اختر النوع",
+      "shippingCompany": "شركة الشحن",
+      "selectCarrier": "اختر شركة الشحن",
+      "capacityOrders": "السعة (طلبات)",
+      "capacityWeight": "السعة (وزن)",
+      "capacityVolume": "السعة (حجم)",
+      "capacityHint": "تُستخدم لتخطيط التحميل والإرسال.",
+      "specification": "المواصفات",
+      "fuelType": "نوع الوقود",
+      "selectFuelType": "اختر نوع الوقود",
+      "manufacturer": "الشركة المصنعة",
+      "model": "الطراز",
+      "year": "سنة الصنع",
+      "color": "اللون",
+      "vin": "رقم الهيكل"
+    },
+    "maintenance": {
+      "toast": {
+        "dateRequired": "تاريخ الصيانة مطلوب",
+        "amended": "تم تعديل سجل الصيانة",
+        "recorded": "تم تسجيل الصيانة",
+        "saveFailed": "تعذر حفظ سجل الصيانة",
+        "deleted": "تم حذف سجل الصيانة",
+        "deleteFailed": "تعذر حذف سجل الصيانة"
+      },
+      "recordCount": "السجلات",
+      "immutableNote": "لا يمكن تعديل الصيانة المسجلة، بل إضافة تعديل عليها فقط.",
+      "recordService": "تسجيل صيانة",
+      "permissionNotice": "ليس لديك صلاحية تسجيل الصيانة.",
+      "amendRecord": "تعديل السجل",
+      "newRecord": "سجل جديد",
+      "cost": "التكلفة",
+      "vendor": "المورّد",
+      "nextDate": "تاريخ الصيانة التالية",
+      "saveAmendment": "حفظ التعديل",
+      "record": "تسجيل",
+      "emptyTitle": "لا توجد سجلات صيانة",
+      "emptyDescription": "تظهر عمليات الصيانة المسجلة هنا.",
+      "serviceDue": "صيانة مستحقة",
+      "amended": "مُعدَّل",
+      "noVendor": "بدون مورّد",
+      "nextOn": "التالية في",
+      "byUser": "بواسطة",
+      "amendedBy": "عُدِّل بواسطة",
+      "deleteTitle": "حذف سجل الصيانة",
+      "deleteDescription": "هل تريد حذف سجل الصيانة هذا؟"
+    },
+    "documents": {
+      "toast": {
+        "chooseFile": "اختر ملفاً",
+        "uploaded": "تم رفع المستند",
+        "uploadFailed": "تعذر رفع المستند",
+        "downloadFailed": "تعذر تنزيل المستند",
+        "deleted": "تم حذف المستند",
+        "deleteFailed": "تعذر حذف المستند"
+      },
+      "joinAnd": "و",
+      "blockedAlert": "هذه المركبة محظورة بسبب مستندات منتهية الصلاحية.",
+      "archivedNotice": "لا يمكن إضافة مستندات إلى المركبات المؤرشفة.",
+      "uploadTitle": "رفع مستند",
+      "expiresOn": "تنتهي في",
+      "referenceNumber": "الرقم المرجعي",
+      "file": "الملف",
+      "fileHint": "ملف PDF أو صورة، بحد أقصى ١٠ ميجابايت.",
+      "upload": "رفع",
+      "emptyTitle": "لا توجد مستندات",
+      "emptyDescription": "ارفع مستندات الرخصة والتأمين والفحص.",
+      "expired": "منتهية الصلاحية",
+      "expiresInDays": "تنتهي خلال",
+      "ref": "مرجع",
+      "expiresValue": "تنتهي",
+      "deleteTitle": "حذف المستند",
+      "deletePrefix": "حذف",
+      "deleteSuffix": "؟"
+    },
+    "assignment": {
+      "intro": "إسنادات السائقين لهذه المركبة.",
+      "assignedOn": "أُسند في",
+      "emptyTitle": "لا توجد إسنادات",
+      "emptyDescription": "أسند سائقاً لجعل هذه المركبة قابلة للإرسال.",
+      "dispatchReadiness": "جاهزية الإرسال",
+      "statusLine": "الحالة",
+      "nextDocExpiry": "انتهاء المستند التالي",
+      "blockedByExpired": "محظورة بسبب مستندات منتهية الصلاحية"
+    },
+    "dispatch": {
+      "readyForDispatch": "جاهزة للإرسال",
+      "notDispatchable": "غير قابلة للإرسال"
+    },
+    "toast": {
+      "requiredFields": "أكمل الحقول المطلوبة",
+      "created": "تم إنشاء المركبة",
+      "saved": "تم حفظ المركبة",
+      "saveFailed": "تعذر حفظ المركبة",
+      "statusChanged": "تم تحديث حالة المركبة",
+      "statusChangeFailed": "تعذر تحديث حالة المركبة"
+    },
+    "drawer": {
+      "newTitle": "مركبة جديدة",
+      "fallbackTitle": "المركبة",
+      "createDescription": "أضف مركبة إلى الأسطول.",
+      "editDescription": "تحديث بيانات المركبة."
+    },
+    "actions": {
+      "create": "إنشاء المركبة",
+      "mark": "وضع علامة"
+    },
+    "tabs": {
+      "details": "التفاصيل",
+      "service": "الصيانة",
+      "docs": "المستندات"
+    },
+    "statusDialog": {
+      "title": "تغيير حالة المركبة",
+      "movePrefix": "نقل",
+      "moveMiddle": "إلى",
+      "moveSuffix": "؟",
+      "archivedNote": "لا يمكن إرسال المركبات المؤرشفة.",
+      "outOfServiceNote": "تُستبعد المركبات الخارجة عن الخدمة من التخطيط."
+    },
+    "empty": {
+      "filteredTitle": "لا توجد مركبات مطابقة للتصفية",
+      "filteredDescription": "جرّب تعديل عوامل التصفية أو مسحها.",
+      "title": "لا توجد مركبات",
+      "description": "أضف مركبة لبناء الأسطول.",
+      "action": "إضافة مركبة"
+    },
+    "table": {
+      "colVehicle": "المركبة",
+      "colDispatch": "الإرسال"
+    },
+    "documentType": {
+      "license": "الرخصة",
+      "insurance": "التأمين",
+      "inspection": "الفحص",
+      "other": "أخرى"
+    },
+    "status": {
+      "archived": "مؤرشفة",
+      "inDelivery": "قيد التوصيل",
+      "maintenance": "الصيانة",
+      "outOfService": "خارج الخدمة"
+    }
+  },
+  "trips": {
+    "title": "الرحلات",
+    "subtitle": "تخطيط الرحلات وتوفير الموارد وإرسالها",
+    "stats": {
+      "total": "إجمالي الرحلات",
+      "planning": "قيد التخطيط",
+      "loading": "قيد التحميل",
+      "readyForDispatch": "جاهزة للإرسال",
+      "dispatchBlocked": "الإرسال محظور",
+      "onTheRoad": "على الطريق",
+      "completed": "مكتملة",
+      "settlementPending": "بانتظار التسوية",
+      "onTheRoadNote": "المرسلة وقيد التوصيل وقيد التنفيذ مجتمعة"
+    },
+    "toolbar": {
+      "searchPlaceholder": "ابحث برقم الرحلة أو الاسم",
+      "newTrip": "رحلة جديدة",
+      "refresh": "تحديث"
+    },
+    "filters": {
+      "status": "الحالة",
+      "type": "النوع",
+      "all": "كل الحالات",
+      "allTypes": "كل الأنواع",
+      "openOnly": "الرحلات المفتوحة",
+      "openOnlyNote": "الرحلات المغلقة والملغاة مخفية ما لم تُحدَّد حالة"
+    },
+    "columns": {
+      "tripNumber": "الرحلة",
+      "name": "الاسم",
+      "type": "النوع",
+      "status": "الحالة",
+      "driver": "السائق",
+      "vehicle": "المركبة",
+      "orders": "الطلبات",
+      "capacity": "السعة",
+      "collection": "التحصيل"
+    },
+    "row": {
+      "unassigned": "غير معيّن",
+      "ofCapacity": "من {{capacity}}",
+      "remaining": "{{count}} متاح"
+    },
+    "empty": {
+      "title": "لا توجد رحلات",
+      "description": "لا توجد رحلة مطابقة للمرشحات الحالية.",
+      "createFirst": "أنشئ أول رحلة لبدء التخطيط."
+    },
+    "error": {
+      "title": "تعذّر تحميل الرحلات",
+      "retry": "أعد المحاولة"
+    },
+    "status": {
+      "planning": "قيد التخطيط",
+      "loading": "قيد التحميل",
+      "loading_completed": "اكتمل التحميل",
+      "driver_accepted": "قبِلها السائق",
+      "dispatch_blocked": "الإرسال محظور",
+      "ready_for_dispatch": "جاهزة للإرسال",
+      "dispatched": "تم الإرسال",
+      "out_for_delivery": "قيد التوصيل",
+      "in_progress": "قيد التنفيذ",
+      "completed": "مكتملة",
+      "settlement_pending": "بانتظار التسوية",
+      "closed": "مغلقة",
+      "cancelled": "ملغاة"
+    },
+    "type": {
+      "company_vehicle": "مركبة الشركة",
+      "personal_vehicle": "مركبة شخصية",
+      "external_carrier": "ناقل خارجي"
+    },
+    "form": {
+      "createTitle": "رحلة جديدة",
+      "editTitle": "تعديل الرحلة",
+      "createDescription": "تبدأ الرحلة في مرحلة التخطيط. تُضاف الطلبات والعُهد والمحطات لاحقًا.",
+      "editDescription": "يمكن تعديل الرحلات القابلة للتعديل فقط.",
+      "name": "اسم الرحلة",
+      "namePlaceholder": "أدخل اسم الرحلة",
+      "tripNumber": "رقم الرحلة",
+      "tripNumberHint": "إذا تُرك فارغًا يُخصَّص الرقم التالي تلقائيًا",
+      "type": "النوع",
+      "capacity": "السعة",
+      "capacityHint": "أقصى عدد للطلبات",
+      "notes": "ملاحظات",
+      "notesPlaceholder": "ملاحظات اختيارية لفريق العمليات",
+      "save": "حفظ",
+      "cancel": "إلغاء",
+      "saving": "جارٍ الحفظ...",
+      "required": "هذا الحقل مطلوب",
+      "nameTooLong": "يجب ألا يتجاوز الاسم 150 حرفًا",
+      "capacityRange": "يجب أن تكون السعة بين 1 و9999",
+      "notesTooLong": "يجب ألا تتجاوز الملاحظات 2000 حرف",
+      "noCompany": "لا توجد شركة نشطة محدّدة، لذا لا يمكن إنشاء رحلة."
+    },
+    "drawer": {
+      "title": "الرحلة",
+      "loading": "جارٍ تحميل الرحلة...",
+      "notFound": "تعذّر تحميل هذه الرحلة.",
+      "edit": "تعديل",
+      "tabs": {
+        "overview": "نظرة عامة",
+        "resourcing": "الموارد",
+        "acceptance": "قبول السائق",
+        "timeline": "التسلسل الزمني",
+        "money": "المالية"
+      },
+      "overview": {
+        "tripNumber": "رقم الرحلة",
+        "name": "الاسم",
+        "type": "النوع",
+        "status": "الحالة",
+        "capacity": "السعة",
+        "orders": "الطلبات",
+        "remaining": "السعة المتبقية",
+        "zone": "منطقة التوزيع",
+        "wave": "موجة التجهيز",
+        "notes": "ملاحظات",
+        "editable": "قابلة للتعديل",
+        "terminal": "نهائية"
+      },
+      "resourcing": {
+        "title": "الموارد",
+        "shippingCompany": "شركة الشحن",
+        "driver": "السائق",
+        "vehicle": "المركبة",
+        "licenceStatus": "حالة الرخصة",
+        "mobile": "الهاتف",
+        "plate": "اللوحة",
+        "none": "غير معيّن",
+        "note": "يُستمد السائق والمركبة من التعيين ولا يُخزّنان على الرحلة."
+      },
+      "readiness": {
+        "title": "جاهزية الإرسال",
+        "ready": "جاهزة للإرسال",
+        "notReady": "غير جاهزة للإرسال",
+        "blockers": "الموانع",
+        "none": "لا توجد موانع.",
+        "checking": "جارٍ فحص الجاهزية..."
+      },
+      "acceptance": {
+        "products": "تم قبول المنتجات",
+        "custody": "تم قبول العُهدة",
+        "equipment": "تم قبول المعدات",
+        "full": "تم تسجيل القبول الكامل",
+        "at": "وقت القبول",
+        "discrepancy": "تم الإبلاغ عن فرق",
+        "discrepancyNotes": "ملاحظات الفرق",
+        "pending": "لم يقبل السائق هذه الرحلة بعد.",
+        "yes": "نعم",
+        "no": "لا"
+      },
+      "timeline": {
+        "finalized": "الاعتماد",
+        "dispatched": "الإرسال",
+        "driverNotified": "إخطار السائق",
+        "departure": "المغادرة",
+        "started": "البدء",
+        "finished": "الانتهاء",
+        "odometerStart": "عداد البداية",
+        "odometerEnd": "عداد النهاية",
+        "created": "الإنشاء",
+        "updated": "آخر تحديث",
+        "none": "غير مسجّل"
+      },
+      "money": {
+        "collection": "مبلغ التحصيل",
+        "cash": "النقد المحصّل",
+        "bank": "التحويلات البنكية",
+        "alreadyPaid": "المدفوع مسبقًا",
+        "note": "الأرقام المعتمدة موجودة في تسوية الرحلة."
+      }
+    },
+    "actions": {
+      "changeStatus": "تغيير الحالة",
+      "changeStatusTitle": "تغيير حالة الرحلة",
+      "changeStatusDescription": "تُعرض الانتقالات المسموح بها لهذه الرحلة فقط.",
+      "newStatus": "الحالة الجديدة",
+      "reason": "السبب",
+      "reasonPlaceholder": "سبب اختياري للتغيير",
+      "confirm": "تأكيد",
+      "noTransitions": "لا توجد انتقالات متاحة لهذه الرحلة.",
+      "failed": "تعذّر تغيير الحالة."
+    },
+    "counts": {
+      "stops": "المحطات",
+      "custody": "العُهدة",
+      "exceptions": "الاستثناءات",
+      "tripOrders": "الطلبات"
+    },
+    "execution": {
+      "tabs": {
+        "orders": "الطلبات",
+        "stops": "المحطات",
+        "exceptions": "الاستثناءات",
+        "returns": "المرتجعات"
+      },
+      "progress": {
+        "title": "التنفيذ المباشر",
+        "stops": "المحطات",
+        "completed": "مكتملة",
+        "pending": "قيد الانتظار",
+        "inProgress": "قيد التنفيذ",
+        "failed": "فاشلة",
+        "percent": "اكتمل {{percent}}%",
+        "none": "لا توجد محطات بعد.",
+        "derivedNote": "يُحتسب التقدم من قائمة المحطات، وتظل حالة الرحلة هي المرجع لدورة الحياة."
+      },
+      "orders": {
+        "title": "الطلبات المعيّنة",
+        "empty": "لا توجد طلبات معيّنة لهذه الرحلة.",
+        "orderId": "الطلب",
+        "zone": "المنطقة",
+        "governorate": "المحافظة",
+        "assignment": "التعيين",
+        "assignedAt": "تاريخ التعيين",
+        "manual": "يدوي",
+        "auto": "تلقائي",
+        "add": "تعيين طلب",
+        "addTitle": "تعيين طلب لهذه الرحلة",
+        "addDescription": "يجب أن يكون الطلب موجودًا وأن تتوفر سعة في الرحلة.",
+        "orderIdLabel": "معرّف الطلب",
+        "orderIdPlaceholder": "ألصق معرّف الطلب",
+        "zonePlaceholder": "كود منطقة اختياري",
+        "governoratePlaceholder": "محافظة اختيارية",
+        "assignmentType": "نوع التعيين",
+        "remove": "إزالة",
+        "removeConfirm": "إزالة هذا الطلب من الرحلة؟",
+        "move": "نقل",
+        "moveTitle": "نقل الطلب إلى رحلة أخرى",
+        "moveDescription": "يغادر الطلب هذه الرحلة وينضم إلى الرحلة الهدف.",
+        "targetTrip": "الرحلة الهدف",
+        "targetTripPlaceholder": "ألصق معرّف الرحلة الهدف",
+        "idNote": "تُعنون الطلبات بمعرّفات، ولا يوفر هذا المسار قائمة اختيار، لذا يُدخل المعرّف مباشرة.",
+        "addFailed": "تعذّر تعيين الطلب.",
+        "removeFailed": "تعذّر إزالة الطلب.",
+        "moveFailed": "تعذّر نقل الطلب."
+      },
+      "stops": {
+        "title": "محطات التوصيل",
+        "empty": "لا توجد محطات بعد. أنشئها من الطلبات المعيّنة.",
+        "generate": "إنشاء المحطات",
+        "generated": "تم إنشاء {{count}} محطة.",
+        "generateNote": "الإنشاء متكرر التنفيذ — إعادته تضيف المحطات الناقصة فقط.",
+        "sequence": "#",
+        "order": "الطلب",
+        "status": "الحالة",
+        "collected": "المحصّل",
+        "completedAt": "وقت الإكمال",
+        "start": "بدء",
+        "complete": "إكمال",
+        "startFailed": "تعذّر بدء المحطة.",
+        "completeFailed": "تعذّر إكمال المحطة.",
+        "completeTitle": "إكمال المحطة",
+        "completeDescription": "اختر النتيجة التي أبلغ عنها السائق.",
+        "outcome": "النتيجة",
+        "deliveryType": "نوع التوصيل",
+        "collectedAmount": "المبلغ المحصّل",
+        "paymentMethod": "طريقة الدفع",
+        "notes": "ملاحظات",
+        "acceptsPayment": "تقبل الدفع",
+        "settled": "مُسوّاة",
+        "actions": "الإجراءات",
+        "proof": "الإثبات",
+        "noActions": "لا توجد إجراءات مسجّلة.",
+        "noProof": "لم يُلتقط إثبات.",
+        "proofSignature": "تم التقاط التوقيع",
+        "proofPhotos": "الصور",
+        "proofCapturedAt": "وقت الالتقاط",
+        "recordAction": "تسجيل إجراء",
+        "actionType": "نوع الإجراء",
+        "actionTypePlaceholder": "مثل: إعادة جدولة، تصحيح موقع",
+        "reason": "السبب",
+        "newDeliveryDate": "تاريخ توصيل جديد",
+        "captureProof": "التقاط إثبات",
+        "signaturePath": "مرجع التوقيع",
+        "signaturePathPlaceholder": "مرجع التوقيع المخزّن",
+        "photos": "مراجع الصور",
+        "photosPlaceholder": "مرجع واحد في كل سطر",
+        "uploadNote": "يخزّن هذا المسار مراجع لملفات مرفوعة مسبقًا ولا يقبل رفع الملفات."
+      },
+      "status": {
+        "pending": "قيد الانتظار",
+        "in_progress": "قيد التنفيذ",
+        "delivered": "تم التوصيل",
+        "partial": "جزئي",
+        "failed": "فاشل",
+        "returned": "مرتجع",
+        "skipped": "متجاوز"
+      },
+      "exceptions": {
+        "title": "الاستثناءات",
+        "empty": "لا توجد استثناءات.",
+        "type": "النوع",
+        "description": "الوصف",
+        "raisedAt": "تاريخ الرفع",
+        "resolved": "تمت المعالجة",
+        "open": "مفتوح",
+        "resolve": "معالجة",
+        "resolveTitle": "معالجة الاستثناء",
+        "resolutionNotes": "ملاحظات المعالجة",
+        "raise": "رفع استثناء",
+        "raiseTitle": "رفع استثناء",
+        "typePlaceholder": "مثل: تلف، العميل غير متاح",
+        "descriptionPlaceholder": "ما الذي حدث",
+        "stop": "المحطة",
+        "syncedToCs": "أُرسل إلى خدمة العملاء",
+        "raiseFailed": "تعذّر رفع الاستثناء.",
+        "resolveFailed": "تعذّرت معالجة الاستثناء."
+      },
+      "returns": {
+        "title": "المرتجعات",
+        "empty": "لا توجد مرتجعات مسجّلة.",
+        "kind": "النوع",
+        "product": "منتج",
+        "custody": "عُهدة",
+        "item": "الصنف",
+        "dispatched": "المرسل",
+        "returnedQty": "المرتجع",
+        "confirmedQty": "المؤكّد",
+        "discrepancy": "الفرق",
+        "driverLiable": "السائق مسؤول",
+        "confirmed": "مؤكّد",
+        "awaitingConfirmation": "بانتظار تأكيد المخزن",
+        "record": "تسجيل مرتجع",
+        "recordTitle": "تسجيل مرتجع",
+        "recordDescription": "مرتجعات المنتجات تحتاج طلبًا ومنتجًا، ومرتجعات العُهدة تحتاج نوع عُهدة.",
+        "confirm": "تأكيد",
+        "confirmTitle": "تأكيد المرتجع",
+        "confirmDescription": "أدخل الكمية التي استلمها المخزن فعليًا.",
+        "warehouseQty": "الكمية المؤكّدة من المخزن",
+        "orderIdPlaceholder": "معرّف الطلب",
+        "productIdPlaceholder": "معرّف المنتج",
+        "productNamePlaceholder": "اسم المنتج (اختياري)",
+        "custodyTypePlaceholder": "مثل: صندوق، ثلاجة",
+        "disposition": "التصرف",
+        "dispositionFull": "كلي",
+        "dispositionPartial": "جزئي",
+        "reason": "السبب",
+        "notes": "ملاحظات",
+        "recordFailed": "تعذّر تسجيل المرتجع.",
+        "confirmFailed": "تعذّر تأكيد المرتجع."
+      },
+      "common": {
+        "save": "حفظ",
+        "cancel": "إلغاء",
+        "saving": "جارٍ الحفظ...",
+        "required": "هذا الحقل مطلوب",
+        "positiveNumber": "أدخل رقمًا يساوي صفرًا أو أكثر",
+        "close": "إغلاق",
+        "yes": "نعم",
+        "no": "لا",
+        "none": "—"
+      },
+      "custody": {
+        "title": "العُهدة",
+        "tab": "العُهدة",
+        "empty": "لا توجد عُهد في هذه الرحلة.",
+        "itemType": "الصنف",
+        "description": "الوصف",
+        "quantity": "المرسل",
+        "received": "المستلم",
+        "shortfall": "العجز",
+        "confirmed": "أكّدها السائق",
+        "awaiting": "بانتظار تأكيد السائق",
+        "confirmedAt": "وقت التأكيد",
+        "notes": "ملاحظات",
+        "add": "إضافة عُهدة",
+        "addTitle": "إضافة صنف عُهدة",
+        "addDescription": "الأصناف المُسلّمة للسائق مع الرحلة، ويؤكّد السائق ما استلمه فعليًا.",
+        "descriptionPlaceholder": "وصف اختياري",
+        "quantityLabel": "الكمية",
+        "confirm": "تأكيد الاستلام",
+        "confirmTitle": "تأكيد ما استلمه السائق",
+        "receivedQuantity": "الكمية المستلمة",
+        "remove": "إزالة",
+        "addFailed": "تعذّرت إضافة العُهدة.",
+        "confirmFailed": "تعذّر تأكيد العُهدة.",
+        "removeFailed": "تعذّرت إزالة العُهدة.",
+        "shortfallNote": "يُحتسب العجز في الخادم من الكميتين المرسلة والمستلمة.",
+        "type": {
+          "cash_float": "عهدة نقدية",
+          "pos_device": "جهاز نقاط بيع",
+          "ice_boxes": "صناديق ثلج",
+          "ice_packs": "عبوات ثلج",
+          "thermal_bags": "حقائب حرارية",
+          "delivery_bags": "حقائب توصيل",
+          "other": "أخرى"
+        }
+      }
+    },
+    "settlement": {
+      "tabs": {
+        "settlement": "التسوية",
+        "payments": "المدفوعات"
+      },
+      "status": {
+        "draft": "مسودة",
+        "submitted": "مُقدّمة",
+        "reconciled": "مُطابَقة",
+        "disputed": "متنازع عليها",
+        "finalized": "مُعتمدة"
+      },
+      "paymentType": {
+        "cash": "نقدًا",
+        "bank_transfer": "تحويل بنكي",
+        "card": "بطاقة",
+        "already_paid": "مدفوع مسبقًا"
+      },
+      "settlement": {
+        "title": "التسوية",
+        "notOpened": "لم تُفتح تسوية لهذه الرحلة.",
+        "notOpenedHint": "فتح التسوية يشتق إجمالياتها من سجل المدفوعات.",
+        "open": "فتح التسوية",
+        "openFailed": "تعذّر فتح التسوية.",
+        "status": "الحالة",
+        "final": "نهائية",
+        "totals": "الإجماليات",
+        "cashCollected": "النقد المحصّل",
+        "bankTransfers": "تحويلات بنكية معلّقة",
+        "alreadyPaid": "مدفوع مسبقًا",
+        "totalCollected": "إجمالي المحصّل",
+        "cashExpected": "النقد المتوقّع",
+        "driverSubmitted": "النقد المُسلّم من السائق",
+        "discrepancy": "الفرق",
+        "balanced": "متوازنة",
+        "short": "عجز",
+        "notSubmitted": "لم يُسلّم",
+        "derivedNote": "تُشتق الإجماليات من سجل المدفوعات في الخادم، ولا يُحتسب شيء منها في المتصفّح.",
+        "timeline": "التسلسل الزمني",
+        "submittedAt": "وقت التقديم",
+        "reconciledAt": "وقت المطابقة",
+        "finalizedAt": "وقت الاعتماد",
+        "notes": "ملاحظات"
+      },
+      "driver": {
+        "title": "تسوية السائق",
+        "submitCash": "تسليم نقد السائق",
+        "submitCashDescription": "سجّل النقد الذي سلّمه السائق فعليًا، ويحتسب الخادم الفرق مقابل النقد المتوقّع.",
+        "amount": "المبلغ المُسلّم",
+        "submit": "تسليم",
+        "submitFailed": "تعذّر تسليم نقد السائق.",
+        "shortWarning": "النقد المُسلّم أقل من المتوقّع."
+      },
+      "actions": {
+        "title": "إجراءات التسوية",
+        "reconcile": "مطابقة",
+        "dispute": "اعتراض",
+        "finalize": "اعتماد",
+        "finalizeDescription": "الاعتماد يوافق على التسوية ويغلقها، ويسجّل الخادم المستخدم المعتمِد.",
+        "notes": "ملاحظات",
+        "notesPlaceholder": "ملاحظة اختيارية تُسجّل مع الإجراء",
+        "reconcileFailed": "تعذّرت مطابقة التسوية.",
+        "disputeFailed": "تعذّر الاعتراض على التسوية.",
+        "finalizeFailed": "تعذّر اعتماد التسوية.",
+        "noTransitions": "لا توجد انتقالات متاحة لهذه التسوية.",
+        "allowed": "الحالات التالية المسموحة"
+      },
+      "payments": {
+        "title": "سجل المدفوعات",
+        "empty": "لا توجد مدفوعات مسجّلة لهذه الرحلة.",
+        "type": "النوع",
+        "amount": "المبلغ",
+        "reference": "المرجع",
+        "status": "الحالة",
+        "stop": "المحطة",
+        "collectedBy": "حصّله",
+        "verifiedAt": "وقت التحقق",
+        "physicalCash": "نقد فعلي",
+        "countsToward": "يُحتسب ضمن النقد المتوقّع",
+        "notCounted": "لا يُحتسب ضمن النقد المتوقّع",
+        "verify": "تحقق",
+        "reject": "رفض",
+        "rejectTitle": "رفض الدفعة",
+        "rejectNotes": "السبب",
+        "verifyFailed": "تعذّر التحقق من الدفعة.",
+        "rejectFailed": "تعذّر رفض الدفعة.",
+        "record": "تسجيل دفعة",
+        "recordTitle": "تسجيل دفعة عند محطة",
+        "recordDescription": "تُسجّل المدفوعات مقابل محطة، لذا يجب اختيار محطة.",
+        "selectStop": "المحطة",
+        "noStops": "لا توجد محطات في هذه الرحلة بعد، لذا لا يمكن تسجيل دفعة.",
+        "referencePlaceholder": "رقم مرجع اختياري",
+        "recordFailed": "تعذّر تسجيل الدفعة."
+      },
+      "summary": {
+        "title": "الملخص المالي",
+        "stopsTotal": "المحطات",
+        "stopsOutstanding": "المحطات المعلّقة",
+        "noSettlement": "لا توجد تسوية بعد"
+      },
+      "carrier": {
+        "title": "تسوية الناقل",
+        "unavailable": "لا توجد واجهة برمجية لتسوية الناقل. تُسوّي المنصة الرحلة مع سائقها، وسجلات الناقلين تعرض الحسابات والعقود لا التسويات."
+      }
+    },
+    "routing": {
+      "tab": "المسار",
+      "title": "خطة المسار",
+      "none": "لم يُخطط لهذه الرحلة بعد.",
+      "noneHint": "التخطيط يرتّب محطات الرحلة، وإعادة التخطيط تجمّد المحطات التي جرت محاولتها وتعيد ترتيب الباقي فقط.",
+      "deterministicNote": "التوجيه حتمي. تُنشَر الاستراتيجيات من الخادم، ولا يجري أي تحسين في المتصفّح.",
+      "plan": "تخطيط الرحلة",
+      "replan": "إعادة التخطيط",
+      "strategy": "الاستراتيجية",
+      "strategyDefault": "افتراضي الخادم",
+      "activate": "تفعيل",
+      "complete": "إكمال",
+      "projectEta": "حساب الوصول المتوقّع",
+      "status": "الحالة",
+      "current": "الحالية",
+      "superseded": "مُستبدلة",
+      "supersedeReason": "سبب الاستبدال",
+      "distance": "المسافة (كم)",
+      "duration": "المدة (دقيقة)",
+      "stopCount": "المحطات",
+      "averagePerStop": "متوسط الكيلومترات لكل محطة",
+      "confidence": "الثقة",
+      "plannedAt": "وقت التخطيط",
+      "activatedAt": "وقت التفعيل",
+      "completedAt": "وقت الإكمال",
+      "stops": "الترتيب المخطط",
+      "stopId": "المحطة",
+      "sequence": "#",
+      "frozen": "مجمّدة",
+      "eta": "الوصول المتوقّع",
+      "etaLevel": "مستوى الدقة",
+      "breach": "تجاوز متوقّع",
+      "minutesLate": "دقائق التأخير",
+      "history": "سجل الخطط",
+      "noHistory": "لا توجد خطط سابقة.",
+      "breachesFound": "{{count}} تجاوز متوقّع.",
+      "noBreaches": "لا توجد تجاوزات متوقّعة.",
+      "planFailed": "تعذّر تخطيط الرحلة.",
+      "activateFailed": "تعذّر تفعيل الخطة.",
+      "completeFailed": "تعذّر إكمال الخطة.",
+      "etaFailed": "تعذّر حساب الوصول المتوقّع.",
+      "planStatus": {
+        "draft": "مسودة",
+        "optimizing": "جارٍ التحسين",
+        "failed": "فاشلة",
+        "planned": "مخططة",
+        "active": "نشطة",
+        "superseded": "مُستبدلة",
+        "completed": "مكتملة",
+        "cancelled": "ملغاة"
+      }
+    }
+  },
+  "carriers": {
+    "title": "حسابات الناقلين",
+    "subtitle": "حسابات التكامل والقدرات ومطابقة الحالات",
+    "empty": "لا توجد حسابات ناقلين.",
+    "emptyFiltered": "لا يوجد حساب مطابق للمرشحات الحالية.",
+    "code": "الكود",
+    "name": "الاسم",
+    "adapter": "المحول",
+    "mode": "الوضع",
+    "status": "الحالة",
+    "priority": "الأولوية",
+    "default": "افتراضي",
+    "credentials": "بيانات اعتماد مخزّنة",
+    "noCredentials": "لا توجد بيانات اعتماد",
+    "shippingCompany": "شركة الشحن",
+    "allModes": "كل الأوضاع",
+    "allStatuses": "كل الحالات",
+    "refresh": "تحديث",
+    "new": "حساب جديد",
+    "newTitle": "إنشاء حساب ناقل",
+    "newDescription": "يجب أن يكون المحول معروفًا في السجل، ويُرفض المحول المجهول بدلاً من استبداله.",
+    "adapterLabel": "المحول",
+    "codePlaceholder": "كود مختصر",
+    "namePlaceholder": "اسم العرض",
+    "notes": "ملاحظات",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "saving": "جارٍ الحفظ...",
+    "createFailed": "تعذّر إنشاء حساب الناقل.",
+    "noUpdateNote": "لا توفر الواجهة تعديلًا أو حذفًا للحساب؛ فقط الإنشاء واختبار الاتصال ومطابقة الحالات.",
+    "mode_internal": "أسطول خاص",
+    "mode_external": "ناقل خارجي",
+    "status_draft": "مسودة",
+    "status_active": "نشط",
+    "status_disabled": "معطل",
+    "drawer": {
+      "tabs": {
+        "overview": "نظرة عامة",
+        "capabilities": "القدرات",
+        "mappings": "مطابقة الحالات"
+      },
+      "testConnection": "اختبار الاتصال",
+      "testing": "جارٍ الاختبار...",
+      "testOk": "نجح الاتصال",
+      "testFailed": "فشل الاتصال",
+      "capabilitiesTitle": "القدرات",
+      "supported": "مدعومة",
+      "notSupported": "غير مدعومة",
+      "absenceMeaning": "ماذا يعني الغياب",
+      "mappingsTitle": "مطابقة الحالات",
+      "noMappings": "لا توجد مطابقات حالات.",
+      "carrierStatus": "حالة الناقل",
+      "deliveryStatus": "حالة التوصيل",
+      "failureReason": "سبب الفشل",
+      "incomplete": "غير مكتملة",
+      "complete": "مكتملة",
+      "description": "الوصف",
+      "addMapping": "إضافة أو تحديث مطابقة",
+      "mappingFailed": "تعذّر حفظ مطابقة الحالة.",
+      "notFound": "تعذّر تحميل هذا الحساب."
+    }
+  },
+  "automation": {
+    "title": "مراقبة الأتمتة",
+    "subtitle": "السياسات المُعلنة ومستهلكو الأحداث والمؤشرات التشغيلية",
+    "readOnlyNote": "المسارات الثلاثة للقراءة فقط. تُعلَن السياسات في الكود، فلا يوجد ما يُعدّل أو يُفعّل هنا.",
+    "refresh": "تحديث",
+    "policies": {
+      "title": "السياسات",
+      "empty": "لا توجد سياسات مُعلنة.",
+      "name": "السياسة",
+      "event": "الحدث",
+      "action": "الإجراء",
+      "channel": "القناة",
+      "target": "الهدف",
+      "minSeverity": "أدنى خطورة",
+      "statusEquals": "الحالة تساوي",
+      "active": "نشطة",
+      "inactive": "غير نشطة"
+    },
+    "monitoring": {
+      "title": "مستهلكو الأحداث",
+      "consumers": "المستهلكون",
+      "eventsConsumed": "الأحداث المستهلكة",
+      "policyCount": "السياسات",
+      "activePolicyCount": "السياسات النشطة",
+      "eventLogging": "تسجيل الأحداث",
+      "queueConnection": "اتصال الطابور",
+      "generatedAt": "وقت التوليد",
+      "enabled": "مُفعّل",
+      "disabled": "مُعطّل",
+      "empty": "لا يوجد مستهلكون مسجّلون."
+    },
+    "metrics": {
+      "title": "المؤشرات التشغيلية",
+      "exceptions": "الاستثناءات",
+      "outstanding": "معلّقة",
+      "critical": "حرجة",
+      "needsAttention": "تحتاج انتباهًا",
+      "overdue": "متأخرة عن التصعيد",
+      "conflicts": "التعارضات",
+      "open": "مفتوحة",
+      "blocking": "معيقة",
+      "alerts": "التنبيهات",
+      "total": "الإجمالي",
+      "unacknowledged": "غير مُقرّة"
+    },
+    "error": "تعذّر تحميل بيانات الأتمتة."
+  },
+  "intelligence": {
+    "title": "ذكاء اللوجستيات",
+    "subtitle": "قرارات حتمية ورؤى وتوقّعات عبر منظومة اللوجستيات",
+    "readOnlyNote": "كل محرك هنا يرتّب ويفسّر ولا ينفّذ. لا يوجد مسار كتابة في هذه الواجهة، فلا شيء في هذه الصفحة يغيّر العمليات.",
+    "refresh": "تحديث",
+    "error": "تعذّر تحميل بيانات الذكاء.",
+    "generatedAt": "وقت التوليد",
+    "tabs": {
+      "decisions": "القرارات",
+      "insights": "الرؤى",
+      "forecasts": "التوقّعات",
+      "optimization": "التحسين"
+    },
+    "decisions": {
+      "title": "ملخص القرارات",
+      "overallStatus": "الحالة العامة",
+      "count": "التوصيات",
+      "topPriority": "أعلى أولوية",
+      "bySeverity": "حسب الخطورة",
+      "recommendations": "التوصيات",
+      "priorities": "ترتيب الأولويات",
+      "conflicts": "توصيات التعارضات",
+      "noRecommendations": "لا توجد توصيات.",
+      "noConflicts": "لا توجد توصيات تعارض.",
+      "priority": "الأولوية",
+      "severity": "الخطورة",
+      "category": "الفئة",
+      "action": "الإجراء",
+      "sourceModule": "المصدر"
+    },
+    "insights": {
+      "suggestions": "اقتراحات ذكية",
+      "noSuggestions": "لا توجد اقتراحات.",
+      "why": "السبب",
+      "owningModule": "المالك",
+      "bottlenecks": "الاختناقات",
+      "noBottlenecks": "لا توجد قيود ملزِمة.",
+      "module": "الوحدة",
+      "reason": "السبب",
+      "tightness": "شدة القيد",
+      "action": "الإجراء",
+      "tightnessNote": "شدة القيد هي درجة المحرك لمدى اقتراب القيد من انعدام المتسع.",
+      "warnings": "تحذيرات السعة",
+      "noWarnings": "لا توجد تحذيرات سعة.",
+      "operational": "رؤى تشغيلية",
+      "noInsights": "لا توجد رؤى تشغيلية.",
+      "topic": "الموضوع",
+      "signal": "الإشارة"
+    },
+    "forecasts": {
+      "capacity": "توقّع السعة",
+      "dispatch": "توقّع الإرسال",
+      "workload": "توقّع عبء العمل",
+      "method": "الطريقة",
+      "horizon": "الأفق",
+      "projected": "المتوقّع",
+      "avgUtilisation": "متوسط الاستخدام",
+      "headroomShare": "نسبة المتسع",
+      "exhaustedSlots": "الفترات المستنفدة",
+      "nearCapacitySlots": "فترات قرب الامتلاء",
+      "currentlyHolding": "المحجوز حاليًا",
+      "refusalRate": "معدل الرفض",
+      "queueDepth": "عمق الطابور",
+      "needsAction": "يحتاج إجراءً",
+      "stuck": "متعطّل",
+      "oldestWait": "أطول انتظار (دقيقة)",
+      "confirmationRate": "معدل التأكيد",
+      "queueNeedsAction": "طابور يحتاج إجراءً",
+      "exceptionsNeedingAttention": "استثناءات تحتاج انتباهًا",
+      "criticalExceptions": "استثناءات حرجة",
+      "openWorkItems": "بنود عمل مفتوحة",
+      "methodNote": "ينشر كل توقّع الطريقة المستخدمة وملاحظة عن حدوده، ويُعرضان هنا دون تغيير."
+    },
+    "optimization": {
+      "title": "التحسين",
+      "vehicle": "المركبات",
+      "capacity": "السعة",
+      "route": "المسار",
+      "assignment": "التعيين",
+      "empty": "لا توجد نتيجة تحسين.",
+      "shapeNote": "نتائج التحسين تختلف باختلاف المسار، لذا تُعرض من حقولها نفسها بدلاً من مخطط ثابت."
+    }
+  }
+}

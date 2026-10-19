@@ -1,0 +1,43 @@
+{
+  "title": "Warehouses",
+  "subtitle": "Manage storage locations for your inventory.",
+  "search": "Search warehouses…",
+  "actions": {
+    "new": "New Warehouse",
+    "create": "Create warehouse",
+    "edit": "Edit Warehouse"
+  },
+  "columns": {
+    "code": "Code",
+    "name": "Name",
+    "company": "Company",
+    "branch": "Branch",
+    "city": "City",
+    "status": "Status"
+  },
+  "form": {
+    "code": { "label": "Code", "placeholder": "WH-01" },
+    "name": { "label": "Name", "placeholder": "Main Warehouse" },
+    "company": { "label": "Company", "placeholder": "Select company…" },
+    "branch": { "label": "Branch", "placeholder": "Select branch…" },
+    "phone": "Phone",
+    "country": "Country",
+    "city": "City",
+    "address": "Address",
+    "active": "Active"
+  },
+  "drawer": {
+    "createTitle": "Create Warehouse",
+    "editTitle": "Edit Warehouse",
+    "createSubtitle": "Add a new warehouse to your organization.",
+    "editSubtitle": "Update the warehouse details below.",
+    "submitCreate": "Create warehouse",
+    "submitEdit": "Save changes",
+    "saving": "Saving…",
+    "errorTitle": "Unable to save"
+  },
+  "delete": {
+    "title": "Delete warehouse",
+    "confirm": "Delete"
+  }
+}

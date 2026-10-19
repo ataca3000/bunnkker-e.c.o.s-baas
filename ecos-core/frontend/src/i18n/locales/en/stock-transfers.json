@@ -1,0 +1,76 @@
+{
+  "title": "Stock Transfers",
+  "subtitle": "Move inventory between warehouses.",
+  "search": "Search transfers by number or warehouse…",
+  "actions": {
+    "new": "New Transfer",
+    "edit": "Edit Transfer",
+    "dispatch": "Dispatch",
+    "receive": "Mark as Received",
+    "cancel": "Cancel Transfer"
+  },
+  "columns": {
+    "number": "Transfer No.",
+    "fromWarehouse": "From",
+    "toWarehouse": "To",
+    "status": "Status",
+    "products": "Products",
+    "requestedDate": "Requested",
+    "dispatchedDate": "Dispatched",
+    "receivedDate": "Received",
+    "createdBy": "Created By"
+  },
+  "status": {
+    "draft": "Draft",
+    "dispatched": "Dispatched",
+    "received": "Received",
+    "cancelled": "Cancelled"
+  },
+  "form": {
+    "fromWarehouse": { "label": "From Warehouse", "placeholder": "Select source warehouse…" },
+    "toWarehouse": { "label": "To Warehouse", "placeholder": "Select destination warehouse…" },
+    "requestedDate": "Requested Transfer Date",
+    "notes": { "label": "Notes", "placeholder": "Optional notes…" }
+  },
+  "lines": {
+    "title": "Transfer Lines",
+    "addLine": "Add Product",
+    "columns": {
+      "product": "Product",
+      "sku": "SKU",
+      "requestedQty": "Requested Qty",
+      "dispatchedQty": "Dispatched Qty",
+      "receivedQty": "Received Qty",
+      "unit": "Unit"
+    },
+    "selectProduct": "Select product…",
+    "noLines": "No products added yet."
+  },
+  "dialogs": {
+    "dispatch": {
+      "title": "Dispatch Transfer",
+      "description": "Dispatch transfer {{number}}? Stock will be deducted from {{warehouse}}.",
+      "confirm": "Dispatch"
+    },
+    "receive": {
+      "title": "Receive Transfer",
+      "description": "Confirm receipt of transfer {{number}}? Stock will be added to {{warehouse}}.",
+      "confirm": "Confirm Receipt"
+    },
+    "cancel": {
+      "title": "Cancel Transfer",
+      "description": "Cancel transfer {{number}}? This cannot be undone.",
+      "confirm": "Cancel Transfer"
+    }
+  },
+  "drawer": {
+    "createTitle": "New Transfer",
+    "editTitle": "Edit Transfer",
+    "createSubtitle": "Create a stock transfer between warehouses.",
+    "editSubtitle": "Update transfer details.",
+    "submitCreate": "Create Transfer",
+    "submitEdit": "Save Changes",
+    "saving": "Saving…",
+    "errorTitle": "Unable to save"
+  }
+}

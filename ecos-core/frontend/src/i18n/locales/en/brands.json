@@ -1,0 +1,54 @@
+{
+  "title": "Brands",
+  "subtitle": "Manage your commercial brands and their policies.",
+  "search": "Search brands…",
+  "actions": {
+    "new": "New Brand",
+    "create": "Create Brand",
+    "edit": "Edit Brand",
+    "viewChannels": "View Channels",
+    "viewPolicies": "View Policies"
+  },
+  "columns": {
+    "name": "Brand Name",
+    "code": "Code",
+    "channels": "Channels",
+    "currency": "Currency",
+    "status": "Status",
+    "createdAt": "Created"
+  },
+  "form": {
+    "name": { "label": "Brand Name", "placeholder": "e.g. ECOS Premium" },
+    "code": { "label": "Code", "placeholder": "BRAND-01" },
+    "currency": { "label": "Default Currency", "placeholder": "Select currency…" },
+    "description": { "label": "Description", "placeholder": "Optional brand description…" },
+    "active": "Active"
+  },
+  "drawer": {
+    "createTitle": "Create Brand",
+    "editTitle": "Edit Brand",
+    "createSubtitle": "Add a new commercial brand to your organisation.",
+    "editSubtitle": "Update brand details below.",
+    "submitCreate": "Create Brand",
+    "submitEdit": "Save Changes",
+    "saving": "Saving…",
+    "errorTitle": "Unable to save"
+  },
+  "tabs": {
+    "overview": "Overview",
+    "channels": "Channels",
+    "shipping": "Shipping",
+    "policies": "Policies"
+  },
+  "policies": {
+    "title": "Brand Policies",
+    "orderPolicy": "Order Policy",
+    "pricingPolicy": "Pricing Policy",
+    "noPolicy": "No policy configured."
+  },
+  "delete": {
+    "title": "Delete Brand",
+    "description": "Delete {{name}}? This cannot be undone.",
+    "confirm": "Delete"
+  }
+}

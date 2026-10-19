@@ -1,0 +1,38 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Modules\Crm\Intelligence\Domain\Models;
+
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Modules\Crm\Customers\Domain\Models\Customer;
+use Modules\Crm\Intelligence\Domain\Enums\InsightSeverity;
+
+/** A deterministic observation about a customer or the portfolio. */
+class CustomerInsight extends Model
+{
+    use HasUuids;
+
+    protected $table = 'crm_customer_insights';
+
+    protected $fillable = [
+        'company_id', 'customer_id', 'type', 'severity', 'rule_key',
+        'title', 'detail', 'metric_key', 'metric_value', 'generated_at',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'severity' => InsightSeverity::class,
+            'metric_value' => 'decimal:4',
+            'generated_at' => 'datetime',
+        ];
+    }
+
+    public function customer(): BelongsTo
+    {
+        return $this->belongsTo(Customer::class, 'customer_id');
+    }
+}

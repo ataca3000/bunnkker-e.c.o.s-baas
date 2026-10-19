@@ -1,0 +1,57 @@
+{
+  "title": "Conversational Commerce",
+  "subtitle": "Sell and support through WhatsApp and messaging channels.",
+  "inbox": {
+    "title": "Unified Inbox",
+    "subtitle": "All conversations in one place.",
+    "search": "Search conversations…",
+    "noConversations": "No conversations yet.",
+    "newMessage": "New Message",
+    "filters": {
+      "all": "All",
+      "unread": "Unread",
+      "open": "Open",
+      "resolved": "Resolved",
+      "assigned": "Assigned to me"
+    }
+  },
+  "conversation": {
+    "resolve": "Mark as Resolved",
+    "reopen": "Reopen",
+    "assign": "Assign",
+    "createOrder": "Create Order",
+    "viewCustomer": "View Customer Profile",
+    "attachProduct": "Attach Product",
+    "sendCatalog": "Send Catalog",
+    "typeMessage": "Type a message…",
+    "send": "Send",
+    "uploadFile": "Upload File"
+  },
+  "templates": {
+    "title": "Message Templates",
+    "subtitle": "WhatsApp Business approved message templates.",
+    "search": "Search templates…",
+    "actions": {
+      "new": "New Template",
+      "preview": "Preview",
+      "send": "Send Template"
+    },
+    "columns": {
+      "name": "Template Name",
+      "category": "Category",
+      "language": "Language",
+      "status": "Status"
+    },
+    "status": {
+      "approved": "Approved",
+      "pending": "Pending Approval",
+      "rejected": "Rejected"
+    }
+  },
+  "catalog": {
+    "title": "Product Catalog",
+    "subtitle": "Share products directly in WhatsApp conversations.",
+    "search": "Search products…",
+    "sendToCustomer": "Send to Customer"
+  }
+}

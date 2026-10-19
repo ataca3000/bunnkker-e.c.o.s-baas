@@ -1,0 +1,63 @@
+{
+  "title": "Teams",
+  "subtitle": "Manage operational teams, roles, and member assignments.",
+  "search": "Search teams or members…",
+  "actions": {
+    "new": "New Team",
+    "edit": "Edit Team",
+    "addMember": "Add Member",
+    "removeMember": "Remove Member",
+    "deactivate": "Deactivate Team"
+  },
+  "columns": {
+    "name": "Team Name",
+    "type": "Type",
+    "lead": "Team Lead",
+    "members": "Members",
+    "branch": "Branch",
+    "status": "Status"
+  },
+  "type": {
+    "sales": "Sales",
+    "operations": "Operations",
+    "delivery": "Delivery",
+    "customer_service": "Customer Service",
+    "warehouse": "Warehouse",
+    "other": "Other"
+  },
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive"
+  },
+  "form": {
+    "name": { "label": "Team Name", "placeholder": "e.g. Cairo Sales Team A" },
+    "type": { "label": "Team Type", "placeholder": "Select type…" },
+    "lead": { "label": "Team Lead", "placeholder": "Select team lead…" },
+    "branch": { "label": "Branch", "placeholder": "Select branch…" },
+    "description": { "label": "Description", "placeholder": "Optional description…" }
+  },
+  "members": {
+    "title": "Team Members",
+    "addMember": "Add Member",
+    "columns": {
+      "member": "Member",
+      "role": "Role",
+      "joinedAt": "Joined"
+    },
+    "noMembers": "No members yet.",
+    "roles": {
+      "lead": "Lead",
+      "member": "Member",
+      "trainee": "Trainee"
+    }
+  },
+  "drawer": {
+    "createTitle": "New Team",
+    "editTitle": "Edit Team",
+    "createSubtitle": "Create an operational team and assign members.",
+    "submitCreate": "Create Team",
+    "submitEdit": "Save Changes",
+    "saving": "Saving…",
+    "errorTitle": "Unable to save"
+  }
+}

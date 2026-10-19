@@ -1,0 +1,117 @@
+{
+  "title": "Channels",
+  "subtitle": "Manage your commerce channels and integrations.",
+  "search": "Search channels…",
+  "actions": {
+    "new": "New Channel",
+    "create": "Create channel",
+    "edit": "Edit Channel",
+    "importProducts": "Import Products",
+    "importOrders": "Import Orders",
+    "importing": "Importing…",
+    "testConnection": "Test Connection",
+    "testing": "Testing…",
+    "syncStock": "Sync Stock",
+    "syncing": "Syncing…"
+  },
+  "filters": {
+    "platform": "Platform",
+    "allPlatforms": "All Platforms"
+  },
+  "columns": {
+    "name": "Name",
+    "company": "Company",
+    "platform": "Platform",
+    "storeUrl": "Store URL",
+    "connection": "Connection",
+    "branch": "Branch",
+    "warehouse": "Warehouse",
+    "status": "Status",
+    "lastSync": "Last Sync",
+    "brand": "Brand"
+  },
+  "platforms": {
+    "shopify": "Shopify",
+    "woocommerce": "WooCommerce",
+    "amazon": "Amazon",
+    "noon": "Noon",
+    "salla": "Salla",
+    "zid": "Zid",
+    "manual": "Manual",
+    "other": "Other"
+  },
+  "form": {
+    "company": {
+      "label": "Company",
+      "placeholder": "Select company…"
+    },
+    "name": {
+      "label": "Name",
+      "placeholder": "ECOS Main Store"
+    },
+    "platform": {
+      "label": "Platform",
+      "placeholder": "Select platform…"
+    },
+    "branch": {
+      "label": "Branch",
+      "placeholder": "Select branch…"
+    },
+    "warehouse": {
+      "label": "Warehouse",
+      "placeholder": "Select warehouse…"
+    },
+    "apiKey": {
+      "label": "API Key",
+      "placeholder": "Enter API key…"
+    },
+    "apiSecret": {
+      "label": "API Secret",
+      "placeholder": "Enter API secret…"
+    },
+    "consumerKey": {
+      "label": "Consumer Key",
+      "placeholder": "ck_…"
+    },
+    "consumerSecret": {
+      "label": "Consumer Secret",
+      "placeholder": "cs_…"
+    },
+    "storeUrl": {
+      "label": "Store URL",
+      "placeholder": "https://store.example.com"
+    },
+    "syncSettings": "Sync Settings",
+    "syncOrders": "Sync Orders",
+    "syncProducts": "Sync Products",
+    "syncPrices": "Sync Prices",
+    "syncStock": "Sync Stock",
+    "syncCustomers": "Sync Customers",
+    "syncInventory": "Sync Inventory",
+    "active": "Active",
+    "brand": {
+      "label": "Brand",
+      "placeholder": "Select a brand"
+    }
+  },
+  "drawer": {
+    "createTitle": "Create Channel",
+    "editTitle": "Edit Channel",
+    "createSubtitle": "Add a new commerce channel to your system.",
+    "editSubtitle": "Update the channel details below.",
+    "submitCreate": "Create channel",
+    "submitEdit": "Save changes",
+    "saving": "Saving…",
+    "errorTitle": "Unable to save"
+  },
+  "delete": {
+    "title": "Delete channel",
+    "confirm": "Delete"
+  },
+  "kpi": {
+    "total": "Total channels",
+    "active": "Active channels",
+    "connected": "Connected channels",
+    "platforms": "Platforms"
+  }
+}

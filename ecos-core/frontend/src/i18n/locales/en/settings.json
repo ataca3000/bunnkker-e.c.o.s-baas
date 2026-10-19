@@ -1,0 +1,1259 @@
+{
+  "title": "Settings",
+  "subtitle": "Configure your ECOS workspace.",
+  "sections": {
+    "general": "General",
+    "appearance": "Appearance",
+    "language": "Language & Region",
+    "notifications": "Notifications",
+    "security": "Security"
+  },
+  "configOs": {
+    "title": "Configuration OS",
+    "subtitle": "Enterprise governance platform — every configurable rule across ECOS ERP",
+    "auditEnabled": "All changes are audited",
+    "selectBrand": "Select Brand to Configure",
+    "loadingBrands": "Loading brands…",
+    "selected": "Selected",
+    "companyConfig": "Company Configuration",
+    "companySettings": "Company Settings",
+    "companySettingsDesc": "Currency, timezone, fiscal year, default warehouse, language",
+    "brandSettings": "Brand Settings",
+    "searchCategories": "Search categories…",
+    "selectBrandWorkspace": "Select a brand above to open its configuration workspace.",
+    "selectBrandCategories": "Select a brand above to view its configuration categories.",
+    "kpi": {
+      "areas": "Configuration Areas",
+      "brands": "Brands",
+      "audit": "Audit Enabled",
+      "cacheTtl": "Cache TTL",
+      "yes": "Yes",
+      "oneHour": "1 hr"
+    },
+    "cat": {
+      "windows": {
+        "label": "Delivery Windows",
+        "desc": "Define time windows for customer deliveries"
+      },
+      "preparation": {
+        "label": "Preparation",
+        "desc": "Wave planning, batch sizing, and manufacturing rules"
+      },
+      "inventory": {
+        "label": "Inventory",
+        "desc": "Stock thresholds, reorder rules, and reservation policies"
+      },
+      "manufacturing": {
+        "label": "Manufacturing",
+        "desc": "BOM settings, production scheduling, and quality gates"
+      },
+      "logistics": {
+        "label": "Logistics",
+        "desc": "Carrier rules, routing logic, and delivery policies"
+      },
+      "crm": {
+        "label": "CRM",
+        "desc": "Customer segmentation, loyalty rules, and contact policies"
+      },
+      "marketing": {
+        "label": "Marketing",
+        "desc": "Campaign rules, budget caps, and channel controls"
+      },
+      "ai": {
+        "label": "AI Configuration",
+        "desc": "AI model preferences and automation thresholds"
+      },
+      "workflow": {
+        "label": "Workflow",
+        "desc": "Approval chains, escalations, and notification routing"
+      },
+      "notification": {
+        "label": "Notifications",
+        "desc": "Alert channels, delivery preferences, and quiet hours"
+      },
+      "integration": {
+        "label": "Integrations",
+        "desc": "Third-party API connections and sync settings"
+      },
+      "security": {
+        "label": "Security",
+        "desc": "Access policies, MFA enforcement, and audit retention"
+      },
+      "numbering": {
+        "label": "Numbering",
+        "desc": "Document number sequences and format templates"
+      },
+      "approval": {
+        "label": "Approvals",
+        "desc": "Multi-level approval workflows and delegation rules"
+      }
+    }
+  },
+  "brandConfig": {
+    "pageTitle": "Brand Configuration",
+    "back": "Dashboard",
+    "deliveryWindows": "Delivery Windows",
+    "auditLog": "Audit Log",
+    "sections": {
+      "operations": "OPERATIONS",
+      "commerce": "COMMERCE",
+      "system": "SYSTEM"
+    },
+    "statusBadge": {
+      "complete": "Complete",
+      "partial": "Partial",
+      "notSet": "Not Set"
+    },
+    "checkLabels": {
+      "channels": "Sales Channels",
+      "delivery_coverage": "Delivery Coverage",
+      "delivery_zones": "Delivery Zones",
+      "delivery_windows": "Delivery Windows",
+      "shipping_prices": "Shipping Prices"
+    },
+    "health": {
+      "title": "Brand Configuration Health",
+      "brand": "Brand",
+      "scoreLabel": "Health",
+      "checksComplete": "{{passed}} of {{total}} checks complete"
+    },
+    "deliveryWindowsTabs": {
+      "coverage": "Coverage",
+      "shipping": "Shipping Zones"
+    },
+    "audit": {
+      "loading": "Loading audit log…",
+      "title": "Configuration Audit Log",
+      "entries": "{{count}} entries",
+      "empty": "No audit entries yet.",
+      "hideDiff": "Hide diff",
+      "showDiff": "Show diff",
+      "before": "Before",
+      "after": "After",
+      "created": "Created",
+      "deleted": "Deleted",
+      "updated": "Updated",
+      "by": "by {{actor}}"
+    },
+    "cards": {
+      "pricing": {
+        "label": "Pricing",
+        "desc": "Margin thresholds, discount limits, and price-review automation"
+      },
+      "order": {
+        "label": "Order Management",
+        "desc": "Order entry policies, payment proof, and customer matching rules"
+      },
+      "preparation": {
+        "label": "Preparation",
+        "desc": "Wave planning and batch manufacturing settings"
+      },
+      "inventory": {
+        "label": "Inventory",
+        "desc": "Stock thresholds, reorder points, reservation rules"
+      },
+      "manufacturing": {
+        "label": "Manufacturing",
+        "desc": "BOM rules, production scheduling, quality gates"
+      },
+      "logistics": {
+        "label": "Logistics",
+        "desc": "Carrier configuration, routing, and delivery policies"
+      },
+      "crm": {
+        "label": "CRM",
+        "desc": "Customer segmentation and contact rules"
+      },
+      "marketing": {
+        "label": "Marketing",
+        "desc": "Campaign budgets, channel controls, ad policies"
+      },
+      "workflow": {
+        "label": "Workflow",
+        "desc": "Approval chains and escalation policies"
+      },
+      "notification": {
+        "label": "Notifications",
+        "desc": "Alert channels and delivery preferences"
+      },
+      "security": {
+        "label": "Security",
+        "desc": "Access controls and audit policies"
+      },
+      "integration": {
+        "label": "Integrations",
+        "desc": "API connections and third-party sync"
+      },
+      "ai": {
+        "label": "AI Configuration",
+        "desc": "AI model preferences and automation"
+      },
+      "numbering": {
+        "label": "Numbering",
+        "desc": "Document sequences and format templates"
+      },
+      "approval": {
+        "label": "Approvals",
+        "desc": "Multi-level approval workflows"
+      },
+      "audit": {
+        "label": "Audit Log",
+        "desc": "Configuration change history and diff viewer"
+      },
+      "windows": {
+        "label": "Delivery & Shipping",
+        "desc": "Coverage area, zone shipping costs, and delivery window configuration"
+      }
+    }
+  },
+  "policy": {
+    "configuredVersion": "Configured v{{version}}",
+    "usingDefaults": "Using Defaults",
+    "noSettings": "No configurable settings for this policy group yet.",
+    "reasonPlaceholder": "Reason for change (optional)",
+    "reasonNote": "Audit trail note…",
+    "saving": "Saving…",
+    "save": "Save Changes",
+    "saved": "Saved",
+    "enabled": "Enabled",
+    "comingSoon": "Coming Soon",
+    "notSet": "Not set",
+    "banner": {
+      "orderPriceProtection": "Order Price Protection — Always Enabled",
+      "orderPriceProtectionDesc": "Order prices are locked at confirmation time. Price changes apply to new orders only. This setting is enforced system-wide to ensure financial accuracy.",
+      "enforced": "Enforced"
+    },
+    "toast": {
+      "approvalRequired": "Approval Threshold required",
+      "approvalRequiredDesc": "Set a threshold value when using \"Publish After Approval\" strategy.",
+      "saveFailed": "Save failed",
+      "saveFailedDesc": "Changes could not be saved. Please try again."
+    },
+    "recentChanges": "Recent Changes",
+    "savedSuccessfully": "Policy saved",
+    "loading": "Loading policy…",
+    "auditBy": "by",
+    "locked": "Locked",
+    "preserveIncomingStatus": "Preserve Incoming Status",
+    "auditActions": {
+      "create": "Created",
+      "update": "Updated",
+      "delete": "Deleted"
+    },
+    "options": {
+      "automatic": "Automatic",
+      "manual": "Manual",
+      "disabled": "Disabled",
+      "block_prevent": "Block (prevent)",
+      "warn": "Warn only",
+      "allow": "Allow",
+      "fifo": "FIFO",
+      "fefo": "FEFO",
+      "lifo": "LIFO",
+      "push_on_confirm": "Push on Confirm",
+      "push_on_pack": "Push on Pack",
+      "lazy": "Lazy (manual)",
+      "immediate": "Immediate",
+      "batch_end": "Batch End",
+      "pricing_manager": "Pricing Manager",
+      "commercial_manager": "Commercial Manager",
+      "general_manager": "General Manager",
+      "publish_after_approval": "Publish After Approval",
+      "block_completion": "Block Completion",
+      "require_photo": "Require Photo",
+      "require_note": "Require Note",
+      "block_with_note": "Block (require note)",
+      "proceed_with_note": "Proceed (log note)",
+      "all": "All",
+      "confirmed": "Confirmed",
+      "invoice": "Invoice",
+      "pos": "POS",
+      "none": "None",
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "wave_generation": {
+        "auto": "Automatic",
+        "manual": "Manual"
+      },
+      "wave_priority": {
+        "fifo": "FIFO (First In First Out)",
+        "priority": "Priority Based",
+        "deadline": "Deadline First"
+      },
+      "negative_stock_handling": {
+        "block": "Block (prevent)",
+        "warn": "Warn Only",
+        "allow": "Allow"
+      },
+      "packing_strategy": {
+        "standard": "Standard",
+        "bulk": "Bulk",
+        "individual": "Individual"
+      },
+      "exception_handling": {
+        "notify": "Notify Only",
+        "block": "Block Completion",
+        "auto_resolve": "Auto Resolve"
+      },
+      "reservation_method": {
+        "fifo": "FIFO",
+        "fefo": "FEFO (Expiry)",
+        "manual": "Manual"
+      },
+      "costing_method": {
+        "fifo": "FIFO",
+        "average": "Weighted Average",
+        "standard": "Standard Cost"
+      },
+      "recipe_version_policy": {
+        "latest": "Always Latest",
+        "approved": "Last Approved",
+        "pinned": "Pinned Version"
+      },
+      "vehicle_assignment": {
+        "manual": "Manual",
+        "auto": "Automatic"
+      },
+      "driver_assignment": {
+        "manual": "Manual",
+        "auto": "Automatic"
+      },
+      "failed_delivery": {
+        "return_to_warehouse": "Return to Warehouse",
+        "reschedule": "Reschedule",
+        "cancel": "Cancel Order"
+      },
+      "campaign_attribution": {
+        "last_click": "Last Click",
+        "first_click": "First Click",
+        "linear": "Linear"
+      },
+      "order_workflow": {
+        "standard": "Standard",
+        "express": "Express",
+        "strict": "Strict Approval"
+      },
+      "preparation_workflow": {
+        "standard": "Standard",
+        "lean": "Lean",
+        "strict": "Strict"
+      },
+      "procurement_workflow": {
+        "standard": "Standard",
+        "strict": "Strict Approval"
+      },
+      "publishing_strategy": {
+        "automatic": "Publish Automatically",
+        "approval_only": "Publish After Approval"
+      },
+      "discount_type": {
+        "percentage": "Percentage (%)",
+        "fixed_amount": "Fixed Amount"
+      },
+      "customer_matching_policy": {
+        "reuse_existing": "Reuse Existing Customer (Recommended)",
+        "warn_only": "Reuse + Warn (frontend shows a notice)",
+        "block_new_customer": "Force Reuse (prevent creating a new profile)",
+        "always_create_new": "Always Create New Customer"
+      },
+      "deposit_policy": {
+        "none": "None",
+        "optional": "Optional",
+        "required": "Required"
+      },
+      "discount_policy": {
+        "none": "No Discounts",
+        "open": "Open Discounts",
+        "manager_approval": "Manager Approval"
+      },
+      "source_entry_policies": {
+        "pending": "Pending",
+        "awaiting_payment": "Awaiting Payment",
+        "processing": "Processing",
+        "confirmed": "Confirmed",
+        "confirm_order": "Confirmed"
+      },
+      "payment_proof_policy": {
+        "none": "None",
+        "optional": "Optional",
+        "required": "Required"
+      }
+    },
+    "rows": {
+      "cash": "Cash",
+      "cod": "COD",
+      "card": "Card",
+      "bank_transfer": "Bank Transfer",
+      "wallet": "Wallet",
+      "partial": "Partial",
+      "online": "Online"
+    },
+    "optionHints": {
+      "publishing_strategy": {
+        "automatic": "Approved prices go live instantly.",
+        "approval_only": "Prices are staged and must be manually published."
+      }
+    },
+    "rowLabels": {
+      "source_entry_policies": {
+        "manual": "Manual Orders",
+        "pos": "POS Sales",
+        "woocommerce": "WooCommerce",
+        "public_api": "Public API"
+      },
+      "payment_proof_policy": {
+        "cod": "Cash on Delivery",
+        "instapay": "InstaPay",
+        "bank_transfer": "Bank Transfer",
+        "mobile_wallet": "Mobile Wallet",
+        "credit_card": "Credit Card"
+      }
+    },
+    "lockLabels": {
+      "woocommerce": "Preserve Incoming Status",
+      "public_api": "Preserve Incoming Status"
+    },
+    "descriptions": {
+      "pricing": "Configure price automation, margin rules, and channel publishing strategy.",
+      "preparation": "Batch planning, sorting rules, and wave-level capacity limits.",
+      "inventory": "Stock reservation, shortage handling, and replenishment triggers.",
+      "manufacturing": "BOM substitution, scrap tolerance, and production scheduling.",
+      "order": "Order validation, modification windows, and price protection rules.",
+      "logistics": "Carrier selection, routing, and COD handling policies.",
+      "crm": "Customer tier rules, loyalty points, and contact deduplication.",
+      "marketing": "Campaign budget controls, channel caps, and ad spend limits.",
+      "ai": "AI recommendation preferences and automation confidence thresholds.",
+      "workflow": "Approval chains, escalation timers, and delegation policies.",
+      "notification": "Alert channels, quiet hours, and escalation notification rules.",
+      "integration": "Sync frequency, conflict resolution, and API rate limit policies.",
+      "security": "Session duration, MFA enforcement, and password complexity rules.",
+      "numbering": "Document number sequences, prefixes, and format templates.",
+      "approval": "Multi-level approval thresholds and workflow delegation."
+    },
+    "fields": {
+      "auto_price_review": "Auto Price Review",
+      "margin_alert_threshold": "Margin Alert Threshold",
+      "price_publish_strategy": "Price Publish Strategy",
+      "approval_threshold": "Approval Threshold",
+      "channel_publish_delay": "Channel Publish Delay",
+      "allow_negative_margin": "Allow Negative Margin",
+      "default_sort_strategy": "Default Sort Strategy",
+      "max_batch_size": "Max Batch Size",
+      "max_orders_per_wave": "Max Orders per Wave",
+      "require_batch_approval": "Require Batch Approval",
+      "reservation_mode": "Reservation Mode",
+      "shortage_action": "Shortage Action",
+      "auto_reorder": "Auto Reorder",
+      "reorder_threshold_days": "Reorder Threshold (days)",
+      "allow_bom_substitution": "Allow BOM Substitution",
+      "scrap_tolerance_pct": "Scrap Tolerance %",
+      "require_qc_sign_off": "Require QC Sign-off",
+      "production_schedule_mode": "Production Schedule Mode",
+      "allow_order_edit_after_confirm": "Allow Order Edit After Confirm",
+      "edit_window_minutes": "Edit Window (minutes)",
+      "require_reason_on_cancel": "Require Reason on Cancel",
+      "auto_cancel_unpaid_hours": "Auto-cancel Unpaid (hours)",
+      "cod_verification_required": "COD Verification Required",
+      "allow_partial_delivery": "Allow Partial Delivery",
+      "carrier_selection_mode": "Carrier Selection Mode",
+      "driver_reassignment_mode": "Driver Reassignment Mode",
+      "proof_of_delivery_required": "Proof of Delivery Required",
+      "failed_delivery_action": "Failed Delivery Action",
+      "enable_loyalty_points": "Enable Loyalty Points",
+      "points_per_egp": "Points per unit",
+      "tier_upgrade_mode": "Tier Upgrade Mode",
+      "campaign_daily_budget_cap": "Campaign Daily Budget Cap",
+      "auto_pause_on_budget": "Auto-pause on Budget",
+      "channel_spend_limits": "Channel Spend Limits",
+      "ai_suggestion_confidence": "AI Suggestion Confidence",
+      "enable_demand_forecast": "Enable Demand Forecast",
+      "forecast_horizon_days": "Forecast Horizon (days)",
+      "require_approval_for": "Require Approval For",
+      "escalation_timeout_hours": "Escalation Timeout (hours)",
+      "auto_approve_below": "Auto-approve Below",
+      "notification_channels": "Notification Channels",
+      "quiet_hours_start": "Quiet Hours Start",
+      "quiet_hours_end": "Quiet Hours End",
+      "sync_frequency_minutes": "Sync Frequency (minutes)",
+      "conflict_resolution": "Conflict Resolution",
+      "session_timeout_minutes": "Session Timeout (minutes)",
+      "require_mfa": "Require MFA",
+      "password_complexity": "Password Complexity",
+      "audit_retention_days": "Audit Retention (days)",
+      "order_number_prefix": "Order Number Prefix",
+      "order_number_padding": "Order Number Padding",
+      "invoice_number_prefix": "Invoice Number Prefix",
+      "invoice_number_padding": "Invoice Number Padding",
+      "approval_levels": "Approval Levels",
+      "delegation_allowed": "Delegation Allowed",
+      "auto_approve_timeout": "Auto-approve on Timeout",
+      "allowed_payment_methods": "Allowed Payment Methods",
+      "wave_generation": "Wave Generation",
+      "wave_priority": "Wave Priority",
+      "batch_size": "Default Batch Size",
+      "merge_orders": "Merge Orders in Wave",
+      "split_orders": "Allow Order Splitting",
+      "partial_preparation": "Allow Partial Preparation",
+      "negative_stock_handling": "Negative Stock Handling",
+      "packing_strategy": "Packing Strategy",
+      "exception_handling": "Exception Handling",
+      "minimum_margin_pct": "Minimum Margin %",
+      "publishing_strategy": "Publishing Strategy",
+      "discount_type": "Discount Limit Type",
+      "discount_value": "Maximum Discount Value",
+      "required_approval_above": "Approval Threshold",
+      "_approval_role": "Approval Role",
+      "pending_review_threshold": "Pending Review Alert",
+      "price_expiration_days": "Price Expiry (days)",
+      "allow_negative_stock": "Allow Negative Stock",
+      "reservation_method": "Reservation Method",
+      "costing_method": "Costing Method",
+      "cycle_count_frequency_days": "Cycle Count Frequency (days)",
+      "stock_alert_threshold_pct": "Low Stock Alert %",
+      "recipe_version_policy": "Recipe Version Policy",
+      "recipe_approval_required": "Recipe Approval Required",
+      "auto_manufacturing": "Auto Manufacturing",
+      "bom_validation": "BOM Validation",
+      "waste_rules_enabled": "Waste Rules Enabled",
+      "cost_refresh_on_production": "Refresh Cost After Production",
+      "source_entry_policies": "Source Order Entry Policy",
+      "payment_proof_policy": "Payment Proof Policy",
+      "auto_reserve_inventory": "Auto Reserve Inventory",
+      "customer_matching_policy": "Customer Matching Policy",
+      "require_phone": "Require Phone Number",
+      "require_address": "Require Delivery Address",
+      "customer_lookup_enabled": "Customer Lookup Enabled",
+      "deposit_policy": "Deposit Policy",
+      "discount_policy": "Discount Policy",
+      "vehicle_assignment": "Vehicle Assignment",
+      "driver_assignment": "Driver Assignment",
+      "max_stops_per_route": "Max Stops per Route",
+      "partial_delivery": "Allow Partial Delivery",
+      "failed_delivery": "Failed Delivery Action",
+      "vip_order_threshold": "VIP Order Threshold",
+      "delivery_success_threshold": "Delivery Success Target %",
+      "follow_up_after_days": "Follow-up After (days)",
+      "loyalty_enabled": "Loyalty Program Enabled",
+      "default_utm_source": "Default UTM Source",
+      "campaign_attribution": "Campaign Attribution Model",
+      "conversion_window_days": "Conversion Window (days)",
+      "confidence_threshold": "Confidence Threshold",
+      "auto_decision_enabled": "Auto Decision Enabled",
+      "alert_threshold": "Alert Threshold",
+      "order_workflow": "Order Workflow Mode",
+      "preparation_workflow": "Preparation Workflow Mode",
+      "procurement_workflow": "Procurement Workflow Mode",
+      "email_enabled": "Email Notifications",
+      "sms_enabled": "SMS Notifications",
+      "whatsapp_enabled": "WhatsApp Notifications",
+      "push_enabled": "Push Notifications",
+      "escalation_after_minutes": "Escalation After (minutes)",
+      "woocommerce_enabled": "WooCommerce Integration",
+      "meta_enabled": "Meta (Facebook) Integration",
+      "google_enabled": "Google Ads Integration",
+      "max_login_attempts": "Max Login Attempts",
+      "mfa_enabled": "Enable MFA",
+      "password_expiry_days": "Password Expiry (days)",
+      "order_prefix": "Order Prefix",
+      "invoice_prefix": "Invoice Prefix",
+      "purchase_prefix": "Purchase Prefix",
+      "session_prefix": "Session Prefix",
+      "count_prefix": "Count Prefix",
+      "transfer_prefix": "Transfer Prefix",
+      "return_prefix": "Return Prefix",
+      "sequence_padding": "Sequence Padding",
+      "price_approval_required": "Price Approval Required",
+      "purchase_approval_threshold": "Purchase Approval Threshold",
+      "discount_approval_required": "Discount Approval Required",
+      "refund_approval_required": "Refund Approval Required"
+    },
+    "hints": {
+      "auto_price_review": "Automatically flag items for price review when cost changes",
+      "margin_alert_threshold": "Alert when margin falls below this percentage",
+      "price_publish_strategy": "How price changes are published to sales channels",
+      "approval_threshold": "Price changes above this % require approval before publishing",
+      "channel_publish_delay": "Minutes to wait before publishing price changes",
+      "allow_negative_margin": "Allow products to be sold below cost",
+      "default_sort_strategy": "Default item sorting for preparation and picking",
+      "max_batch_size": "Maximum items per preparation batch",
+      "max_orders_per_wave": "Maximum orders included in a single wave",
+      "require_batch_approval": "Require manager approval before executing each batch",
+      "reservation_mode": "When inventory is reserved for confirmed orders",
+      "shortage_action": "Action to take when reserved stock is unavailable",
+      "auto_reorder": "Automatically create purchase orders at reorder point",
+      "reorder_threshold_days": "Days of stock remaining to trigger reorder",
+      "allow_bom_substitution": "Allow alternate BOM components when primary is unavailable",
+      "scrap_tolerance_pct": "Maximum acceptable scrap percentage per production run",
+      "require_qc_sign_off": "Require QC approval before marking production complete",
+      "production_schedule_mode": "How production batches are scheduled",
+      "allow_order_edit_after_confirm": "Allow editing confirmed orders within the time window",
+      "edit_window_minutes": "Minutes after confirmation that edits are allowed",
+      "require_reason_on_cancel": "Require a reason note when cancelling orders",
+      "auto_cancel_unpaid_hours": "Automatically cancel unpaid orders after this many hours",
+      "cod_verification_required": "Require photo/signature proof for COD collections",
+      "allow_partial_delivery": "Allow delivering a subset of ordered items",
+      "carrier_selection_mode": "How delivery carrier is assigned to shipments",
+      "driver_reassignment_mode": "How drivers are reassigned when unavailable",
+      "proof_of_delivery_required": "Require delivery proof before marking delivered",
+      "failed_delivery_action": "Action when delivery attempt fails",
+      "enable_loyalty_points": "Award loyalty points on completed orders",
+      "points_per_egp": "Loyalty points awarded per unit spent",
+      "tier_upgrade_mode": "How customer tiers are evaluated and upgraded",
+      "campaign_daily_budget_cap": "Maximum daily spend across all campaigns",
+      "auto_pause_on_budget": "Automatically pause campaigns when budget is exhausted",
+      "channel_spend_limits": "Per-channel maximum daily spend limits",
+      "ai_suggestion_confidence": "Minimum confidence score for AI suggestions (0–100)",
+      "enable_demand_forecast": "Enable AI-based demand forecasting",
+      "forecast_horizon_days": "Days ahead to forecast demand",
+      "require_approval_for": "Which document types require explicit approval",
+      "escalation_timeout_hours": "Hours before pending approval is escalated",
+      "auto_approve_below": "Automatically approve amounts below this value",
+      "notification_channels": "Active channels for system notifications",
+      "quiet_hours_start": "Hour to begin quiet period (0–23)",
+      "quiet_hours_end": "Hour to end quiet period (0–23)",
+      "sync_frequency_minutes": "How often to sync with connected systems",
+      "conflict_resolution": "Strategy when sync conflicts are detected",
+      "session_timeout_minutes": "Minutes of inactivity before session expires",
+      "require_mfa": "Enforce multi-factor authentication for all users",
+      "password_complexity": "Minimum password complexity requirement",
+      "audit_retention_days": "Days to retain audit log entries",
+      "order_number_prefix": "Text prefix for order number sequences",
+      "order_number_padding": "Minimum digits in order number (zero-padded)",
+      "invoice_number_prefix": "Text prefix for invoice number sequences",
+      "invoice_number_padding": "Minimum digits in invoice number (zero-padded)",
+      "approval_levels": "Number of approval levels required",
+      "delegation_allowed": "Allow approvers to delegate approval authority",
+      "auto_approve_timeout": "Automatically approve if not actioned within timeout",
+      "allowed_payment_methods": "Payment methods accepted for orders",
+      "merge_orders": "Group multiple orders into a single preparation unit.",
+      "split_orders": "Allow splitting large orders across multiple waves.",
+      "partial_preparation": "Allow waves to be completed with partial inventory.",
+      "publishing_strategy": "Controls when approved prices are pushed to the product catalog, WooCommerce, and POS.",
+      "discount_value": "Maximum allowed discount per order. 0 = no limit.",
+      "required_approval_above": "Require manager approval when price change exceeds this value.",
+      "_approval_role": "The role required to approve price changes. Coming in a future update.",
+      "pending_review_threshold": "Show dashboard alert when pending reviews exceed this count.",
+      "price_expiration_days": "Auto-expire prices after this many days. Leave blank for no expiry.",
+      "minimum_margin_pct": "Minimum acceptable profit margin percentage.",
+      "discount_type": "How the maximum discount limit is expressed.",
+      "allow_negative_stock": "Allow stock levels to go below zero.",
+      "cycle_count_frequency_days": "How often to trigger inventory cycle count reminders.",
+      "stock_alert_threshold_pct": "Alert when stock falls below this percentage of reorder point.",
+      "recipe_approval_required": "Recipes must be approved before production use.",
+      "auto_manufacturing": "Automatically create production orders to meet demand.",
+      "bom_validation": "Validate BOM components are available before production.",
+      "waste_rules_enabled": "Track and account for production waste in cost calculations.",
+      "cost_refresh_on_production": "Update finished product cost immediately after each production run.",
+      "source_entry_policies": "Entry status per order source. Options are loaded from the Order Status registry.",
+      "payment_proof_policy": "When a payment receipt or screenshot is required per payment method.",
+      "auto_reserve_inventory": "Automatically reserve stock after a new order is created.",
+      "customer_matching_policy": "Controls how an order handles a phone number that already belongs to an existing customer.",
+      "customer_lookup_enabled": "Enable phone-based customer lookup when creating orders.",
+      "partial_delivery": "Allow delivering part of an order when full delivery is not possible.",
+      "vip_order_threshold": "Orders above this value are flagged as VIP.",
+      "confidence_threshold": "Min confidence score (0-1) for AI recommendations.",
+      "auto_decision_enabled": "Allow AI to make decisions automatically above the confidence threshold.",
+      "alert_threshold": "Show alerts when AI confidence drops below this value.",
+      "escalation_after_minutes": "Escalate unresolved alerts after this many minutes.",
+      "password_expiry_days": "Leave blank to disable password expiry.",
+      "sequence_padding": "Number of digits with zero-padding. 6 = 000001.",
+      "purchase_approval_threshold": "Require approval for purchases above this amount.",
+      "default_utm_source": "e.g. ecos-erp"
+    }
+  },
+  "deliveryCoverage": {
+    "search": "Search governorates or zones…",
+    "defaultCost": "Default cost…",
+    "applyToAll": "Apply to All",
+    "enableAll": "Enable All",
+    "disableAll": "Disable All",
+    "collapseAll": "Collapse All",
+    "expandAll": "Expand All",
+    "setDefaultCost": "Set default cost",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "zone": "Zone",
+    "shippingCost": "Shipping Cost",
+    "kpi": {
+      "coveredGovs": "Covered Governorates",
+      "activeZones": "Active Zones",
+      "coverage": "Coverage",
+      "avgShipping": "Avg Shipping"
+    },
+    "coverageProgress": "Coverage Progress",
+    "healthBar": {
+      "title": "Brand Configuration Health",
+      "channels": "Sales Channels",
+      "deliveryCoverage": "Delivery Coverage",
+      "deliveryZones": "Delivery Zones",
+      "deliveryWindows": "Delivery Windows",
+      "shippingPrices": "Shipping Prices"
+    },
+    "loading": "Loading coverage data…",
+    "emptyGovs": "No governorates match your search.",
+    "emptyZones": "No zones match your search.",
+    "save": "Save",
+    "zonesCount": "{{enabled}} / {{total}} zones",
+    "inherited": "Inherited",
+    "off": "Off",
+    "emptyInherit": "empty = inherit",
+    "toast": {
+      "failEnable": "Failed to enable {{name}}",
+      "failDisable": "Failed to disable {{name}}",
+      "invalidCost": "Enter a valid cost",
+      "failUpdateCost": "Failed to update default cost",
+      "allEnabled": "All 27 governorates enabled",
+      "allDisabled": "All governorates disabled",
+      "costApplied": "{{cost}} applied to all enabled governorates",
+      "invalidZoneCost": "Enter a valid cost or leave empty to inherit",
+      "failZoneCost": "Failed to update zone cost"
+    }
+  },
+  "deliveryShipping": {
+    "kpi": {
+      "governorates": "Governorates",
+      "zones": "Zones",
+      "activeZones": "Active Zones",
+      "avgCost": "Avg Shipping Cost"
+    },
+    "importing": "Importing Egypt default zones… {{done}}/{{total}}",
+    "search": "Search governorates or zones…",
+    "importDefaults": "Import Egypt Defaults",
+    "addZone": "Add Zone",
+    "addTitle": "Add New Zone",
+    "editTitle": "Edit Zone",
+    "form": {
+      "governorate": "Governorate *",
+      "zoneName": "Zone Name *",
+      "shippingCost": "Shipping Cost *",
+      "deliveryWindow": "Delivery Window",
+      "active": "Active zone",
+      "notes": "Notes"
+    },
+    "create": "Create Zone",
+    "saveChanges": "Save Changes",
+    "cancel": "Cancel",
+    "confirm": {
+      "importEgypt": "Import Egypt default zones for this brand?\n\nExisting governorates and zones will be preserved — only new ones are added.",
+      "deleteGov": "Delete \"{{name}}\" and all its zones? This cannot be undone.",
+      "deleteZone": "Delete zone \"{{name}}\"?"
+    },
+    "badge": {
+      "inactive": "Inactive",
+      "noCost": "No cost set"
+    },
+    "loading": "Loading…",
+    "emptySearch": "No results for \"{{search}}\"",
+    "emptyState": "No zones configured yet.",
+    "noZonesSearch": "No zones match your search.",
+    "zonesCount": "{{count}} zones",
+    "selectGovPlaceholder": "Select governorate…",
+    "governorateLabel": "Governorate:",
+    "zoneNamePlaceholder": "e.g. Nasr City",
+    "noWindowOption": "No specific window",
+    "notesPlaceholder": "Optional notes…",
+    "toast": {
+      "zoneCreated": "Zone created",
+      "zoneUpdated": "Zone updated",
+      "zoneDeleted": "Zone deleted",
+      "govDeleted": "Governorate deleted",
+      "createFail": "Failed to create zone",
+      "updateFail": "Failed to update zone",
+      "deleteFail": "Failed to delete",
+      "selectGov": "Select a governorate",
+      "selectGovDesc": "Choose from the list.",
+      "zoneNameRequired": "Zone name required",
+      "invalidShippingCost": "Enter a valid shipping cost",
+      "importComplete": "Import complete",
+      "importCompleteDesc": "{{done}} zones processed successfully.",
+      "importCompleteErrDesc": "{{done}} zones processed. {{errors}} errors."
+    },
+    "deleteGovTitle": "Delete governorate",
+    "editZoneTitle": "Edit zone",
+    "deleteZoneTitle": "Delete zone"
+  },
+  "wave": {
+    "tabs": {
+      "general": "General",
+      "automation": "Automation",
+      "schedule": "Schedule",
+      "notifications": "Notifications"
+    },
+    "info": {
+      "waveNumber": "Wave #",
+      "status": "Status",
+      "planningDate": "Planning Date",
+      "warehouseId": "Warehouse ID",
+      "orders": "Orders",
+      "products": "Products",
+      "completion": "Completion",
+      "approvedAt": "Approved At",
+      "startedAt": "Started At"
+    },
+    "notes": {
+      "title": "Wave Notes",
+      "placeholder": "Add internal notes for this wave…",
+      "hint": "Notes are internal and visible only to the operations team."
+    },
+    "actions": {
+      "generateDemand": {
+        "title": "Generate Demand",
+        "desc": "Calculate item quantities based on wave orders",
+        "button": "Generate"
+      },
+      "analyzeMaterials": {
+        "title": "Analyze Materials",
+        "desc": "Check BOM availability and flag shortages",
+        "button": "Analyze"
+      },
+      "recalculate": {
+        "title": "Recalculate Wave",
+        "desc": "Refresh all order and product totals",
+        "button": "Recalculate"
+      },
+      "approve": {
+        "title": "Approve Wave",
+        "desc": "Lock the wave and authorize preparation to begin",
+        "button": "Approve"
+      }
+    },
+    "emptyState": "Select a wave to manage its settings.",
+    "loading": "Loading…",
+    "notFound": "Wave not found.",
+    "automation": {
+      "title": "Automation Rules",
+      "desc": "Configure auto-triggers for demand generation and material analysis. Automation rules will fire based on wave lifecycle events.",
+      "autoGenerateDemand": "Auto-generate demand on order attachment",
+      "autoAnalyzeMaterials": "Auto-analyze materials after demand generation",
+      "comingSoon": "Automation rules are coming soon."
+    },
+    "schedule": {
+      "title": "Wave Scheduling",
+      "desc": "Schedule recurring wave creation and define cutoff times for order batching. Available in the next platform release.",
+      "comingSoon": "Scheduling configuration coming soon."
+    },
+    "notifications": {
+      "title": "Wave Notifications",
+      "desc": "Configure alerts for shortage detection, completion milestones, and approval requests. Notification channels will be available in a future update.",
+      "comingSoon": "Notification preferences coming soon."
+    },
+    "comingSoonBadge": "Coming soon",
+    "toast": {
+      "generateSuccess": "Demand generated",
+      "generateFail": "Failed to generate demand",
+      "analyzeSuccess": "Materials analyzed",
+      "analyzeFail": "Failed to analyze materials",
+      "recalcSuccess": "Wave recalculated",
+      "recalcFail": "Failed to recalculate wave",
+      "approveSuccess": "Wave approved",
+      "approveFail": "Failed to approve wave"
+    }
+  },
+  "marketingSettings": {
+    "title": "Marketing Settings",
+    "subtitle": "Configure Intelligence dashboard preferences and defaults",
+    "sections": {
+      "cache": "Cache & Refresh",
+      "preferences": "Dashboard Preferences",
+      "filters": "Default Filters",
+      "alerts": "Alerts"
+    },
+    "rows": {
+      "cacheTtl": {
+        "label": "Cache TTL",
+        "desc": "How long dashboard data is cached before refresh"
+      },
+      "autoRefresh": {
+        "label": "Auto Refresh",
+        "desc": "Automatically reload dashboard data"
+      },
+      "refreshInterval": {
+        "label": "Refresh Interval",
+        "desc": "How often to auto-refresh (when enabled)"
+      },
+      "defaultCurrency": {
+        "label": "Default Currency",
+        "desc": "Currency for all monetary displays"
+      },
+      "defaultDateRange": {
+        "label": "Default Date Range",
+        "desc": "Initial date range for new dashboard sessions"
+      },
+      "rowsPerPage": {
+        "label": "Rows per Page",
+        "desc": "Default number of rows in data tables"
+      },
+      "granularity": {
+        "label": "Chart Granularity",
+        "desc": "Default time granularity for trend charts"
+      },
+      "roasAlert": {
+        "label": "ROAS Alert Threshold",
+        "desc": "Alert when ROAS drops below this value"
+      },
+      "budgetAlert": {
+        "label": "Budget Alert %",
+        "desc": "Alert when budget utilization exceeds this %"
+      },
+      "showGrowth": {
+        "label": "Show growth indicators",
+        "desc": "Display % change vs. previous period on KPI cards."
+      }
+    },
+    "options": {
+      "ttl1": "1 minute",
+      "ttl5": "5 minutes",
+      "ttl15": "15 minutes",
+      "ttl30": "30 minutes",
+      "ttl60": "1 hour",
+      "interval30": "30 seconds",
+      "interval60": "1 minute",
+      "interval300": "5 minutes",
+      "egp": "EGP",
+      "usd": "USD",
+      "eur": "EUR (€)",
+      "gbp": "GBP (£)",
+      "off": "Off",
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "last7": "Last 7 days",
+      "last30": "Last 30 days",
+      "last90": "Last 90 days",
+      "thisMonth": "This month",
+      "lastMonth": "Last month",
+      "rows10": "10",
+      "rows25": "25",
+      "rows50": "50",
+      "hourly": "Hourly",
+      "daily": "Daily",
+      "weekly": "Weekly",
+      "monthly": "Monthly"
+    },
+    "reset": "Reset to defaults",
+    "save": "Save Settings",
+    "toast": {
+      "saved": "Settings saved",
+      "savedDesc": "Your marketing preferences have been updated.",
+      "failed": "Could not save settings"
+    }
+  },
+  "bridgeSettings": {
+    "pageTitle": "Claude Bridge Settings",
+    "worker": {
+      "title": "Worker",
+      "subtitle": "Worker Setup",
+      "noWorker": "No worker registered. Register one to start using Claude Bridge.",
+      "regAvailable": "Worker registration available in Sprint 2.",
+      "availableSoon": "Available in Sprint 2.",
+      "steps": {
+        "1": "Download the worker package below",
+        "2": "Extract to your local development machine",
+        "3": "Open a terminal in the extracted directory",
+        "4": "Run: npm install",
+        "5": "Configure .env with your worker token",
+        "6": "Run: npm start",
+        "7": "The worker will connect and appear as active above"
+      }
+    },
+    "defaults": {
+      "title": "Default Settings",
+      "repoPath": "Default Repository Path",
+      "branch": "Default Branch",
+      "savedNote": "Saved to browser — used to pre-fill the Create Task form."
+    },
+    "register": "Register Worker",
+    "saveDefaults": "Save Defaults",
+    "download": "Download Worker Package"
+  },
+  "geo": {
+    "searchPlaceholder": "Search governorates…",
+    "filter": {
+      "all": "All",
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "table": {
+      "arabicName": "Arabic Name",
+      "englishName": "English Name",
+      "defaultShipping": "Default Shipping",
+      "cities": "Cities",
+      "status": "Status"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "unsavedBanner": {
+      "message": "Unsaved order changes. Save to persist.",
+      "save": "Save Order",
+      "discard": "Discard"
+    },
+    "empty": {
+      "title": "No governorates found",
+      "desc": "Try a different search term."
+    },
+    "pageTitle": "Egypt Geography",
+    "pageDesc": "Governorates, cities, and shipping pricing for Egypt",
+    "breadcrumb": {
+      "module": "Logistics OS",
+      "page": "Egypt Geography"
+    },
+    "saving": "Saving…",
+    "systemBadge": "(system)",
+    "systemRecord": "System Record",
+    "ariaLabels": {
+      "dragHandle": "Drag handle",
+      "open": "Open"
+    },
+    "metrics": {
+      "total": "Governorates",
+      "active": "Active",
+      "totalCities": "Total Cities",
+      "activeCities": "Active Cities",
+      "avgShipping": "Avg. Shipping",
+      "providers": "Providers"
+    }
+  },
+  "govDrawer": {
+    "tabs": {
+      "overview": "Overview",
+      "cities": "Cities",
+      "providers": "Providers",
+      "activity": "Activity"
+    },
+    "drawerDesc": "Governorate · {{count}} cities · {{price}} default",
+    "statusBadge": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "system": "System Record"
+    },
+    "overview": {
+      "form": {
+        "nameEn": "Name (English)",
+        "nameAr": "Name (Arabic)",
+        "defaultShipping": "Default Shipping Cost",
+        "shippingHint": "Cities without a custom price inherit this value.",
+        "active": "Active"
+      },
+      "kpi": {
+        "cities": "Cities",
+        "providers": "Providers",
+        "coverage": "Coverage",
+        "avgShipping": "Avg Shipping",
+        "defaultShipping": "Default Shipping"
+      },
+      "danger": {
+        "title": "Danger Zone",
+        "deleteTitle": "Delete Governorate",
+        "deleteDesc": "Permanently remove this governorate and all associated zones and cities.",
+        "deleteButton": "Delete Governorate",
+        "deactivate": "Deactivate",
+        "activate": "Activate"
+      }
+    },
+    "cities": {
+      "search": "Search cities…",
+      "addTitle": "Add City",
+      "newTitle": "New City",
+      "form": {
+        "nameEn": "Name (English) *",
+        "nameAr": "Name (Arabic) *",
+        "shipping": "Custom Shipping"
+      },
+      "addButton": "Add City",
+      "adding": "Adding…",
+      "edit": "Edit",
+      "editButton": "Save",
+      "cancel": "Cancel",
+      "empty": "No cities yet.",
+      "loading": "Loading cities…",
+      "inactive": "Inactive",
+      "remote": "Remote",
+      "govPrice": "↑ gov price",
+      "aliasCount": "{{count}} alias(es)",
+      "deactivate": "Deactivate",
+      "activate": "Activate",
+      "systemTooltip": "System cities are managed by seed only.",
+      "editCity": "Edit city",
+      "toggleCity": "Toggle city",
+      "deleteCity": "Delete city"
+    },
+    "providers": {
+      "empty": "No providers configured for this governorate.",
+      "desc": "Add provider aliases to cities in the Cities tab. Each alias maps a city name to how a courier labels it in their system.",
+      "linkButton": "Link Provider",
+      "comingSoon": "Direct provider integrations — coming in Logistics Phase 2.",
+      "aliasDesc": "City aliases define how each courier labels this governorate's cities.",
+      "aliasCount": "{{count}} city alias(es)",
+      "noAliases": "No aliases yet"
+    },
+    "activity": {
+      "intro": "Chronological record of changes. Price changes, status changes, and alias activity appear here.",
+      "seeded": "Governorate seeded",
+      "empty": "No activity recorded yet.",
+      "events": {
+        "created": "Governorate created",
+        "updated": "Details updated",
+        "statusChanged": "Status changed",
+        "cityAdded": "City added",
+        "cityRemoved": "City removed",
+        "shippingUpdated": "Shipping cost updated"
+      },
+      "legend": {
+        "title": "Tracked Events",
+        "events": "created, updated, status changes, city modifications, shipping updates",
+        "priceChanged": "Price changed",
+        "statusChanged": "Status changed",
+        "aliasChanged": "Alias added / removed",
+        "cityOrderChanged": "City order changed",
+        "cityStatusChanged": "Child city status changed"
+      }
+    },
+    "save": "Save Changes",
+    "cancel": "Cancel",
+    "saving": "Saving…",
+    "toast": {
+      "saved": "Governorate saved",
+      "saveFail": "Failed to save",
+      "deleted": "Governorate deleted",
+      "deleteFail": "Failed to delete",
+      "activated": "Governorate activated",
+      "deactivated": "Governorate deactivated",
+      "deactivatedDesc": "All child cities have been deactivated.",
+      "failed": "Failed",
+      "error": "Error",
+      "cityAdded": "City added",
+      "cityAddFail": "Failed to add city",
+      "citySaved": "City saved",
+      "citySaveFail": "Failed to save city",
+      "cityDeleted": "City deleted",
+      "cityDeleteFail": "Failed to delete city",
+      "cityToggled": "City status updated",
+      "cityToggleFail": "Failed to update city"
+    }
+  },
+  "cityDrawer": {
+    "description": "City details & provider aliases",
+    "statusBadge": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "system": "System Record",
+      "govPrice": "Using governorate price"
+    },
+    "saving": "Saving…",
+    "form": {
+      "nameEn": "Name (English)",
+      "nameAr": "Name (Arabic)",
+      "customShipping": "Custom Shipping Price",
+      "hint": "Leave empty to inherit from governorate ({{price}})",
+      "effectivePrice": "Effective price: {{price}}"
+    },
+    "aliases": {
+      "title": "Provider Aliases",
+      "desc": "Map this city to provider-specific location codes",
+      "loading": "Loading aliases…",
+      "form": {
+        "provider": "Provider",
+        "alias": "Alias / Code",
+        "anyProvider": "Any",
+        "code": "Code"
+      },
+      "add": "Add Alias",
+      "empty": "No aliases configured."
+    },
+    "save": "Save City",
+    "cancel": "Cancel",
+    "toast": {
+      "saved": "City saved",
+      "saveFail": "Save failed",
+      "aliasAdded": "Alias added",
+      "aliasRemoved": "Alias removed",
+      "aliasFail": "Failed"
+    }
+  },
+  "masterGeo": {
+    "common": {
+      "cancel": "Cancel",
+      "save": "Save",
+      "create": "Create",
+      "saving": "Saving…",
+      "edit": "Edit",
+      "delete": "Delete",
+      "archive": "Archive",
+      "loading": "Loading…",
+      "pleaseWait": "Please wait…",
+      "error": "Error",
+      "saveFailed": "Failed to save",
+      "actionFailed": "Action failed"
+    },
+    "badge": {
+      "archived": "Archived",
+      "inactive": "Inactive"
+    },
+    "difficulty": {
+      "easy": "Easy",
+      "medium": "Medium",
+      "hard": "Hard"
+    },
+    "gov": {
+      "addTitle": "Add Governorate",
+      "editTitle": "Edit Governorate",
+      "nameEn": "Name (English) *",
+      "nameEnPlaceholder": "Cairo",
+      "nameAr": "Name (Arabic)",
+      "nameArPlaceholder": "Arabic name",
+      "code": "Code *",
+      "codeHint": "(immutable, 2–6 chars, e.g. CAI)",
+      "toastCreated": "Governorate created",
+      "toastUpdated": "Governorate updated"
+    },
+    "zone": {
+      "addTitle": "Add Zone",
+      "editTitle": "Edit Zone",
+      "name": "Zone Name *",
+      "namePlaceholder": "Nasr City",
+      "codeImmutable": "Code (immutable)",
+      "slaHours": "SLA Hours",
+      "priority": "Priority (1–10)",
+      "difficulty": "Difficulty",
+      "difficultyPlaceholder": "Select difficulty",
+      "difficultyNone": "— None —",
+      "hub": "Logistics Hub",
+      "hubPlaceholder": "Hub name or location",
+      "notes": "Notes",
+      "notesPlaceholder": "Optional notes…",
+      "toastCreated": "Zone created",
+      "toastUpdated": "Zone updated"
+    },
+    "confirm": {
+      "deleteTitle": "Delete?",
+      "archiveTitle": "Archive?",
+      "deleteDesc": "Permanently delete \"{{name}}\"? This cannot be undone.",
+      "archiveDesc": "Archive \"{{name}}\"? It will no longer be available for new records.",
+      "archivedToast": "{{name}} archived",
+      "deletedToast": "{{name}} deleted"
+    },
+    "row": {
+      "sla": "{{hours}}h SLA",
+      "brandZones_one": "{{count}} brand zone",
+      "brandZones_other": "{{count}} brand zones",
+      "brandZones": "Brand zones"
+    },
+    "page": {
+      "title": "Egypt Geography",
+      "summary": "{{govs}} governorates · {{zones}} zones",
+      "archivedSuffix": " · {{count}} archived",
+      "showArchived": "Show archived",
+      "hidingArchived": "Hiding archived",
+      "searchPlaceholder": "Search by name or code…",
+      "noGovs": "No governorates found",
+      "zonesCount_one": "{{count}} zone",
+      "zonesCount_other": "{{count}} zones",
+      "selectGovPrompt": "Select a governorate to view its zones",
+      "loadingZones": "Loading zones…",
+      "noZones": "No zones found",
+      "zonesCount": "Zones"
+    }
+  }
+}

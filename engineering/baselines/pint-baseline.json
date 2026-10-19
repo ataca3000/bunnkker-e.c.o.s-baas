@@ -1,0 +1,3495 @@
+{
+  "_comment": "Guardian Pint ratchet baseline. May only shrink. See engineering/quality-guardian/README.md.",
+  "total": 628,
+  "files": {
+    "backend/config/engineering.php": [
+      "binary_operator_spaces",
+      "fully_qualified_strict_types"
+    ],
+    "backend/database/seeders/DatabaseSeeder.php": [
+      "no_unused_imports"
+    ],
+    "backend/Modules/Commerce/Orders/Application/Actions/CreateManualOrderAction.php": [
+      "binary_operator_spaces",
+      "blank_line_before_statement",
+      "braces_position",
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Commerce/Orders/Application/Actions/PatchOrderAction.php": [
+      "binary_operator_spaces",
+      "braces_position",
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Commerce/Orders/Domain/Enums/OrderStatus.php": [
+      "binary_operator_spaces",
+      "not_operator_with_successor_space",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Commerce/Orders/Presentation/Http/Resources/OrderResource.php": [
+      "binary_operator_spaces",
+      "method_argument_space",
+      "not_operator_with_successor_space",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Core/Traits/HasApiResponse.php": [
+      "no_superfluous_phpdoc_tags",
+      "phpdoc_trim"
+    ],
+    "backend/Modules/Crm/Customers/Domain/Events/CustomerArchived.php": [
+      "line_ending"
+    ],
+    "backend/Modules/Crm/Customers/Domain/Events/CustomerCreated.php": [
+      "line_ending"
+    ],
+    "backend/Modules/Crm/Customers/Domain/Events/CustomerMerged.php": [
+      "line_ending"
+    ],
+    "backend/Modules/Crm/Customers/Domain/Events/CustomerRestored.php": [
+      "line_ending"
+    ],
+    "backend/Modules/Crm/Customers/Domain/Events/CustomerUpdated.php": [
+      "line_ending"
+    ],
+    "backend/Modules/Crm/Customers/Domain/Services/CustomerMergeService.php": [
+      "line_ending",
+      "not_operator_with_successor_space",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Crm/Customers/Domain/Services/CustomerService.php": [
+      "line_ending",
+      "not_operator_with_successor_space",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Crm/Executive/Domain/Services/LoyaltyPerformanceService.php": [
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Crm/Executive/Domain/Services/SalesPerformanceService.php": [
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Crm/Executive/Domain/Services/SatisfactionService.php": [
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Crm/Executive/Domain/Services/ServicePerformanceService.php": [
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Crm/Intelligence/Domain/Enums/RfmSegment.php": [
+      "strict_comparison"
+    ],
+    "backend/Modules/Crm/Intelligence/Domain/Services/CustomerAnalyticsService.php": [
+      "braces_position",
+      "global_namespace_import",
+      "ordered_imports",
+      "single_line_empty_body"
+    ],
+    "backend/Modules/Crm/Intelligence/Domain/Services/CustomerIntelligenceService.php": [
+      "braces_position",
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Crm/Intelligence/Domain/Services/HealthScoreService.php": [
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Crm/Intelligence/Domain/Support/IntelligenceWeights.php": [
+      "class_attributes_separation"
+    ],
+    "backend/Modules/Crm/Intelligence/Presentation/Http/Controllers/PurchaseFactController.php": [
+      "braces_position",
+      "no_unused_imports",
+      "single_line_empty_body"
+    ],
+    "backend/Modules/Crm/Loyalty/Domain/Services/PointsService.php": [
+      "line_ending"
+    ],
+    "backend/Modules/Crm/Sales/Domain/Events/LeadConverted.php": [
+      "line_ending"
+    ],
+    "backend/Modules/Crm/Sales/Domain/Events/LeadCreated.php": [
+      "line_ending"
+    ],
+    "backend/Modules/Crm/Sales/Domain/Events/LeadLost.php": [
+      "line_ending"
+    ],
+    "backend/Modules/Crm/Sales/Domain/Events/LeadQualified.php": [
+      "line_ending"
+    ],
+    "backend/Modules/Crm/Sales/Domain/Events/OpportunityCreated.php": [
+      "line_ending"
+    ],
+    "backend/Modules/Crm/Sales/Domain/Events/OpportunityLost.php": [
+      "line_ending"
+    ],
+    "backend/Modules/Crm/Sales/Domain/Events/OpportunityUpdated.php": [
+      "line_ending"
+    ],
+    "backend/Modules/Crm/Sales/Domain/Events/OpportunityWon.php": [
+      "line_ending"
+    ],
+    "backend/Modules/Crm/Sales/Domain/Events/QuoteApproved.php": [
+      "line_ending"
+    ],
+    "backend/Modules/Crm/Sales/Domain/Events/QuoteCreated.php": [
+      "line_ending"
+    ],
+    "backend/Modules/Crm/Sales/Domain/Events/QuoteRejected.php": [
+      "line_ending"
+    ],
+    "backend/Modules/Crm/Sales/Domain/Services/LeadService.php": [
+      "braces_position",
+      "line_ending",
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Crm/Sales/Domain/Services/OpportunityService.php": [
+      "braces_position",
+      "line_ending",
+      "single_line_empty_body"
+    ],
+    "backend/Modules/Crm/Sales/Domain/Services/QuoteService.php": [
+      "line_ending",
+      "no_unused_imports"
+    ],
+    "backend/Modules/Crm/Service/Domain/Events/KnowledgeArticleArchived.php": [
+      "line_ending"
+    ],
+    "backend/Modules/Crm/Service/Domain/Events/KnowledgeArticlePublished.php": [
+      "line_ending"
+    ],
+    "backend/Modules/Crm/Service/Domain/Events/TicketAssigned.php": [
+      "line_ending"
+    ],
+    "backend/Modules/Crm/Service/Domain/Events/TicketClosed.php": [
+      "line_ending"
+    ],
+    "backend/Modules/Crm/Service/Domain/Events/TicketEscalated.php": [
+      "line_ending"
+    ],
+    "backend/Modules/Crm/Service/Domain/Events/TicketOpened.php": [
+      "line_ending"
+    ],
+    "backend/Modules/Crm/Service/Domain/Events/TicketResolved.php": [
+      "line_ending"
+    ],
+    "backend/Modules/Finance/Analytics/Domain/Services/FinancialMetricsService.php": [
+      "braces_position",
+      "phpdoc_align",
+      "single_line_empty_body",
+      "strict_comparison"
+    ],
+    "backend/Modules/Finance/Infrastructure/Providers/FinanceServiceProvider.php": [
+      "not_operator_with_successor_space",
+      "ordered_imports",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Finance/Integration/Application/Jobs/ProcessFinancialEventJob.php": [
+      "global_namespace_import"
+    ],
+    "backend/Modules/Finance/Integration/Domain/ValueObjects/FinancialEvent.php": [
+      "braces_position",
+      "phpdoc_align",
+      "single_line_empty_body"
+    ],
+    "backend/Modules/Finance/Intelligence/Domain/Services/ForecastService.php": [
+      "braces_position",
+      "single_line_empty_body",
+      "strict_comparison"
+    ],
+    "backend/Modules/Finance/Intelligence/Domain/Services/ProfitabilityService.php": [
+      "strict_comparison"
+    ],
+    "backend/Modules/Finance/Intelligence/Domain/Services/ScenarioEngine.php": [
+      "braces_position",
+      "phpdoc_align",
+      "single_line_empty_body",
+      "strict_comparison"
+    ],
+    "backend/Modules/Finance/Intelligence/Domain/Services/TrendAnalysisService.php": [
+      "braces_position",
+      "single_line_empty_body",
+      "strict_comparison"
+    ],
+    "backend/Modules/Finance/Intelligence/Domain/Services/VarianceAnalysisService.php": [
+      "braces_position",
+      "single_line_empty_body",
+      "strict_comparison"
+    ],
+    "backend/Modules/Finance/Ledger/Domain/Exceptions/FinanceException.php": [
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Finance/Ledger/Domain/Services/ChartOfAccountsService.php": [
+      "not_operator_with_successor_space",
+      "trailing_comma_in_multiline",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Finance/Posting/Domain/Services/PostingCoordinator.php": [
+      "braces_position",
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Finance/Posting/Domain/Strategies/DirectPostingStrategy.php": [
+      "phpdoc_align"
+    ],
+    "backend/Modules/Finance/Reporting/Domain/Services/FinancialStatementService.php": [
+      "braces_position",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Finance/Vat/Domain/Services/VatService.php": [
+      "braces_position",
+      "no_unused_imports",
+      "single_line_empty_body"
+    ],
+    "backend/Modules/Finance/Workspace/Domain/Services/CfoWorkspaceService.php": [
+      "braces_position",
+      "ordered_imports",
+      "single_line_empty_body"
+    ],
+    "backend/Modules/Hr/Attendance/Domain/Services/AttendanceRegistrationService.php": [
+      "braces_position",
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Hr/Attendance/Domain/Services/LeaveRequestService.php": [
+      "braces_position",
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Hr/Attendance/Presentation/Http/Controllers/AttendanceController.php": [
+      "braces_position",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Hr/Attendance/Presentation/Http/Controllers/LeaveRequestController.php": [
+      "braces_position",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Hr/Compensation/Domain/Exceptions/CompensationException.php": [
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Hr/Compensation/Domain/Models/Payslip.php": [
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Hr/Compensation/Domain/Services/Compensation360Service.php": [
+      "braces_position",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Hr/Compensation/Domain/Services/CompensationAdjustmentService.php": [
+      "braces_position",
+      "no_unused_imports",
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Hr/Compensation/Infrastructure/Database/Migrations/2026_12_15_610001_enhance_hr_compensation_traceability.php": [
+      "braces_position",
+      "class_definition",
+      "fully_qualified_strict_types",
+      "not_operator_with_successor_space",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Hr/Compensation/Presentation/Http/Controllers/CompensationController.php": [
+      "braces_position",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Hr/Compensation/Presentation/Http/Controllers/CompensationExplainabilityController.php": [
+      "braces_position",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Hr/Executive/Domain/Services/HrAnalyticsService.php": [
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Hr/Executive/Presentation/Http/Controllers/HrExecutiveController.php": [
+      "braces_position",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Hr/Infrastructure/Providers/HrServiceProvider.php": [
+      "not_operator_with_successor_space",
+      "ordered_imports",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Hr/Performance/Domain/Models/Goal.php": [
+      "strict_comparison"
+    ],
+    "backend/Modules/Hr/Performance/Domain/Services/BonusRecommendationService.php": [
+      "braces_position",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Hr/Performance/Domain/Services/GoalService.php": [
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Hr/Performance/Domain/Services/ManagerReviewService.php": [
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Hr/Performance/Domain/Services/PerformanceDashboardService.php": [
+      "braces_position",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Hr/Performance/Domain/Services/PerformanceEvaluationService.php": [
+      "braces_position",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Hr/Performance/Presentation/Http/Controllers/PerformanceController.php": [
+      "braces_position",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Hr/Recruitment/Domain/Services/ApplicantTimelineService.php": [
+      "not_operator_with_successor_space",
+      "trailing_comma_in_multiline",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Hr/Recruitment/Domain/Services/BulkRecruitmentService.php": [
+      "braces_position",
+      "global_namespace_import",
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Hr/Recruitment/Domain/Services/JobApplicationService.php": [
+      "braces_position",
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Hr/Recruitment/Presentation/Http/Controllers/ExitController.php": [
+      "braces_position",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Hr/Recruitment/Presentation/Http/Controllers/HiringController.php": [
+      "braces_position",
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Hr/Recruitment/Presentation/Http/Controllers/PublicCareersController.php": [
+      "braces_position",
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Hr/Recruitment/Presentation/Http/Controllers/RecruitmentController.php": [
+      "braces_position",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Hr/Workforce/Domain/Services/Employee360Service.php": [
+      "braces_position",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Hr/Workforce/Presentation/Http/Controllers/EmployeeController.php": [
+      "braces_position",
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Hr/Workforce/Presentation/Http/Controllers/OrganizationChartController.php": [
+      "braces_position",
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/IAM/Application/Services/AuthorizationGateway.php": [
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/IAM/Application/Services/RoleTemplateImportService.php": [
+      "braces_position",
+      "global_namespace_import",
+      "not_operator_with_successor_space",
+      "ordered_imports",
+      "single_line_empty_body",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/IAM/Application/Services/RoleTemplateRepository.php": [
+      "braces_position",
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "strict_comparison",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/IAM/Application/Services/ScopeResolver.php": [
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/IAM/Application/Services/UserIdentityService.php": [
+      "braces_position",
+      "global_namespace_import",
+      "new_with_parentheses",
+      "ordered_imports",
+      "single_line_empty_body"
+    ],
+    "backend/Modules/IAM/Application/Services/UserInvitationService.php": [
+      "braces_position",
+      "global_namespace_import",
+      "ordered_imports",
+      "single_line_empty_body"
+    ],
+    "backend/Modules/IAM/Application/Services/UserOrganizationAssignmentService.php": [
+      "braces_position",
+      "global_namespace_import",
+      "not_operator_with_successor_space",
+      "ordered_imports",
+      "single_line_empty_body",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/IAM/Application/Services/UserRoleAssignmentService.php": [
+      "braces_position",
+      "global_namespace_import",
+      "ordered_imports",
+      "single_line_empty_body"
+    ],
+    "backend/Modules/IAM/Application/Services/VisibilityResolver.php": [
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/IAM/Domain/Contracts/RoleCompositionInterface.php": [
+      "phpdoc_align"
+    ],
+    "backend/Modules/IAM/Domain/Policies/PolicyContext.php": [
+      "single_line_empty_body"
+    ],
+    "backend/Modules/IAM/Domain/Policies/PolicyResult.php": [
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/IAM/Domain/ValueObjects/AuthorizationDecision.php": [
+      "new_with_parentheses",
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/IAM/Domain/ValueObjects/EffectiveRoleProfile.php": [
+      "braces_position",
+      "not_operator_with_successor_space",
+      "phpdoc_align",
+      "single_line_empty_body",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/IAM/Domain/ValueObjects/PermissionName.php": [
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/IAM/Domain/ValueObjects/ScopeConstraint.php": [
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/IAM/Infrastructure/Providers/IamServiceProvider.php": [
+      "ordered_imports"
+    ],
+    "backend/Modules/Inventory/CountSessions/Application/Actions/ApproveCountSessionAction.php": [
+      "braces_position",
+      "not_operator_with_successor_space",
+      "ordered_imports",
+      "single_line_empty_body",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Inventory/DomainEvents/Events/InventoryStockAdjusted.php": [
+      "line_ending"
+    ],
+    "backend/Modules/Inventory/DomainEvents/Events/InventoryStockShipped.php": [
+      "line_ending"
+    ],
+    "backend/Modules/Inventory/DomainEvents/Events/InventoryTransferred.php": [
+      "line_ending"
+    ],
+    "backend/Modules/Inventory/InventoryItems/Application/Actions/AdjustmentOutAction.php": [
+      "braces_position",
+      "line_ending",
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Inventory/InventoryItems/Application/Actions/DirectIssueStockAction.php": [
+      "braces_position",
+      "line_ending",
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Inventory/InventoryItems/Application/Actions/ShipStockAction.php": [
+      "braces_position",
+      "line_ending",
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Inventory/InventoryItems/Domain/DTO/InventorySummary.php": [
+      "braces_position",
+      "phpdoc_align",
+      "single_line_empty_body"
+    ],
+    "backend/Modules/Inventory/Products/Infrastructure/Repositories/EloquentProductRepository.php": [
+      "concat_space",
+      "not_operator_with_successor_space",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Inventory/Products/Presentation/Http/Requests/UpdateProductRequest.php": [
+      "line_ending",
+      "not_operator_with_successor_space",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Inventory/StockLedger/Application/Actions/AddManualStockAction.php": [
+      "braces_position",
+      "line_ending",
+      "single_line_empty_body"
+    ],
+    "backend/Modules/Inventory/Transfer/Application/Actions/TransferStockAction.php": [
+      "braces_position",
+      "line_ending",
+      "not_operator_with_successor_space",
+      "ordered_imports",
+      "single_line_empty_body",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Logistics/Automation/Domain/Services/AutomationEngine.php": [
+      "braces_position",
+      "phpdoc_align",
+      "single_line_empty_body"
+    ],
+    "backend/Modules/Logistics/Carriers/Domain/Exceptions/CarrierException.php": [
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Logistics/Carriers/Presentation/Http/Controllers/CarrierController.php": [
+      "braces_position",
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Logistics/Carriers/Presentation/Http/Resources/CarrierAccountResource.php": [
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Logistics/Delivery/Domain/Exceptions/DeliveryException.php": [
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Logistics/Delivery/Domain/Models/Delivery.php": [
+      "not_operator_with_successor_space",
+      "ordered_imports",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Logistics/Delivery/Domain/Models/ProofOfDelivery.php": [
+      "not_operator_with_successor_space",
+      "trailing_comma_in_multiline",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Logistics/Delivery/Domain/Services/DeliveryReturnService.php": [
+      "braces_position",
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Logistics/Delivery/Infrastructure/Repositories/EloquentDeliveryRepository.php": [
+      "not_operator_with_successor_space",
+      "trailing_comma_in_multiline",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Logistics/Delivery/Presentation/Http/Controllers/DeliveryAttemptController.php": [
+      "braces_position",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Logistics/Delivery/Presentation/Http/Controllers/DeliveryController.php": [
+      "braces_position",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Logistics/Delivery/Presentation/Http/Controllers/DeliveryReturnController.php": [
+      "braces_position",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Logistics/Delivery/Presentation/Http/Resources/DeliveryResource.php": [
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Logistics/Delivery/Presentation/Http/Resources/DeliveryReturnResource.php": [
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Logistics/Delivery/Presentation/Http/Resources/PodResource.php": [
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Logistics/Dispatch/Domain/Exceptions/DispatchException.php": [
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Logistics/Dispatch/Domain/Exceptions/DispatchOperationsException.php": [
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Logistics/Dispatch/Domain/Services/AssignmentLockService.php": [
+      "braces_position",
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Logistics/Dispatch/Domain/Services/DispatchQueueService.php": [
+      "braces_position",
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Logistics/Dispatch/Domain/Services/DispatchReleaseService.php": [
+      "braces_position",
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Logistics/Dispatch/Domain/Services/ResourceAllocationService.php": [
+      "braces_position",
+      "lambda_not_used_import",
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "spaces_inside_parentheses",
+      "trailing_comma_in_multiline",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Logistics/Dispatch/Domain/Services/ResourcePoolService.php": [
+      "braces_position",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Logistics/Dispatch/Presentation/Http/Controllers/DispatchController.php": [
+      "braces_position",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Logistics/Dispatch/Presentation/Http/Controllers/DispatchOperationsController.php": [
+      "braces_position",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Logistics/Dispatch/Presentation/Http/Resources/DispatchProposalResource.php": [
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Logistics/Distribution/Domain/Services/DeliveryService.php": [
+      "not_operator_with_successor_space",
+      "trailing_comma_in_multiline",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Logistics/Distribution/Domain/Services/TripService.php": [
+      "not_operator_with_successor_space",
+      "trailing_comma_in_multiline",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Logistics/Distribution/Presentation/Http/Controllers/DeliveryController.php": [
+      "braces_position",
+      "class_attributes_separation",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Logistics/Distribution/Presentation/Http/Controllers/SettlementController.php": [
+      "braces_position",
+      "class_attributes_separation",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Logistics/Distribution/Presentation/Http/Controllers/TripController.php": [
+      "braces_position",
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Logistics/Distribution/Presentation/Http/Resources/TripResource.php": [
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Logistics/Drivers/Domain/Services/DriverVehicleAssignmentService.php": [
+      "braces_position",
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Logistics/Drivers/Presentation/Http/Controllers/DriverController.php": [
+      "braces_position",
+      "not_operator_with_successor_space",
+      "ordered_imports",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Logistics/Drivers/Presentation/Http/Resources/DriverResource.php": [
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Logistics/Fleet/Domain/Contracts/FleetReadinessQueryInterface.php": [
+      "phpdoc_align"
+    ],
+    "backend/Modules/Logistics/Fleet/Domain/Exceptions/FleetException.php": [
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Logistics/Fleet/Domain/Models/FleetUnit.php": [
+      "global_namespace_import",
+      "not_operator_with_successor_space",
+      "ordered_imports",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Logistics/Fleet/Domain/Services/InspectionService.php": [
+      "braces_position",
+      "not_operator_with_successor_space",
+      "phpdoc_align",
+      "single_line_empty_body",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Logistics/Fleet/Domain/Services/MaintenanceSchedulingService.php": [
+      "braces_position",
+      "no_unused_imports",
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Logistics/Fleet/Domain/ValueObjects/HealthScore.php": [
+      "braces_position",
+      "phpdoc_align",
+      "single_line_empty_body"
+    ],
+    "backend/Modules/Logistics/Fleet/Presentation/Http/Controllers/FleetUnitController.php": [
+      "braces_position",
+      "no_empty_phpdoc",
+      "no_superfluous_phpdoc_tags",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Logistics/Fleet/Presentation/Http/Controllers/FuelController.php": [
+      "braces_position",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Logistics/Fleet/Presentation/Http/Controllers/InspectionController.php": [
+      "braces_position",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Logistics/Fleet/Presentation/Http/Controllers/MaintenanceController.php": [
+      "braces_position",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Logistics/Fleet/Presentation/Http/Resources/FleetResource.php": [
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Logistics/Fleet/Presentation/Http/Resources/FleetUnitResource.php": [
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Logistics/Fleet/Presentation/Http/Resources/InspectionResource.php": [
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Logistics/Fleet/Presentation/Http/Resources/MaintenancePlanResource.php": [
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Logistics/Intelligence/Domain/Services/DecisionPriorityEngine.php": [
+      "phpdoc_align"
+    ],
+    "backend/Modules/Logistics/Network/Domain/Exceptions/NetworkException.php": [
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Logistics/Network/Presentation/Http/Controllers/NetworkController.php": [
+      "braces_position",
+      "no_unused_imports",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Logistics/Network/Presentation/Http/Resources/ServiceAreaResource.php": [
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Logistics/Operations/Domain/Exceptions/OperationsException.php": [
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Logistics/Operations/Domain/Models/OperationalException.php": [
+      "not_operator_with_successor_space",
+      "trailing_comma_in_multiline",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Logistics/Operations/Domain/Services/CapacityMonitoringService.php": [
+      "not_operator_with_successor_space",
+      "trailing_comma_in_multiline",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Logistics/Operations/Domain/Services/ExceptionQueryService.php": [
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Logistics/Operations/Domain/Services/ExceptionRegistryService.php": [
+      "not_operator_with_successor_space",
+      "ordered_imports",
+      "trailing_comma_in_multiline",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Logistics/Operations/Domain/Services/PoolHealthService.php": [
+      "braces_position",
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Logistics/Operations/Infrastructure/Providers/LogisticsOperationsServiceProvider.php": [
+      "ordered_imports"
+    ],
+    "backend/Modules/Logistics/Operations/Presentation/Http/Controllers/CapacityOperationsController.php": [
+      "braces_position",
+      "no_unused_imports",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Logistics/Operations/Presentation/Http/Controllers/ExceptionController.php": [
+      "braces_position",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Logistics/Operations/Presentation/Http/Controllers/ResourcePoolController.php": [
+      "braces_position",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Logistics/Routing/Domain/Exceptions/RoutingException.php": [
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Logistics/Routing/Domain/Services/EtaEngine.php": [
+      "not_operator_with_successor_space",
+      "phpdoc_align",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Logistics/Routing/Domain/Services/RoutePlannerService.php": [
+      "braces_position",
+      "not_operator_with_successor_space",
+      "phpdoc_align",
+      "single_line_empty_body",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Logistics/Routing/Domain/Strategies/SequentialZoneStrategy.php": [
+      "no_unused_imports",
+      "not_operator_with_successor_space",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Logistics/Routing/Presentation/Http/Resources/RoutePlanResource.php": [
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Logistics/ShippingCompanies/Presentation/Http/Controllers/ShippingCompanyController.php": [
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Logistics/Vehicles/Domain/Exceptions/VehicleException.php": [
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Logistics/Vehicles/Domain/Services/VehicleMaintenanceService.php": [
+      "not_operator_with_successor_space",
+      "trailing_comma_in_multiline",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Logistics/Vehicles/Domain/Services/VehicleService.php": [
+      "braces_position",
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Logistics/Vehicles/Presentation/Http/Controllers/VehicleController.php": [
+      "braces_position",
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Logistics/Vehicles/Presentation/Http/Controllers/VehicleMaintenanceController.php": [
+      "braces_position",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Logistics/Vehicles/Presentation/Http/Resources/VehicleResource.php": [
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/Manufacturing/BillsOfMaterials/Application/Actions/CreateBomAction.php": [
+      "braces_position",
+      "line_ending",
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Manufacturing/BillsOfMaterials/Application/Actions/SetBomStatusAction.php": [
+      "braces_position",
+      "line_ending",
+      "single_line_empty_body"
+    ],
+    "backend/Modules/Manufacturing/BillsOfMaterials/Application/Actions/UpdateBomAction.php": [
+      "braces_position",
+      "line_ending",
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Manufacturing/BillsOfMaterials/Application/DTO/BomDTO.php": [
+      "braces_position",
+      "line_ending",
+      "single_line_empty_body"
+    ],
+    "backend/Modules/Manufacturing/BillsOfMaterials/Domain/Contracts/BomRepositoryInterface.php": [
+      "line_ending"
+    ],
+    "backend/Modules/Manufacturing/BillsOfMaterials/Infrastructure/Repositories/EloquentBomRepository.php": [
+      "braces_position",
+      "line_ending",
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Manufacturing/BillsOfMaterials/Presentation/Http/Controllers/BomController.php": [
+      "line_ending"
+    ],
+    "backend/Modules/Manufacturing/BillsOfMaterials/Presentation/Http/Requests/SetBomStatusRequest.php": [
+      "line_ending"
+    ],
+    "backend/Modules/Manufacturing/BillsOfMaterials/Presentation/Http/Requests/UpdateBomRequest.php": [
+      "line_ending"
+    ],
+    "backend/Modules/Operations/Fulfillment/Application/Workflows/CancelOrderWorkflow.php": [
+      "binary_operator_spaces",
+      "braces_position",
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Operations/Fulfillment/Application/Workflows/ConfirmOrderWorkflow.php": [
+      "binary_operator_spaces",
+      "braces_position",
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Operations/Fulfillment/Application/Workflows/MoveToPreparationWorkflow.php": [
+      "binary_operator_spaces",
+      "braces_position",
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Operations/Fulfillment/Application/Workflows/ProcessOrderWorkflow.php": [
+      "binary_operator_spaces",
+      "braces_position",
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Operations/Fulfillment/Application/Workflows/ResumeOrderWorkflow.php": [
+      "binary_operator_spaces",
+      "not_operator_with_successor_space",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Operations/Fulfillment/Application/Workflows/ReturnToPendingWorkflow.php": [
+      "binary_operator_spaces",
+      "braces_position",
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Operations/Preparation/Application/Services/BranchAssignmentEngine.php": [
+      "binary_operator_spaces",
+      "braces_position",
+      "ordered_imports",
+      "phpdoc_align",
+      "single_line_empty_body"
+    ],
+    "backend/Modules/Operations/Preparation/Application/Services/CoverageResolutionService.php": [
+      "phpdoc_align"
+    ],
+    "backend/Modules/Operations/Preparation/Domain/Enums/WarehouseAssignmentSource.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/Organization/Branches/Domain/Models/Branch.php": [
+      "binary_operator_spaces",
+      "phpdoc_align"
+    ],
+    "backend/Modules/Organization/Branches/Domain/Models/BranchCoverageArea.php": [
+      "binary_operator_spaces",
+      "phpdoc_align"
+    ],
+    "backend/Modules/Organization/Branches/Infrastructure/Database/Seeders/BranchSeeder.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/Organization/Branches/Presentation/Http/Controllers/BranchCoverageController.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/Organization/Branches/Presentation/Http/Requests/UpdateCoverageAreaRequest.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/Organization/Branches/Presentation/Http/Resources/BranchResource.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/Organization/Branches/Presentation/Http/Resources/CoverageAreaResource.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/Platform/EventPlatform/Application/Services/EnterpriseEventBus.php": [
+      "braces_position",
+      "line_ending",
+      "ordered_imports",
+      "single_line_empty_body"
+    ],
+    "backend/Modules/Platform/EventPlatform/Application/Services/EnterpriseEventPublisher.php": [
+      "braces_position",
+      "line_ending",
+      "ordered_imports",
+      "single_line_empty_body"
+    ],
+    "backend/Modules/Platform/EventPlatform/Application/Services/EnterpriseEventSerializer.php": [
+      "line_ending",
+      "not_operator_with_successor_space",
+      "ordered_imports",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Platform/EventPlatform/Domain/Contracts/EnterpriseEventStoreInterface.php": [
+      "line_ending",
+      "ordered_imports"
+    ],
+    "backend/Modules/Platform/EventPlatform/Infrastructure/Providers/EventPlatformServiceProvider.php": [
+      "line_ending",
+      "ordered_imports"
+    ],
+    "backend/Modules/Platform/EventPlatform/Infrastructure/Repositories/EloquentEventStore.php": [
+      "braces_position",
+      "line_ending",
+      "not_operator_with_successor_space",
+      "ordered_imports",
+      "single_line_empty_body",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/POS/Application/Infrastructure/Adapters/EnterpriseBusAccountingAdapter.php": [
+      "braces_position",
+      "ordered_imports",
+      "single_line_empty_body"
+    ],
+    "backend/Modules/POS/Application/Infrastructure/Providers/EventServiceProvider.php": [
+      "line_ending"
+    ],
+    "backend/Modules/Sales/Customers/Application/Actions/CreateCustomerAction.php": [
+      "binary_operator_spaces",
+      "braces_position",
+      "single_line_empty_body"
+    ],
+    "backend/Modules/Sales/Customers/Application/Actions/UpdateCustomerAction.php": [
+      "binary_operator_spaces",
+      "braces_position",
+      "single_line_empty_body"
+    ],
+    "backend/Modules/Sales/Customers/Application/DTO/CustomerDTO.php": [
+      "braces_position",
+      "single_line_empty_body",
+      "single_space_around_construct",
+      "type_declaration_spaces"
+    ],
+    "backend/Modules/Sales/Customers/Domain/Models/Customer.php": [
+      "phpdoc_align"
+    ],
+    "backend/Modules/Sales/Customers/Domain/Models/CustomerBrand.php": [
+      "binary_operator_spaces",
+      "phpdoc_align"
+    ],
+    "backend/Modules/Sales/Customers/Infrastructure/Database/Factories/CustomerFactory.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/Sales/Customers/Infrastructure/Database/Migrations/2026_07_22_100000_add_brand_id_to_customers_table.php": [
+      "binary_operator_spaces",
+      "braces_position",
+      "class_definition",
+      "not_operator_with_successor_space",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Sales/Customers/Infrastructure/Database/Migrations/2026_07_22_200000_create_customer_brands_table.php": [
+      "binary_operator_spaces",
+      "braces_position",
+      "class_definition",
+      "not_operator_with_successor_space",
+      "trailing_comma_in_multiline",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/Sales/Customers/Infrastructure/Database/Migrations/2026_07_22_400000_add_unique_company_phone_to_customers_table.php": [
+      "blank_line_before_statement",
+      "braces_position",
+      "class_definition",
+      "concat_space"
+    ],
+    "backend/Modules/Sales/Customers/Infrastructure/Database/Seeders/CustomerSeeder.php": [
+      "binary_operator_spaces",
+      "blank_line_before_statement"
+    ],
+    "backend/Modules/Sales/Customers/Presentation/Http/Controllers/CustomerController.php": [
+      "binary_operator_spaces",
+      "braces_position",
+      "single_line_empty_body"
+    ],
+    "backend/Modules/Sales/Customers/Presentation/Http/Requests/StoreCustomerRequest.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/Sales/Customers/Presentation/Http/Requests/UpdateCustomerRequest.php": [
+      "binary_operator_spaces",
+      "single_line_after_imports"
+    ],
+    "backend/Modules/Sales/Customers/Presentation/Http/Resources/CustomerBrandResource.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/Sales/Customers/Presentation/Http/Resources/CustomerResource.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/Sales/Customers/Tests/Feature/CustomerCreationTest.php": [
+      "binary_operator_spaces",
+      "class_attributes_separation",
+      "method_chaining_indentation",
+      "no_unused_imports",
+      "phpdoc_align"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/AdrComplianceValidator.php": [
+      "binary_operator_spaces",
+      "not_operator_with_successor_space",
+      "phpdoc_align",
+      "trailing_comma_in_multiline",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/AgentArtifactService.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/AgentHeartbeatService.php": [
+      "binary_operator_spaces",
+      "class_attributes_separation",
+      "new_with_parentheses",
+      "no_unused_imports"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/AgentRegistrationService.php": [
+      "binary_operator_spaces",
+      "new_with_parentheses",
+      "not_operator_with_successor_space",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/AIADRValidationEngine.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "blank_line_before_statement",
+      "blank_lines_before_namespace",
+      "function_declaration",
+      "no_space_around_double_colon",
+      "ordered_imports"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/AILearningEngine.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "blank_line_before_statement",
+      "blank_lines_before_namespace",
+      "braces_position",
+      "control_structure_braces",
+      "ordered_imports",
+      "statement_indentation"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/AIMetricsEngine.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "blank_lines_before_namespace"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/AIRecommendationEngine.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "blank_line_before_statement",
+      "blank_lines_before_namespace",
+      "braces_position",
+      "control_structure_braces",
+      "ordered_imports",
+      "single_space_around_construct",
+      "statement_indentation",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/AIReleaseRecommendationEngine.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "blank_lines_before_namespace",
+      "no_unused_imports",
+      "ordered_imports",
+      "single_space_around_construct",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/AIReviewEngine.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "blank_line_before_statement",
+      "blank_lines_before_namespace",
+      "braces_position",
+      "concat_space",
+      "control_structure_braces",
+      "function_declaration",
+      "no_space_around_double_colon",
+      "no_unused_imports",
+      "not_operator_with_successor_space",
+      "ordered_imports",
+      "single_line_empty_body",
+      "statement_indentation",
+      "type_declaration_spaces"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/AIRiskEngine.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "blank_lines_before_namespace",
+      "function_declaration",
+      "no_space_around_double_colon",
+      "ordered_imports"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/AIScoringEngine.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "blank_line_before_statement",
+      "blank_lines_before_namespace",
+      "braces_position",
+      "control_structure_continuation_position",
+      "elseif",
+      "function_declaration",
+      "no_multiple_statements_per_line",
+      "no_space_around_double_colon",
+      "single_space_around_construct",
+      "statement_indentation"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/AISecurityCheckEngine.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "blank_line_before_statement",
+      "blank_lines_before_namespace",
+      "no_unused_imports",
+      "single_space_around_construct",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/AITrendEngine.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "blank_lines_before_namespace",
+      "concat_space",
+      "function_declaration",
+      "method_argument_space"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/BranchManager.php": [
+      "binary_operator_spaces",
+      "blank_line_before_statement",
+      "blank_lines_before_namespace",
+      "concat_space",
+      "function_declaration",
+      "global_namespace_import",
+      "not_operator_with_successor_space",
+      "ordered_imports",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/ClaudeCodeIntegration.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "concat_space",
+      "declare_strict_types",
+      "not_operator_with_successor_space",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/ClusterCoordinator.php": [
+      "binary_operator_spaces",
+      "blank_line_before_statement",
+      "blank_lines_before_namespace",
+      "braces_position",
+      "cast_spaces",
+      "global_namespace_import",
+      "no_unused_imports",
+      "not_operator_with_successor_space",
+      "ordered_imports",
+      "single_line_empty_body"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/ClusterHealthService.php": [
+      "binary_operator_spaces",
+      "braces_position",
+      "function_declaration",
+      "not_operator_with_successor_space",
+      "single_line_empty_body"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/ClusterRecoveryService.php": [
+      "binary_operator_spaces",
+      "blank_line_before_statement",
+      "braces_position",
+      "function_declaration",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/ClusterScheduler.php": [
+      "binary_operator_spaces",
+      "blank_line_before_statement",
+      "blank_lines_before_namespace",
+      "function_declaration",
+      "not_operator_with_successor_space",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/CommandValidatorRunner.php": [
+      "binary_operator_spaces",
+      "concat_space",
+      "not_operator_with_successor_space",
+      "trailing_comma_in_multiline",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/ConflictDetector.php": [
+      "binary_operator_spaces",
+      "blank_line_before_statement",
+      "blank_lines_before_namespace",
+      "concat_space",
+      "function_declaration",
+      "not_operator_with_successor_space",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/EngineeringTaskService.php": [
+      "binary_operator_spaces",
+      "global_namespace_import",
+      "not_operator_with_successor_space",
+      "ordered_imports",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/ExecutionSessionService.php": [
+      "binary_operator_spaces",
+      "braces_position",
+      "global_namespace_import",
+      "not_operator_with_successor_space",
+      "ordered_imports",
+      "single_line_empty_body",
+      "single_space_around_construct",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/FailureAnalysisEngine.php": [
+      "binary_operator_spaces",
+      "braces_position",
+      "not_operator_with_successor_space",
+      "single_line_empty_body"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/GuardianCheckRunner.php": [
+      "binary_operator_spaces",
+      "braces_position",
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/GuardianDecisionEngine.php": [
+      "binary_operator_spaces",
+      "concat_space",
+      "not_operator_with_successor_space",
+      "ordered_imports",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/GuardianDiagnosticsEngine.php": [
+      "binary_operator_spaces",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/GuardianEngine.php": [
+      "binary_operator_spaces",
+      "concat_space",
+      "fully_qualified_strict_types",
+      "global_namespace_import",
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/GuardianPolicyService.php": [
+      "binary_operator_spaces",
+      "not_operator_with_successor_space",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/GuardianRepairOrchestrator.php": [
+      "binary_operator_spaces",
+      "braces_position",
+      "single_line_empty_body"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/GuardianReportService.php": [
+      "binary_operator_spaces",
+      "braces_position",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/GuardianValidationCoordinator.php": [
+      "binary_operator_spaces",
+      "braces_position",
+      "global_namespace_import",
+      "not_operator_with_successor_space",
+      "ordered_imports",
+      "single_line_empty_body",
+      "type_declaration_spaces",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/ImportEngineeringReportService.php": [
+      "binary_operator_spaces",
+      "blank_line_before_statement",
+      "braces_position",
+      "concat_space",
+      "global_namespace_import",
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "single_quote",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/IntelAnalyticsEngine.php": [
+      "binary_operator_spaces",
+      "concat_space",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/IntelConfidenceScorer.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/IntelDebtAnalyzer.php": [
+      "binary_operator_spaces",
+      "method_chaining_indentation"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/IntelInsightsEngine.php": [
+      "binary_operator_spaces",
+      "braces_position",
+      "concat_space",
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/IntelKnowledgeBase.php": [
+      "binary_operator_spaces",
+      "braces_position",
+      "single_line_empty_body"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/IntelLearningEngine.php": [
+      "binary_operator_spaces",
+      "braces_position",
+      "concat_space",
+      "single_line_empty_body",
+      "single_quote",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/IntelPatternDetector.php": [
+      "binary_operator_spaces",
+      "concat_space",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/IntelPredictionEngine.php": [
+      "binary_operator_spaces",
+      "braces_position",
+      "concat_space",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/IntelTrendEngine.php": [
+      "binary_operator_spaces",
+      "braces_position",
+      "concat_space",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/PatchRollbackService.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/PatchSafetyRuleEngine.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/PatchSecurityValidator.php": [
+      "binary_operator_spaces",
+      "not_operator_with_successor_space",
+      "phpdoc_align",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/PatchValidatorRegistry.php": [
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/PipelineAnalyticsService.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/PipelineNotificationService.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/PipelineRecoveryService.php": [
+      "binary_operator_spaces",
+      "blank_line_before_statement",
+      "not_operator_with_successor_space",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/PipelineStageExecutor.php": [
+      "binary_operator_spaces",
+      "blank_line_before_statement",
+      "class_attributes_separation",
+      "concat_space",
+      "fully_qualified_strict_types",
+      "global_namespace_import",
+      "method_argument_space",
+      "not_operator_with_successor_space",
+      "single_quote",
+      "single_space_around_construct",
+      "trailing_comma_in_multiline",
+      "type_declaration_spaces",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/PipelineTemplateEngine.php": [
+      "binary_operator_spaces",
+      "blank_line_before_statement"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/ReleaseApprovalService.php": [
+      "binary_operator_spaces",
+      "blank_line_after_namespace",
+      "blank_line_after_opening_tag",
+      "blank_line_before_statement",
+      "blank_lines_before_namespace",
+      "braces_position",
+      "function_declaration",
+      "single_line_empty_body"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/ReleaseAuditService.php": [
+      "binary_operator_spaces",
+      "blank_line_after_namespace",
+      "blank_line_after_opening_tag",
+      "blank_lines_before_namespace",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/ReleaseCandidateService.php": [
+      "binary_operator_spaces",
+      "global_namespace_import",
+      "not_operator_with_successor_space",
+      "ordered_imports",
+      "phpdoc_align",
+      "single_space_around_construct",
+      "type_declaration_spaces",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/ReleaseDependencyService.php": [
+      "binary_operator_spaces",
+      "blank_line_after_namespace",
+      "blank_line_after_opening_tag",
+      "blank_line_before_statement",
+      "blank_lines_before_namespace",
+      "no_unused_imports",
+      "not_operator_with_successor_space"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/ReleasePipelineAdapter.php": [
+      "binary_operator_spaces",
+      "blank_line_after_namespace",
+      "blank_line_after_opening_tag",
+      "blank_lines_before_namespace",
+      "braces_position",
+      "concat_space",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/ReleasePipelineService.php": [
+      "binary_operator_spaces",
+      "blank_line_before_statement",
+      "braces_position",
+      "concat_space",
+      "global_namespace_import",
+      "phpdoc_align",
+      "single_line_empty_body",
+      "single_space_around_construct",
+      "type_declaration_spaces"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/ReleaseReadinessScorer.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "blank_line_before_statement",
+      "blank_lines_before_namespace",
+      "braces_position",
+      "not_operator_with_successor_space",
+      "statement_indentation",
+      "whitespace_after_comma_in_array"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/ReleaseReportService.php": [
+      "binary_operator_spaces",
+      "blank_line_after_namespace",
+      "blank_line_after_opening_tag",
+      "blank_line_before_statement",
+      "blank_lines_before_namespace",
+      "braces_position",
+      "concat_space",
+      "function_declaration",
+      "single_quote",
+      "statement_indentation",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/ReleaseRiskService.php": [
+      "binary_operator_spaces",
+      "blank_line_after_namespace",
+      "blank_line_after_opening_tag",
+      "blank_line_before_statement",
+      "blank_lines_before_namespace",
+      "braces_position",
+      "function_declaration",
+      "not_operator_with_successor_space",
+      "statement_indentation"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/ReleaseService.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "blank_line_before_statement",
+      "blank_lines_before_namespace",
+      "braces_position",
+      "concat_space",
+      "function_declaration",
+      "global_namespace_import",
+      "method_argument_space",
+      "no_unused_imports",
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "whitespace_after_comma_in_array"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/ReleaseValidationService.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "blank_line_before_statement",
+      "blank_lines_before_namespace",
+      "method_chaining_indentation",
+      "whitespace_after_comma_in_array"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/RepairAuditService.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "declare_strict_types",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/RepairEngine.php": [
+      "binary_operator_spaces",
+      "braces_position",
+      "global_namespace_import",
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "type_declaration_spaces",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/RepairPromptBuilder.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "concat_space",
+      "declare_strict_types",
+      "global_namespace_import",
+      "not_operator_with_successor_space",
+      "ordered_imports",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/RepairSessionManager.php": [
+      "binary_operator_spaces",
+      "braces_position",
+      "concat_space",
+      "global_namespace_import",
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline",
+      "type_declaration_spaces",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/ResourceManager.php": [
+      "binary_operator_spaces",
+      "blank_line_before_statement",
+      "blank_lines_before_namespace",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/RetryPolicyEngine.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "declare_strict_types",
+      "method_chaining_indentation",
+      "no_unused_imports",
+      "not_operator_with_successor_space",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/RetryPolicyFactory.php": [
+      "binary_operator_spaces",
+      "not_operator_with_successor_space",
+      "phpdoc_align",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/RootCauseClassifier.php": [
+      "binary_operator_spaces",
+      "concat_space",
+      "no_multiline_whitespace_around_double_arrow"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/SelfHealingPipeline.php": [
+      "binary_operator_spaces",
+      "braces_position",
+      "concat_space",
+      "not_operator_with_successor_space",
+      "ordered_imports",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline",
+      "type_declaration_spaces",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/TaskAttachmentService.php": [
+      "binary_operator_spaces",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/TaskCommentService.php": [
+      "binary_operator_spaces",
+      "not_operator_with_successor_space"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/TaskDependencyService.php": [
+      "binary_operator_spaces",
+      "concat_space",
+      "function_declaration",
+      "global_namespace_import",
+      "not_operator_with_successor_space",
+      "ordered_imports",
+      "phpdoc_align",
+      "single_quote",
+      "type_declaration_spaces",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/ValidationReportService.php": [
+      "binary_operator_spaces",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/WorkerManager.php": [
+      "binary_operator_spaces",
+      "blank_line_before_statement",
+      "blank_lines_before_namespace",
+      "braces_position",
+      "concat_space",
+      "global_namespace_import",
+      "lambda_not_used_import",
+      "not_operator_with_successor_space",
+      "ordered_imports",
+      "single_line_empty_body",
+      "spaces_inside_parentheses",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/WorkspaceAggregationService.php": [
+      "binary_operator_spaces",
+      "braces_position",
+      "concat_space",
+      "global_namespace_import",
+      "ordered_imports",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/System/Engineering/Application/Services/WorkspaceManager.php": [
+      "binary_operator_spaces",
+      "blank_line_before_statement",
+      "blank_lines_before_namespace",
+      "braces_position",
+      "concat_space",
+      "global_namespace_import",
+      "not_operator_with_successor_space",
+      "ordered_imports",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/System/Engineering/Domain/Contracts/PipelineActionInterface.php": [
+      "phpdoc_align",
+      "type_declaration_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Enums/AgentStatus.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Enums/ApprovalStatus.php": [
+      "binary_operator_spaces",
+      "blank_line_after_namespace",
+      "blank_line_after_opening_tag",
+      "blank_lines_before_namespace",
+      "braces_position",
+      "class_definition"
+    ],
+    "backend/Modules/System/Engineering/Domain/Enums/ClusterNodeStatus.php": [
+      "binary_operator_spaces",
+      "single_space_around_construct"
+    ],
+    "backend/Modules/System/Engineering/Domain/Enums/ExecutionSessionStatus.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Enums/GuardianCheckCategory.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Enums/GuardianRunStatus.php": [
+      "binary_operator_spaces",
+      "not_operator_with_successor_space",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Enums/PatchValidationStatus.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Enums/PipelineStage.php": [
+      "binary_operator_spaces",
+      "single_space_around_construct"
+    ],
+    "backend/Modules/System/Engineering/Domain/Enums/PipelineStatus.php": [
+      "binary_operator_spaces",
+      "single_space_around_construct"
+    ],
+    "backend/Modules/System/Engineering/Domain/Enums/QueueStatus.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Enums/ReleaseCandidateStatus.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Enums/ReleaseStatus.php": [
+      "binary_operator_spaces",
+      "blank_line_after_namespace",
+      "blank_line_after_opening_tag",
+      "blank_lines_before_namespace",
+      "braces_position",
+      "class_definition",
+      "single_space_around_construct"
+    ],
+    "backend/Modules/System/Engineering/Domain/Enums/RepairApproach.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Enums/RepairFailureType.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Enums/RepairResponseType.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Enums/RepairSessionStatus.php": [
+      "binary_operator_spaces",
+      "not_operator_with_successor_space",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Enums/ReviewDimension.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "blank_lines_before_namespace",
+      "single_space_around_construct"
+    ],
+    "backend/Modules/System/Engineering/Domain/Enums/ReviewRecommendation.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "blank_line_before_statement",
+      "blank_lines_before_namespace",
+      "braces_position",
+      "control_structure_braces",
+      "single_space_around_construct",
+      "statement_indentation"
+    ],
+    "backend/Modules/System/Engineering/Domain/Enums/ReviewStatus.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "blank_lines_before_namespace",
+      "single_space_around_construct"
+    ],
+    "backend/Modules/System/Engineering/Domain/Enums/RiskLevel.php": [
+      "binary_operator_spaces",
+      "blank_line_after_namespace",
+      "blank_line_after_opening_tag",
+      "blank_lines_before_namespace",
+      "braces_position",
+      "class_definition",
+      "single_space_around_construct"
+    ],
+    "backend/Modules/System/Engineering/Domain/Enums/RiskSeverity.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "blank_lines_before_namespace",
+      "single_space_around_construct"
+    ],
+    "backend/Modules/System/Engineering/Domain/Enums/SchedulingPolicy.php": [
+      "binary_operator_spaces",
+      "single_space_around_construct"
+    ],
+    "backend/Modules/System/Engineering/Domain/Enums/StageStatus.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Enums/TaskPriority.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Enums/TaskStatus.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Enums/ValidationStatus.php": [
+      "binary_operator_spaces",
+      "blank_line_after_namespace",
+      "blank_line_after_opening_tag",
+      "blank_lines_before_namespace",
+      "braces_position",
+      "class_definition"
+    ],
+    "backend/Modules/System/Engineering/Domain/Enums/ValidationStepStatus.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Enums/ValidationVerdict.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Enums/ValidatorType.php": [
+      "binary_operator_spaces",
+      "not_operator_with_successor_space",
+      "trailing_comma_in_multiline",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Enums/WorkerSessionStatus.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Enums/WorkerStatus.php": [
+      "binary_operator_spaces",
+      "single_space_around_construct"
+    ],
+    "backend/Modules/System/Engineering/Domain/Events/Pipeline/PipelineCancelled.php": [
+      "braces_position",
+      "single_line_empty_body",
+      "type_declaration_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Events/Pipeline/PipelineCompleted.php": [
+      "braces_position",
+      "single_line_empty_body",
+      "type_declaration_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Events/Pipeline/PipelineCreated.php": [
+      "braces_position",
+      "single_line_empty_body",
+      "type_declaration_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Events/Pipeline/PipelineFailed.php": [
+      "braces_position",
+      "single_line_empty_body",
+      "type_declaration_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Events/Pipeline/StageCompleted.php": [
+      "braces_position",
+      "single_line_empty_body",
+      "type_declaration_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Events/Pipeline/StageFailed.php": [
+      "braces_position",
+      "single_line_empty_body",
+      "type_declaration_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Events/Pipeline/StageStarted.php": [
+      "braces_position",
+      "single_line_empty_body",
+      "type_declaration_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/EngineeringAgent.php": [
+      "binary_operator_spaces",
+      "ordered_imports"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/EngineeringAgentHeartbeat.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/EngineeringAgentLog.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/EngineeringAgentVersion.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/EngineeringAIArchitectureCheck.php": [
+      "binary_operator_spaces",
+      "blank_line_after_namespace",
+      "blank_line_after_opening_tag",
+      "blank_lines_before_namespace",
+      "class_attributes_separation"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/EngineeringAIHistory.php": [
+      "binary_operator_spaces",
+      "blank_line_after_namespace",
+      "blank_line_after_opening_tag",
+      "blank_lines_before_namespace",
+      "class_attributes_separation"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/EngineeringAIMetric.php": [
+      "binary_operator_spaces",
+      "blank_line_after_namespace",
+      "blank_line_after_opening_tag",
+      "blank_lines_before_namespace",
+      "class_attributes_separation"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/EngineeringAIRecommendation.php": [
+      "binary_operator_spaces",
+      "blank_line_after_namespace",
+      "blank_line_after_opening_tag",
+      "blank_lines_before_namespace",
+      "class_attributes_separation"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/EngineeringAIReleaseReview.php": [
+      "binary_operator_spaces",
+      "blank_line_after_namespace",
+      "blank_line_after_opening_tag",
+      "blank_lines_before_namespace",
+      "class_attributes_separation"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/EngineeringAIReview.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "blank_lines_before_namespace",
+      "class_attributes_separation",
+      "ordered_imports"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/EngineeringAIRisk.php": [
+      "binary_operator_spaces",
+      "blank_line_after_namespace",
+      "blank_line_after_opening_tag",
+      "blank_lines_before_namespace",
+      "class_attributes_separation"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/EngineeringAIScore.php": [
+      "binary_operator_spaces",
+      "blank_line_after_namespace",
+      "blank_line_after_opening_tag",
+      "blank_lines_before_namespace",
+      "class_attributes_separation"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/EngineeringAISecurityCheck.php": [
+      "binary_operator_spaces",
+      "blank_line_after_namespace",
+      "blank_line_after_opening_tag",
+      "blank_lines_before_namespace",
+      "class_attributes_separation"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/EngineeringAITrend.php": [
+      "binary_operator_spaces",
+      "blank_line_after_namespace",
+      "blank_line_after_opening_tag",
+      "blank_lines_before_namespace",
+      "class_attributes_separation"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/EngineeringBranchLock.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/EngineeringChecklistItem.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/EngineeringClusterEvent.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/EngineeringClusterMetric.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/EngineeringClusterNode.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/EngineeringExecutionArtifact.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/EngineeringExecutionEvent.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/EngineeringExecutionQueue.php": [
+      "binary_operator_spaces",
+      "single_import_per_statement"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/EngineeringFileLock.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/EngineeringFinding.php": [
+      "class_attributes_separation",
+      "phpdoc_align"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/EngineeringNotification.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/EngineeringPipeline.php": [
+      "binary_operator_spaces",
+      "ordered_imports"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/EngineeringPipelineLog.php": [
+      "binary_operator_spaces",
+      "ordered_imports"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/EngineeringPipelineTemplate.php": [
+      "binary_operator_spaces",
+      "blank_line_before_statement",
+      "phpdoc_align"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/EngineeringRelease.php": [
+      "binary_operator_spaces",
+      "blank_line_after_namespace",
+      "blank_line_after_opening_tag",
+      "blank_line_before_statement",
+      "blank_lines_before_namespace",
+      "braces_position",
+      "class_attributes_separation",
+      "class_definition",
+      "single_line_after_imports",
+      "statement_indentation",
+      "whitespace_after_comma_in_array"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/EngineeringReleaseApproval.php": [
+      "blank_line_after_namespace",
+      "blank_line_after_opening_tag",
+      "blank_lines_before_namespace",
+      "braces_position",
+      "class_attributes_separation",
+      "class_definition",
+      "single_line_after_imports",
+      "statement_indentation",
+      "whitespace_after_comma_in_array"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/EngineeringReleaseArtifact.php": [
+      "blank_line_after_namespace",
+      "blank_line_after_opening_tag",
+      "blank_lines_before_namespace",
+      "braces_position",
+      "class_attributes_separation",
+      "class_definition",
+      "single_line_after_imports",
+      "statement_indentation",
+      "whitespace_after_comma_in_array"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/EngineeringReleaseAudit.php": [
+      "blank_line_after_namespace",
+      "blank_line_after_opening_tag",
+      "blank_lines_before_namespace",
+      "braces_position",
+      "class_attributes_separation",
+      "class_definition",
+      "single_line_after_imports",
+      "statement_indentation",
+      "whitespace_after_comma_in_array"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/EngineeringReleaseCandidate.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/EngineeringReleaseDependency.php": [
+      "blank_line_after_namespace",
+      "blank_line_after_opening_tag",
+      "blank_lines_before_namespace",
+      "braces_position",
+      "class_attributes_separation",
+      "class_definition",
+      "single_line_after_imports",
+      "statement_indentation",
+      "whitespace_after_comma_in_array"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/EngineeringReleaseMetric.php": [
+      "blank_line_after_namespace",
+      "blank_line_after_opening_tag",
+      "blank_lines_before_namespace",
+      "braces_position",
+      "class_attributes_separation",
+      "class_definition",
+      "single_line_after_imports",
+      "statement_indentation",
+      "whitespace_after_comma_in_array"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/EngineeringReleaseNote.php": [
+      "blank_line_after_namespace",
+      "blank_line_after_opening_tag",
+      "blank_lines_before_namespace",
+      "braces_position",
+      "class_attributes_separation",
+      "class_definition",
+      "single_line_after_imports",
+      "statement_indentation",
+      "whitespace_after_comma_in_array"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/EngineeringReleasePackage.php": [
+      "blank_line_after_namespace",
+      "blank_line_after_opening_tag",
+      "blank_lines_before_namespace",
+      "braces_position",
+      "class_attributes_separation",
+      "class_definition",
+      "single_line_after_imports",
+      "statement_indentation",
+      "whitespace_after_comma_in_array"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/EngineeringReleasePipelineRun.php": [
+      "blank_line_after_namespace",
+      "blank_line_after_opening_tag",
+      "blank_line_before_statement",
+      "blank_lines_before_namespace",
+      "braces_position",
+      "class_attributes_separation",
+      "class_definition",
+      "not_operator_with_successor_space",
+      "single_line_after_imports",
+      "statement_indentation",
+      "whitespace_after_comma_in_array"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/EngineeringReleaseReport.php": [
+      "blank_line_after_namespace",
+      "blank_line_after_opening_tag",
+      "blank_lines_before_namespace",
+      "braces_position",
+      "class_attributes_separation",
+      "class_definition",
+      "single_line_after_imports",
+      "statement_indentation",
+      "whitespace_after_comma_in_array"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/EngineeringReleaseRisk.php": [
+      "blank_line_after_namespace",
+      "blank_line_after_opening_tag",
+      "blank_lines_before_namespace",
+      "braces_position",
+      "class_attributes_separation",
+      "class_definition",
+      "single_line_after_imports",
+      "statement_indentation",
+      "whitespace_after_comma_in_array"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/EngineeringReleaseValidation.php": [
+      "blank_line_after_namespace",
+      "blank_line_after_opening_tag",
+      "blank_lines_before_namespace",
+      "braces_position",
+      "class_attributes_separation",
+      "class_definition",
+      "single_line_after_imports",
+      "statement_indentation",
+      "whitespace_after_comma_in_array"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/EngineeringResourceUsage.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/EngineeringRun.php": [
+      "binary_operator_spaces",
+      "class_attributes_separation",
+      "phpdoc_align"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/EngineeringRuntimeMetric.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/EngineeringSchedulerEvent.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/EngineeringTask.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/EngineeringTaskChecklist.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/EngineeringTaskComment.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/EngineeringTaskHistory.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/EngineeringWorker.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/EngineeringWorkerRuntime.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/EngineeringWorkerSession.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/EngineeringWorkspaceLock.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/EngineeringWorkspaceSession.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/ExecutionSession.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/GuardianCheck.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "declare_strict_types"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/GuardianDecisionLog.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/GuardianPolicy.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "declare_strict_types"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/GuardianReport.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/GuardianRun.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "declare_strict_types"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/IntelInsight.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/IntelKnowledgeEntry.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/IntelSnapshot.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/PatchSnapshot.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "declare_strict_types"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/PatchValidation.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "declare_strict_types"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/RepairAnalysis.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "declare_strict_types"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/RepairHistory.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "declare_strict_types"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/RepairMetric.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "declare_strict_types"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/RepairPatch.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "declare_strict_types"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/RepairPrompt.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "declare_strict_types"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/RepairResponse.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "declare_strict_types"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/RepairRetryPolicy.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "declare_strict_types"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/RepairSession.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "declare_strict_types"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/ValidationHistory.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "declare_strict_types"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/ValidationReport.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "declare_strict_types"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/ValidationRule.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "declare_strict_types"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/ValidationStep.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "declare_strict_types"
+    ],
+    "backend/Modules/System/Engineering/Domain/Models/WorkspaceView.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/ValueObjects/CIResult.php": [
+      "binary_operator_spaces",
+      "braces_position",
+      "single_line_empty_body",
+      "single_space_around_construct",
+      "type_declaration_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/ValueObjects/RetryPolicy.php": [
+      "binary_operator_spaces",
+      "braces_position",
+      "cast_spaces",
+      "class_attributes_separation",
+      "single_line_empty_body",
+      "single_space_around_construct",
+      "type_declaration_spaces"
+    ],
+    "backend/Modules/System/Engineering/Domain/ValueObjects/StageConfig.php": [
+      "binary_operator_spaces",
+      "braces_position",
+      "cast_spaces",
+      "single_line_empty_body",
+      "single_space_around_construct",
+      "type_declaration_spaces"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Database/Migrations/2026_07_21_300000_create_engineering_pipeline_templates_table.php": [
+      "braces_position",
+      "class_definition",
+      "method_chaining_indentation"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Database/Migrations/2026_07_21_300001_seed_engineering_pipeline_templates.php": [
+      "binary_operator_spaces",
+      "braces_position",
+      "class_definition"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Database/Migrations/2026_07_22_100000_create_engineering_tasks_table.php": [
+      "braces_position"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Database/Migrations/2026_07_22_100001_create_engineering_task_comments_table.php": [
+      "braces_position"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Database/Migrations/2026_07_22_100002_create_engineering_task_attachments_table.php": [
+      "braces_position"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Database/Migrations/2026_07_22_100003_create_engineering_task_dependencies_table.php": [
+      "braces_position"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Database/Migrations/2026_07_22_100004_create_engineering_task_labels_table.php": [
+      "braces_position"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Database/Migrations/2026_07_22_100005_create_engineering_task_label_pivot_table.php": [
+      "braces_position"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Database/Migrations/2026_07_22_300000_create_engineering_agents_table.php": [
+      "braces_position"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Database/Migrations/2026_07_22_300001_create_engineering_agent_heartbeats_table.php": [
+      "braces_position"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Database/Migrations/2026_07_22_300002_create_engineering_agent_capabilities_table.php": [
+      "braces_position"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Database/Migrations/2026_07_22_300003_create_engineering_execution_sessions_table.php": [
+      "braces_position"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Database/Migrations/2026_07_22_300004_create_engineering_execution_artifacts_table.php": [
+      "braces_position"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Database/Migrations/2026_07_22_300005_create_engineering_execution_events_table.php": [
+      "braces_position"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Database/Migrations/2026_07_22_300006_create_engineering_workspace_sessions_table.php": [
+      "braces_position"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Database/Migrations/2026_07_22_300007_create_engineering_agent_versions_table.php": [
+      "braces_position"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Database/Migrations/2026_07_22_300008_create_engineering_runtime_metrics_table.php": [
+      "braces_position"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Database/Migrations/2026_07_22_300009_create_engineering_agent_logs_table.php": [
+      "braces_position"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Database/Migrations/2026_07_22_700000_create_engineering_releases_table.php": [
+      "blank_line_after_opening_tag",
+      "braces_position",
+      "class_attributes_separation",
+      "declare_strict_types",
+      "single_line_after_imports",
+      "statement_indentation"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Database/Migrations/2026_07_22_700001_create_engineering_release_artifacts_table.php": [
+      "blank_line_after_opening_tag",
+      "braces_position",
+      "class_attributes_separation",
+      "declare_strict_types",
+      "single_line_after_imports",
+      "statement_indentation"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Database/Migrations/2026_07_22_700002_create_engineering_release_reports_table.php": [
+      "blank_line_after_opening_tag",
+      "braces_position",
+      "class_attributes_separation",
+      "declare_strict_types",
+      "single_line_after_imports",
+      "statement_indentation"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Database/Migrations/2026_07_22_700003_create_engineering_release_validation_table.php": [
+      "blank_line_after_opening_tag",
+      "braces_position",
+      "class_attributes_separation",
+      "declare_strict_types",
+      "single_line_after_imports",
+      "statement_indentation"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Database/Migrations/2026_07_22_700004_create_engineering_release_approvals_table.php": [
+      "blank_line_after_opening_tag",
+      "braces_position",
+      "class_attributes_separation",
+      "declare_strict_types",
+      "single_line_after_imports",
+      "statement_indentation"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Database/Migrations/2026_07_22_700005_create_engineering_release_audit_table.php": [
+      "blank_line_after_opening_tag",
+      "braces_position",
+      "class_attributes_separation",
+      "declare_strict_types",
+      "single_line_after_imports",
+      "statement_indentation"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Database/Migrations/2026_07_22_700006_create_engineering_release_dependencies_table.php": [
+      "blank_line_after_opening_tag",
+      "braces_position",
+      "class_attributes_separation",
+      "declare_strict_types",
+      "single_line_after_imports",
+      "statement_indentation"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Database/Migrations/2026_07_22_700007_create_engineering_release_packages_table.php": [
+      "blank_line_after_opening_tag",
+      "braces_position",
+      "class_attributes_separation",
+      "declare_strict_types",
+      "single_line_after_imports",
+      "statement_indentation"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Database/Migrations/2026_07_22_700008_create_engineering_release_pipeline_runs_table.php": [
+      "blank_line_after_opening_tag",
+      "braces_position",
+      "class_attributes_separation",
+      "declare_strict_types",
+      "single_line_after_imports",
+      "statement_indentation"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Database/Migrations/2026_07_22_700009_create_engineering_release_risks_table.php": [
+      "blank_line_after_opening_tag",
+      "braces_position",
+      "class_attributes_separation",
+      "declare_strict_types",
+      "single_line_after_imports",
+      "statement_indentation"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Database/Migrations/2026_07_22_700010_create_engineering_release_notes_table.php": [
+      "blank_line_after_opening_tag",
+      "braces_position",
+      "class_attributes_separation",
+      "declare_strict_types",
+      "single_line_after_imports",
+      "statement_indentation"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Database/Migrations/2026_07_22_700011_create_engineering_release_metrics_table.php": [
+      "blank_line_after_opening_tag",
+      "braces_position",
+      "class_attributes_separation",
+      "declare_strict_types",
+      "single_line_after_imports",
+      "statement_indentation"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Database/Migrations/2026_07_22_800000_create_engineering_ai_reviews_table.php": [
+      "blank_line_after_opening_tag",
+      "braces_position",
+      "class_attributes_separation",
+      "statement_indentation"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Database/Migrations/2026_07_22_800001_create_engineering_ai_scores_table.php": [
+      "blank_line_after_opening_tag",
+      "braces_position",
+      "class_attributes_separation",
+      "statement_indentation"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Database/Migrations/2026_07_22_800002_create_engineering_ai_risks_table.php": [
+      "blank_line_after_opening_tag",
+      "braces_position",
+      "class_attributes_separation",
+      "statement_indentation"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Database/Migrations/2026_07_22_800003_create_engineering_ai_recommendations_table.php": [
+      "blank_line_after_opening_tag",
+      "braces_position",
+      "class_attributes_separation",
+      "statement_indentation"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Database/Migrations/2026_07_22_800004_create_engineering_ai_trends_table.php": [
+      "blank_line_after_opening_tag",
+      "braces_position",
+      "class_attributes_separation",
+      "statement_indentation"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Database/Migrations/2026_07_22_800005_create_engineering_ai_history_table.php": [
+      "blank_line_after_opening_tag",
+      "braces_position",
+      "class_attributes_separation",
+      "single_line_after_imports",
+      "statement_indentation"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Database/Migrations/2026_07_22_800006_create_engineering_ai_metrics_table.php": [
+      "blank_line_after_opening_tag",
+      "braces_position",
+      "class_attributes_separation",
+      "single_line_after_imports",
+      "statement_indentation"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Database/Migrations/2026_07_22_800007_create_engineering_ai_architecture_checks_table.php": [
+      "blank_line_after_opening_tag",
+      "braces_position",
+      "class_attributes_separation",
+      "single_line_after_imports",
+      "statement_indentation"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Database/Migrations/2026_07_22_800008_create_engineering_ai_security_checks_table.php": [
+      "blank_line_after_opening_tag",
+      "braces_position",
+      "class_attributes_separation",
+      "single_line_after_imports",
+      "statement_indentation"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Database/Migrations/2026_07_22_800009_create_engineering_ai_release_reviews_table.php": [
+      "blank_line_after_opening_tag",
+      "braces_position",
+      "class_attributes_separation",
+      "single_line_after_imports",
+      "statement_indentation"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Database/Migrations/2026_07_22_900000_create_engineering_repair_sessions_table.php": [
+      "blank_line_after_opening_tag",
+      "braces_position",
+      "class_definition",
+      "declare_strict_types"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Database/Migrations/2026_07_22_900001_create_engineering_repair_analyses_table.php": [
+      "blank_line_after_opening_tag",
+      "braces_position",
+      "class_definition",
+      "declare_strict_types"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Database/Migrations/2026_07_22_900002_create_engineering_repair_prompts_table.php": [
+      "blank_line_after_opening_tag",
+      "braces_position",
+      "class_definition",
+      "declare_strict_types"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Database/Migrations/2026_07_22_900003_create_engineering_repair_responses_table.php": [
+      "blank_line_after_opening_tag",
+      "braces_position",
+      "class_definition",
+      "declare_strict_types"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Database/Migrations/2026_07_22_900004_create_engineering_repair_patches_table.php": [
+      "blank_line_after_opening_tag",
+      "braces_position",
+      "class_definition",
+      "declare_strict_types"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Database/Migrations/2026_07_22_900005_create_engineering_repair_history_table.php": [
+      "blank_line_after_opening_tag",
+      "braces_position",
+      "class_definition",
+      "declare_strict_types"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Database/Migrations/2026_07_22_900006_create_engineering_repair_retry_policies_table.php": [
+      "blank_line_after_opening_tag",
+      "braces_position",
+      "class_definition",
+      "declare_strict_types"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Database/Migrations/2026_07_22_900007_create_engineering_repair_metrics_table.php": [
+      "blank_line_after_opening_tag",
+      "braces_position",
+      "class_definition",
+      "declare_strict_types"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Database/Migrations/2026_07_23_200000_create_engineering_guardian_runs_table.php": [
+      "blank_line_after_opening_tag",
+      "braces_position",
+      "class_definition",
+      "declare_strict_types"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Database/Migrations/2026_07_23_200001_create_engineering_guardian_checks_table.php": [
+      "blank_line_after_opening_tag",
+      "braces_position",
+      "class_definition",
+      "declare_strict_types"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Database/Migrations/2026_07_23_200002_create_engineering_guardian_policies_table.php": [
+      "blank_line_after_opening_tag",
+      "braces_position",
+      "class_definition",
+      "declare_strict_types"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Database/Migrations/2026_07_23_300000_create_engineering_intel_knowledge_table.php": [
+      "blank_line_after_opening_tag",
+      "braces_position",
+      "class_definition",
+      "declare_strict_types"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Database/Migrations/2026_07_23_300001_create_engineering_intel_insights_table.php": [
+      "blank_line_after_opening_tag",
+      "braces_position",
+      "class_definition",
+      "declare_strict_types"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Database/Migrations/2026_07_23_300002_create_engineering_intel_snapshots_table.php": [
+      "blank_line_after_opening_tag",
+      "braces_position",
+      "class_definition",
+      "declare_strict_types"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Database/Migrations/2026_07_23_400000_create_engineering_workspace_views_table.php": [
+      "blank_line_after_opening_tag",
+      "braces_position",
+      "class_definition",
+      "declare_strict_types"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Jobs/ExecutePipelineJob.php": [
+      "binary_operator_spaces",
+      "class_attributes_separation"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Providers/CI/GitHubCiProvider.php": [
+      "binary_operator_spaces",
+      "blank_line_before_statement",
+      "concat_space",
+      "global_namespace_import",
+      "not_operator_with_successor_space",
+      "single_quote",
+      "trailing_comma_in_multiline",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Providers/EngineeringServiceProvider.php": [
+      "concat_space",
+      "function_declaration",
+      "method_argument_space",
+      "ordered_imports",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/System/Engineering/Infrastructure/Repositories/EloquentEngineeringRunRepository.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Console/Commands/ImportEngineeringReportCommand.php": [
+      "blank_line_before_statement",
+      "concat_space",
+      "global_namespace_import",
+      "not_operator_with_successor_space",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Console/Commands/RunPipelineCommand.php": [
+      "binary_operator_spaces",
+      "blank_line_before_statement",
+      "concat_space",
+      "function_declaration",
+      "single_quote",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Controllers/AgentRegistrationController.php": [
+      "binary_operator_spaces",
+      "braces_position",
+      "concat_space",
+      "ordered_imports",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Controllers/AIDashboardController.php": [
+      "blank_line_after_namespace",
+      "blank_line_after_opening_tag",
+      "blank_lines_before_namespace",
+      "braces_position",
+      "class_attributes_separation",
+      "single_line_empty_body"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Controllers/AIRecommendationController.php": [
+      "blank_line_after_namespace",
+      "blank_line_after_opening_tag",
+      "blank_line_before_statement",
+      "blank_lines_before_namespace",
+      "braces_position",
+      "class_attributes_separation",
+      "ordered_imports",
+      "single_line_empty_body"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Controllers/AIReleaseReviewController.php": [
+      "binary_operator_spaces",
+      "blank_line_after_namespace",
+      "blank_line_after_opening_tag",
+      "blank_line_before_statement",
+      "blank_lines_before_namespace",
+      "braces_position",
+      "class_attributes_separation",
+      "no_unused_imports",
+      "not_operator_with_successor_space",
+      "ordered_imports",
+      "single_line_empty_body",
+      "type_declaration_spaces"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Controllers/AIReviewController.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "blank_line_before_statement",
+      "blank_lines_before_namespace",
+      "braces_position",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Controllers/AIRiskController.php": [
+      "blank_line_after_namespace",
+      "blank_line_after_opening_tag",
+      "blank_line_before_statement",
+      "blank_lines_before_namespace",
+      "braces_position",
+      "class_attributes_separation",
+      "no_unused_imports",
+      "single_line_empty_body"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Controllers/AIScoreController.php": [
+      "binary_operator_spaces",
+      "blank_line_after_namespace",
+      "blank_line_after_opening_tag",
+      "blank_line_before_statement",
+      "blank_lines_before_namespace",
+      "ordered_imports"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Controllers/AITrendController.php": [
+      "blank_line_after_namespace",
+      "blank_line_after_opening_tag",
+      "blank_line_before_statement",
+      "blank_lines_before_namespace",
+      "braces_position",
+      "class_attributes_separation",
+      "ordered_imports",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline",
+      "type_declaration_spaces"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Controllers/ClusterController.php": [
+      "blank_line_before_statement",
+      "braces_position",
+      "single_line_empty_body"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Controllers/ClusterHealthController.php": [
+      "blank_line_before_statement",
+      "braces_position",
+      "single_line_empty_body"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Controllers/ClusterMetricsController.php": [
+      "blank_line_before_statement",
+      "braces_position",
+      "single_line_empty_body"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Controllers/EngineeringDashboardController.php": [
+      "binary_operator_spaces",
+      "braces_position",
+      "single_line_empty_body"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Controllers/EngineeringNotificationController.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Controllers/ExecutionSessionController.php": [
+      "binary_operator_spaces",
+      "braces_position",
+      "ordered_imports",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Controllers/GuardianDashboardController.php": [
+      "blank_line_after_opening_tag",
+      "braces_position",
+      "declare_strict_types",
+      "single_line_empty_body"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Controllers/GuardianPolicyController.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "braces_position",
+      "declare_strict_types",
+      "single_line_empty_body"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Controllers/GuardianRunController.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "braces_position",
+      "declare_strict_types",
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Controllers/InboxCommentController.php": [
+      "binary_operator_spaces",
+      "braces_position",
+      "single_line_empty_body"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Controllers/InboxReleaseCandidateController.php": [
+      "binary_operator_spaces",
+      "braces_position",
+      "single_line_empty_body"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Controllers/InboxTaskController.php": [
+      "binary_operator_spaces",
+      "braces_position",
+      "ordered_imports",
+      "single_line_empty_body"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Controllers/IntelAnalyticsController.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "braces_position",
+      "declare_strict_types",
+      "single_line_empty_body"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Controllers/IntelInsightsController.php": [
+      "blank_line_after_opening_tag",
+      "braces_position",
+      "declare_strict_types",
+      "single_line_empty_body"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Controllers/IntelKnowledgeController.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "braces_position",
+      "declare_strict_types",
+      "single_line_empty_body"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Controllers/PatchRollbackController.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "braces_position",
+      "declare_strict_types",
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Controllers/PatchValidationController.php": [
+      "blank_line_after_opening_tag",
+      "braces_position",
+      "declare_strict_types",
+      "single_line_empty_body"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Controllers/PipelineController.php": [
+      "binary_operator_spaces",
+      "braces_position",
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Controllers/PipelineRecoveryController.php": [
+      "braces_position",
+      "no_unused_imports",
+      "not_operator_with_successor_space",
+      "single_line_empty_body",
+      "unary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Controllers/PipelineTemplateController.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Controllers/QueueController.php": [
+      "binary_operator_spaces",
+      "blank_line_before_statement",
+      "braces_position",
+      "single_line_empty_body"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Controllers/ReleaseApprovalController.php": [
+      "blank_line_after_namespace",
+      "blank_line_after_opening_tag",
+      "blank_line_before_statement",
+      "blank_lines_before_namespace",
+      "braces_position",
+      "class_attributes_separation",
+      "single_line_after_imports",
+      "single_line_empty_body"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Controllers/ReleaseController.php": [
+      "binary_operator_spaces",
+      "blank_line_after_namespace",
+      "blank_line_after_opening_tag",
+      "blank_line_before_statement",
+      "blank_lines_before_namespace",
+      "braces_position",
+      "cast_spaces",
+      "class_attributes_separation",
+      "method_argument_space",
+      "no_unused_imports",
+      "single_line_empty_body"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Controllers/ReleasePipelineController.php": [
+      "binary_operator_spaces",
+      "blank_line_after_namespace",
+      "blank_line_after_opening_tag",
+      "blank_line_before_statement",
+      "blank_lines_before_namespace",
+      "braces_position",
+      "class_attributes_separation",
+      "single_line_after_imports",
+      "single_line_empty_body"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Controllers/ReleaseReportController.php": [
+      "binary_operator_spaces",
+      "blank_line_after_namespace",
+      "blank_line_after_opening_tag",
+      "blank_line_before_statement",
+      "blank_lines_before_namespace",
+      "braces_position",
+      "class_attributes_separation",
+      "single_line_after_imports",
+      "single_line_empty_body",
+      "single_space_around_construct"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Controllers/RepairDashboardController.php": [
+      "blank_line_after_opening_tag",
+      "braces_position",
+      "declare_strict_types",
+      "single_line_empty_body"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Controllers/RepairPatchController.php": [
+      "blank_line_after_opening_tag",
+      "declare_strict_types"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Controllers/RepairPromptController.php": [
+      "blank_line_after_opening_tag",
+      "declare_strict_types",
+      "ordered_imports"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Controllers/RepairResponseController.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "declare_strict_types"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Controllers/RepairSessionController.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "braces_position",
+      "declare_strict_types",
+      "ordered_imports",
+      "single_line_empty_body"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Controllers/ValidationReportController.php": [
+      "blank_line_after_opening_tag",
+      "braces_position",
+      "declare_strict_types",
+      "single_line_empty_body"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Controllers/WorkerController.php": [
+      "binary_operator_spaces",
+      "blank_line_before_statement",
+      "braces_position",
+      "function_declaration",
+      "no_unused_imports",
+      "single_line_empty_body"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Controllers/WorkspaceController.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "braces_position",
+      "concat_space",
+      "declare_strict_types",
+      "single_line_empty_body"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Controllers/WorkspaceViewController.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "declare_strict_types"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Requests/StoreTaskRequest.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Requests/TransitionTaskRequest.php": [
+      "concat_space"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Requests/UpdateTaskRequest.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Resources/AgentResource.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Resources/EngineeringFindingResource.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Resources/EngineeringReleaseCandidateResource.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Resources/EngineeringRunResource.php": [
+      "binary_operator_spaces",
+      "blank_line_before_statement"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Resources/EngineeringTaskResource.php": [
+      "binary_operator_spaces",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Resources/NotificationResource.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Resources/PipelineLogResource.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Resources/PipelineResource.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Resources/TaskAttachmentResource.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Resources/TaskChecklistResource.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Resources/TaskCommentResource.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Resources/TaskDependencyResource.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Presentation/Http/Resources/TaskHistoryResource.php": [
+      "binary_operator_spaces"
+    ],
+    "backend/Modules/System/Engineering/Tests/Feature/AgentRegistrationTest.php": [
+      "binary_operator_spaces",
+      "blank_line_before_statement",
+      "class_attributes_separation",
+      "concat_space",
+      "method_chaining_indentation"
+    ],
+    "backend/Modules/System/Engineering/Tests/Feature/AIReleaseReviewTest.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "blank_lines_before_namespace",
+      "class_attributes_separation",
+      "global_namespace_import",
+      "ordered_imports"
+    ],
+    "backend/Modules/System/Engineering/Tests/Feature/AIReviewTest.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "blank_lines_before_namespace",
+      "global_namespace_import",
+      "ordered_imports",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/System/Engineering/Tests/Feature/ClusterQueueTest.php": [
+      "binary_operator_spaces",
+      "blank_lines_before_namespace",
+      "global_namespace_import",
+      "ordered_imports"
+    ],
+    "backend/Modules/System/Engineering/Tests/Feature/ClusterWorkerTest.php": [
+      "binary_operator_spaces",
+      "global_namespace_import",
+      "ordered_imports"
+    ],
+    "backend/Modules/System/Engineering/Tests/Feature/GuardianPolicyTest.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "blank_lines_before_namespace",
+      "global_namespace_import",
+      "ordered_imports",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/System/Engineering/Tests/Feature/GuardianRunTest.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "blank_lines_before_namespace",
+      "global_namespace_import",
+      "ordered_imports"
+    ],
+    "backend/Modules/System/Engineering/Tests/Feature/InboxTaskTest.php": [
+      "binary_operator_spaces",
+      "class_attributes_separation",
+      "concat_space",
+      "method_chaining_indentation"
+    ],
+    "backend/Modules/System/Engineering/Tests/Feature/IntelAnalyticsTest.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "blank_lines_before_namespace",
+      "global_namespace_import",
+      "ordered_imports"
+    ],
+    "backend/Modules/System/Engineering/Tests/Feature/IntelKnowledgeTest.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "blank_lines_before_namespace",
+      "global_namespace_import",
+      "ordered_imports"
+    ],
+    "backend/Modules/System/Engineering/Tests/Feature/PatchValidatorsTest.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "blank_lines_before_namespace",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/System/Engineering/Tests/Feature/ReleaseApprovalTest.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "blank_lines_before_namespace",
+      "class_attributes_separation",
+      "global_namespace_import",
+      "ordered_imports"
+    ],
+    "backend/Modules/System/Engineering/Tests/Feature/ReleasePipelineTest.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "blank_lines_before_namespace",
+      "class_attributes_separation",
+      "global_namespace_import",
+      "ordered_imports"
+    ],
+    "backend/Modules/System/Engineering/Tests/Feature/ReleaseTest.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "blank_lines_before_namespace",
+      "global_namespace_import",
+      "ordered_imports"
+    ],
+    "backend/Modules/System/Engineering/Tests/Feature/RepairEngineTest.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "blank_lines_before_namespace",
+      "global_namespace_import",
+      "no_unused_imports",
+      "ordered_imports"
+    ],
+    "backend/Modules/System/Engineering/Tests/Feature/RepairSessionTest.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "blank_lines_before_namespace",
+      "concat_space",
+      "global_namespace_import",
+      "ordered_imports"
+    ],
+    "backend/Modules/System/Engineering/Tests/Feature/SelfHealingPipelineTest.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "blank_lines_before_namespace",
+      "global_namespace_import",
+      "ordered_imports",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/Modules/System/Engineering/Tests/Feature/WorkspaceTest.php": [
+      "binary_operator_spaces",
+      "blank_line_after_opening_tag",
+      "blank_lines_before_namespace",
+      "global_namespace_import",
+      "ordered_imports"
+    ],
+    "backend/Modules/System/Traits/HasApiResponse.php": [
+      "no_superfluous_phpdoc_tags",
+      "phpdoc_trim"
+    ],
+    "backend/routes/api.php": [
+      "fully_qualified_strict_types",
+      "line_ending",
+      "method_argument_space",
+      "no_singleline_whitespace_before_semicolons",
+      "no_unneeded_import_alias",
+      "ordered_imports"
+    ],
+    "backend/routes/console.php": [
+      "concat_space",
+      "fully_qualified_strict_types"
+    ],
+    "backend/tests/Feature/Commerce/ChannelSynchronizationDualRunTest.php": [
+      "line_ending",
+      "ordered_imports"
+    ],
+    "backend/tests/Feature/Core/ExecutiveDashboardPortabilityTest.php": [
+      "global_namespace_import",
+      "ordered_imports"
+    ],
+    "backend/tests/Feature/Crm/CustomerEngagementTest.php": [
+      "global_namespace_import",
+      "not_operator_with_successor_space",
+      "ordered_imports",
+      "unary_operator_spaces"
+    ],
+    "backend/tests/Feature/Crm/CustomerFoundationTest.php": [
+      "global_namespace_import",
+      "not_operator_with_successor_space",
+      "ordered_imports",
+      "unary_operator_spaces"
+    ],
+    "backend/tests/Feature/Crm/CustomerIntelligenceTest.php": [
+      "global_namespace_import",
+      "not_operator_with_successor_space",
+      "ordered_imports",
+      "trailing_comma_in_multiline",
+      "unary_operator_spaces"
+    ],
+    "backend/tests/Feature/Crm/CustomerSalesLoyaltyTest.php": [
+      "global_namespace_import",
+      "no_unused_imports",
+      "not_operator_with_successor_space",
+      "ordered_imports",
+      "unary_operator_spaces"
+    ],
+    "backend/tests/Feature/Crm/CustomerServiceTest.php": [
+      "global_namespace_import",
+      "no_unused_imports",
+      "not_operator_with_successor_space",
+      "ordered_imports",
+      "unary_operator_spaces"
+    ],
+    "backend/tests/Feature/Crm/ExecutiveWorkspaceTest.php": [
+      "global_namespace_import",
+      "ordered_imports",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/tests/Feature/Crm/LoyaltyEventsTest.php": [
+      "global_namespace_import",
+      "line_ending",
+      "ordered_imports"
+    ],
+    "backend/tests/Feature/Finance/FinancialControlPlatformTest.php": [
+      "global_namespace_import",
+      "not_operator_with_successor_space",
+      "ordered_imports",
+      "unary_operator_spaces"
+    ],
+    "backend/tests/Feature/Finance/FinancialIntegrationTest.php": [
+      "braces_position",
+      "global_namespace_import",
+      "line_ending",
+      "no_unused_imports",
+      "not_operator_with_successor_space",
+      "ordered_imports",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline",
+      "unary_operator_spaces"
+    ],
+    "backend/tests/Feature/Finance/FinancialIntelligenceWorkspaceTest.php": [
+      "global_namespace_import",
+      "no_unused_imports",
+      "not_operator_with_successor_space",
+      "ordered_imports",
+      "unary_operator_spaces"
+    ],
+    "backend/tests/Feature/Finance/FinancialStatementTest.php": [
+      "line_ending"
+    ],
+    "backend/tests/Feature/Finance/InventoryPostingPipelineTest.php": [
+      "line_ending"
+    ],
+    "backend/tests/Feature/Finance/LedgerFoundationTest.php": [
+      "global_namespace_import",
+      "no_unused_imports",
+      "not_operator_with_successor_space",
+      "ordered_imports",
+      "trailing_comma_in_multiline",
+      "unary_operator_spaces"
+    ],
+    "backend/tests/Feature/Finance/PosSalePostingPipelineTest.php": [
+      "braces_position",
+      "single_line_empty_body"
+    ],
+    "backend/tests/Feature/Finance/SubledgersTest.php": [
+      "no_unused_imports"
+    ],
+    "backend/tests/Feature/Hr/AttendanceAvailabilityTest.php": [
+      "trailing_comma_in_multiline"
+    ],
+    "backend/tests/Feature/Hr/CompensationArchitectureGuardTest.php": [
+      "braces_position",
+      "class_definition",
+      "global_namespace_import",
+      "not_operator_with_successor_space",
+      "ordered_imports",
+      "single_line_empty_body",
+      "trailing_comma_in_multiline",
+      "unary_operator_spaces"
+    ],
+    "backend/tests/Feature/Hr/CompensationEngineTest.php": [
+      "trailing_comma_in_multiline"
+    ],
+    "backend/tests/Feature/Hr/HrArchitectureGuardTest.php": [
+      "global_namespace_import",
+      "not_operator_with_successor_space",
+      "ordered_imports",
+      "single_quote",
+      "trailing_comma_in_multiline",
+      "unary_operator_spaces"
+    ],
+    "backend/tests/Feature/Hr/HrEnhancementsArchitectureGuardTest.php": [
+      "global_namespace_import",
+      "not_operator_with_successor_space",
+      "ordered_imports",
+      "trailing_comma_in_multiline",
+      "unary_operator_spaces"
+    ],
+    "backend/tests/Feature/Hr/HrEnhancementsTest.php": [
+      "no_unused_imports",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/tests/Feature/Hr/PerformanceEngineTest.php": [
+      "trailing_comma_in_multiline"
+    ],
+    "backend/tests/Feature/Hr/RecruitmentArchitectureGuardTest.php": [
+      "global_namespace_import",
+      "not_operator_with_successor_space",
+      "ordered_imports",
+      "single_quote",
+      "trailing_comma_in_multiline",
+      "unary_operator_spaces"
+    ],
+    "backend/tests/Feature/Hr/RecruitmentPlatformTest.php": [
+      "trailing_comma_in_multiline"
+    ],
+    "backend/tests/Feature/Hr/WorkforceFoundationTest.php": [
+      "no_unused_imports"
+    ],
+    "backend/tests/Feature/IAM/UserManagementTest.php": [
+      "global_namespace_import",
+      "no_unused_imports",
+      "ordered_imports"
+    ],
+    "backend/tests/Feature/Inventory/InventoryDomainEventsTest.php": [
+      "braces_position",
+      "class_definition",
+      "line_ending",
+      "ordered_imports"
+    ],
+    "backend/tests/Feature/Inventory/InventoryFoundationRegressionTest.php": [
+      "line_ending"
+    ],
+    "backend/tests/Feature/Logistics/AutomationModuleTest.php": [
+      "global_namespace_import",
+      "not_operator_with_successor_space",
+      "ordered_imports",
+      "trailing_comma_in_multiline",
+      "unary_operator_spaces"
+    ],
+    "backend/tests/Feature/Logistics/DeliveryModuleTest.php": [
+      "trailing_comma_in_multiline"
+    ],
+    "backend/tests/Feature/Logistics/DriverModuleTest.php": [
+      "ordered_imports",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/tests/Feature/Logistics/FleetModuleTest.php": [
+      "no_unused_imports",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/tests/Feature/Logistics/IntelligenceModuleTest.php": [
+      "new_with_parentheses",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/tests/Feature/Logistics/OperationalEventsTest.php": [
+      "trailing_comma_in_multiline"
+    ],
+    "backend/tests/Feature/Logistics/Phase2ModuleTest.php": [
+      "no_unused_imports",
+      "not_operator_with_successor_space",
+      "trailing_comma_in_multiline",
+      "unary_operator_spaces"
+    ],
+    "backend/tests/Feature/Logistics/Phase3ModuleTest.php": [
+      "global_namespace_import",
+      "no_unused_imports",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/tests/Feature/Logistics/Phase4ModuleTest.php": [
+      "no_unused_imports",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/tests/Feature/Logistics/Phase5ModuleTest.php": [
+      "global_namespace_import",
+      "no_unused_imports",
+      "ordered_imports",
+      "trailing_comma_in_multiline"
+    ],
+    "backend/tests/Feature/Logistics/Phase6ModuleTest.php": [
+      "trailing_comma_in_multiline"
+    ],
+    "backend/tests/Feature/Operations/BranchAssignmentEngineTest.php": [
+      "binary_operator_spaces",
+      "concat_space"
+    ],
+    "backend/tests/Feature/Sales/Customers/CustomerContextIntegrityTest.php": [
+      "binary_operator_spaces",
+      "concat_space"
+    ],
+    "backend/tests/Feature/Security/WriteRouteAuthorizationTest.php": [
+      "global_namespace_import",
+      "not_operator_with_successor_space",
+      "trailing_comma_in_multiline",
+      "unary_operator_spaces"
+    ]
+  }
+}

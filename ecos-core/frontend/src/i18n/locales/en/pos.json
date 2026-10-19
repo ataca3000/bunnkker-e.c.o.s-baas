@@ -1,0 +1,68 @@
+{
+  "title": "Point of Sale",
+  "subtitle": "In-store and counter sales.",
+  "session": {
+    "title": "POS Session",
+    "open": "Open Session",
+    "close": "Close Session",
+    "openingBalance": "Opening Cash Balance",
+    "closingBalance": "Closing Cash Balance",
+    "totalSales": "Total Sales",
+    "totalReturns": "Total Returns",
+    "netSales": "Net Sales",
+    "cashdrawer": "Cash Drawer",
+    "opening": "Opening Session…",
+    "closing": "Closing Session…"
+  },
+  "sale": {
+    "title": "New Sale",
+    "searchProduct": "Scan barcode or search product…",
+    "cart": "Cart",
+    "emptyCart": "Cart is empty. Add products to begin.",
+    "customer": "Customer (optional)",
+    "searchCustomer": "Search customer by name or phone…",
+    "discount": "Discount",
+    "subtotal": "Subtotal",
+    "tax": "Tax",
+    "total": "Total",
+    "payment": "Payment",
+    "charge": "Charge {{amount}}",
+    "cash": "Cash",
+    "card": "Card",
+    "amountReceived": "Amount Received",
+    "change": "Change Due",
+    "completeSale": "Complete Sale",
+    "completing": "Processing…",
+    "printReceipt": "Print Receipt",
+    "newSale": "New Sale"
+  },
+  "return": {
+    "title": "Process Return",
+    "searchOrder": "Search order number…",
+    "selectItems": "Select items to return",
+    "reason": "Return Reason",
+    "refundMethod": "Refund Method",
+    "processReturn": "Process Return",
+    "processing": "Processing…"
+  },
+  "reports": {
+    "title": "POS Reports",
+    "salesSummary": "Sales Summary",
+    "cashFlow": "Cash Flow",
+    "topProducts": "Top Products",
+    "byPaymentMethod": "By Payment Method"
+  },
+  "receipts": {
+    "title": "Receipts",
+    "search": "Search receipts…",
+    "columns": {
+      "receiptNo": "Receipt No.",
+      "customer": "Customer",
+      "items": "Items",
+      "total": "Total",
+      "paymentMethod": "Payment",
+      "cashier": "Cashier",
+      "date": "Date"
+    }
+  }
+}

@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# ECOS Engineering Guardian — pre-commit hook
+# Installed by: engineering/quality-guardian/setup.sh
+#
+# Runs fast checks (PHP syntax, Composer, ESLint, TypeScript) before each commit.
+# To bypass in a genuine emergency: git commit --no-verify
+GUARDIAN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../engineering/quality-guardian" && pwd)"
+exec "$GUARDIAN_DIR/guardian.sh" pre-commit

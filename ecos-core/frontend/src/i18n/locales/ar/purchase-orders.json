@@ -1,0 +1,124 @@
+{
+  "title": "أوامر الشراء",
+  "subtitle": "إدارة المشتريات من مورديك.",
+  "search": "بحث في أوامر الشراء…",
+  "actions": {
+    "new": "أمر شراء جديد",
+    "create": "إنشاء أمر شراء",
+    "submit": "إرسال للاعتماد",
+    "approve": "موافقة",
+    "cancel": "إلغاء"
+  },
+  "filters": {
+    "status": "الحالة",
+    "allStatuses": "جميع الحالات",
+    "warehouse": "المستودع",
+    "supplier": "المورد",
+    "dateFrom": "من تاريخ",
+    "dateTo": "إلى تاريخ"
+  },
+  "status": {
+    "draft": "مسودة",
+    "submitted": "مُرسل",
+    "approved": "موافق عليه",
+    "partially_received": "مستلم جزئياً",
+    "received": "مستلم",
+    "cancelled": "ملغى"
+  },
+  "columns": {
+    "number": "الرقم",
+    "supplier": "المورد",
+    "warehouse": "المستودع",
+    "orderDate": "تاريخ الطلب",
+    "expectedDate": "التاريخ المتوقع",
+    "total": "الإجمالي",
+    "receivedPct": "المُستلم",
+    "status": "الحالة"
+  },
+  "form": {
+    "supplier": { "label": "المورد", "placeholder": "اختر مورداً…" },
+    "orderDate": "تاريخ الطلب",
+    "expectedDate": "التاريخ المتوقع",
+    "notes": { "label": "ملاحظات", "placeholder": "ملاحظات اختيارية…" }
+  },
+  "lines": {
+    "title": "بنود الطلب",
+    "addLine": "إضافة بند",
+    "columns": {
+      "product": "المنتج",
+      "quantity": "الكمية",
+      "unitPrice": "سعر الوحدة",
+      "total": "الإجمالي"
+    },
+    "selectProduct": "اختر منتجاً…",
+    "noLines": "لم تُضف بنود بعد."
+  },
+  "totals": {
+    "subtotal": "المجموع الفرعي",
+    "total": "الإجمالي"
+  },
+  "detail": {
+    "title": "أمر الشراء",
+    "orderInfo": "معلومات الطلب",
+    "orderDetails": "تفاصيل الطلب",
+    "lineItems": "بنود الطلب",
+    "supplier": "المورد",
+    "warehouse": "المستودع",
+    "orderDate": "تاريخ الطلب",
+    "expectedDate": "التاريخ المتوقع",
+    "status": "الحالة",
+    "notes": "ملاحظات",
+    "product": "المنتج",
+    "qty": "الكمية",
+    "receivedQty": "المُستلم",
+    "remainingQty": "المتبقي",
+    "unitPrice": "سعر الوحدة",
+    "lineTotal": "إجمالي البند",
+    "financials": "الملخص المالي",
+    "subtotal": "المجموع الفرعي",
+    "discount": "الخصم",
+    "shipping": "الشحن",
+    "additionalCosts": "تكاليف إضافية",
+    "grandTotal": "الإجمالي الكلي",
+    "loading": "جارٍ التحميل…",
+    "notFound": "غير موجود",
+    "notFoundMessage": "أمر الشراء هذا غير موجود."
+  },
+  "create": {
+    "title": "أمر شراء جديد",
+    "new": "جديد",
+    "subtitle": "إنشاء مسودة أمر شراء.",
+    "orderDetails": "تفاصيل الطلب",
+    "submitCreate": "إنشاء الطلب",
+    "creating": "جارٍ الإنشاء…",
+    "errorTitle": "تعذر إنشاء الطلب"
+  },
+  "edit": {
+    "title": "تعديل أمر الشراء",
+    "subtitle": "تحديث تفاصيل أمر الشراء.",
+    "submitEdit": "حفظ التغييرات",
+    "saving": "جارٍ الحفظ…",
+    "errorTitle": "تعذر الحفظ"
+  },
+  "dialogs": {
+    "submit": {
+      "title": "إرسال أمر الشراء",
+      "description": "إرسال {{number}} للاعتماد؟",
+      "confirm": "إرسال"
+    },
+    "approve": {
+      "title": "الموافقة على أمر الشراء",
+      "description": "الموافقة على {{number}}؟ سيصبح الطلب للقراءة فقط بعد الموافقة.",
+      "confirm": "موافقة"
+    },
+    "cancel": {
+      "title": "إلغاء أمر الشراء",
+      "description": "إلغاء {{number}}؟ لا يمكن التراجع عن هذا الإجراء.",
+      "confirm": "إلغاء الطلب"
+    }
+  },
+  "delete": {
+    "title": "حذف أمر الشراء",
+    "confirm": "حذف"
+  }
+}

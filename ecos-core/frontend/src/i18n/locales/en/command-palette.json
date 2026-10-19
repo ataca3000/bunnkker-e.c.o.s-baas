@@ -1,0 +1,56 @@
+{
+  "groups": {
+    "navigation": "Navigation",
+    "actions": "Quick Actions",
+    "search": "Search",
+    "recent": "Recently Opened",
+    "favorites": "Favorites",
+    "ai": "AI Assistant"
+  },
+  "nav": {
+    "dashboard": { "title": "Dashboard", "description": "Go to the main overview" },
+    "orders": { "title": "Orders", "description": "Manage sales orders" },
+    "fulfillments": { "title": "Fulfillments", "description": "Track order fulfillment and shipping" },
+    "customers": { "title": "Customers", "description": "Manage customer records" },
+    "products": { "title": "Products", "description": "Manage the product catalog" },
+    "inventory": { "title": "Inventory", "description": "View stock levels and movements" },
+    "warehouses": { "title": "Warehouses", "description": "Manage storage locations" },
+    "suppliers": { "title": "Suppliers", "description": "Manage vendors and suppliers" },
+    "purchaseOrders": { "title": "Purchase Orders", "description": "Manage procurement orders" },
+    "companies": { "title": "Companies", "description": "Manage company entities" },
+    "manufacturing": { "title": "Manufacturing", "description": "BOM and production management" },
+    "reports": { "title": "Reports", "description": "Analytics and business reports" },
+    "settings": { "title": "Settings", "description": "Application configuration" }
+  },
+  "actions": {
+    "orderNew": { "title": "New Order", "description": "Create a sales order" },
+    "customerNew": { "title": "New Customer", "description": "Add a customer record" },
+    "productNew": { "title": "New Product", "description": "Add a product to the catalog" },
+    "supplierNew": { "title": "New Supplier", "description": "Register a supplier or vendor" },
+    "warehouseNew": { "title": "New Warehouse", "description": "Register a storage location" },
+    "companyNew": { "title": "New Company", "description": "Add a company entity" },
+    "import": { "title": "Import Data", "description": "Import from CSV or Excel" },
+    "export": { "title": "Export Data", "description": "Export to CSV or Excel" }
+  },
+  "favorites": {
+    "orders": { "title": "Orders", "description": "Sales orders workspace" },
+    "inventory": { "title": "Inventory", "description": "Stock levels & locations" }
+  },
+  "ai": {
+    "assistant": { "title": "AI Assistant", "description": "Ask anything about your data and operations" }
+  },
+  "palette": {
+    "soon": "Soon",
+    "noResults": "No results for “{{query}}”",
+    "noResultsHint": "Try a different keyword or navigate directly.",
+    "searchPlaceholder": "Search commands, pages, or records…",
+    "clearSearch": "Clear search",
+    "commandsAria": "Commands",
+    "navigate": "Navigate",
+    "select": "Select",
+    "close": "Close",
+    "aiComingSoon": "AI coming soon",
+    "title": "Command Center",
+    "srDescription": "Search and execute commands across the ECOS ERP system."
+  }
+}

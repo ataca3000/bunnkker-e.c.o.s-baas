@@ -1,0 +1,1267 @@
+{
+  "title": "الإعدادات",
+  "subtitle": "تكوين مساحة عمل ECOS الخاصة بك.",
+  "sections": {
+    "general": "عام",
+    "appearance": "المظهر",
+    "language": "اللغة والمنطقة",
+    "notifications": "الإشعارات",
+    "security": "الأمان"
+  },
+  "configOs": {
+    "title": "نظام الإعدادات",
+    "subtitle": "منصة الحوكمة المؤسسية — كل قاعدة قابلة للتهيئة عبر ECOS ERP",
+    "auditEnabled": "جميع التغييرات مُدققة",
+    "selectBrand": "اختر العلامة التجارية للتهيئة",
+    "loadingBrands": "جارٍ تحميل العلامات…",
+    "selected": "محدد",
+    "companyConfig": "إعدادات الشركة",
+    "companySettings": "إعدادات الشركة",
+    "companySettingsDesc": "العملة، المنطقة الزمنية، السنة المالية، المستودع الافتراضي، اللغة",
+    "brandSettings": "إعدادات العلامة التجارية",
+    "searchCategories": "البحث في الفئات…",
+    "selectBrandWorkspace": "اختر علامة تجارية أعلاه لفتح مساحة عمل التهيئة.",
+    "selectBrandCategories": "اختر علامة تجارية أعلاه لعرض فئات التهيئة.",
+    "kpi": {
+      "areas": "مناطق الإعداد",
+      "brands": "العلامات التجارية",
+      "audit": "التدقيق مفعّل",
+      "cacheTtl": "مدة الكاش",
+      "yes": "نعم",
+      "oneHour": "1 ساعة"
+    },
+    "cat": {
+      "windows": {
+        "label": "نوافذ التسليم",
+        "desc": "تحديد نوافذ زمنية لتسليم العملاء"
+      },
+      "preparation": {
+        "label": "التحضير",
+        "desc": "تخطيط الموجات، أحجام الدُّفعات، وقواعد التصنيع"
+      },
+      "inventory": {
+        "label": "المخزون",
+        "desc": "حدود المخزون، قواعد إعادة الطلب، وسياسات الحجز"
+      },
+      "manufacturing": {
+        "label": "التصنيع",
+        "desc": "إعدادات BOM، جدولة الإنتاج، وبوابات الجودة"
+      },
+      "logistics": {
+        "label": "اللوجستيات",
+        "desc": "قواعد الناقل، منطق التوجيه، وسياسات التسليم"
+      },
+      "crm": {
+        "label": "إدارة العملاء",
+        "desc": "تقسيم العملاء، قواعد الولاء، وسياسات الاتصال"
+      },
+      "marketing": {
+        "label": "التسويق",
+        "desc": "قواعد الحملات، حدود الميزانية، وضوابط القنوات"
+      },
+      "ai": {
+        "label": "إعدادات الذكاء الاصطناعي",
+        "desc": "تفضيلات نموذج الذكاء الاصطناعي وعتبات الأتمتة"
+      },
+      "workflow": {
+        "label": "سير العمل",
+        "desc": "سلاسل الموافقة، التصعيد، وتوجيه الإشعارات"
+      },
+      "notification": {
+        "label": "الإشعارات",
+        "desc": "قنوات التنبيه، تفضيلات التسليم، وساعات الهدوء"
+      },
+      "integration": {
+        "label": "التكاملات",
+        "desc": "اتصالات API الخارجية وإعدادات المزامنة"
+      },
+      "security": {
+        "label": "الأمان",
+        "desc": "سياسات الوصول، إلزام MFA، والاحتفاظ بسجلات التدقيق"
+      },
+      "numbering": {
+        "label": "الترقيم",
+        "desc": "تسلسلات أرقام المستندات وقوالب التنسيق"
+      },
+      "approval": {
+        "label": "الموافقات",
+        "desc": "مهام سير عمل الموافقة متعددة المستويات وقواعد التفويض"
+      }
+    }
+  },
+  "brandConfig": {
+    "pageTitle": "تهيئة العلامة التجارية",
+    "back": "لوحة التحكم",
+    "deliveryWindows": "نوافذ التسليم",
+    "auditLog": "سجل التدقيق",
+    "sections": {
+      "operations": "العمليات",
+      "commerce": "التجارة",
+      "system": "النظام"
+    },
+    "statusBadge": {
+      "complete": "مكتمل",
+      "partial": "جزئي",
+      "notSet": "غير محدد"
+    },
+    "checkLabels": {
+      "channels": "قنوات البيع",
+      "delivery_coverage": "تغطية التسليم",
+      "delivery_zones": "مناطق التسليم",
+      "delivery_windows": "نوافذ التسليم",
+      "shipping_prices": "أسعار الشحن"
+    },
+    "health": {
+      "title": "صحة تهيئة العلامة التجارية",
+      "brand": "العلامة التجارية",
+      "scoreLabel": "الصحة",
+      "checksComplete": "{{passed}} من {{total}} فحوصات مكتملة"
+    },
+    "deliveryWindowsTabs": {
+      "coverage": "التغطية",
+      "shipping": "مناطق الشحن"
+    },
+    "audit": {
+      "loading": "جارٍ تحميل سجل التدقيق…",
+      "title": "سجل تدقيق الإعدادات",
+      "entries": "{{count}} مدخل",
+      "empty": "لا توجد مدخلات تدقيق بعد.",
+      "hideDiff": "إخفاء الفرق",
+      "showDiff": "إظهار الفرق",
+      "before": "قبل",
+      "after": "بعد",
+      "created": "أُنشئ",
+      "deleted": "حُذف",
+      "updated": "حُدِّث",
+      "by": "بواسطة {{actor}}"
+    },
+    "cards": {
+      "pricing": {
+        "label": "التسعير",
+        "desc": "أتمتة الأسعار، قواعد هامش الربح، ونشر قنوات البيع."
+      },
+      "order": {
+        "label": "الطلبات",
+        "desc": "سياسات إدخال الطلبات، إثبات الدفع، وقواعد مطابقة العملاء."
+      },
+      "preparation": {
+        "label": "التحضير",
+        "desc": "إعدادات تخطيط الموجات والتصنيع الدُّفعي"
+      },
+      "inventory": {
+        "label": "المخزون",
+        "desc": "حدود المخزون، نقاط إعادة الطلب، قواعد الحجز"
+      },
+      "manufacturing": {
+        "label": "التصنيع",
+        "desc": "قواعد BOM، جدولة الإنتاج، بوابات الجودة"
+      },
+      "logistics": {
+        "label": "اللوجستيات",
+        "desc": "تهيئة الناقل، التوجيه، وسياسات التسليم"
+      },
+      "crm": {
+        "label": "إدارة العملاء",
+        "desc": "تقسيم العملاء وقواعد الاتصال"
+      },
+      "marketing": {
+        "label": "التسويق",
+        "desc": "ميزانيات الحملات، ضوابط القنوات، سياسات الإعلانات"
+      },
+      "workflow": {
+        "label": "سير العمل",
+        "desc": "سلاسل الموافقة وسياسات التصعيد"
+      },
+      "notification": {
+        "label": "الإشعارات",
+        "desc": "قنوات التنبيه وتفضيلات التسليم"
+      },
+      "security": {
+        "label": "الأمان",
+        "desc": "ضوابط الوصول وسياسات التدقيق"
+      },
+      "integration": {
+        "label": "التكاملات",
+        "desc": "اتصالات API ومزامنة الأطراف الثالثة"
+      },
+      "ai": {
+        "label": "إعدادات الذكاء الاصطناعي",
+        "desc": "تفضيلات نموذج الذكاء الاصطناعي والأتمتة"
+      },
+      "numbering": {
+        "label": "الترقيم",
+        "desc": "تسلسلات المستندات وقوالب التنسيق"
+      },
+      "approval": {
+        "label": "الموافقات",
+        "desc": "مهام سير عمل الموافقة متعددة المستويات"
+      },
+      "audit": {
+        "label": "سجل التدقيق",
+        "desc": "تاريخ تغييرات الإعدادات وعارض الفروق"
+      },
+      "windows": {
+        "label": "التسليم والشحن",
+        "desc": "منطقة التغطية، تكاليف شحن المناطق، وتهيئة نوافذ التسليم"
+      }
+    }
+  },
+  "policy": {
+    "configuredVersion": "مُهيَّأ v{{version}}",
+    "usingDefaults": "يستخدم الافتراضي",
+    "noSettings": "لا توجد إعدادات قابلة للتهيئة لهذه المجموعة بعد.",
+    "reasonPlaceholder": "سبب التغيير (اختياري)",
+    "reasonNote": "ملاحظة لسجل التدقيق…",
+    "saving": "جارٍ الحفظ…",
+    "save": "حفظ التغييرات",
+    "saved": "تم الحفظ",
+    "enabled": "مفعّل",
+    "comingSoon": "قريباً",
+    "notSet": "غير محدد",
+    "banner": {
+      "orderPriceProtection": "حماية سعر الطلب — مفعّلة دائماً",
+      "orderPriceProtectionDesc": "تُقفل أسعار الطلبات عند وقت التأكيد. تُطبَّق تغييرات الأسعار على الطلبات الجديدة فقط. هذا الإعداد مُفرض على مستوى النظام لضمان الدقة المالية.",
+      "enforced": "مفروض"
+    },
+    "toast": {
+      "approvalRequired": "عتبة الموافقة مطلوبة",
+      "approvalRequiredDesc": "حدد قيمة العتبة عند استخدام استراتيجية \"النشر بعد الموافقة\".",
+      "saveFailed": "فشل الحفظ",
+      "saveFailedDesc": "تعذّر حفظ التغييرات. يُرجى المحاولة مرة أخرى."
+    },
+    "recentChanges": "التغييرات الأخيرة",
+    "savedSuccessfully": "تم حفظ السياسة",
+    "loading": "جارٍ تحميل السياسة…",
+    "auditBy": "بواسطة",
+    "locked": "مقفل",
+    "preserveIncomingStatus": "الحفاظ على الحالة الواردة",
+    "auditActions": {
+      "create": "إنشاء",
+      "update": "تحديث",
+      "delete": "حذف"
+    },
+    "options": {
+      "automatic": "تلقائي",
+      "manual": "يدوي",
+      "disabled": "معطّل",
+      "block_prevent": "منع (حظر)",
+      "warn": "تحذير فقط",
+      "allow": "السماح",
+      "fifo": "FIFO",
+      "fefo": "FEFO",
+      "lifo": "LIFO",
+      "push_on_confirm": "دفع عند التأكيد",
+      "push_on_pack": "دفع عند التعبئة",
+      "lazy": "كسول (يدوي)",
+      "immediate": "فوري",
+      "batch_end": "نهاية الدُّفعة",
+      "pricing_manager": "مدير التسعير",
+      "commercial_manager": "المدير التجاري",
+      "general_manager": "المدير العام",
+      "publish_after_approval": "نشر بعد الموافقة",
+      "block_completion": "منع الإتمام",
+      "require_photo": "طلب صورة",
+      "require_note": "طلب ملاحظة",
+      "block_with_note": "منع (مع ملاحظة)",
+      "proceed_with_note": "المتابعة (مع ملاحظة)",
+      "all": "الكل",
+      "confirmed": "مؤكد",
+      "invoice": "فاتورة",
+      "pos": "نقطة البيع",
+      "none": "لا شيء",
+      "low": "منخفض",
+      "medium": "متوسط",
+      "high": "مرتفع",
+      "wave_generation": {
+        "auto": "تلقائي",
+        "manual": "يدوي"
+      },
+      "wave_priority": {
+        "fifo": "الأول دخولاً الأول خروجاً (FIFO)",
+        "priority": "حسب الأولوية",
+        "deadline": "الموعد النهائي أولاً"
+      },
+      "negative_stock_handling": {
+        "block": "منع",
+        "warn": "تحذير فقط",
+        "allow": "سماح"
+      },
+      "packing_strategy": {
+        "standard": "قياسي",
+        "bulk": "بالجملة",
+        "individual": "فردي"
+      },
+      "exception_handling": {
+        "notify": "إشعار فقط",
+        "block": "منع الإتمام",
+        "auto_resolve": "حل تلقائي"
+      },
+      "reservation_method": {
+        "fifo": "FIFO",
+        "fefo": "FEFO (انتهاء الصلاحية)",
+        "manual": "يدوي"
+      },
+      "costing_method": {
+        "fifo": "FIFO",
+        "average": "المتوسط المرجح",
+        "standard": "التكلفة القياسية"
+      },
+      "recipe_version_policy": {
+        "latest": "الأحدث دائماً",
+        "approved": "آخر معتمد",
+        "pinned": "نسخة مثبتة"
+      },
+      "vehicle_assignment": {
+        "manual": "يدوي",
+        "auto": "تلقائي"
+      },
+      "driver_assignment": {
+        "manual": "يدوي",
+        "auto": "تلقائي"
+      },
+      "failed_delivery": {
+        "return_to_warehouse": "الإرجاع إلى المستودع",
+        "reschedule": "إعادة الجدولة",
+        "cancel": "إلغاء الطلب"
+      },
+      "campaign_attribution": {
+        "last_click": "آخر نقرة",
+        "first_click": "أول نقرة",
+        "linear": "خطي"
+      },
+      "order_workflow": {
+        "standard": "قياسي",
+        "express": "سريع",
+        "strict": "موافقة صارمة"
+      },
+      "preparation_workflow": {
+        "standard": "قياسي",
+        "lean": "رشيق",
+        "strict": "صارم"
+      },
+      "procurement_workflow": {
+        "standard": "قياسي",
+        "strict": "موافقة صارمة"
+      },
+      "publishing_strategy": {
+        "automatic": "النشر التلقائي",
+        "approval_only": "النشر بعد الموافقة"
+      },
+      "discount_type": {
+        "percentage": "نسبة مئوية (%)",
+        "fixed_amount": "مبلغ ثابت (جنيه)"
+      },
+      "customer_matching_policy": {
+        "reuse_existing": "استخدام العميل الموجود (موصى به)",
+        "warn_only": "استخدام + تحذير (يعرض إشعاراً)",
+        "block_new_customer": "إجبار الاستخدام (منع إنشاء ملف جديد)",
+        "always_create_new": "إنشاء عميل جديد دائماً"
+      },
+      "deposit_policy": {
+        "none": "لا شيء",
+        "optional": "اختياري",
+        "required": "إلزامي"
+      },
+      "discount_policy": {
+        "none": "بلا خصومات",
+        "open": "خصومات مفتوحة",
+        "manager_approval": "موافقة المدير"
+      },
+      "source_entry_policies": {
+        "pending": "معلق",
+        "awaiting_payment": "بانتظار الدفع",
+        "processing": "قيد المعالجة",
+        "confirmed": "مؤكد",
+        "confirm_order": "مؤكد"
+      },
+      "payment_proof_policy": {
+        "none": "لا شيء",
+        "optional": "اختياري",
+        "required": "إلزامي"
+      }
+    },
+    "rows": {
+      "cash": "نقدي",
+      "cod": "الدفع عند الاستلام",
+      "card": "بطاقة",
+      "bank_transfer": "تحويل بنكي",
+      "wallet": "محفظة",
+      "partial": "جزئي",
+      "online": "أونلاين"
+    },
+    "optionHints": {
+      "publishing_strategy": {
+        "automatic": "تُنشر الأسعار المعتمدة فوراً.",
+        "approval_only": "تُخزَّن الأسعار مؤقتاً وتُنشر يدوياً."
+      }
+    },
+    "rowLabels": {
+      "source_entry_policies": {
+        "manual": "الطلبات اليدوية",
+        "pos": "مبيعات نقطة البيع",
+        "woocommerce": "WooCommerce",
+        "public_api": "واجهة API العامة"
+      },
+      "payment_proof_policy": {
+        "cod": "الدفع عند الاستلام",
+        "instapay": "إنستاباي",
+        "bank_transfer": "تحويل بنكي",
+        "mobile_wallet": "محفظة إلكترونية",
+        "credit_card": "بطاقة ائتمانية"
+      }
+    },
+    "lockLabels": {
+      "woocommerce": "الحفاظ على الحالة الواردة",
+      "public_api": "الحفاظ على الحالة الواردة"
+    },
+    "descriptions": {
+      "pricing": "ضبط أتمتة الأسعار، قواعد هامش الربح، واستراتيجية نشر القنوات.",
+      "preparation": "تخطيط الدُّفعات، قواعد الفرز، وحدود الطاقة على مستوى الموجة.",
+      "inventory": "حجز المخزون، إدارة النقص، ومحفّزات التزويد.",
+      "manufacturing": "استبدال BOM، تحمّل الفاقد، وجدولة الإنتاج.",
+      "order": "التحقق من الطلبات، نوافذ التعديل، وقواعد حماية الأسعار.",
+      "logistics": "اختيار الناقل، التوجيه، وسياسات التعامل مع الدفع عند الاستلام.",
+      "crm": "قواعد درجات العملاء، نقاط الولاء، وإزالة تكرار جهات الاتصال.",
+      "marketing": "ضوابط ميزانية الحملات، حدود القنوات، وحدود إنفاق الإعلانات.",
+      "ai": "تفضيلات توصيات الذكاء الاصطناعي وعتبات ثقة الأتمتة.",
+      "workflow": "سلاسل الموافقة، مؤقتات التصعيد، وسياسات التفويض.",
+      "notification": "قنوات التنبيه، ساعات الهدوء، وقواعد إشعارات التصعيد.",
+      "integration": "تكرار المزامنة، حل التعارضات، وسياسات حدود معدل API.",
+      "security": "مدة الجلسة، إلزام MFA، وقواعد تعقيد كلمة المرور.",
+      "numbering": "تسلسلات أرقام المستندات، البادئات، وقوالب التنسيق.",
+      "approval": "عتبات الموافقة متعددة المستويات وتفويض سير العمل."
+    },
+    "fields": {
+      "auto_price_review": "مراجعة الأسعار التلقائية",
+      "margin_alert_threshold": "عتبة تنبيه هامش الربح",
+      "price_publish_strategy": "استراتيجية نشر الأسعار",
+      "approval_threshold": "عتبة الموافقة",
+      "channel_publish_delay": "تأخير نشر القناة",
+      "allow_negative_margin": "السماح بهامش ربح سالب",
+      "default_sort_strategy": "استراتيجية الفرز الافتراضية",
+      "max_batch_size": "الحد الأقصى لحجم الدُّفعة",
+      "max_orders_per_wave": "الحد الأقصى للطلبات لكل موجة",
+      "require_batch_approval": "طلب موافقة على الدُّفعة",
+      "reservation_mode": "وضع الحجز",
+      "shortage_action": "إجراء النقص",
+      "auto_reorder": "إعادة الطلب التلقائية",
+      "reorder_threshold_days": "عتبة إعادة الطلب (أيام)",
+      "allow_bom_substitution": "السماح باستبدال BOM",
+      "scrap_tolerance_pct": "نسبة تحمّل الفاقد %",
+      "require_qc_sign_off": "طلب موافقة مراقبة الجودة",
+      "production_schedule_mode": "وضع جدولة الإنتاج",
+      "allow_order_edit_after_confirm": "السماح بتعديل الطلب بعد التأكيد",
+      "edit_window_minutes": "نافذة التعديل (دقائق)",
+      "require_reason_on_cancel": "طلب سبب عند الإلغاء",
+      "auto_cancel_unpaid_hours": "إلغاء تلقائي للطلبات غير مدفوعة (ساعات)",
+      "cod_verification_required": "التحقق من الدفع عند الاستلام مطلوب",
+      "allow_partial_delivery": "السماح بالتسليم الجزئي",
+      "carrier_selection_mode": "وضع اختيار الناقل",
+      "driver_reassignment_mode": "وضع إعادة تعيين السائق",
+      "proof_of_delivery_required": "إثبات التسليم مطلوب",
+      "failed_delivery_action": "إجراء فشل التسليم",
+      "enable_loyalty_points": "تفعيل نقاط الولاء",
+      "points_per_egp": "نقاط لكل جنيه",
+      "tier_upgrade_mode": "وضع ترقية الدرجة",
+      "campaign_daily_budget_cap": "الحد الأقصى للميزانية اليومية للحملة",
+      "auto_pause_on_budget": "إيقاف مؤقت تلقائي عند انتهاء الميزانية",
+      "channel_spend_limits": "حدود إنفاق القناة",
+      "ai_suggestion_confidence": "ثقة اقتراح الذكاء الاصطناعي",
+      "enable_demand_forecast": "تفعيل توقعات الطلب",
+      "forecast_horizon_days": "أفق التوقع (أيام)",
+      "require_approval_for": "طلب موافقة على",
+      "escalation_timeout_hours": "مهلة التصعيد (ساعات)",
+      "auto_approve_below": "موافقة تلقائية تحت",
+      "notification_channels": "قنوات الإشعارات",
+      "quiet_hours_start": "بداية ساعات الهدوء",
+      "quiet_hours_end": "نهاية ساعات الهدوء",
+      "sync_frequency_minutes": "تكرار المزامنة (دقائق)",
+      "conflict_resolution": "حل التعارضات",
+      "session_timeout_minutes": "مهلة الجلسة (دقائق)",
+      "require_mfa": "إلزام المصادقة الثنائية",
+      "password_complexity": "تعقيد كلمة المرور",
+      "audit_retention_days": "الاحتفاظ بالتدقيق (أيام)",
+      "order_number_prefix": "بادئة رقم الطلب",
+      "order_number_padding": "حشو رقم الطلب",
+      "invoice_number_prefix": "بادئة رقم الفاتورة",
+      "invoice_number_padding": "حشو رقم الفاتورة",
+      "approval_levels": "مستويات الموافقة",
+      "delegation_allowed": "التفويض مسموح",
+      "auto_approve_timeout": "موافقة تلقائية عند انتهاء المهلة",
+      "allowed_payment_methods": "طرق الدفع المسموح بها",
+      "wave_generation": "توليد الموجة",
+      "wave_priority": "أولوية الموجة",
+      "batch_size": "حجم الدُّفعة الافتراضي",
+      "merge_orders": "دمج الطلبات في الموجة",
+      "split_orders": "السماح بتقسيم الطلبات",
+      "partial_preparation": "السماح بالتجهيز الجزئي",
+      "negative_stock_handling": "معالجة المخزون السالب",
+      "packing_strategy": "استراتيجية التعبئة",
+      "exception_handling": "معالجة الاستثناءات",
+      "minimum_margin_pct": "الحد الأدنى لهامش الربح %",
+      "publishing_strategy": "استراتيجية النشر",
+      "discount_type": "نوع حد الخصم",
+      "discount_value": "الحد الأقصى لقيمة الخصم",
+      "required_approval_above": "عتبة الموافقة (جنيه)",
+      "_approval_role": "دور الموافقة",
+      "pending_review_threshold": "تنبيه المراجعات المعلقة",
+      "price_expiration_days": "انتهاء صلاحية السعر (أيام)",
+      "allow_negative_stock": "السماح بالمخزون السالب",
+      "reservation_method": "طريقة الحجز",
+      "costing_method": "طريقة التكلفة",
+      "cycle_count_frequency_days": "تكرار الجرد الدوري (أيام)",
+      "stock_alert_threshold_pct": "تنبيه انخفاض المخزون %",
+      "recipe_version_policy": "سياسة إصدار الوصفة",
+      "recipe_approval_required": "موافقة الوصفة مطلوبة",
+      "auto_manufacturing": "تصنيع تلقائي",
+      "bom_validation": "التحقق من BOM",
+      "waste_rules_enabled": "قواعد الهدر مفعّلة",
+      "cost_refresh_on_production": "تحديث التكلفة بعد الإنتاج",
+      "source_entry_policies": "سياسة إدخال الطلب حسب المصدر",
+      "payment_proof_policy": "سياسة إثبات الدفع",
+      "auto_reserve_inventory": "حجز المخزون تلقائياً",
+      "customer_matching_policy": "سياسة مطابقة العملاء",
+      "require_phone": "إلزام رقم الهاتف",
+      "require_address": "إلزام عنوان التسليم",
+      "customer_lookup_enabled": "تفعيل البحث عن العملاء",
+      "deposit_policy": "سياسة العربون",
+      "discount_policy": "سياسة الخصم",
+      "vehicle_assignment": "تعيين المركبة",
+      "driver_assignment": "تعيين السائق",
+      "max_stops_per_route": "الحد الأقصى للتوقفات في الخط",
+      "partial_delivery": "السماح بالتسليم الجزئي",
+      "failed_delivery": "إجراء فشل التسليم",
+      "vip_order_threshold": "عتبة طلب VIP",
+      "delivery_success_threshold": "مستهدف نجاح التسليم %",
+      "follow_up_after_days": "متابعة بعد (أيام)",
+      "loyalty_enabled": "برنامج الولاء مفعّل",
+      "default_utm_source": "مصدر UTM الافتراضي",
+      "campaign_attribution": "نموذج نسب الحملة",
+      "conversion_window_days": "نافذة التحويل (أيام)",
+      "confidence_threshold": "عتبة الثقة",
+      "auto_decision_enabled": "القرار التلقائي مفعّل",
+      "alert_threshold": "عتبة التنبيه",
+      "order_workflow": "وضع سير عمل الطلبات",
+      "preparation_workflow": "وضع سير عمل التجهيز",
+      "procurement_workflow": "وضع سير عمل المشتريات",
+      "email_enabled": "إشعارات البريد الإلكتروني",
+      "sms_enabled": "إشعارات SMS",
+      "whatsapp_enabled": "إشعارات واتساب",
+      "push_enabled": "الإشعارات الفورية",
+      "escalation_after_minutes": "تصعيد بعد (دقائق)",
+      "woocommerce_enabled": "تكامل WooCommerce",
+      "meta_enabled": "تكامل Meta (فيسبوك)",
+      "google_enabled": "تكامل إعلانات Google",
+      "max_login_attempts": "الحد الأقصى لمحاولات الدخول",
+      "mfa_enabled": "تفعيل المصادقة الثنائية",
+      "password_expiry_days": "انتهاء صلاحية كلمة المرور (أيام)",
+      "order_prefix": "بادئة الطلب",
+      "invoice_prefix": "بادئة الفاتورة",
+      "purchase_prefix": "بادئة المشتريات",
+      "session_prefix": "بادئة الجلسة",
+      "count_prefix": "بادئة الجرد",
+      "transfer_prefix": "بادئة التحويل",
+      "return_prefix": "بادئة المرتجعات",
+      "sequence_padding": "حشو التسلسل",
+      "price_approval_required": "موافقة السعر مطلوبة",
+      "purchase_approval_threshold": "عتبة موافقة الشراء (جنيه)",
+      "discount_approval_required": "موافقة الخصم مطلوبة",
+      "refund_approval_required": "موافقة المرتجع مطلوبة"
+    },
+    "hints": {
+      "auto_price_review": "وضع علامة تلقائية على العناصر لمراجعة الأسعار عند تغيّر التكلفة",
+      "margin_alert_threshold": "تنبيه عندما ينخفض هامش الربح عن هذه النسبة",
+      "price_publish_strategy": "كيفية نشر تغييرات الأسعار على قنوات البيع",
+      "approval_threshold": "تغييرات الأسعار التي تتجاوز هذه النسبة تتطلب موافقة قبل النشر",
+      "channel_publish_delay": "الدقائق الانتظار قبل نشر تغييرات الأسعار",
+      "allow_negative_margin": "السماح ببيع المنتجات بأقل من التكلفة",
+      "default_sort_strategy": "الترتيب الافتراضي للعناصر في التحضير والجمع",
+      "max_batch_size": "الحد الأقصى للعناصر في دُفعة تحضير واحدة",
+      "max_orders_per_wave": "الحد الأقصى للطلبات في موجة واحدة",
+      "require_batch_approval": "طلب موافقة المدير قبل تنفيذ كل دُفعة",
+      "reservation_mode": "وقت حجز المخزون للطلبات المؤكدة",
+      "shortage_action": "الإجراء المتخذ عند عدم توفر المخزون المحجوز",
+      "auto_reorder": "إنشاء أوامر شراء تلقائياً عند نقطة إعادة الطلب",
+      "reorder_threshold_days": "الأيام المتبقية من المخزون لتشغيل إعادة الطلب",
+      "allow_bom_substitution": "السماح بمكونات BOM بديلة عند عدم توفر المكوّن الأساسي",
+      "scrap_tolerance_pct": "الحد الأقصى المقبول لنسبة الفاقد في كل عملية إنتاج",
+      "require_qc_sign_off": "طلب موافقة الجودة قبل وضع علامة اكتمال الإنتاج",
+      "production_schedule_mode": "كيفية جدولة دُفعات الإنتاج",
+      "allow_order_edit_after_confirm": "السماح بتعديل الطلبات المؤكدة خلال النافذة الزمنية",
+      "edit_window_minutes": "الدقائق بعد التأكيد المسموح فيها بالتعديل",
+      "require_reason_on_cancel": "طلب ملاحظة سبب عند إلغاء الطلبات",
+      "auto_cancel_unpaid_hours": "إلغاء الطلبات غير المدفوعة تلقائياً بعد هذا العدد من الساعات",
+      "cod_verification_required": "طلب صورة/توقيع كإثبات لتحصيلات الدفع عند الاستلام",
+      "allow_partial_delivery": "السماح بتسليم مجموعة فرعية من العناصر المطلوبة",
+      "carrier_selection_mode": "كيفية تعيين الناقل للشحنات",
+      "driver_reassignment_mode": "كيفية إعادة تعيين السائقين عند عدم توفرهم",
+      "proof_of_delivery_required": "طلب إثبات التسليم قبل وضع علامة التسليم",
+      "failed_delivery_action": "الإجراء عند فشل محاولة التسليم",
+      "enable_loyalty_points": "منح نقاط الولاء على الطلبات المكتملة",
+      "points_per_egp": "نقاط الولاء الممنوحة لكل جنيه مصري",
+      "tier_upgrade_mode": "كيفية تقييم درجات العملاء وترقيتها",
+      "campaign_daily_budget_cap": "الحد الأقصى للإنفاق اليومي عبر جميع الحملات",
+      "auto_pause_on_budget": "إيقاف الحملات مؤقتاً تلقائياً عند استنفاد الميزانية",
+      "channel_spend_limits": "حدود الإنفاق اليومي القصوى لكل قناة",
+      "ai_suggestion_confidence": "الحد الأدنى لنقاط الثقة لاقتراحات الذكاء الاصطناعي (0–100)",
+      "enable_demand_forecast": "تفعيل التنبؤ بالطلب بالذكاء الاصطناعي",
+      "forecast_horizon_days": "الأيام المستقبلية للتنبؤ بالطلب",
+      "require_approval_for": "أنواع المستندات التي تتطلب موافقة صريحة",
+      "escalation_timeout_hours": "الساعات قبل تصعيد الموافقة المعلقة",
+      "auto_approve_below": "الموافقة التلقائية على المبالغ التي تقل عن هذه القيمة",
+      "notification_channels": "القنوات الفعالة لإشعارات النظام",
+      "quiet_hours_start": "الساعة لبدء الفترة الهادئة (0–23)",
+      "quiet_hours_end": "الساعة لإنهاء الفترة الهادئة (0–23)",
+      "sync_frequency_minutes": "مدة المزامنة مع الأنظمة المتصلة",
+      "conflict_resolution": "الاستراتيجية عند اكتشاف تعارضات المزامنة",
+      "session_timeout_minutes": "دقائق عدم النشاط قبل انتهاء صلاحية الجلسة",
+      "require_mfa": "فرض المصادقة متعددة العوامل لجميع المستخدمين",
+      "password_complexity": "متطلب الحد الأدنى لتعقيد كلمة المرور",
+      "audit_retention_days": "الأيام للاحتفاظ بمدخلات سجل التدقيق",
+      "order_number_prefix": "البادئة النصية لتسلسلات أرقام الطلبات",
+      "order_number_padding": "الحد الأدنى لأرقام رقم الطلب (معبأ بالأصفار)",
+      "invoice_number_prefix": "البادئة النصية لتسلسلات أرقام الفواتير",
+      "invoice_number_padding": "الحد الأدنى لأرقام رقم الفاتورة (معبأ بالأصفار)",
+      "approval_levels": "عدد مستويات الموافقة المطلوبة",
+      "delegation_allowed": "السماح للمعتمدين بتفويض صلاحية الموافقة",
+      "auto_approve_timeout": "الموافقة التلقائية إذا لم يتم اتخاذ إجراء في المهلة",
+      "allowed_payment_methods": "طرق الدفع المقبولة للطلبات",
+      "merge_orders": "تجميع طلبات متعددة في وحدة تجهيز واحدة.",
+      "split_orders": "السماح بتقسيم الطلبات الكبيرة عبر موجات متعددة.",
+      "partial_preparation": "السماح بإتمام الموجات بمخزون جزئي.",
+      "publishing_strategy": "يتحكم في وقت دفع الأسعار المعتمدة إلى كتالوج المنتجات و WooCommerce ونقطة البيع.",
+      "discount_value": "الحد الأقصى للخصم المسموح به لكل طلب. 0 = بلا حد.",
+      "required_approval_above": "يتطلب موافقة المدير عند تجاوز تغيير السعر هذه القيمة.",
+      "_approval_role": "الدور المطلوب للموافقة على تغييرات الأسعار. قادم في تحديث مستقبلي.",
+      "pending_review_threshold": "عرض تنبيه اللوحة عند تجاوز المراجعات المعلقة هذا العدد.",
+      "price_expiration_days": "انتهاء صلاحية الأسعار تلقائياً بعد هذا العدد من الأيام. اتركه فارغاً للأسعار الدائمة.",
+      "minimum_margin_pct": "الحد الأدنى المقبول لنسبة هامش الربح.",
+      "discount_type": "كيفية التعبير عن الحد الأقصى للخصم.",
+      "allow_negative_stock": "السماح لمستويات المخزون بالانخفاض عن الصفر.",
+      "cycle_count_frequency_days": "مدى تكرار تنبيهات الجرد الدوري للمخزون.",
+      "stock_alert_threshold_pct": "تنبيه عند انخفاض المخزون عن هذه النسبة من نقطة إعادة الطلب.",
+      "recipe_approval_required": "يجب اعتماد الوصفات قبل استخدامها في الإنتاج.",
+      "auto_manufacturing": "إنشاء أوامر الإنتاج تلقائياً لتلبية الطلب.",
+      "bom_validation": "التحقق من توفر مكونات BOM قبل الإنتاج.",
+      "waste_rules_enabled": "تتبع ومحاسبة الهدر في الإنتاج ضمن حسابات التكلفة.",
+      "cost_refresh_on_production": "تحديث تكلفة المنتج النهائي فوراً بعد كل دورة إنتاج.",
+      "source_entry_policies": "حالة الإدخال لكل مصدر طلب. يتم تحميل الخيارات من سجل حالات الطلب.",
+      "payment_proof_policy": "متى يُطلب إيصال الدفع أو لقطة شاشة لكل طريقة دفع.",
+      "auto_reserve_inventory": "حجز المخزون تلقائياً بعد إنشاء طلب جديد.",
+      "customer_matching_policy": "يتحكم في كيفية تعامل الطلب مع رقم هاتف ينتمي لعميل موجود.",
+      "customer_lookup_enabled": "تفعيل البحث عن العملاء برقم الهاتف عند إنشاء الطلبات.",
+      "partial_delivery": "السماح بتسليم جزء من الطلب عند تعذر التسليم الكامل.",
+      "vip_order_threshold": "الطلبات التي تتجاوز هذه القيمة تُصنَّف كـ VIP.",
+      "confidence_threshold": "الحد الأدنى لدرجة الثقة (0-1) لتوصيات الذكاء الاصطناعي.",
+      "auto_decision_enabled": "السماح للذكاء الاصطناعي باتخاذ القرارات تلقائياً فوق عتبة الثقة.",
+      "alert_threshold": "عرض تنبيهات عند انخفاض ثقة الذكاء الاصطناعي عن هذه القيمة.",
+      "escalation_after_minutes": "تصعيد التنبيهات غير المحلولة بعد هذا العدد من الدقائق.",
+      "password_expiry_days": "اتركه فارغاً لتعطيل انتهاء صلاحية كلمة المرور.",
+      "sequence_padding": "عدد الأرقام مع حشو الأصفار. 6 = 000001.",
+      "purchase_approval_threshold": "يتطلب موافقة على المشتريات التي تتجاوز هذا المبلغ.",
+      "default_utm_source": "مثال: ecos-erp"
+    }
+  },
+  "deliveryCoverage": {
+    "search": "البحث في المحافظات أو المناطق…",
+    "defaultCost": "التكلفة الافتراضية…",
+    "applyToAll": "تطبيق على الكل",
+    "enableAll": "تفعيل الكل",
+    "disableAll": "تعطيل الكل",
+    "collapseAll": "طي الكل",
+    "expandAll": "توسيع الكل",
+    "setDefaultCost": "تعيين التكلفة الافتراضية",
+    "enabled": "مفعّل",
+    "disabled": "معطّل",
+    "zone": "المنطقة",
+    "shippingCost": "تكلفة الشحن",
+    "kpi": {
+      "coveredGovs": "المحافظات المغطاة",
+      "activeZones": "المناطق النشطة",
+      "coverage": "التغطية",
+      "avgShipping": "متوسط الشحن"
+    },
+    "coverageProgress": "تقدم التغطية",
+    "healthBar": {
+      "title": "صحة تهيئة العلامة التجارية",
+      "channels": "قنوات البيع",
+      "deliveryCoverage": "تغطية التسليم",
+      "deliveryZones": "مناطق التسليم",
+      "deliveryWindows": "نوافذ التسليم",
+      "shippingPrices": "أسعار الشحن"
+    },
+    "loading": "جارٍ تحميل بيانات التغطية…",
+    "emptyGovs": "لا توجد محافظات تطابق بحثك.",
+    "emptyZones": "لا توجد مناطق تطابق بحثك.",
+    "save": "حفظ",
+    "zonesCount": "{{enabled}} / {{total}} منطقة",
+    "inherited": "موروثة",
+    "off": "معطّل",
+    "emptyInherit": "فارغ = وراثة",
+    "toast": {
+      "failEnable": "فشل تفعيل {{name}}",
+      "failDisable": "فشل تعطيل {{name}}",
+      "invalidCost": "أدخل تكلفة صحيحة",
+      "failUpdateCost": "فشل تحديث التكلفة الافتراضية",
+      "allEnabled": "تم تفعيل جميع 27 محافظة",
+      "allDisabled": "تم تعطيل جميع المحافظات",
+      "costApplied": "تم تطبيق {{cost}} على جميع المحافظات المفعّلة",
+      "invalidZoneCost": "أدخل تكلفة صحيحة أو اتركها فارغة للوراثة",
+      "failZoneCost": "فشل تحديث تكلفة المنطقة"
+    }
+  },
+  "deliveryShipping": {
+    "kpi": {
+      "governorates": "المحافظات",
+      "zones": "المناطق",
+      "activeZones": "المناطق النشطة",
+      "avgCost": "متوسط تكلفة الشحن"
+    },
+    "importing": "جارٍ استيراد مناطق مصر الافتراضية… {{done}}/{{total}}",
+    "search": "البحث في المحافظات أو المناطق…",
+    "importDefaults": "استيراد افتراضيات مصر",
+    "addZone": "إضافة منطقة",
+    "addTitle": "إضافة منطقة جديدة",
+    "editTitle": "تعديل المنطقة",
+    "form": {
+      "governorate": "المحافظة *",
+      "zoneName": "اسم المنطقة *",
+      "shippingCost": "تكلفة الشحن *",
+      "deliveryWindow": "نافذة التسليم",
+      "active": "منطقة نشطة",
+      "notes": "ملاحظات"
+    },
+    "create": "إنشاء منطقة",
+    "saveChanges": "حفظ التغييرات",
+    "cancel": "إلغاء",
+    "confirm": {
+      "importEgypt": "هل تريد استيراد مناطق مصر الافتراضية لهذه العلامة التجارية؟\n\nسيتم الحفاظ على المحافظات والمناطق الموجودة — يُضاف الجديد فقط.",
+      "deleteGov": "حذف \"{{name}}\" وجميع مناطقها؟ لا يمكن التراجع عن هذا الإجراء.",
+      "deleteZone": "حذف المنطقة \"{{name}}\"؟"
+    },
+    "badge": {
+      "inactive": "غير نشط",
+      "noCost": "لا توجد تكلفة"
+    },
+    "loading": "جارٍ التحميل…",
+    "emptySearch": "لا نتائج لـ \"{{search}}\"",
+    "emptyState": "لم يتم تهيئة مناطق بعد.",
+    "noZonesSearch": "لا توجد مناطق تطابق بحثك.",
+    "zonesCount": "{{count}} منطقة",
+    "selectGovPlaceholder": "اختر المحافظة…",
+    "governorateLabel": "المحافظة:",
+    "zoneNamePlaceholder": "مثال: مدينة نصر",
+    "noWindowOption": "بدون نافذة محددة",
+    "notesPlaceholder": "ملاحظات اختيارية…",
+    "toast": {
+      "zoneCreated": "تم إنشاء المنطقة",
+      "zoneUpdated": "تم تحديث المنطقة",
+      "zoneDeleted": "تم حذف المنطقة",
+      "govDeleted": "تم حذف المحافظة",
+      "createFail": "فشل إنشاء المنطقة",
+      "updateFail": "فشل تحديث المنطقة",
+      "deleteFail": "فشل الحذف",
+      "selectGov": "اختر محافظة",
+      "selectGovDesc": "اختر من القائمة.",
+      "zoneNameRequired": "اسم المنطقة مطلوب",
+      "invalidShippingCost": "أدخل تكلفة شحن صحيحة",
+      "importComplete": "اكتمل الاستيراد",
+      "importCompleteDesc": "تمت معالجة {{done}} منطقة بنجاح.",
+      "importCompleteErrDesc": "تمت معالجة {{done}} منطقة. {{errors}} أخطاء."
+    },
+    "deleteGovTitle": "حذف المحافظة",
+    "editZoneTitle": "تعديل المنطقة",
+    "deleteZoneTitle": "حذف المنطقة"
+  },
+  "wave": {
+    "tabs": {
+      "general": "عام",
+      "automation": "أتمتة",
+      "schedule": "جدول",
+      "notifications": "إشعارات"
+    },
+    "info": {
+      "waveNumber": "موجة #",
+      "status": "الحالة",
+      "planningDate": "تاريخ التخطيط",
+      "warehouseId": "معرف المستودع",
+      "orders": "الطلبات",
+      "products": "المنتجات",
+      "completion": "الاكتمال",
+      "approvedAt": "تمت الموافقة في",
+      "startedAt": "بدأت في"
+    },
+    "notes": {
+      "title": "ملاحظات الموجة",
+      "placeholder": "أضف ملاحظات داخلية لهذه الموجة…",
+      "hint": "الملاحظات داخلية ومرئية لفريق العمليات فقط."
+    },
+    "actions": {
+      "generateDemand": {
+        "title": "توليد الطلب",
+        "desc": "حساب كميات العناصر بناءً على طلبات الموجة",
+        "button": "توليد"
+      },
+      "analyzeMaterials": {
+        "title": "تحليل المواد",
+        "desc": "التحقق من توفر BOM وتحديد النقص",
+        "button": "تحليل"
+      },
+      "recalculate": {
+        "title": "إعادة حساب الموجة",
+        "desc": "تحديث جميع إجماليات الطلبات والمنتجات",
+        "button": "إعادة حساب"
+      },
+      "approve": {
+        "title": "الموافقة على الموجة",
+        "desc": "قفل الموجة والترخيص ببدء التحضير",
+        "button": "موافقة"
+      }
+    },
+    "emptyState": "اختر موجة لإدارة إعداداتها.",
+    "loading": "جارٍ التحميل…",
+    "notFound": "الموجة غير موجودة.",
+    "automation": {
+      "title": "قواعد الأتمتة",
+      "desc": "ضبط المشغّلات التلقائية لتوليد الطلب وتحليل المواد. ستُفعَّل قواعد الأتمتة بناءً على أحداث دورة حياة الموجة.",
+      "autoGenerateDemand": "توليد الطلب تلقائيًا عند إرفاق الطلب",
+      "autoAnalyzeMaterials": "تحليل المواد تلقائيًا بعد توليد الطلب",
+      "comingSoon": "قواعد الأتمتة قريباً."
+    },
+    "schedule": {
+      "title": "جدولة الموجة",
+      "desc": "جدولة إنشاء الموجات المتكررة وتحديد أوقات الإغلاق لتجميع الطلبات. متاح في الإصدار القادم من المنصة.",
+      "comingSoon": "تهيئة الجدول الزمني قريباً."
+    },
+    "notifications": {
+      "title": "إشعارات الموجة",
+      "desc": "ضبط التنبيهات لاكتشاف النقص، ومراحل الاكتمال، وطلبات الاعتماد. ستكون قنوات الإشعارات متاحة في تحديث مستقبلي.",
+      "comingSoon": "تفضيلات الإشعارات قريباً."
+    },
+    "comingSoonBadge": "قريباً",
+    "toast": {
+      "generateSuccess": "تم توليد الطلب",
+      "generateFail": "فشل توليد الطلب",
+      "analyzeSuccess": "تم تحليل المواد",
+      "analyzeFail": "فشل تحليل المواد",
+      "recalcSuccess": "تمت إعادة حساب الموجة",
+      "recalcFail": "فشل إعادة حساب الموجة",
+      "approveSuccess": "تمت الموافقة على الموجة",
+      "approveFail": "فشل الموافقة على الموجة"
+    }
+  },
+  "marketingSettings": {
+    "title": "إعدادات التسويق",
+    "subtitle": "ضبط تفضيلات لوحة معلومات التحليل وإعداداتها الافتراضية",
+    "sections": {
+      "cache": "الكاش والتحديث",
+      "preferences": "تفضيلات لوحة التحكم",
+      "filters": "الفلاتر الافتراضية",
+      "alerts": "التنبيهات"
+    },
+    "rows": {
+      "cacheTtl": {
+        "label": "مدة الكاش",
+        "desc": "كم من الوقت يتم فيه تخزين بيانات لوحة التحكم مؤقتاً قبل التحديث"
+      },
+      "autoRefresh": {
+        "label": "التحديث التلقائي",
+        "desc": "إعادة تحميل بيانات لوحة التحكم تلقائياً"
+      },
+      "refreshInterval": {
+        "label": "فترة التحديث",
+        "desc": "كم مرة يتم التحديث التلقائي (عند التفعيل)"
+      },
+      "defaultCurrency": {
+        "label": "العملة الافتراضية",
+        "desc": "العملة لجميع العروض النقدية"
+      },
+      "defaultDateRange": {
+        "label": "النطاق الزمني الافتراضي",
+        "desc": "النطاق الزمني الأولي لجلسات لوحة التحكم الجديدة"
+      },
+      "rowsPerPage": {
+        "label": "الصفوف في الصفحة",
+        "desc": "عدد الصفوف الافتراضي في جداول البيانات"
+      },
+      "granularity": {
+        "label": "دقة المخطط",
+        "desc": "دقة الوقت الافتراضية لمخططات الاتجاهات"
+      },
+      "roasAlert": {
+        "label": "عتبة تنبيه ROAS",
+        "desc": "تنبيه عندما ينخفض ROAS دون هذه القيمة"
+      },
+      "budgetAlert": {
+        "label": "نسبة تنبيه الميزانية %",
+        "desc": "تنبيه عندما يتجاوز استخدام الميزانية هذه النسبة"
+      },
+      "showGrowth": {
+        "label": "إظهار مؤشرات النمو",
+        "desc": "عرض نسبة التغيير مقارنةً بالفترة السابقة على بطاقات KPI."
+      }
+    },
+    "options": {
+      "ttl1": "1 دقيقة",
+      "ttl5": "5 دقائق",
+      "ttl15": "15 دقيقة",
+      "ttl30": "30 دقيقة",
+      "ttl60": "1 ساعة",
+      "interval30": "30 ثانية",
+      "interval60": "1 دقيقة",
+      "interval300": "5 دقائق",
+      "egp": "ج.م.",
+      "usd": "دولار أمريكي",
+      "eur": "يورو (€)",
+      "gbp": "جنيه إسترليني (£)",
+      "off": "معطّل",
+      "today": "اليوم",
+      "yesterday": "أمس",
+      "last7": "آخر 7 أيام",
+      "last30": "آخر 30 يوم",
+      "last90": "آخر 90 يوم",
+      "thisMonth": "هذا الشهر",
+      "lastMonth": "الشهر الماضي",
+      "rows10": "10",
+      "rows25": "25",
+      "rows50": "50",
+      "hourly": "ساعي",
+      "daily": "يومي",
+      "weekly": "أسبوعي",
+      "monthly": "شهري"
+    },
+    "reset": "إعادة الافتراضيات",
+    "save": "حفظ الإعدادات",
+    "toast": {
+      "saved": "تم حفظ الإعدادات",
+      "savedDesc": "تم تحديث تفضيلات التسويق.",
+      "failed": "تعذّر حفظ الإعدادات"
+    }
+  },
+  "bridgeSettings": {
+    "pageTitle": "إعدادات Claude Bridge",
+    "worker": {
+      "title": "العامل",
+      "subtitle": "إعداد العامل",
+      "noWorker": "لم يتم تسجيل عامل. سجّل أحدهم لبدء استخدام Claude Bridge.",
+      "regAvailable": "تسجيل العامل متاح في Sprint 2.",
+      "availableSoon": "متاح في Sprint 2.",
+      "steps": {
+        "1": "قم بتحميل حزمة العامل أدناه",
+        "2": "فك الضغط على جهاز التطوير المحلي",
+        "3": "افتح طرفية في المجلد المستخرج",
+        "4": "شغّل: npm install",
+        "5": "هيّئ .env برمز العامل الخاص بك",
+        "6": "شغّل: npm start",
+        "7": "سيتصل العامل ويظهر كنشط في الأعلى"
+      }
+    },
+    "defaults": {
+      "title": "الإعدادات الافتراضية",
+      "repoPath": "مسار المستودع الافتراضي",
+      "branch": "الفرع الافتراضي",
+      "savedNote": "محفوظ في المتصفح — يُستخدم لتعبئة نموذج إنشاء المهمة مسبقاً."
+    },
+    "register": "تسجيل عامل",
+    "saveDefaults": "حفظ الافتراضيات",
+    "download": "تحميل حزمة العامل"
+  },
+  "geo": {
+    "searchPlaceholder": "البحث في المحافظات…",
+    "filter": {
+      "all": "الكل",
+      "active": "نشط",
+      "inactive": "غير نشط"
+    },
+    "table": {
+      "arabicName": "الاسم بالعربية",
+      "englishName": "الاسم بالإنجليزية",
+      "defaultShipping": "شحن افتراضي",
+      "cities": "المدن",
+      "status": "الحالة"
+    },
+    "status": {
+      "active": "نشط",
+      "inactive": "غير نشط"
+    },
+    "unsavedBanner": {
+      "message": "تغييرات ترتيب غير محفوظة. احفظ للاستمرار.",
+      "save": "حفظ الترتيب",
+      "discard": "تجاهل"
+    },
+    "empty": {
+      "title": "لم يتم العثور على محافظات",
+      "desc": "جرّب مصطلح بحث مختلف."
+    },
+    "pageTitle": "جغرافيا مصر",
+    "pageDesc": "المحافظات والمدن وأسعار الشحن في مصر",
+    "breadcrumb": {
+      "module": "نظام اللوجستيات",
+      "page": "جغرافيا مصر"
+    },
+    "saving": "جارٍ الحفظ…",
+    "systemBadge": "(نظام)",
+    "systemRecord": "سجل نظام",
+    "ariaLabels": {
+      "dragHandle": "مقبض السحب",
+      "open": "فتح"
+    },
+    "metrics": {
+      "total": "المحافظات",
+      "active": "النشطة",
+      "totalCities": "إجمالي المدن",
+      "activeCities": "المدن النشطة",
+      "avgShipping": "متوسط الشحن",
+      "providers": "الموفرون"
+    }
+  },
+  "govDrawer": {
+    "tabs": {
+      "overview": "نظرة عامة",
+      "cities": "المدن",
+      "providers": "مزودو الخدمة",
+      "activity": "النشاط"
+    },
+    "drawerDesc": "محافظة · {{count}} مدينة · {{price}} افتراضي",
+    "statusBadge": {
+      "active": "نشط",
+      "inactive": "غير نشط",
+      "system": "سجل نظام"
+    },
+    "overview": {
+      "form": {
+        "nameEn": "الاسم (إنجليزي)",
+        "nameAr": "الاسم (عربي)",
+        "defaultShipping": "تكلفة الشحن الافتراضية",
+        "shippingHint": "المدن التي ليس لها سعر مخصص ترث هذه القيمة.",
+        "active": "نشط"
+      },
+      "kpi": {
+        "cities": "المدن",
+        "providers": "مزودو الخدمة",
+        "coverage": "التغطية",
+        "avgShipping": "متوسط الشحن",
+        "defaultShipping": "الشحن الافتراضي"
+      },
+      "danger": {
+        "title": "منطقة الخطر",
+        "deleteTitle": "حذف المحافظة",
+        "deleteDesc": "إزالة هذه المحافظة بشكل دائم مع جميع المناطق والمدن المرتبطة بها.",
+        "deleteButton": "حذف المحافظة",
+        "deactivate": "تعطيل",
+        "activate": "تفعيل"
+      }
+    },
+    "cities": {
+      "search": "البحث في المدن…",
+      "addTitle": "إضافة مدينة",
+      "newTitle": "مدينة جديدة",
+      "form": {
+        "nameEn": "الاسم (إنجليزي) *",
+        "nameAr": "الاسم (عربي) *",
+        "shipping": "شحن مخصص"
+      },
+      "addButton": "إضافة مدينة",
+      "adding": "جارٍ الإضافة…",
+      "edit": "تعديل",
+      "editButton": "حفظ",
+      "cancel": "إلغاء",
+      "empty": "لا توجد مدن بعد.",
+      "loading": "جارٍ تحميل المدن…",
+      "inactive": "غير نشط",
+      "remote": "منطقة نائية",
+      "govPrice": "↑ سعر المحافظة",
+      "aliasCount": "{{count}} اسم(أسماء)",
+      "deactivate": "تعطيل",
+      "activate": "تفعيل",
+      "systemTooltip": "المدن النظامية يديرها البذر فقط.",
+      "editCity": "تعديل المدينة",
+      "toggleCity": "تبديل حالة المدينة",
+      "deleteCity": "حذف المدينة"
+    },
+    "providers": {
+      "empty": "لم يتم تهيئة مزودي خدمة لهذه المحافظة.",
+      "desc": "أضف أسماء مزودي الخدمة إلى المدن في تبويب المدن. كل اسم يربط اسم المدينة بما يسمّيه الناقل في نظامه.",
+      "linkButton": "ربط مزود",
+      "comingSoon": "تكاملات المزودين المباشرة — قادمة في المرحلة الثانية من اللوجستيات.",
+      "aliasDesc": "تحدد أسماء المدن كيف يصنّف كل ناقل مدن هذه المحافظة.",
+      "aliasCount": "{{count}} اسم مدينة",
+      "noAliases": "لا أسماء بعد"
+    },
+    "activity": {
+      "intro": "سجل زمني للتغييرات. تغييرات الأسعار والحالات ونشاط الأسماء تظهر هنا.",
+      "seeded": "تم بذر المحافظة",
+      "empty": "لم يتم تسجيل نشاط بعد.",
+      "events": {
+        "created": "تم إنشاء المحافظة",
+        "updated": "تم تحديث التفاصيل",
+        "statusChanged": "تغيّرت الحالة",
+        "cityAdded": "تمت إضافة مدينة",
+        "cityRemoved": "تمت إزالة مدينة",
+        "shippingUpdated": "تم تحديث تكلفة الشحن"
+      },
+      "legend": {
+        "title": "الأحداث المتتبعة",
+        "events": "الإنشاء، التحديث، تغييرات الحالة، تعديلات المدن، تحديثات الشحن",
+        "priceChanged": "تغيير السعر",
+        "statusChanged": "تغيير الحالة",
+        "aliasChanged": "إضافة / إزالة اسم",
+        "cityOrderChanged": "تغيير ترتيب المدن",
+        "cityStatusChanged": "تغيير حالة مدينة فرعية"
+      }
+    },
+    "save": "حفظ التغييرات",
+    "cancel": "إلغاء",
+    "saving": "جارٍ الحفظ…",
+    "toast": {
+      "saved": "تم حفظ المحافظة",
+      "saveFail": "فشل الحفظ",
+      "deleted": "تم حذف المحافظة",
+      "deleteFail": "فشل الحذف",
+      "activated": "تم تفعيل المحافظة",
+      "deactivated": "تم تعطيل المحافظة",
+      "deactivatedDesc": "تم تعطيل جميع المدن الفرعية.",
+      "failed": "فشل",
+      "error": "خطأ",
+      "cityAdded": "تمت إضافة المدينة",
+      "cityAddFail": "فشل إضافة المدينة",
+      "citySaved": "تم حفظ المدينة",
+      "citySaveFail": "فشل حفظ المدينة",
+      "cityDeleted": "تم حذف المدينة",
+      "cityDeleteFail": "فشل حذف المدينة",
+      "cityToggled": "تم تحديث حالة المدينة",
+      "cityToggleFail": "فشل تحديث المدينة"
+    }
+  },
+  "cityDrawer": {
+    "description": "تفاصيل المدينة وأسماء المزودين",
+    "statusBadge": {
+      "active": "نشط",
+      "inactive": "غير نشط",
+      "system": "سجل نظام",
+      "govPrice": "يستخدم سعر المحافظة"
+    },
+    "saving": "جارٍ الحفظ…",
+    "form": {
+      "nameEn": "الاسم (إنجليزي)",
+      "nameAr": "الاسم (عربي)",
+      "customShipping": "سعر الشحن المخصص",
+      "hint": "اتركه فارغاً للوراثة من المحافظة ({{price}})",
+      "effectivePrice": "السعر الفعلي: {{price}}"
+    },
+    "aliases": {
+      "title": "أسماء مزودي الخدمة",
+      "desc": "ربط هذه المدينة برموز مواقع خاصة بالمزود",
+      "loading": "جارٍ تحميل الأسماء…",
+      "form": {
+        "provider": "المزود",
+        "alias": "الاسم / الرمز",
+        "anyProvider": "أي مزود",
+        "code": "رمز"
+      },
+      "add": "إضافة اسم",
+      "empty": "لم يتم تهيئة أسماء."
+    },
+    "save": "حفظ المدينة",
+    "cancel": "إلغاء",
+    "toast": {
+      "saved": "تم حفظ المدينة",
+      "saveFail": "فشل الحفظ",
+      "aliasAdded": "تمت إضافة الاسم",
+      "aliasRemoved": "تمت إزالة الاسم",
+      "aliasFail": "فشل"
+    }
+  },
+  "masterGeo": {
+    "common": {
+      "cancel": "إلغاء",
+      "save": "حفظ",
+      "create": "إنشاء",
+      "saving": "جارٍ الحفظ…",
+      "edit": "تعديل",
+      "delete": "حذف",
+      "archive": "أرشفة",
+      "loading": "جارٍ التحميل…",
+      "pleaseWait": "يرجى الانتظار…",
+      "error": "خطأ",
+      "saveFailed": "تعذر الحفظ",
+      "actionFailed": "فشل تنفيذ الإجراء"
+    },
+    "badge": {
+      "archived": "مؤرشف",
+      "inactive": "غير نشط"
+    },
+    "difficulty": {
+      "easy": "سهل",
+      "medium": "متوسط",
+      "hard": "صعب"
+    },
+    "gov": {
+      "addTitle": "إضافة محافظة",
+      "editTitle": "تعديل المحافظة",
+      "nameEn": "الاسم بالإنجليزية *",
+      "nameEnPlaceholder": "Cairo",
+      "nameAr": "الاسم بالعربية",
+      "nameArPlaceholder": "الاسم بالعربية",
+      "code": "الرمز *",
+      "codeHint": "(غير قابل للتغيير، من 2 إلى 6 أحرف، مثال: CAI)",
+      "toastCreated": "تم إنشاء المحافظة",
+      "toastUpdated": "تم تحديث المحافظة"
+    },
+    "zone": {
+      "addTitle": "إضافة منطقة",
+      "editTitle": "تعديل المنطقة",
+      "name": "اسم المنطقة *",
+      "namePlaceholder": "مدينة نصر",
+      "codeImmutable": "الرمز (غير قابل للتغيير)",
+      "slaHours": "ساعات اتفاقية الخدمة",
+      "priority": "الأولوية (1–10)",
+      "difficulty": "درجة الصعوبة",
+      "difficultyPlaceholder": "اختر درجة الصعوبة",
+      "difficultyNone": "— بدون —",
+      "hub": "المركز اللوجستي",
+      "hubPlaceholder": "اسم المركز أو موقعه",
+      "notes": "ملاحظات",
+      "notesPlaceholder": "ملاحظات اختيارية…",
+      "toastCreated": "تم إنشاء المنطقة",
+      "toastUpdated": "تم تحديث المنطقة"
+    },
+    "confirm": {
+      "deleteTitle": "حذف؟",
+      "archiveTitle": "أرشفة؟",
+      "deleteDesc": "حذف \"{{name}}\" نهائياً؟ لا يمكن التراجع عن هذا الإجراء.",
+      "archiveDesc": "أرشفة \"{{name}}\"؟ لن تكون متاحة للسجلات الجديدة.",
+      "archivedToast": "تمت أرشفة {{name}}",
+      "deletedToast": "تم حذف {{name}}"
+    },
+    "row": {
+      "sla": "{{hours}} ساعة اتفاقية خدمة",
+      "brandZones_zero": "لا توجد مناطق علامة تجارية",
+      "brandZones_one": "منطقة علامة تجارية واحدة",
+      "brandZones_two": "منطقتا علامة تجارية",
+      "brandZones_few": "{{count}} مناطق علامة تجارية",
+      "brandZones_many": "{{count}} منطقة علامة تجارية",
+      "brandZones_other": "{{count}} منطقة علامة تجارية",
+      "brandZones": "مناطق العلامة التجارية"
+    },
+    "page": {
+      "title": "جغرافيا مصر",
+      "summary": "{{govs}} محافظة · {{zones}} منطقة",
+      "archivedSuffix": " · {{count}} مؤرشف",
+      "showArchived": "إظهار المؤرشف",
+      "hidingArchived": "إخفاء المؤرشف",
+      "searchPlaceholder": "بحث بالاسم أو الرمز…",
+      "noGovs": "لا توجد محافظات",
+      "zonesCount_zero": "لا توجد مناطق",
+      "zonesCount_one": "منطقة واحدة",
+      "zonesCount_two": "منطقتان",
+      "zonesCount_few": "{{count}} مناطق",
+      "zonesCount_many": "{{count}} منطقة",
+      "zonesCount_other": "{{count}} منطقة",
+      "selectGovPrompt": "اختر محافظة لعرض مناطقها",
+      "loadingZones": "جارٍ تحميل المناطق…",
+      "noZones": "لا توجد مناطق",
+      "zonesCount": "المناطق"
+    }
+  }
+}

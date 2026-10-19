@@ -1,0 +1,166 @@
+{
+  "title": "إيصالات البضائع",
+  "subtitle": "استلام المنتجات من أوامر الشراء المعتمدة إلى المستودعات.",
+  "search": "بحث برقم الإيصال أو رقم أمر الشراء…",
+  "actions": {
+    "new": "إيصال جديد",
+    "create": "إنشاء إيصال بضائع",
+    "post": "ترحيل",
+    "postReceipt": "ترحيل الإيصال",
+    "cancel": "إلغاء"
+  },
+  "filters": {
+    "status": "الحالة",
+    "allStatuses": "جميع الحالات",
+    "paymentStatus": "حالة الدفع",
+    "allPaymentStatuses": "جميع حالات الدفع",
+    "supplier": "المورد",
+    "dateFrom": "من تاريخ",
+    "dateTo": "إلى تاريخ"
+  },
+  "status": {
+    "draft": "مسودة",
+    "posted": "مرحّل"
+  },
+  "paymentStatus": {
+    "unpaid": "غير مدفوع",
+    "partiallyPaid": "مدفوع جزئياً",
+    "paid": "مدفوع"
+  },
+  "paymentMethod": {
+    "cash": "نقداً",
+    "bankTransfer": "تحويل بنكي",
+    "cheque": "شيك",
+    "wallet": "محفظة إلكترونية",
+    "credit": "ائتمان",
+    "other": "أخرى"
+  },
+  "columns": {
+    "number": "رقم الإيصال",
+    "supplier": "المورد",
+    "purchaseOrder": "أمر الشراء",
+    "warehouse": "المستودع",
+    "receiptDate": "تاريخ الاستلام",
+    "invoiceNumber": "رقم الفاتورة",
+    "invoiceDate": "تاريخ الفاتورة",
+    "invoiceTotal": "إجمالي الفاتورة",
+    "paymentStatus": "حالة الدفع",
+    "total": "الإجمالي",
+    "status": "الحالة"
+  },
+  "form": {
+    "purchaseOrder": { "label": "أمر الشراء", "placeholder": "اختر أمر شراء…" },
+    "warehouse": { "label": "المستودع", "placeholder": "اختر مستودعاً…" },
+    "receiptDate": "تاريخ الاستلام",
+    "notes": { "label": "ملاحظات", "placeholder": "ملاحظات اختيارية…" },
+    "supplierInvoice": {
+      "title": "فاتورة المورّد",
+      "number": "رقم الفاتورة",
+      "date": "تاريخ الفاتورة",
+      "attachment": "مرفق الفاتورة",
+      "uploadAttachment": "رفع مرفق…",
+      "changeAttachment": "تغيير المرفق",
+      "viewAttachment": "عرض المرفق",
+      "attachmentHint": "المقبول: PDF، JPG، JPEG، PNG (بحد أقصى 10 ميغابايت)"
+    },
+    "invoiceFinancials": {
+      "title": "البيانات المالية للفاتورة",
+      "totalAmount": "إجمالي الفاتورة",
+      "paidAmount": "المبلغ المدفوع",
+      "freight": "الشحن",
+      "tax": "الضرائب / الجمارك",
+      "additionalCosts": "تكاليف إضافية"
+    },
+    "paymentInfo": {
+      "title": "معلومات الدفع",
+      "status": "حالة الدفع",
+      "method": "طريقة الدفع",
+      "termsDays": "شروط الدفع",
+      "termsImmediate": "فوري (صافي 0)",
+      "dueDate": "تاريخ استحقاق الدفع"
+    }
+  },
+  "lines": {
+    "title": "بنود الإيصال",
+    "selectPoPrompt": "اختر أمر شراء معتمداً لتحميل البنود تلقائياً.",
+    "columns": {
+      "product": "المنتج",
+      "orderedQty": "الكمية المطلوبة",
+      "grossQty": "الكمية الإجمالية",
+      "netQty": "الكمية الصافية",
+      "varianceQty": "الفارق",
+      "weightPhoto": "صورة الميزان",
+      "notes": "ملاحظات"
+    },
+    "addPhoto": "إضافة صورة",
+    "photoAdded": "تمت الإضافة",
+    "viewPhoto": "عرض الصورة",
+    "notesPlaceholder": "ملاحظات البند…"
+  },
+  "detail": {
+    "title": "إيصال البضائع",
+    "receiptInfo": "معلومات الإيصال",
+    "receiptDetails": "تفاصيل الإيصال",
+    "lineItems": "البنود",
+    "purchaseOrder": "أمر الشراء",
+    "warehouse": "المستودع",
+    "receiptDate": "تاريخ الاستلام",
+    "notes": "ملاحظات",
+    "invoiceAttachment": "مرفق الفاتورة",
+    "invoice": "فاتورة",
+    "viewInvoice": "عرض مرفق الفاتورة",
+    "invoiceFinancials": "البيانات المالية للفاتورة",
+    "invoiceTotal": "إجمالي الفاتورة",
+    "landedCostSummary": "ملخص التكاليف المضافة",
+    "totalExtraCosts": "إجمالي التكاليف الإضافية",
+    "totalNetQty": "إجمالي الكمية الصافية المستلمة",
+    "extraCostPerUnit": "التكلفة الإضافية لكل وحدة",
+    "unitPrice": "سعر الوحدة",
+    "netQty": "الكمية الصافية",
+    "landedUnitCost": "تكلفة الوحدة الفعلية",
+    "paymentInfo": "معلومات الدفع",
+    "paymentStatus": "حالة الدفع",
+    "paidAmount": "المبلغ المدفوع",
+    "outstandingAmount": "الرصيد المستحق",
+    "paymentMethod": "طريقة الدفع",
+    "paymentTerms": "شروط الدفع",
+    "paymentDueDate": "تاريخ استحقاق الدفع",
+    "nDays": "{{n}} يوم",
+    "loading": "جارٍ التحميل…",
+    "notFound": "غير موجود.",
+    "notFoundMessage": "إيصال البضائع هذا غير موجود."
+  },
+  "create": {
+    "title": "إيصال بضائع جديد",
+    "new": "جديد",
+    "subtitle": "اختر أمر شراء معتمداً وأدخل الكميات الإجمالية والصافية المستلمة.",
+    "receiptDetails": "تفاصيل الإيصال",
+    "submitCreate": "إنشاء الإيصال",
+    "creating": "جارٍ الإنشاء…",
+    "errorTitle": "تعذر إنشاء إيصال البضائع"
+  },
+  "edit": {
+    "title": "تعديل",
+    "subtitle": "تحديث تفاصيل الإيصال والكميات المستلمة.",
+    "editLabel": "تعديل",
+    "submitEdit": "حفظ التغييرات",
+    "saving": "جارٍ الحفظ…",
+    "errorTitle": "تعذر الحفظ"
+  },
+  "dialogs": {
+    "post": {
+      "title": "ترحيل إيصال البضائع",
+      "description": "ترحيل {{number}}؟ سيتم تحديث المخزون باستخدام الكمية الصافية وسيصبح الإيصال للقراءة فقط.",
+      "confirm": "ترحيل الإيصال"
+    },
+    "delete": {
+      "title": "حذف إيصال البضائع",
+      "description": "حذف {{number}}؟ يمكن حذف المسودات فقط.",
+      "confirm": "حذف"
+    }
+  },
+  "delete": {
+    "title": "حذف إيصال البضائع",
+    "confirm": "حذف"
+  }
+}

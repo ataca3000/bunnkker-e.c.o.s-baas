@@ -1,0 +1,44 @@
+# PHPStan — ECOS Core Framework, level 6 (PROGRAM-D).
+# Split out of phpstan.neon.dist so platform-wide level-0 coverage could be
+# added WITHOUT lowering the level that app/Core already passes.
+#
+# Run (once a static-analysis package such as phpstan/phpstan or larastan/larastan
+# is added as a dev dependency):
+#
+#   docker compose exec app ./vendor/bin/phpstan analyse
+#
+# Larastan (Laravel-aware rules) can be enabled later by installing
+# `larastan/larastan` and uncommenting the `includes` section below.
+
+# includes:
+#     - vendor/larastan/larastan/extension.neon
+
+includes:
+    # Baseline captures pre-Larastan Eloquent errors. Remove entries here as
+    # each model gets @property/@method annotations or Larastan is added.
+    - phpstan-baseline.neon
+
+parameters:
+    level: 6
+
+    # Scope: the reusable ECOS Core Framework that we own. Stock Laravel and
+    # business modules are added here as they are built and hardened.
+    paths:
+        - app/Core
+        - app/Contracts
+        - app/Traits
+
+    # Generated/runtime paths are not analysed.
+    excludePaths:
+        - bootstrap/cache
+        - storage
+
+    tmpDir: storage/framework/cache/phpstan-core
+
+    treatPhpDocTypesAsCertain: false
+
+    # Reusable framework traits/classes are intentionally not yet consumed by
+    # any business module (none exist in this milestone). PHPStan cannot analyse
+    # a trait that is used zero times, which is expected for Core Framework v1.
+    ignoreErrors:
+        - identifier: trait.unused

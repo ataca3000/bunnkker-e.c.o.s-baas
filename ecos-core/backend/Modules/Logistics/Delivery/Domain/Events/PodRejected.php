@@ -1,0 +1,27 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Modules\Logistics\Delivery\Domain\Events;
+
+use Illuminate\Foundation\Events\Dispatchable;
+use Illuminate\Queue\SerializesModels;
+use Modules\Logistics\Delivery\Domain\Models\Delivery;
+use Modules\Logistics\Delivery\Domain\Models\ProofOfDelivery;
+
+/**
+ * Proof of delivery was rejected and must be recaptured.
+ *
+ * Dispatched after the transaction commits, so subscribers never observe
+ * uncommitted state.
+ */
+class PodRejected
+{
+    use Dispatchable, SerializesModels;
+
+    public function __construct(
+        public readonly Delivery $delivery,
+        public readonly ProofOfDelivery $pod,
+        public readonly ?string $actor = null,
+    ) {}
+}

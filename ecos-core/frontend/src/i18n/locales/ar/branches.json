@@ -1,0 +1,53 @@
+{
+  "title": "الفروع",
+  "subtitle": "إدارة الفروع داخل شركاتك.",
+  "search": "بحث في الفروع…",
+  "actions": {
+    "new": "فرع جديد",
+    "create": "إنشاء فرع",
+    "edit": "تعديل الفرع",
+    "deactivate": "تعطيل"
+  },
+  "columns": {
+    "code": "الرمز",
+    "name": "الاسم",
+    "company": "الشركة",
+    "phone": "الهاتف",
+    "city": "المدينة",
+    "headOffice": "المقر الرئيسي",
+    "status": "الحالة",
+    "createdAt": "تاريخ الإنشاء"
+  },
+  "form": {
+    "code": { "label": "الرمز", "placeholder": "HQ" },
+    "name": { "label": "الاسم", "placeholder": "المقر الرئيسي" },
+    "company": { "label": "الشركة", "placeholder": "اختر شركة…" },
+    "email": { "label": "البريد الإلكتروني", "placeholder": "branch@example.com" },
+    "phone": "الهاتف",
+    "mobile": "المحمول",
+    "country": "الدولة",
+    "city": "المدينة",
+    "address": "العنوان",
+    "headOffice": "المقر الرئيسي",
+    "active": "نشط"
+  },
+  "drawer": {
+    "createTitle": "إنشاء فرع",
+    "editTitle": "تعديل الفرع",
+    "createSubtitle": "إضافة فرع جديد إلى شركة.",
+    "editSubtitle": "تحديث تفاصيل الفرع أدناه.",
+    "submitCreate": "إنشاء فرع",
+    "submitEdit": "حفظ التغييرات",
+    "saving": "جارٍ الحفظ…",
+    "errorTitle": "تعذر الحفظ"
+  },
+  "delete": {
+    "title": "حذف الفرع",
+    "confirm": "حذف"
+  },
+  "deactivate": {
+    "title": "تعطيل الفرع",
+    "description": "سيتم تعيين \"{{name}}\" كغير نشط. يمكنك إعادة تفعيله لاحقاً عبر تعديل الفرع.",
+    "confirm": "تعطيل"
+  }
+}

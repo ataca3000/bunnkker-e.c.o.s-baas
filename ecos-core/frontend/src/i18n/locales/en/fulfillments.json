@@ -1,0 +1,107 @@
+{
+  "title": "Fulfillments",
+  "subtitle": "Fulfill orders and track stock-out movements.",
+  "search": "Search by fulfillment # or order number…",
+  "actions": {
+    "new": "New Fulfillment",
+    "create": "Create fulfillment",
+    "fulfill": "Fulfill",
+    "cancel": "Cancel",
+    "cancelFulfillment": "Cancel Fulfillment"
+  },
+  "filters": {
+    "status": "Status",
+    "allStatuses": "All statuses"
+  },
+  "status": {
+    "pending": "Pending",
+    "fulfilled": "Fulfilled",
+    "cancelled": "Cancelled"
+  },
+  "columns": {
+    "number": "Fulfillment #",
+    "order": "Order",
+    "customer": "Customer",
+    "warehouse": "Warehouse",
+    "fulfillmentDate": "Date",
+    "status": "Status",
+    "channel": "Channel"
+  },
+  "form": {
+    "order": {
+      "label": "Order",
+      "placeholder": "Select order…"
+    },
+    "warehouse": {
+      "label": "Warehouse",
+      "placeholder": "Select warehouse…"
+    },
+    "fulfillmentDate": "Fulfillment Date",
+    "notes": {
+      "label": "Notes",
+      "placeholder": "Optional notes…"
+    }
+  },
+  "lines": {
+    "title": "Fulfillment Lines",
+    "columns": {
+      "product": "Product",
+      "ordered": "Ordered",
+      "quantity": "Quantity to Fulfill"
+    },
+    "noLines": "No lines available."
+  },
+  "detail": {
+    "title": "Fulfillment",
+    "fulfillmentInfo": "Fulfillment Information",
+    "fulfillmentDetails": "Fulfillment Details",
+    "fulfillmentNumber": "Fulfillment #",
+    "order": "Order",
+    "customer": "Customer",
+    "warehouse": "Warehouse",
+    "date": "Date",
+    "fulfillmentDate": "Fulfillment Date",
+    "status": "Status",
+    "notes": "Notes",
+    "lineItems": "Line Items",
+    "product": "Product",
+    "quantity": "Quantity",
+    "back": "Back",
+    "loading": "Loading…",
+    "notFound": "Fulfillment not found.",
+    "notFoundMessage": "This fulfillment does not exist."
+  },
+  "create": {
+    "title": "New Fulfillment",
+    "new": "New",
+    "subtitle": "Create a fulfillment to ship order items from a warehouse.",
+    "fulfillmentDetails": "Fulfillment Details",
+    "lineItems": "Line Items",
+    "addLine": "Add Line",
+    "selectProduct": "Select product…",
+    "submitCreate": "Create Fulfillment",
+    "creating": "Creating…",
+    "errorTitle": "Unable to create"
+  },
+  "dialogs": {
+    "fulfill": {
+      "title": "Fulfill shipment",
+      "description": "Fulfill {{number}}? Stock will be deducted from the warehouse.",
+      "confirm": "Fulfill"
+    },
+    "cancel": {
+      "title": "Cancel fulfillment",
+      "description": "Cancel {{number}}? This action cannot be undone.",
+      "confirm": "Cancel Fulfillment"
+    },
+    "delete": {
+      "title": "Delete fulfillment",
+      "description": "Delete {{number}}? Only pending fulfillments can be deleted.",
+      "confirm": "Delete"
+    }
+  },
+  "delete": {
+    "title": "Delete fulfillment",
+    "confirm": "Delete"
+  }
+}

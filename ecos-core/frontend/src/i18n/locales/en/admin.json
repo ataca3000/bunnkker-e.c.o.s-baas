@@ -1,0 +1,89 @@
+{
+  "title": "Administration",
+  "subtitle": "Manage users, roles, and system configuration.",
+  "users": {
+    "title": "Users",
+    "subtitle": "Manage team members and their access levels.",
+    "search": "Search users by name or email…",
+    "actions": {
+      "invite": "Invite User",
+      "resendInvite": "Resend Invitation",
+      "deactivate": "Deactivate",
+      "activate": "Activate",
+      "resetPassword": "Reset Password",
+      "changeRole": "Change Role"
+    },
+    "columns": {
+      "name": "Name",
+      "email": "Email",
+      "role": "Role",
+      "company": "Company",
+      "status": "Status",
+      "lastLogin": "Last Login",
+      "createdAt": "Joined"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "pending": "Pending Invitation"
+    },
+    "invite": {
+      "title": "Invite a New User",
+      "subtitle": "Send an invitation email to add a new team member.",
+      "email": "Email Address",
+      "role": "Role",
+      "company": "Assign Company",
+      "submit": "Send Invitation",
+      "sending": "Sending…",
+      "successTitle": "Invitation Sent",
+      "successMessage": "An invitation has been sent to {{email}}."
+    },
+    "deactivate": {
+      "title": "Deactivate User",
+      "description": "Deactivate {{name}}? They will lose access immediately.",
+      "confirm": "Deactivate"
+    }
+  },
+  "roles": {
+    "title": "Roles & Permissions",
+    "subtitle": "Define what each role can see and do.",
+    "columns": {
+      "role": "Role",
+      "description": "Description",
+      "users": "Users",
+      "permissions": "Permissions"
+    },
+    "labels": {
+      "super_admin": "Super Admin",
+      "admin": "Administrator",
+      "manager": "Manager",
+      "operator": "Operator",
+      "viewer": "Viewer"
+    }
+  },
+  "audit": {
+    "title": "Audit Log",
+    "subtitle": "System-wide record of all administrative actions.",
+    "search": "Search by user, action, or resource…",
+    "columns": {
+      "timestamp": "Timestamp",
+      "user": "User",
+      "action": "Action",
+      "resource": "Resource",
+      "ip": "IP Address",
+      "result": "Result"
+    }
+  },
+  "system": {
+    "title": "System",
+    "version": "Version",
+    "environment": "Environment",
+    "database": "Database",
+    "cache": "Cache",
+    "queue": "Queue",
+    "healthCheck": "Health Check",
+    "clearCache": "Clear Cache",
+    "clearing": "Clearing…",
+    "cacheCleared": "Cache cleared successfully."
+  }
+}

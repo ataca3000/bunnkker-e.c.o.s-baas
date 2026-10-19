@@ -1,0 +1,257 @@
+{
+  "welcome": "Welcome back, {{firstName}} 👋",
+  "subtitle": "Here is an overview of your ECOS workspace.",
+  "kpi": {
+    "revenue": "Total Revenue",
+    "orders": "Orders",
+    "products": "Products",
+    "activeUsers": "Active Users",
+    "noData": "No data yet",
+    "thisWeek": "+1 this week"
+  },
+  "quickActions": {
+    "title": "Quick Actions",
+    "subtitle": "Common shortcuts (placeholder).",
+    "addCompany": "Add Company",
+    "newProduct": "New Product",
+    "inviteUser": "Invite User",
+    "viewReports": "View Reports"
+  },
+  "recentActivity": {
+    "title": "Recent Activity",
+    "subtitle": "Placeholder feed — not connected to the backend.",
+    "onboarding": "Company onboarding flow drafted",
+    "inventory": "Inventory module scaffolding planned",
+    "sales": "Sales pipeline schema proposed",
+    "hr": "HR onboarding checklist outlined",
+    "justNow": "Just now"
+  },
+  "systemStatus": {
+    "title": "System Status",
+    "subtitle": "Placeholder — not connected to the backend.",
+    "api": "API",
+    "database": "Database",
+    "queue": "Queue",
+    "mail": "Mail",
+    "operational": "Operational"
+  },
+  "page": {
+    "goodMorning": "Good morning",
+    "goodAfternoon": "Good afternoon",
+    "goodEvening": "Good evening",
+    "goodNight": "Good night",
+    "fallbackName": "there",
+    "statusOperational": "All Systems Operational",
+    "statusAlertSingular": "{{count}} Critical Alert",
+    "statusAlertPlural": "{{count}} Critical Alerts",
+    "outForDelivery": "{{count}} out for delivery",
+    "activeWaveSingular": "{{count}} active wave",
+    "activeWavePlural": "{{count}} active waves",
+    "profileLabel": "Dashboard Profile",
+    "workspaceSettings": "Workspace settings — coming soon",
+    "aiBriefSection": "AI Executive Brief",
+    "analyticsSection": "Business Analytics",
+    "updatesEvery5min": "Updates every 5 min",
+    "monthlyHistorical": "Monthly · Historical"
+  },
+  "profiles": {
+    "executive": {
+      "label": "Executive (CEO)",
+      "description": "Revenue, orders, and business health"
+    },
+    "operations": {
+      "label": "Operations Manager",
+      "description": "Orders, shipping, logistics, waves"
+    },
+    "marketing": {
+      "label": "Marketing Manager",
+      "description": "Campaigns, ROAS, spend, acquisition"
+    },
+    "warehouse": {
+      "label": "Warehouse Manager",
+      "description": "Inventory, trips, COD, shipping"
+    },
+    "finance": {
+      "label": "Finance Manager",
+      "description": "Revenue, profit, COD, financial health"
+    },
+    "manufacturing": {
+      "label": "Manufacturing Manager",
+      "description": "Production waves, capacity, materials"
+    },
+    "crm": {
+      "label": "CRM Manager",
+      "description": "Customer orders, acquisition, retention"
+    }
+  },
+  "hero": {
+    "criticalIssues": "Critical Issues",
+    "revenueToday": "Revenue Today",
+    "ordersToday": "Orders Today",
+    "shippedToday": "Shipped Today",
+    "roas": "ROAS",
+    "pendingOrders": "Pending Orders",
+    "pending": "Pending",
+    "outForDelivery": "Out for Delivery",
+    "activeTrips": "Active Trips",
+    "spendToday": "Spend Today",
+    "campaignRevenue": "Campaign Revenue",
+    "newCustomers": "New Customers",
+    "conversionRate": "Conversion Rate",
+    "revenueThisMonth": "Revenue This Month",
+    "grossProfitToday": "Gross Profit Today",
+    "activeWaves": "Active Waves",
+    "pendingCOD": "Pending COD",
+    "returning": "Returning",
+    "vsYesterday": "% vs yesterday"
+  },
+  "workspaces": {
+    "orders": "Orders",
+    "inventory": "Inventory",
+    "manufacturing": "Manufacturing",
+    "procurement": "Procurement",
+    "crm": "CRM",
+    "marketing": "Marketing",
+    "shipping": "Shipping",
+    "finance": "Finance"
+  },
+  "brief": {
+    "header": "AI Executive Brief",
+    "caption": "Rule-based · updates every 5 min",
+    "alert": "alert",
+    "alerts": "alerts",
+    "revenueUp": "Revenue is up {{pct}}% compared to yesterday — strong performance across all channels.",
+    "revenueDown": "Revenue is down {{pct}}% vs yesterday. Review the order pipeline and active campaigns.",
+    "cancelledOrders": "{{count}} orders cancelled today ({{rate}}% cancellation rate).",
+    "roasHigh": "ROAS reached {{roas}}× this month — campaigns are outperforming target. Consider increasing budget.",
+    "roasLow": "Marketing ROAS is below 1× — ad spend is exceeding campaign revenue. Pause underperforming campaigns.",
+    "failedDelivery": "{{count}} failed delivery today ({{rate}}% failure rate). Review driver assignments in the Logistics workspace.",
+    "failedDeliveries": "{{count}} failed deliveries today ({{rate}}% failure rate). Review driver assignments in the Logistics workspace.",
+    "codPending": "{{amount}} in pending COD collections. Schedule driver settlement runs.",
+    "pendingQueue": "{{count}} orders are waiting in the Pending queue. Assign them to preparation waves to clear the backlog.",
+    "noOrdersYet": "No orders recorded yet today. Dashboard will update as orders come in.",
+    "allOnTrack": "{{count}} orders processed today with {{revenue}} in revenue. All operations on track."
+  },
+  "analytics": {
+    "aiLayer": "AI Intelligence Layer",
+    "aiPlanned": "Planned",
+    "features": {
+      "demandForecast": "Demand Forecast",
+      "demandForecastDesc": "Predict stock needs 14 days ahead",
+      "purchaseSuggestions": "Purchase Suggestions",
+      "purchaseSuggestionsDesc": "Auto-generate reorder recommendations",
+      "revenuePrediction": "Revenue Prediction",
+      "revenuePredictionDesc": "Forecast next-week revenue by channel",
+      "campaignRec": "Campaign Recommendations",
+      "campaignRecDesc": "Optimal budget allocation across ads",
+      "cashFlow": "Cash Flow Prediction",
+      "cashFlowDesc": "Weekly COD + inbound cash model",
+      "churnRisk": "Customer Churn Risk",
+      "churnRiskDesc": "Flag high-value customers going quiet",
+      "inventoryOpt": "Inventory Optimisation",
+      "inventoryOptDesc": "Rebalance stock across warehouses"
+    }
+  },
+  "operations": {
+    "title": "Operations Center",
+    "subtitle": "Live workflow status across all departments",
+    "realtime": "Real-time",
+    "blocked": "Blocked",
+    "live": "Live",
+    "waiting": "Waiting",
+    "done": "Done",
+    "workflows": {
+      "orders": "Orders",
+      "inventory": "Inventory",
+      "manufacturing": "Manufacturing",
+      "procurement": "Procurement",
+      "logistics": "Logistics",
+      "crm": "CRM"
+    }
+  },
+  "monthly": {
+    "title": "Monthly Performance",
+    "actual": "actual",
+    "target": "target",
+    "noTarget": "No target set",
+    "revenue": "Revenue",
+    "netRevenue": "Net Revenue",
+    "orders": "Orders"
+  },
+  "quickActionsWidget": {
+    "createOrder": "Create Order",
+    "createOrderDesc": "Start a new sales order",
+    "receiveInventory": "Receive Inventory",
+    "receiveInventoryDesc": "Record incoming stock",
+    "launchWave": "Launch Wave",
+    "launchWaveDesc": "Start a preparation wave",
+    "transferStock": "Transfer Stock",
+    "transferStockDesc": "Move between warehouses",
+    "addCustomer": "Add Customer",
+    "addCustomerDesc": "Register new customer",
+    "purchaseMaterials": "Purchase Materials",
+    "purchaseMaterialsDesc": "Create purchase order"
+  },
+  "feed": {
+    "title": "Activity Feed",
+    "subtitle": "Recent business events",
+    "viewAll": "View all"
+  },
+  "analyticsRow": {
+    "ordersThisWeek": "Orders This Week",
+    "noDataYet": "No data yet",
+    "topProducts": "Top Products",
+    "connectOrdersData": "Connect orders to see data",
+    "connectOrdersHint": "Connect the orders module to see top products",
+    "salesChannels": "Sales Channels",
+    "noChannelData": "No channel data yet"
+  },
+  "kpiCard": {
+    "noData": "No data yet"
+  },
+  "widgetFrame": {
+    "dragToReorder": "Drag to reorder",
+    "restore": "restore"
+  },
+  "execKpi": {
+    "vsYesterday": "vs yesterday"
+  },
+  "aiForecast": {
+    "title": "AI Intelligence Layer",
+    "reserved": "Reserved",
+    "description": "Predictive intelligence powered by operational data — in development.",
+    "features": {
+      "demandForecast": "Demand Forecast",
+      "demandForecastDesc": "Predict order volume by SKU, channel, and region",
+      "purchaseSuggestions": "Purchase Suggestions",
+      "purchaseSuggestionsDesc": "Auto-generate POs based on reorder thresholds",
+      "inventoryOpt": "Inventory Optimization",
+      "inventoryOptDesc": "Reduce overstock and stockouts using ML",
+      "campaignRec": "Campaign Recommendations",
+      "campaignRecDesc": "Identify best-performing creatives and audiences",
+      "cashFlow": "Cash Flow Prediction",
+      "cashFlowDesc": "Forecast 30 / 60 / 90-day cash position"
+    }
+  },
+  "aiInsights": {
+    "title": "AI Operational Insights",
+    "ruleBased": "Rule-based",
+    "badgeAlert": "Alert",
+    "badgeTip": "Tip",
+    "badgeInfo": "Info",
+    "revenueDown": "Revenue is down {{pct}}% vs yesterday — review order pipeline.",
+    "revenueUp": "Strong day: revenue up {{pct}}% vs yesterday.",
+    "cancellations": "{{count}} cancellations today ({{rate}}% of orders) — investigate root cause.",
+    "failedDeliveries": "{{count}} failed deliveries today ({{rate}}% failure rate). Review driver assignments.",
+    "roasHigh": "ROAS is {{roas}}× this month — consider increasing ad budget to capture more demand.",
+    "roasLow": "Marketing ROAS is below 1× — campaigns are losing money. Pause underperformers.",
+    "codPending": "{{amount}} in pending COD collections — schedule driver settlements.",
+    "pendingQueue": "{{count}} orders in Pending state — assign to preparation waves to clear the queue.",
+    "noOrdersYet": "No orders yet today. Dashboard will update as orders flow in.",
+    "ordersOnTrack": "{{count}} orders today, {{revenue}} revenue. Operations on track."
+  },
+  "errors": {
+    "unavailable": "This data is not available right now.",
+    "retry": "Retry"
+  }
+}

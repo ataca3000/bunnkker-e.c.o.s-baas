@@ -1,0 +1,1026 @@
+{
+  "common": {
+    "actions": "الإجراءات",
+    "all": "الكل",
+    "allStatuses": "جميع الحالات",
+    "archive": "أرشفة",
+    "branch": "Branch",
+    "cancel": "إلغاء",
+    "close": "إغلاق",
+    "created": "تاريخ الإنشاء",
+    "delete": "حذف",
+    "description": "الوصف",
+    "details": "التفاصيل",
+    "download": "تنزيل",
+    "exportCsv": "تصدير CSV",
+    "loading": "جارٍ التحميل…",
+    "name": "الاسم",
+    "next": "التالي",
+    "none": "لا شيء",
+    "notSet": "—",
+    "optional": "اختياري",
+    "page": "صفحة",
+    "pageOf": "صفحة {{current}} من {{last}}",
+    "previous": "السابق",
+    "prev": "السابق",
+    "progress": "التقدم",
+    "refresh": "تحديث",
+    "refreshing": "جارٍ التحديث…",
+    "required": "مطلوب",
+    "search": "بحث",
+    "searching": "جارٍ البحث…",
+    "status": "الحالة",
+    "summary": "ملخص",
+    "type": "النوع",
+    "version": "الإصدار",
+    "view": "عرض",
+    "yes": "نعم",
+    "no": "لا",
+    "justNow": "الآن",
+    "minutesAgo": "منذ {{count}} دقيقة",
+    "hoursAgo": "منذ {{count}} ساعة",
+    "daysAgo": "منذ {{count}} يوم",
+    "secondsAgo": "منذ {{count}} ثانية",
+    "updatedSecondsAgo": "آخر تحديث منذ {{count}} ثانية",
+    "refreshedAt": "تم التحديث {{time}}"
+  },
+  "severity": {
+    "CRITICAL": "حرج",
+    "HIGH": "مرتفع",
+    "MEDIUM": "متوسط",
+    "LOW": "منخفض",
+    "critical": "حرج",
+    "high": "مرتفع",
+    "medium": "متوسط",
+    "low": "منخفض",
+    "minimal": "ضئيل",
+    "informational": "معلوماتي",
+    "info": "معلومة",
+    "warning": "تحذير",
+    "error": "خطأ",
+    "success": "نجاح",
+    "allSeverities": "جميع المستويات"
+  },
+  "quality": {
+    "excellent": "ممتاز",
+    "good": "جيد",
+    "fair": "مقبول",
+    "poor": "ضعيف"
+  },
+  "chart": {
+    "notEnoughData": "لا توجد بيانات كافية لعرض الاتجاه",
+    "notEnoughDataChart": "لا توجد بيانات كافية لرسم الاتجاه",
+    "points": "{{value}} نقطة"
+  },
+  "category": {
+    "php": "PHP",
+    "laravel": "Laravel",
+    "typescript": "TypeScript",
+    "eslint": "ESLint",
+    "architecture": "المعمارية",
+    "repository": "المستودع البرمجي",
+    "translations": "الترجمات",
+    "docker": "Docker",
+    "deployment": "النشر",
+    "security": "الأمان",
+    "performance": "الأداء",
+    "tech_debt": "الدين التقني",
+    "scoreWeight": "{{score}}/100 · {{weight}}%"
+  },
+  "certification": {
+    "title": "نظام الهندسة",
+    "description": "درجة جودة التصديق وجاهزية الإصدار في الوقت الفعلي",
+    "loadingData": "جارٍ تحميل بيانات التصديق…",
+    "emptyTitle": "لا توجد عمليات تصديق بعد",
+    "emptyHint": "شغّل سكربت التصديق ثم استورد النتائج باستخدام أمر الاستيراد الهندسي.",
+    "kpi": {
+      "qualityScore": "درجة الجودة",
+      "releaseStatus": "حالة الإصدار",
+      "totalRuns": "إجمالي عمليات التشغيل",
+      "lastRun": "آخر تشغيل"
+    },
+    "ready": "جاهز",
+    "blocked": "محظور",
+    "overallScore": "الدرجة الإجمالية",
+    "releaseReady": "جاهز للإصدار",
+    "notReleaseReady": "غير جاهز للإصدار",
+    "notReady": "غير جاهز",
+    "latestRunFindings": "نتائج آخر تشغيل",
+    "scoreTrend": "اتجاه الدرجة (آخر {{count}} عمليات تشغيل)",
+    "categoryBreakdown": "تفصيل الفئات",
+    "recentRuns": "عمليات التشغيل الأخيرة",
+    "scoreOutOf": "{{score}}/100"
+  },
+  "runs": {
+    "title": "عمليات التصديق",
+    "description": "سجل جميع عمليات التصديق الهندسي",
+    "columns": {
+      "branchCommit": "Branch / Commit",
+      "score": "الدرجة",
+      "release": "الإصدار",
+      "mode": "الوضع",
+      "certifiedAt": "تاريخ التصديق"
+    },
+    "drawerTitle": "تفاصيل عملية التصديق",
+    "modeSuffix": "وضع {{mode}}",
+    "blockers": "العوائق",
+    "categories": "الفئات",
+    "metrics": "المؤشرات",
+    "metric": {
+      "architectureFindings": "نتائج المعمارية",
+      "repositoryHealth": "سلامة المستودع البرمجي",
+      "todoCount": "عدد ملاحظات TODO / FIXME",
+      "phpstanBaseline": "مشكلات PHPStan الأساسية",
+      "missingTranslationKeys": "مفاتيح الترجمة المفقودة",
+      "deadCodeFiles": "ملفات الكود غير المستخدم",
+      "phpFiles": "ملفات PHP",
+      "tsFiles": "ملفات TS / TSX"
+    },
+    "findingsCount": "النتائج ({{count}})",
+    "fixPrefix": "الإصلاح: {{suggestion}}"
+  },
+  "findings": {
+    "title": "النتائج الهندسية",
+    "description": "جميع المخالفات والمشكلات المكتشفة في عمليات التصديق",
+    "columns": {
+      "severity": "الخطورة",
+      "category": "الفئة",
+      "finding": "النتيجة",
+      "fix": "الإصلاح",
+      "detected": "تاريخ الاكتشاف"
+    }
+  },
+  "notifications": {
+    "title": "الإشعارات",
+    "description": "أحداث Pipeline وحالات الفشل وتنبيهات النشر",
+    "unreadBadge": "{{count}} غير مقروء",
+    "markAllRead": "تعليم الكل كمقروء",
+    "markAsRead": "تعليم كمقروء",
+    "empty": "لا توجد إشعارات بعد. شغّل Pipeline لبدء استقبال الأحداث.",
+    "markedRead_zero": "لم يتم تعليم أي إشعار كمقروء",
+    "markedRead_one": "تم تعليم إشعار واحد كمقروء",
+    "markedRead_two": "تم تعليم إشعارين كمقروءين",
+    "markedRead_few": "تم تعليم {{count}} إشعارات كمقروءة",
+    "markedRead_many": "تم تعليم {{count}} إشعاراً كمقروء",
+    "markedRead_other": "تم تعليم {{count}} إشعار كمقروء"
+  },
+  "pipeline": {
+    "title": "مدير الإصدارات",
+    "description": "Pipeline ذاتي التشغيل: الحارس ← Build ← الاختبارات ← Commit ← Push ← CI ← التصديق",
+    "idle": "خامل",
+    "launchTitle": "تشغيل Pipeline",
+    "template": "قالب Pipeline",
+    "stageCount": "{{count}} مرحلة",
+    "taskName": "اسم المهمة",
+    "taskNamePlaceholder": "مثال: TASK-ENG-007",
+    "branchPlaceholder": "main",
+    "start": "بدء Pipeline",
+    "autoDeployHint": "AUTO_DEPLOY=false — مرحلة النشر تتطلب اعتماداً يدوياً.",
+    "inProgress": "قيد التنفيذ…",
+    "resume": "استئناف",
+    "retry": "إعادة المحاولة",
+    "restart": "إعادة التشغيل",
+    "skipStage": "تخطي المرحلة الفاشلة والمتابعة",
+    "skipConfirmQuestion": "تخطي {{stage}} والمتابعة؟",
+    "confirmSkip": "تأكيد التخطي",
+    "loadingStages": "جارٍ تحميل تفاصيل المراحل…",
+    "completedSummary": "اجتازت جميع المراحل — اكتمل Pipeline خلال {{duration}}.",
+    "noActive": "لا يوجد Pipeline نشط. ابدأ واحداً بالأعلى لبدء عملية الإصدار.",
+    "autoDeployTitle": "AUTO_DEPLOY = false",
+    "autoDeployBody": "النشر إلى بيئة الإنتاج يتطلب اعتماداً يدوياً. سيتم تخطي مرحلة حارس النشر تلقائياً. اضبط ENGINEERING_AUTO_DEPLOY=true في ملف ‎.env‎ لتفعيل النشر التلقائي.",
+    "defaultTaskName": "تشغيل يدوي",
+    "retryCount": "المحاولة رقم {{count}}",
+    "durationSeconds": "{{count}} ث",
+    "toast": {
+      "queued": "تمت إضافة Pipeline إلى الطابور",
+      "queuedDetail": "\"{{task}}\" قيد التشغيل الآن (قالب {{template}}).",
+      "createFailed": "تعذر إنشاء Pipeline",
+      "cancelled": "تم إلغاء Pipeline",
+      "requeued": "تمت إعادة Pipeline إلى الطابور للمحاولة مجدداً",
+      "resumed": "تم استئناف Pipeline من المرحلة الفاشلة",
+      "resumeFailed": "تعذر استئناف Pipeline",
+      "restarted": "تمت إعادة تشغيل Pipeline من البداية",
+      "restartFailed": "تعذرت إعادة تشغيل Pipeline",
+      "stageSkipped": "تم تخطي المرحلة \"{{stage}}\"",
+      "skipFailed": "تعذر تخطي المرحلة"
+    },
+    "status": {
+      "pending": "في الانتظار",
+      "running": "قيد التشغيل",
+      "completed": "مكتمل",
+      "failed": "فشل",
+      "cancelled": "ملغى"
+    },
+    "stageStatus": {
+      "pending": "في الانتظار",
+      "running": "قيد التشغيل",
+      "success": "نجاح",
+      "failed": "فشل",
+      "retrying": "إعادة المحاولة",
+      "skipped": "تم التخطي",
+      "cancelled": "ملغى"
+    },
+    "stage": {
+      "development_guardian": "حارس التطوير",
+      "architecture_guardian": "حارس المعمارية",
+      "build": "Build",
+      "tests": "الاختبارات",
+      "commit": "Commit تلقائي",
+      "push": "Push تلقائي",
+      "github_actions": "GitHub Actions",
+      "deployment_guardian": "حارس النشر",
+      "certification": "التصديق",
+      "health_check": "فحص السلامة",
+      "notifications": "الإشعارات"
+    },
+    "history": {
+      "title": "سجل Pipeline",
+      "description": "جميع Pipelines الإصدار — {{count}} إجمالاً",
+      "empty": "لا توجد Pipelines بعد. ابدأ واحداً من مدير الإصدارات."
+    }
+  },
+  "analytics": {
+    "title": "تحليلات Pipeline",
+    "description_zero": "آخر {{days}} يوم — لا توجد Pipelines",
+    "description_one": "آخر {{days}} يوم — Pipeline واحد",
+    "description_two": "آخر {{days}} يوم — Pipelines اثنان",
+    "description_few": "آخر {{days}} يوم — {{count}} Pipelines",
+    "description_many": "آخر {{days}} يوم — {{count}} Pipeline",
+    "description_other": "آخر {{days}} يوم — {{count}} Pipeline",
+    "empty": "لا توجد بيانات تحليلية بعد.",
+    "emptyWindow": "لم يتم تشغيل أي Pipeline خلال آخر {{days}} يوم.",
+    "kpi": {
+      "inQueue": "في الطابور",
+      "running": "قيد التشغيل",
+      "successRate": "معدل النجاح",
+      "failureRate": "معدل الفشل",
+      "avgDuration": "متوسط المدة",
+      "totalRetries": "إجمالي إعادة المحاولات",
+      "lastDays": "آخر {{days}} يوم"
+    },
+    "stageDurations": "تفصيل مدة المراحل",
+    "slowest": "الأبطأ: {{stage}} ({{duration}} متوسط)",
+    "runsCount": "{{count}} عملية تشغيل",
+    "avgValue": "{{value}} متوسط",
+    "maxValue": "أقصى {{value}}",
+    "recentPipelines": "Pipelines الأخيرة"
+  },
+  "inbox": {
+    "title": "صندوق الهندسة",
+    "description": "إدارة وتتبع المهام الهندسية وإسناد الوكلاء.",
+    "newTask": "+ مهمة جديدة",
+    "searchPlaceholder": "بحث في المهام…",
+    "allPriorities": "جميع الأولويات",
+    "overdueOnly": "المتأخرة فقط",
+    "empty": "لا توجد مهام. عدّل عوامل التصفية أو أنشئ مهمة جديدة.",
+    "unassigned": "غير مُسندة",
+    "overdueSuffix": " (متأخرة)",
+    "transition": "الانتقال",
+    "showingRange": "عرض {{from}}–{{to}} من {{total}} مهمة",
+    "kpi": {
+      "openTasks": "المهام المفتوحة",
+      "running": "قيد التشغيل",
+      "completed30d": "المكتملة (30 يوماً)",
+      "failed30d": "الفاشلة (30 يوماً)",
+      "overdue": "المتأخرة"
+    },
+    "columns": {
+      "priority": "الأولوية",
+      "title": "العنوان",
+      "status": "الحالة",
+      "agent": "الوكيل",
+      "deadline": "الموعد النهائي"
+    },
+    "dialog": {
+      "title": "مهمة هندسية جديدة",
+      "titleField": "العنوان",
+      "titlePlaceholder": "صف المهمة…",
+      "descriptionPlaceholder": "تفاصيل اختيارية…",
+      "deadline": "الموعد النهائي",
+      "creating": "جارٍ الإنشاء…",
+      "create": "إنشاء مهمة"
+    },
+    "toast": {
+      "movedTo": "تم نقل المهمة إلى {{status}}",
+      "transitionFailed": "فشل الانتقال",
+      "confirmDelete": "حذف هذه المهمة نهائياً؟",
+      "deleted": "تم حذف المهمة",
+      "deleteFailed": "فشل الحذف",
+      "cannotArchive": "لا يمكن الأرشفة في الحالة الحالية",
+      "loadTasksFailed": "تعذر تحميل المهام",
+      "loadTaskFailed": "تعذر تحميل المهمة"
+    },
+    "drawer": {
+      "tabs": {
+        "overview": "نظرة عامة",
+        "activity": "النشاط",
+        "comments": "التعليقات",
+        "checklist": "قائمة التحقق",
+        "files": "الملفات",
+        "dependencies": "التبعيات",
+        "rc": "مرشح الإصدار",
+        "execution": "التنفيذ"
+      },
+      "noDescription": "لا يوجد وصف",
+      "fields": {
+        "sourceType": "نوع المصدر",
+        "sourceRef": "مرجع المصدر",
+        "deadline": "الموعد النهائي",
+        "created": "تاريخ الإنشاء",
+        "retries": "إعادة المحاولات",
+        "agent": "الوكيل"
+      },
+      "noActivity": "لا يوجد نشاط مسجل.",
+      "system": "النظام",
+      "noComments": "لا توجد تعليقات بعد.",
+      "unknownAuthor": "غير معروف",
+      "internal": "داخلي",
+      "internalOnly": "داخلي فقط",
+      "commentPlaceholder": "اكتب تعليقاً…",
+      "posting": "جارٍ النشر…",
+      "post": "نشر",
+      "noChecklists": "لا توجد قوائم تحقق.",
+      "overallProgress": "التقدم الإجمالي",
+      "checklistSummary": "{{completed}} / {{total}} عنصر ({{percent}}%)",
+      "uploadFile": "رفع ملف",
+      "noAttachments": "لا توجد مرفقات.",
+      "noDependencies": "لا توجد تبعيات.",
+      "dependencyColumns": {
+        "task": "المهمة",
+        "type": "النوع",
+        "status": "الحالة"
+      },
+      "noReleaseCandidates": "لا توجد مرشحات إصدار مرتبطة.",
+      "noSession": "لا توجد جلسة تنفيذ نشطة.",
+      "sessionStatus": "حالة الجلسة",
+      "recentEvents": "الأحداث الأخيرة (آخر 20)",
+      "branchLabel": "Branch",
+      "loadTabFailed": "تعذر تحميل بيانات التبويب",
+      "transitionFailed": "فشل الانتقال",
+      "archiveFailed": "فشلت الأرشفة",
+      "commentFailed": "تعذر نشر التعليق",
+      "attachmentUploaded": "تم رفع المرفق",
+      "uploadFailed": "فشل الرفع"
+    }
+  },
+  "task": {
+    "status": {
+      "draft": "مسودة",
+      "queued": "في الطابور",
+      "assigned": "مُسندة",
+      "accepted": "مقبولة",
+      "running": "قيد التشغيل",
+      "paused": "متوقفة مؤقتاً",
+      "completed": "مكتملة",
+      "failed": "فشلت",
+      "cancelled": "ملغاة",
+      "released": "صادرة",
+      "archived": "مؤرشفة"
+    },
+    "priority": {
+      "10": "حرجة",
+      "8": "مرتفعة",
+      "5": "متوسطة",
+      "3": "منخفضة",
+      "1": "ضئيلة",
+      "fallback": "P{{value}}"
+    }
+  },
+  "agent": {
+    "title": "مساحة عمل الوكلاء",
+    "description": "مراقبة وإدارة الوكلاء الهندسيين المتصلين.",
+    "kpi": {
+      "connected": "الوكلاء المتصلون",
+      "busy": "الوكلاء المشغولون",
+      "offline": "الوكلاء غير المتصلين",
+      "runningTasks": "المهام قيد التشغيل"
+    },
+    "columns": {
+      "name": "الاسم",
+      "type": "النوع",
+      "version": "الإصدار",
+      "ip": "عنوان IP",
+      "lastSeen": "آخر ظهور",
+      "currentTask": "المهمة الحالية"
+    },
+    "empty": "لا يوجد وكلاء مسجلون. اربط وكيلاً للبدء.",
+    "idle": "خامل",
+    "collapse": "طي",
+    "deregister": "إلغاء التسجيل",
+    "detailsTitle": "{{name}} — التفاصيل",
+    "platform": "المنصة",
+    "platformFields": {
+      "os": "نظام التشغيل",
+      "cpuCores": "أنوية المعالج",
+      "memory": "الذاكرة",
+      "disk": "القرص",
+      "claude": "Claude",
+      "node": "Node"
+    },
+    "noPlatformData": "لا توجد بيانات عن المنصة",
+    "capabilities": "القدرات",
+    "noneReported": "لا شيء مُبلَّغ عنه",
+    "proficiencyTooltip": "مستوى الإتقان: {{level}}",
+    "liveMetrics": "المؤشرات الحية",
+    "asOf": "(حتى {{time}})",
+    "noHeartbeat": "لا توجد بيانات نبض",
+    "cpu": "المعالج",
+    "memory": "الذاكرة",
+    "diskUsed": "القرص المستخدم",
+    "diskFree": "{{value}} غيغابايت متاحة",
+    "currentSession": "الجلسة الحالية",
+    "latestActivity": "آخر نشاط",
+    "deregisterTitle": "إلغاء تسجيل الوكيل",
+    "deregisterBody": "إلغاء تسجيل {{name}}؟ سيتم وضع علامة إنهاء على الوكيل ولن يقبل مهاماً جديدة.",
+    "deregistering": "جارٍ إلغاء التسجيل…",
+    "confirmDeregister": "تأكيد إلغاء التسجيل",
+    "toast": {
+      "deregistered": "تم إلغاء تسجيل الوكيل \"{{name}}\"",
+      "deregisterFailed": "فشل إلغاء التسجيل",
+      "loadFailed": "تعذر تحميل بيانات الوكلاء"
+    }
+  },
+  "cluster": {
+    "title": "عنقود التنفيذ",
+    "description": "منصة عمال متوازية موزعة",
+    "tick": "نبضة تشغيل",
+    "recoverStale": "استرداد المتوقفة",
+    "purgeLocks": "تفريغ الأقفال",
+    "purgeAllExpired": "تفريغ جميع الأقفال المنتهية",
+    "kpi": {
+      "activeWorkers": "العمال النشطون",
+      "activeWorkersSub": "/ {{total}} إجمالاً",
+      "idleWorkers": "العمال الخاملون",
+      "idleWorkersSub": "متاح",
+      "queuePending": "الطابور في الانتظار",
+      "queuePendingSub": "بانتظار التشغيل",
+      "cpu": "المعالج",
+      "cpuSub": "الاستخدام",
+      "memory": "الذاكرة",
+      "memorySub": "قيد الاستخدام",
+      "throughput": "الإنتاجية",
+      "throughputSub": "مهمة/ساعة اليوم"
+    },
+    "tabs": {
+      "workers": "العمال",
+      "locks": "الأقفال",
+      "events": "الأحداث الأخيرة",
+      "throughput": "الإنتاجية"
+    },
+    "locks": {
+      "workspace": "أقفال مساحة العمل",
+      "branch": "أقفال Branch",
+      "file": "أقفال الملفات"
+    },
+    "recentEvents": "أحداث العنقود الأخيرة",
+    "noEvents": "لا توجد أحداث مسجلة.",
+    "throughputCards": {
+      "tasksPerHour": "مهام/ساعة اليوم",
+      "avgExecution": "متوسط التنفيذ (دقيقة)",
+      "successRate": "معدل النجاح"
+    },
+    "toast": {
+      "loadFailed": "تعذر تحميل لوحة العنقود",
+      "tickComplete": "اكتملت نبضة التشغيل",
+      "tickDetail": "المُسند: {{assigned}}، المُسترد: {{recovered}}",
+      "tickFailed": "فشلت نبضة التشغيل",
+      "recovered_zero": "لم يتم استرداد أي عامل",
+      "recovered_one": "تم استرداد عامل واحد",
+      "recovered_two": "تم استرداد عاملين",
+      "recovered_few": "تم استرداد {{count}} عمال",
+      "recovered_many": "تم استرداد {{count}} عاملاً",
+      "recovered_other": "تم استرداد {{count}} عامل",
+      "recoveryFailed": "فشل الاسترداد",
+      "locksPurged": "تم تفريغ الأقفال المنتهية",
+      "purgeFailed": "فشل التفريغ"
+    }
+  },
+  "worker": {
+    "empty": "لا يوجد عمال مسجلون.",
+    "columns": {
+      "name": "الاسم",
+      "type": "النوع",
+      "status": "الحالة",
+      "currentTask": "المهمة الحالية",
+      "heartbeat": "النبض",
+      "completed": "المكتملة"
+    },
+    "start": "تشغيل",
+    "drain": "تفريغ تدريجي",
+    "stop": "إيقاف",
+    "destroy": "إتلاف",
+    "recover": "استرداد",
+    "detail": {
+      "type": "النوع",
+      "completed": "المكتملة",
+      "failed": "الفاشلة",
+      "lastHeartbeat": "آخر نبضة",
+      "workspace": "مساحة العمل",
+      "recentSessions": "الجلسات الأخيرة ({{count}})",
+      "noSessions": "لا توجد جلسات بعد."
+    },
+    "type": {
+      "standard": "قياسي",
+      "specialist": "متخصص",
+      "heavy": "ثقيل"
+    },
+    "status": {
+      "starting": "قيد البدء",
+      "idle": "خامل",
+      "waiting": "في الانتظار",
+      "reserved": "محجوز",
+      "preparing": "قيد التحضير",
+      "running": "قيد التشغيل",
+      "paused": "متوقف مؤقتاً",
+      "completed": "مكتمل",
+      "failed": "فشل",
+      "recovering": "قيد الاسترداد",
+      "updating": "قيد التحديث",
+      "stopping": "قيد الإيقاف",
+      "offline": "غير متصل",
+      "destroyed": "متلَف"
+    },
+    "sessionStatus": {
+      "preparing": "قيد التحضير",
+      "running": "قيد التشغيل",
+      "paused": "متوقفة مؤقتاً",
+      "completing": "قيد الإتمام",
+      "completed": "مكتملة",
+      "failed": "فشلت",
+      "aborted": "مُجهضة"
+    },
+    "toast": {
+      "loadFailed": "تعذر تحميل العمال",
+      "started": "تم تشغيل العامل",
+      "startFailed": "تعذر تشغيل العامل",
+      "stopped": "تم إيقاف العامل",
+      "stopFailed": "تعذر إيقاف العامل",
+      "draining": "جارٍ تفريغ العامل",
+      "drainFailed": "تعذر تفريغ العامل",
+      "destroyed": "تم إتلاف العامل",
+      "destroyFailed": "تعذر إتلاف العامل",
+      "recovered": "تم استرداد العامل",
+      "recoverFailed": "تعذر استرداد العامل"
+    }
+  },
+  "release": {
+    "title": "منسّق الإصدارات",
+    "description": "السحابة الهندسية — إدارة الإصدارات",
+    "new": "إصدار جديد",
+    "kpi": {
+      "total": "إجمالي الإصدارات",
+      "draft": "مسودة",
+      "active": "نشط",
+      "activeSub": "قيد التنفيذ",
+      "pendingApproval": "بانتظار الاعتماد",
+      "releasedMonth": "الصادرة (هذا الشهر)",
+      "failed": "فشل",
+      "failedSub": "Pipeline/مرفوض"
+    },
+    "candidates": "مرشحات الإصدار",
+    "empty": "لا توجد إصدارات.",
+    "columns": {
+      "name": "الاسم",
+      "version": "الإصدار",
+      "status": "الحالة",
+      "readiness": "الجاهزية",
+      "risk": "المخاطر",
+      "tasks": "المهام"
+    },
+    "actions": {
+      "startCollecting": "بدء التجميع",
+      "beginValidation": "بدء التحقق",
+      "requestApproval": "طلب الاعتماد",
+      "queueForRelease": "إضافة إلى طابور الإصدار",
+      "triggerPipeline": "تشغيل Pipeline",
+      "generateReports": "إنشاء التقارير"
+    },
+    "tabs": {
+      "overview": "نظرة عامة",
+      "validation": "التحقق",
+      "approvals": "الاعتمادات",
+      "pipeline": "Pipeline"
+    },
+    "overview": {
+      "tasks": "المهام",
+      "environment": "البيئة",
+      "risk": "المخاطر",
+      "breaking": "تغيير جذري"
+    },
+    "create": {
+      "title": "مرشح إصدار جديد",
+      "namePlaceholder": "Release v2.0.0",
+      "versionPlaceholder": "2.0.0",
+      "submit": "إنشاء إصدار"
+    },
+    "validation": {
+      "readiness": "الجاهزية",
+      "passed": "{{count}} ناجح",
+      "failed": "{{count}} فاشل",
+      "blocking": "({{count}} حاجب)",
+      "blockingBadge": "حاجب",
+      "run": "تشغيل التحقق",
+      "validating": "جارٍ التحقق…"
+    },
+    "approval": {
+      "none": "لم يبدأ أي سير عمل اعتماد بعد.",
+      "initiate": "بدء سير عمل الاعتماد",
+      "sequence": "التسلسل {{sequence}} · {{requirement}}",
+      "approve": "اعتماد",
+      "reject": "رفض",
+      "commentPlaceholder": "تعليق (اختياري)",
+      "decidedAt": "تم القرار {{time}}",
+      "status": {
+        "pending": "في الانتظار",
+        "approved": "معتمد",
+        "rejected": "مرفوض",
+        "expired": "منتهي",
+        "skipped": "تم التخطي"
+      },
+      "level": {
+        "engineering": "الهندسة",
+        "lead": "قائد الفريق",
+        "cto": "المدير التقني",
+        "final": "النهائي"
+      }
+    },
+    "pipelineTab": {
+      "trigger": "تشغيل Pipeline",
+      "empty": "لا توجد عمليات تشغيل Pipeline بعد.",
+      "hide": "إخفاء",
+      "logs": "السجلات",
+      "runStatus": {
+        "pending": "في الانتظار",
+        "running": "قيد التشغيل",
+        "success": "نجاح",
+        "failed": "فشل",
+        "cancelled": "ملغى"
+      }
+    },
+    "status": {
+      "draft": "مسودة",
+      "collecting": "قيد التجميع",
+      "validating": "قيد التحقق",
+      "ready": "جاهز",
+      "approval_pending": "بانتظار الاعتماد",
+      "approved": "معتمد",
+      "rejected": "مرفوض",
+      "queued": "في الطابور",
+      "pipeline_running": "Pipeline قيد التشغيل",
+      "pipeline_failed": "فشل Pipeline",
+      "released": "صادر",
+      "cancelled": "ملغى",
+      "archived": "مؤرشف"
+    },
+    "riskLevel": {
+      "critical": "حرج",
+      "high": "مرتفع",
+      "medium": "متوسط",
+      "low": "منخفض",
+      "minimal": "ضئيل"
+    },
+    "toast": {
+      "created": "تم إنشاء الإصدار",
+      "createFailed": "تعذر إنشاء الإصدار",
+      "statusUpdated": "تم تحديث الحالة",
+      "transitionFailed": "فشل الانتقال",
+      "validationComplete": "اكتمل التحقق",
+      "validationScore": "الدرجة: {{score}}%",
+      "validationFailed": "فشل التحقق",
+      "reportsGenerated_zero": "لم يتم إنشاء أي تقرير",
+      "reportsGenerated_one": "تم إنشاء تقرير واحد",
+      "reportsGenerated_two": "تم إنشاء تقريرين",
+      "reportsGenerated_few": "تم إنشاء {{count}} تقارير",
+      "reportsGenerated_many": "تم إنشاء {{count}} تقريراً",
+      "reportsGenerated_other": "تم إنشاء {{count}} تقرير",
+      "reportsFailed": "فشل إنشاء التقارير",
+      "pipelineTriggered": "تم تشغيل Pipeline",
+      "pipelineTriggerFailed": "فشل تشغيل Pipeline",
+      "loadFailed": "تعذر تحميل الإصدارات"
+    }
+  },
+  "repair": {
+    "title": "منصة الإصلاح الذكي",
+    "description": "تحليل آلي للأعطال، وإنشاء Prompts إصلاح لـ Claude Code، وتطبيق Patches",
+    "newSession": "جلسة إصلاح جديدة",
+    "kpi": {
+      "totalSessions": "إجمالي الجلسات",
+      "activeSessions": "الجلسات النشطة",
+      "completedToday": "المكتملة اليوم",
+      "successRate": "معدل النجاح"
+    },
+    "filters": {
+      "allFailureTypes": "جميع أنواع الفشل",
+      "failureType": "نوع الفشل",
+      "searchPlaceholder": "بحث في ملخص الفشل…"
+    },
+    "columns": {
+      "status": "الحالة",
+      "failureType": "نوع الفشل",
+      "summary": "الملخص",
+      "source": "المصدر",
+      "retries": "إعادة المحاولات",
+      "created": "تاريخ الإنشاء"
+    },
+    "loadingSessions": "جارٍ تحميل الجلسات…",
+    "empty": "لا توجد جلسات إصلاح.",
+    "create": {
+      "title": "جلسة إصلاح جديدة",
+      "sourceType": "نوع المصدر",
+      "failureType": "نوع الفشل",
+      "failureSummary": "ملخص الفشل",
+      "summaryPlaceholder": "صف العطل المطلوب إصلاحه…",
+      "submit": "إنشاء جلسة"
+    },
+    "session": {
+      "title": "جلسة الإصلاح",
+      "loading": "جارٍ تحميل الجلسة…",
+      "tabs": {
+        "overview": "نظرة عامة",
+        "prompt": "Prompt",
+        "response": "الاستجابة",
+        "patches": "Patches"
+      },
+      "rootCause": "السبب الجذري",
+      "confidence": "درجة الثقة",
+      "effort": "الجهد",
+      "approach": "المنهج",
+      "noAnalysis": "لا يوجد تحليل بعد. شغّل التحليل لاكتشاف السبب الجذري.",
+      "analyze": "تحليل",
+      "history": "سجل الجلسة ({{count}})",
+      "noEvents": "لا توجد أحداث مسجلة.",
+      "generatePrompt": "إنشاء Prompt",
+      "promptBlocked": "يجب اكتمال التحليل قبل إنشاء Prompt.",
+      "responseType": "نوع الاستجابة",
+      "claudeResponse": "استجابة Claude Code",
+      "responsePlaceholder": "الصق استجابة Claude Code هنا…",
+      "submitResponse": "إرسال الاستجابة",
+      "pastResponses": "الاستجابات السابقة ({{count}})",
+      "noResponses": "لا توجد استجابات مسجلة.",
+      "noPatches": "لم يتم استخراج أي Patches بعد.",
+      "filesAffected_zero": "لا توجد ملفات",
+      "filesAffected_one": "ملف واحد",
+      "filesAffected_two": "ملفان",
+      "filesAffected_few": "{{count}} ملفات",
+      "filesAffected_many": "{{count}} ملفاً",
+      "filesAffected_other": "{{count}} ملف",
+      "applied": "مُطبَّق",
+      "applyPatch": "تطبيق Patch",
+      "appliedAt": "طُبِّق {{time}}",
+      "appliedBy": " بواسطة {{user}}",
+      "completeSession": "إنهاء الجلسة"
+    },
+    "prompt": {
+      "version": "Prompt v{{version}}",
+      "tokens": "~{{count}} tokens",
+      "sent": "أُرسل {{time}}",
+      "notSent": "لم يُرسل",
+      "systemContext": "سياق النظام",
+      "instructions": "تعليمات الإصلاح",
+      "constraints": "القيود",
+      "successCriteria": "معايير النجاح",
+      "copy": "نسخ Prompt كاملاً",
+      "markSent": "تعليم كمُرسَل",
+      "copied": "تم نسخ Prompt إلى الحافظة",
+      "copiedDetail": "Prompt v{{version}} جاهز للصق في Claude Code.",
+      "copyFailed": "تعذر نسخ Prompt"
+    },
+    "status": {
+      "pending": "في الانتظار",
+      "analyzing": "قيد التحليل",
+      "generating_prompt": "جارٍ إنشاء Prompt",
+      "awaiting_response": "بانتظار الاستجابة",
+      "applying": "قيد التطبيق",
+      "completed": "مكتملة",
+      "failed": "فشلت",
+      "cancelled": "ملغاة",
+      "retrying": "إعادة المحاولة",
+      "timeout": "انتهت المهلة"
+    },
+    "failureType": {
+      "build_failure": "فشل Build",
+      "test_failure": "فشل الاختبارات",
+      "validation_failure": "فشل التحقق",
+      "security_issue": "مشكلة أمان",
+      "architecture_violation": "مخالفة معمارية",
+      "quality_issue": "مشكلة جودة",
+      "documentation_gap": "نقص في التوثيق",
+      "performance_issue": "مشكلة أداء",
+      "pipeline_failure": "فشل Pipeline"
+    },
+    "sourceType": {
+      "manual": "يدوي",
+      "pipeline": "Pipeline",
+      "engineering_run": "تشغيل هندسي",
+      "release": "إصدار",
+      "ai_review": "مراجعة ذكية"
+    },
+    "responseType": {
+      "patch": "Patch",
+      "explanation": "شرح",
+      "clarification_request": "طلب توضيح",
+      "error": "خطأ"
+    },
+    "toast": {
+      "summaryRequired": "ملخص الفشل مطلوب",
+      "created": "تم إنشاء جلسة الإصلاح",
+      "createFailed": "تعذر إنشاء جلسة الإصلاح",
+      "deleted": "تم حذف جلسة الإصلاح",
+      "deleteFailed": "تعذر حذف جلسة الإصلاح",
+      "responseRequired": "محتوى الاستجابة مطلوب",
+      "responseSubmitted": "تم إرسال الاستجابة",
+      "responseFailed": "تعذر إرسال الاستجابة",
+      "analysisStarted": "بدأ التحليل",
+      "analysisFailed": "تعذر بدء التحليل",
+      "sessionCancelled": "تم إلغاء الجلسة",
+      "cancelFailed": "تعذر إلغاء الجلسة",
+      "promptGenerated": "تم إنشاء Prompt",
+      "promptFailed": "تعذر إنشاء Prompt",
+      "promptMarkedSent": "تم تعليم Prompt كمُرسَل",
+      "markSentFailed": "تعذر تعليم Prompt كمُرسَل",
+      "patchApplied": "تم تطبيق Patch",
+      "patchFailed": "تعذر تطبيق Patch",
+      "sessionCompleted": "اكتملت الجلسة",
+      "completeFailed": "تعذر إنهاء الجلسة",
+      "loadDashboardFailed": "تعذر تحميل لوحة الإصلاح",
+      "loadSessionsFailed": "تعذر تحميل جلسات الإصلاح",
+      "loadSessionFailed": "تعذر تحميل جلسة الإصلاح"
+    }
+  },
+  "supervisor": {
+    "title": "المشرف الهندسي الذكي",
+    "description": "بوابة جودة آلية قبل كل إصدار",
+    "runReview": "تشغيل المراجعة الذكية",
+    "runningReview": "جارٍ تشغيل المراجعة…",
+    "kpi": {
+      "overallScore": "الدرجة الإجمالية",
+      "criticalRisks": "المخاطر الحرجة",
+      "openRecommendations": "التوصيات المفتوحة",
+      "reviewsThisMonth": "مراجعات هذا الشهر",
+      "notAvailable": "غير متاح"
+    },
+    "latestRecommendation": "آخر توصية:",
+    "tabs": {
+      "overview": "نظرة عامة",
+      "risks": "المخاطر",
+      "recommendations": "التوصيات",
+      "trends": "الاتجاهات"
+    },
+    "runToSeeScores": "شغّل مراجعة لعرض الدرجات",
+    "recentReviews": "المراجعات الأخيرة",
+    "noReviews": "لا توجد مراجعات بعد",
+    "detectedRisks": "المخاطر المكتشفة",
+    "unacknowledged": "{{count}} دون إقرار",
+    "openCount": "{{count}} مفتوحة",
+    "scoreTrend30": "اتجاه الدرجة (30 يوماً)",
+    "architectureShort": "المعمارية: {{value}}%",
+    "securityShort": "الأمان: {{value}}%",
+    "stats": {
+      "totalReviews": "إجمالي المراجعات",
+      "thisMonth": "هذا الشهر",
+      "architectureCompliance": "الالتزام المعماري",
+      "securityPassRate": "معدل اجتياز الأمان"
+    },
+    "scoreCard": {
+      "overallScore": "الدرجة الإجمالية"
+    },
+    "risks": {
+      "empty": "لم يتم اكتشاف مخاطر",
+      "blocking": "حاجب",
+      "acknowledge": "إقرار",
+      "recommendation": "التوصية"
+    },
+    "recommendations": {
+      "empty": "لا توجد توصيات",
+      "markResolved": "تعليم كمحلول"
+    },
+    "effort": {
+      "trivial": "~ساعة",
+      "low": "يوم",
+      "medium": "3 أيام",
+      "high": "أسبوع",
+      "very_high": "أسبوعان فأكثر"
+    },
+    "toast": {
+      "loadFailed": "تعذر تحميل لوحة المشرف الذكي",
+      "reviewCompleted": "اكتملت المراجعة الذكية",
+      "reviewScore": "الدرجة: {{score}}%",
+      "reviewFailed": "فشلت المراجعة الذكية"
+    }
+  },
+  "review": {
+    "status": {
+      "pending": "في الانتظار",
+      "running": "قيد التشغيل",
+      "completed": "مكتملة",
+      "failed": "فشلت",
+      "cancelled": "ملغاة"
+    },
+    "recommendation": {
+      "approve": "اعتماد",
+      "approve_with_warnings": "اعتماد مع تحذيرات",
+      "needs_review": "يحتاج مراجعة",
+      "reject": "رفض",
+      "critical_block": "حجب حرج"
+    },
+    "dimension": {
+      "architecture": "المعمارية",
+      "backend": "الواجهة الخلفية",
+      "frontend": "الواجهة الأمامية",
+      "database": "قاعدة البيانات",
+      "security": "الأمان",
+      "testing": "الاختبارات",
+      "documentation": "التوثيق",
+      "performance": "الأداء",
+      "maintainability": "قابلية الصيانة"
+    }
+  },
+  "workspace": {
+    "title": "مساحة العمل الهندسية",
+    "description": "مراقبة موحّدة عبر الإصلاح والتحقق والحارس والذكاء والإصدارات",
+    "nav": {
+      "repair": "الإصلاح الذكي",
+      "supervisor": "المشرف",
+      "releases": "الإصدارات"
+    },
+    "loading": "جارٍ تحميل مساحة العمل…",
+    "kpi": {
+      "repairSuccess": "نجاح الإصلاح",
+      "validationAccept": "قبول التحقق",
+      "guardianAllow": "سماح الحارس",
+      "supervisorScore": "درجة المشرف",
+      "technicalDebt": "الدين التقني",
+      "inFlight": "قيد التنفيذ",
+      "rate30d": "معدل 30 يوماً",
+      "latestReview": "آخر مراجعة",
+      "inFlightHint": "إصلاحات + عمليات تشغيل + عمليات تحقق"
+    },
+    "debtLevel": {
+      "critical": "حرج",
+      "high": "مرتفع",
+      "moderate": "متوسط",
+      "low": "منخفض",
+      "minimal": "ضئيل"
+    },
+    "tabs": {
+      "live": "المراقبة الحية",
+      "timeline": "الجدول الزمني",
+      "releases": "جاهزية الإصدار",
+      "insights": "الرؤى"
+    },
+    "live": {
+      "activeRepairs": "الإصلاحات النشطة ({{count}})",
+      "noRepairs": "لا شيء قيد التنفيذ.",
+      "runningValidations": "عمليات التحقق الجارية ({{count}})",
+      "noValidations": "لا شيء قيد التشغيل.",
+      "activeGuardianRuns": "عمليات تشغيل الحارس النشطة ({{count}})",
+      "noGuardianRuns": "لا شيء نشط.",
+      "attempt": "المحاولة {{number}}",
+      "patchRef": "Patch رقم {{id}}…"
+    },
+    "releases": {
+      "empty": "لا توجد إصدارات بعد.",
+      "columns": {
+        "release": "الإصدار",
+        "status": "الحالة",
+        "readiness": "الجاهزية",
+        "checks": "الفحوصات",
+        "risks": "المخاطر"
+      },
+      "ready": "جاهز",
+      "blocking": "{{count}} حاجب"
+    },
+    "insights": {
+      "empty": "لا توجد رؤى مفتوحة. أنشئها من واجهات الذكاء البرمجية."
+    },
+    "timeline": {
+      "filters": {
+        "all": "الكل",
+        "repairs": "الإصلاحات",
+        "validations": "عمليات التحقق",
+        "guardian": "الحارس"
+      },
+      "loading": "جارٍ تحميل الجدول الزمني…",
+      "empty": "لا توجد أحداث هندسية بعد.",
+      "source": {
+        "repair": "الإصلاح",
+        "validation": "التحقق",
+        "guardian": "الحارس"
+      }
+    },
+    "search": {
+      "placeholder": "بحث في الجلسات وعمليات التشغيل والإصدارات والرؤى…",
+      "label": "البحث الهندسي الشامل",
+      "noMatches": "لا توجد نتائج مطابقة.",
+      "repairSessions": "جلسات الإصلاح",
+      "guardianRuns": "عمليات تشغيل الحارس",
+      "releases": "الإصدارات",
+      "insights": "الرؤى"
+    },
+    "toast": {
+      "loadFailed": "تعذر تحميل مساحة العمل",
+      "loadLiveFailed": "تعذر تحميل المراقبة الحية",
+      "loadTimelineFailed": "تعذر تحميل الجدول الزمني"
+    }
+  }
+}

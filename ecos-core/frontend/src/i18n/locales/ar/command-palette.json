@@ -1,0 +1,56 @@
+{
+  "groups": {
+    "navigation": "التنقل",
+    "actions": "إجراءات سريعة",
+    "search": "بحث",
+    "recent": "المفتوحة مؤخرًا",
+    "favorites": "المفضلة",
+    "ai": "المساعد الذكي"
+  },
+  "nav": {
+    "dashboard": { "title": "لوحة التحكم", "description": "الانتقال إلى النظرة العامة الرئيسية" },
+    "orders": { "title": "الطلبات", "description": "إدارة طلبات المبيعات" },
+    "fulfillments": { "title": "التنفيذ", "description": "تتبّع تنفيذ الطلبات والشحن" },
+    "customers": { "title": "العملاء", "description": "إدارة سجلات العملاء" },
+    "products": { "title": "المنتجات", "description": "إدارة كتالوج المنتجات" },
+    "inventory": { "title": "المخزون", "description": "عرض مستويات المخزون والحركات" },
+    "warehouses": { "title": "المستودعات", "description": "إدارة مواقع التخزين" },
+    "suppliers": { "title": "الموردون", "description": "إدارة الموردين والبائعين" },
+    "purchaseOrders": { "title": "أوامر الشراء", "description": "إدارة أوامر التوريد" },
+    "companies": { "title": "الشركات", "description": "إدارة كيانات الشركات" },
+    "manufacturing": { "title": "التصنيع", "description": "إدارة قوائم المواد والإنتاج" },
+    "reports": { "title": "التقارير", "description": "التحليلات وتقارير الأعمال" },
+    "settings": { "title": "الإعدادات", "description": "إعدادات التطبيق" }
+  },
+  "actions": {
+    "orderNew": { "title": "طلب جديد", "description": "إنشاء طلب مبيعات" },
+    "customerNew": { "title": "عميل جديد", "description": "إضافة سجل عميل" },
+    "productNew": { "title": "منتج جديد", "description": "إضافة منتج إلى الكتالوج" },
+    "supplierNew": { "title": "مورد جديد", "description": "تسجيل مورد أو بائع" },
+    "warehouseNew": { "title": "مستودع جديد", "description": "تسجيل موقع تخزين" },
+    "companyNew": { "title": "شركة جديدة", "description": "إضافة كيان شركة" },
+    "import": { "title": "استيراد البيانات", "description": "الاستيراد من CSV أو Excel" },
+    "export": { "title": "تصدير البيانات", "description": "التصدير إلى CSV أو Excel" }
+  },
+  "favorites": {
+    "orders": { "title": "الطلبات", "description": "مساحة عمل طلبات المبيعات" },
+    "inventory": { "title": "المخزون", "description": "مستويات المخزون والمواقع" }
+  },
+  "ai": {
+    "assistant": { "title": "المساعد الذكي", "description": "اسأل أي شيء عن بياناتك وعملياتك" }
+  },
+  "palette": {
+    "soon": "قريبًا",
+    "noResults": "لا توجد نتائج لـ ”{{query}}“",
+    "noResultsHint": "جرّب كلمة مفتاحية مختلفة أو انتقل مباشرةً.",
+    "searchPlaceholder": "ابحث في الأوامر أو الصفحات أو السجلات…",
+    "clearSearch": "مسح البحث",
+    "commandsAria": "الأوامر",
+    "navigate": "تنقّل",
+    "select": "اختيار",
+    "close": "إغلاق",
+    "aiComingSoon": "المساعد الذكي قريبًا",
+    "title": "مركز الأوامر",
+    "srDescription": "ابحث ونفّذ الأوامر عبر نظام ECOS ERP."
+  }
+}

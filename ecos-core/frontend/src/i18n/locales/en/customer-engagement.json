@@ -1,0 +1,60 @@
+{
+  "title": "Customer Engagement",
+  "subtitle": "Leads, journeys, and customer engagement orchestration.",
+  "leads": {
+    "title": "Leads",
+    "subtitle": "Track and qualify potential customers.",
+    "search": "Search leads by name, phone, or email…",
+    "actions": {
+      "new": "New Lead",
+      "qualify": "Qualify",
+      "disqualify": "Disqualify",
+      "convertToCustomer": "Convert to Customer"
+    },
+    "columns": {
+      "name": "Lead",
+      "source": "Source",
+      "phone": "Phone",
+      "email": "Email",
+      "status": "Status",
+      "assignedTo": "Assigned To",
+      "createdAt": "Created"
+    },
+    "status": {
+      "new": "New",
+      "contacted": "Contacted",
+      "qualified": "Qualified",
+      "converted": "Converted",
+      "lost": "Lost"
+    },
+    "sources": {
+      "meta_ad": "Meta Ad",
+      "whatsapp": "WhatsApp",
+      "website": "Website",
+      "referral": "Referral",
+      "manual": "Manual Entry"
+    }
+  },
+  "journeys": {
+    "title": "Customer Journeys",
+    "subtitle": "Map and automate touchpoints across the customer lifecycle.",
+    "stages": {
+      "awareness": "Awareness",
+      "consideration": "Consideration",
+      "purchase": "Purchase",
+      "retention": "Retention",
+      "advocacy": "Advocacy"
+    }
+  },
+  "inbox": {
+    "title": "Engagement Inbox",
+    "subtitle": "Centralised view of all customer interactions.",
+    "search": "Search conversations…",
+    "noMessages": "No messages yet.",
+    "channels": {
+      "whatsapp": "WhatsApp",
+      "sms": "SMS",
+      "email": "Email"
+    }
+  }
+}

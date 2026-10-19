@@ -1,0 +1,1006 @@
+{
+  "common": {
+    "actions": "Actions",
+    "all": "All",
+    "allStatuses": "All Statuses",
+    "archive": "Archive",
+    "branch": "Branch",
+    "cancel": "Cancel",
+    "close": "Close",
+    "created": "Created",
+    "delete": "Delete",
+    "description": "Description",
+    "details": "Details",
+    "download": "Download",
+    "exportCsv": "Export CSV",
+    "loading": "Loading…",
+    "name": "Name",
+    "next": "Next",
+    "none": "None",
+    "notSet": "—",
+    "optional": "Optional",
+    "page": "Page",
+    "pageOf": "Page {{current}} of {{last}}",
+    "previous": "Previous",
+    "prev": "Prev",
+    "progress": "Progress",
+    "refresh": "Refresh",
+    "refreshing": "Refreshing…",
+    "required": "Required",
+    "search": "Search",
+    "searching": "Searching…",
+    "status": "Status",
+    "summary": "Summary",
+    "type": "Type",
+    "version": "Version",
+    "view": "View",
+    "yes": "Yes",
+    "no": "No",
+    "justNow": "just now",
+    "minutesAgo": "{{count}} min ago",
+    "hoursAgo": "{{count}} h ago",
+    "daysAgo": "{{count}} d ago",
+    "secondsAgo": "{{count}}s ago",
+    "updatedSecondsAgo": "Updated {{count}}s ago",
+    "refreshedAt": "Refreshed {{time}}"
+  },
+  "severity": {
+    "CRITICAL": "Critical",
+    "HIGH": "High",
+    "MEDIUM": "Medium",
+    "LOW": "Low",
+    "critical": "Critical",
+    "high": "High",
+    "medium": "Medium",
+    "low": "Low",
+    "minimal": "Minimal",
+    "informational": "Informational",
+    "info": "Info",
+    "warning": "Warning",
+    "error": "Error",
+    "success": "Success",
+    "allSeverities": "All severities"
+  },
+  "quality": {
+    "excellent": "Excellent",
+    "good": "Good",
+    "fair": "Fair",
+    "poor": "Poor"
+  },
+  "chart": {
+    "notEnoughData": "Not enough data for trend",
+    "notEnoughDataChart": "Not enough data for trend chart",
+    "points": "{{value}}pts"
+  },
+  "category": {
+    "php": "PHP",
+    "laravel": "Laravel",
+    "typescript": "TypeScript",
+    "eslint": "ESLint",
+    "architecture": "Architecture",
+    "repository": "Repository",
+    "translations": "Translations",
+    "docker": "Docker",
+    "deployment": "Deployment",
+    "security": "Security",
+    "performance": "Performance",
+    "tech_debt": "Tech Debt",
+    "scoreWeight": "{{score}}/100 · {{weight}}%"
+  },
+  "certification": {
+    "title": "Engineering OS",
+    "description": "Real-time certification quality score and release readiness",
+    "loadingData": "Loading certification data…",
+    "emptyTitle": "No certification runs yet",
+    "emptyHint": "Run the certification script, then import the results with the engineering import command.",
+    "kpi": {
+      "qualityScore": "Quality Score",
+      "releaseStatus": "Release Status",
+      "totalRuns": "Total Runs",
+      "lastRun": "Last Run"
+    },
+    "ready": "Ready",
+    "blocked": "Blocked",
+    "overallScore": "Overall Score",
+    "releaseReady": "Release Ready",
+    "notReleaseReady": "Not Release Ready",
+    "notReady": "Not Ready",
+    "latestRunFindings": "Latest Run Findings",
+    "scoreTrend": "Score Trend (last {{count}} runs)",
+    "categoryBreakdown": "Category Breakdown",
+    "recentRuns": "Recent Runs",
+    "scoreOutOf": "{{score}}/100"
+  },
+  "runs": {
+    "title": "Certification Runs",
+    "description": "History of all engineering certification runs",
+    "columns": {
+      "branchCommit": "Branch / Commit",
+      "score": "Score",
+      "release": "Release",
+      "mode": "Mode",
+      "certifiedAt": "Certified At"
+    },
+    "drawerTitle": "Certification Run Detail",
+    "modeSuffix": "{{mode}} mode",
+    "blockers": "BLOCKERS",
+    "categories": "Categories",
+    "metrics": "Metrics",
+    "metric": {
+      "architectureFindings": "Architecture Findings",
+      "repositoryHealth": "Repository Health",
+      "todoCount": "TODO / FIXME Count",
+      "phpstanBaseline": "PHPStan Baseline Issues",
+      "missingTranslationKeys": "Missing Translation Keys",
+      "deadCodeFiles": "Dead Code Files",
+      "phpFiles": "PHP Files",
+      "tsFiles": "TS / TSX Files"
+    },
+    "findingsCount": "Findings ({{count}})",
+    "fixPrefix": "Fix: {{suggestion}}"
+  },
+  "findings": {
+    "title": "Engineering Findings",
+    "description": "All violations and issues detected across certification runs",
+    "columns": {
+      "severity": "Severity",
+      "category": "Category",
+      "finding": "Finding",
+      "fix": "Fix",
+      "detected": "Detected"
+    }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "description": "Pipeline events, failures, and deployment alerts",
+    "unreadBadge": "{{count}} unread",
+    "markAllRead": "Mark all read",
+    "markAsRead": "Mark as read",
+    "empty": "No notifications yet. Run a pipeline to start receiving events.",
+    "markedRead_one": "{{count}} notification marked as read",
+    "markedRead_other": "{{count}} notifications marked as read"
+  },
+  "pipeline": {
+    "title": "Release Manager",
+    "description": "Autonomous pipeline: Guardian → Build → Tests → Commit → Push → CI → Certification",
+    "idle": "Idle",
+    "launchTitle": "Launch Pipeline",
+    "template": "Pipeline Template",
+    "stageCount": "{{count}} stages",
+    "taskName": "Task Name",
+    "taskNamePlaceholder": "e.g. TASK-ENG-007",
+    "branchPlaceholder": "main",
+    "start": "Start Pipeline",
+    "autoDeployHint": "AUTO_DEPLOY=false — deployment stage will require manual approval.",
+    "inProgress": "In progress…",
+    "resume": "Resume",
+    "retry": "Retry",
+    "restart": "Restart",
+    "skipStage": "Skip failed stage and continue",
+    "skipConfirmQuestion": "Skip {{stage}} and continue?",
+    "confirmSkip": "Confirm Skip",
+    "loadingStages": "Loading stage details…",
+    "completedSummary": "All stages passed — pipeline completed in {{duration}}.",
+    "noActive": "No active pipeline. Start one above to begin the release process.",
+    "autoDeployTitle": "AUTO_DEPLOY = false",
+    "autoDeployBody": "Deployment to production requires manual approval. The Deployment Guardian stage will be automatically skipped. Set ENGINEERING_AUTO_DEPLOY=true in the .env file to enable automatic deployment.",
+    "defaultTaskName": "Manual Run",
+    "retryCount": "retry #{{count}}",
+    "durationSeconds": "{{count}}s",
+    "toast": {
+      "queued": "Pipeline queued",
+      "queuedDetail": "\"{{task}}\" is now running ({{template}} template).",
+      "createFailed": "Failed to create pipeline",
+      "cancelled": "Pipeline cancelled",
+      "requeued": "Pipeline requeued for retry",
+      "resumed": "Pipeline resumed from failed stage",
+      "resumeFailed": "Could not resume pipeline",
+      "restarted": "Pipeline restarted from the beginning",
+      "restartFailed": "Could not restart pipeline",
+      "stageSkipped": "Stage \"{{stage}}\" skipped",
+      "skipFailed": "Could not skip stage"
+    },
+    "status": {
+      "pending": "Pending",
+      "running": "Running",
+      "completed": "Completed",
+      "failed": "Failed",
+      "cancelled": "Cancelled"
+    },
+    "stageStatus": {
+      "pending": "Pending",
+      "running": "Running",
+      "success": "Success",
+      "failed": "Failed",
+      "retrying": "Retrying",
+      "skipped": "Skipped",
+      "cancelled": "Cancelled"
+    },
+    "stage": {
+      "development_guardian": "Development Guardian",
+      "architecture_guardian": "Architecture Guardian",
+      "build": "Build",
+      "tests": "Tests",
+      "commit": "Auto Commit",
+      "push": "Auto Push",
+      "github_actions": "GitHub Actions",
+      "deployment_guardian": "Deployment Guardian",
+      "certification": "Certification",
+      "health_check": "Health Check",
+      "notifications": "Notifications"
+    },
+    "history": {
+      "title": "Pipeline History",
+      "description": "All release pipelines — {{count}} total",
+      "empty": "No pipelines yet. Start one from the Release Manager."
+    }
+  },
+  "analytics": {
+    "title": "Pipeline Analytics",
+    "description_one": "Last {{days}} days — {{count}} pipeline",
+    "description_other": "Last {{days}} days — {{count}} pipelines",
+    "empty": "No analytics data available yet.",
+    "emptyWindow": "No pipelines run in the last {{days}} days.",
+    "kpi": {
+      "inQueue": "In Queue",
+      "running": "Running",
+      "successRate": "Success Rate",
+      "failureRate": "Failure Rate",
+      "avgDuration": "Avg Duration",
+      "totalRetries": "Total Retries",
+      "lastDays": "last {{days}}d"
+    },
+    "stageDurations": "Stage Duration Breakdown",
+    "slowest": "Slowest: {{stage}} ({{duration}} avg)",
+    "runsCount": "{{count}} runs",
+    "avgValue": "{{value}} avg",
+    "maxValue": "max {{value}}",
+    "recentPipelines": "Recent Pipelines"
+  },
+  "inbox": {
+    "title": "Engineering Inbox",
+    "description": "Manage and track engineering tasks and agent assignments.",
+    "newTask": "+ New Task",
+    "searchPlaceholder": "Search tasks…",
+    "allPriorities": "All Priorities",
+    "overdueOnly": "Overdue only",
+    "empty": "No tasks found. Adjust filters or create a new task.",
+    "unassigned": "Unassigned",
+    "overdueSuffix": " (overdue)",
+    "transition": "Transition",
+    "showingRange": "Showing {{from}}–{{to}} of {{total}} tasks",
+    "kpi": {
+      "openTasks": "Open Tasks",
+      "running": "Running",
+      "completed30d": "Completed (30d)",
+      "failed30d": "Failed (30d)",
+      "overdue": "Overdue"
+    },
+    "columns": {
+      "priority": "Priority",
+      "title": "Title",
+      "status": "Status",
+      "agent": "Agent",
+      "deadline": "Deadline"
+    },
+    "dialog": {
+      "title": "New Engineering Task",
+      "titleField": "Title",
+      "titlePlaceholder": "Describe the task…",
+      "descriptionPlaceholder": "Optional details…",
+      "deadline": "Deadline",
+      "creating": "Creating…",
+      "create": "Create Task"
+    },
+    "toast": {
+      "movedTo": "Task moved to {{status}}",
+      "transitionFailed": "Transition failed",
+      "confirmDelete": "Delete this task permanently?",
+      "deleted": "Task deleted",
+      "deleteFailed": "Delete failed",
+      "cannotArchive": "Cannot archive in current status",
+      "loadTasksFailed": "Failed to load tasks",
+      "loadTaskFailed": "Failed to load task"
+    },
+    "drawer": {
+      "tabs": {
+        "overview": "Overview",
+        "activity": "Activity",
+        "comments": "Comments",
+        "checklist": "Checklist",
+        "files": "Files",
+        "dependencies": "Deps",
+        "rc": "RC",
+        "execution": "Exec"
+      },
+      "noDescription": "No description",
+      "fields": {
+        "sourceType": "Source Type",
+        "sourceRef": "Source Ref",
+        "deadline": "Deadline",
+        "created": "Created",
+        "retries": "Retries",
+        "agent": "Agent"
+      },
+      "noActivity": "No activity recorded.",
+      "system": "System",
+      "noComments": "No comments yet.",
+      "unknownAuthor": "Unknown",
+      "internal": "Internal",
+      "internalOnly": "Internal only",
+      "commentPlaceholder": "Write a comment…",
+      "posting": "Posting…",
+      "post": "Post",
+      "noChecklists": "No checklists.",
+      "overallProgress": "Overall progress",
+      "checklistSummary": "{{completed}} / {{total}} items ({{percent}}%)",
+      "uploadFile": "Upload File",
+      "noAttachments": "No attachments.",
+      "noDependencies": "No dependencies.",
+      "dependencyColumns": {
+        "task": "Task",
+        "type": "Type",
+        "status": "Status"
+      },
+      "noReleaseCandidates": "No release candidates linked.",
+      "noSession": "No active execution session.",
+      "sessionStatus": "Session status",
+      "recentEvents": "Recent Events (last 20)",
+      "branchLabel": "Branch",
+      "loadTabFailed": "Failed to load tab data",
+      "transitionFailed": "Transition failed",
+      "archiveFailed": "Archive failed",
+      "commentFailed": "Failed to post comment",
+      "attachmentUploaded": "Attachment uploaded",
+      "uploadFailed": "Upload failed"
+    }
+  },
+  "task": {
+    "status": {
+      "draft": "Draft",
+      "queued": "Queued",
+      "assigned": "Assigned",
+      "accepted": "Accepted",
+      "running": "Running",
+      "paused": "Paused",
+      "completed": "Completed",
+      "failed": "Failed",
+      "cancelled": "Cancelled",
+      "released": "Released",
+      "archived": "Archived"
+    },
+    "priority": {
+      "10": "Critical",
+      "8": "High",
+      "5": "Medium",
+      "3": "Low",
+      "1": "Minimal",
+      "fallback": "P{{value}}"
+    }
+  },
+  "agent": {
+    "title": "Agent Workspace",
+    "description": "Monitor and manage connected engineering agents.",
+    "kpi": {
+      "connected": "Connected Agents",
+      "busy": "Busy Agents",
+      "offline": "Offline Agents",
+      "runningTasks": "Running Tasks"
+    },
+    "columns": {
+      "name": "Name",
+      "type": "Type",
+      "version": "Version",
+      "ip": "IP",
+      "lastSeen": "Last Seen",
+      "currentTask": "Current Task"
+    },
+    "empty": "No agents registered. Connect an agent to get started.",
+    "idle": "Idle",
+    "collapse": "Collapse",
+    "deregister": "Deregister",
+    "detailsTitle": "{{name}} — Details",
+    "platform": "Platform",
+    "platformFields": {
+      "os": "OS",
+      "cpuCores": "CPU cores",
+      "memory": "Memory",
+      "disk": "Disk",
+      "claude": "Claude",
+      "node": "Node"
+    },
+    "noPlatformData": "No platform data",
+    "capabilities": "Capabilities",
+    "noneReported": "None reported",
+    "proficiencyTooltip": "Proficiency: {{level}}",
+    "liveMetrics": "Live Metrics",
+    "asOf": "(as of {{time}})",
+    "noHeartbeat": "No heartbeat data",
+    "cpu": "CPU",
+    "memory": "Memory",
+    "diskUsed": "Disk Used",
+    "diskFree": "{{value}} GB free",
+    "currentSession": "Current Session",
+    "latestActivity": "Latest Activity",
+    "deregisterTitle": "Deregister Agent",
+    "deregisterBody": "Deregister {{name}}? The agent will be marked as terminated and won't accept new tasks.",
+    "deregistering": "Deregistering…",
+    "confirmDeregister": "Confirm Deregister",
+    "toast": {
+      "deregistered": "Agent \"{{name}}\" deregistered",
+      "deregisterFailed": "Deregister failed",
+      "loadFailed": "Failed to load agent data"
+    }
+  },
+  "cluster": {
+    "title": "Execution Cluster",
+    "description": "Distributed parallel worker platform",
+    "tick": "Tick",
+    "recoverStale": "Recover Stale",
+    "purgeLocks": "Purge Locks",
+    "purgeAllExpired": "Purge All Expired Locks",
+    "kpi": {
+      "activeWorkers": "Active Workers",
+      "activeWorkersSub": "/ {{total}} total",
+      "idleWorkers": "Idle Workers",
+      "idleWorkersSub": "available",
+      "queuePending": "Queue Pending",
+      "queuePendingSub": "waiting to run",
+      "cpu": "CPU",
+      "cpuSub": "utilization",
+      "memory": "Memory",
+      "memorySub": "in use",
+      "throughput": "Throughput",
+      "throughputSub": "tasks/hr today"
+    },
+    "tabs": {
+      "workers": "Workers",
+      "locks": "Locks",
+      "events": "Recent Events",
+      "throughput": "Throughput"
+    },
+    "locks": {
+      "workspace": "Workspace Locks",
+      "branch": "Branch Locks",
+      "file": "File Locks"
+    },
+    "recentEvents": "Recent Cluster Events",
+    "noEvents": "No events recorded.",
+    "throughputCards": {
+      "tasksPerHour": "Tasks/Hour Today",
+      "avgExecution": "Avg Execution (min)",
+      "successRate": "Success Rate"
+    },
+    "toast": {
+      "loadFailed": "Failed to load cluster dashboard",
+      "tickComplete": "Tick complete",
+      "tickDetail": "Assigned: {{assigned}}, Recovered: {{recovered}}",
+      "tickFailed": "Tick failed",
+      "recovered_one": "Recovered {{count}} worker",
+      "recovered_other": "Recovered {{count}} workers",
+      "recoveryFailed": "Recovery failed",
+      "locksPurged": "Expired locks purged",
+      "purgeFailed": "Purge failed"
+    }
+  },
+  "worker": {
+    "empty": "No workers registered.",
+    "columns": {
+      "name": "Name",
+      "type": "Type",
+      "status": "Status",
+      "currentTask": "Current Task",
+      "heartbeat": "Heartbeat",
+      "completed": "Completed"
+    },
+    "start": "Start",
+    "drain": "Drain",
+    "stop": "Stop",
+    "destroy": "Destroy",
+    "recover": "Recover",
+    "detail": {
+      "type": "Type",
+      "completed": "Completed",
+      "failed": "Failed",
+      "lastHeartbeat": "Last Heartbeat",
+      "workspace": "Workspace",
+      "recentSessions": "Recent Sessions ({{count}})",
+      "noSessions": "No sessions yet."
+    },
+    "type": {
+      "standard": "Standard",
+      "specialist": "Specialist",
+      "heavy": "Heavy"
+    },
+    "status": {
+      "starting": "Starting",
+      "idle": "Idle",
+      "waiting": "Waiting",
+      "reserved": "Reserved",
+      "preparing": "Preparing",
+      "running": "Running",
+      "paused": "Paused",
+      "completed": "Completed",
+      "failed": "Failed",
+      "recovering": "Recovering",
+      "updating": "Updating",
+      "stopping": "Stopping",
+      "offline": "Offline",
+      "destroyed": "Destroyed"
+    },
+    "sessionStatus": {
+      "preparing": "Preparing",
+      "running": "Running",
+      "paused": "Paused",
+      "completing": "Completing",
+      "completed": "Completed",
+      "failed": "Failed",
+      "aborted": "Aborted"
+    },
+    "toast": {
+      "loadFailed": "Failed to load workers",
+      "started": "Worker started",
+      "startFailed": "Failed to start worker",
+      "stopped": "Worker stopped",
+      "stopFailed": "Failed to stop worker",
+      "draining": "Worker draining",
+      "drainFailed": "Failed to drain worker",
+      "destroyed": "Worker destroyed",
+      "destroyFailed": "Failed to destroy worker",
+      "recovered": "Worker recovered",
+      "recoverFailed": "Failed to recover worker"
+    }
+  },
+  "release": {
+    "title": "Release Orchestrator",
+    "description": "Engineering Cloud — Release Management",
+    "new": "New Release",
+    "kpi": {
+      "total": "Total Releases",
+      "draft": "Draft",
+      "active": "Active",
+      "activeSub": "in progress",
+      "pendingApproval": "Pending Approval",
+      "releasedMonth": "Released (Month)",
+      "failed": "Failed",
+      "failedSub": "pipeline/rejected"
+    },
+    "candidates": "Release Candidates",
+    "empty": "No releases found.",
+    "columns": {
+      "name": "Name",
+      "version": "Version",
+      "status": "Status",
+      "readiness": "Readiness",
+      "risk": "Risk",
+      "tasks": "Tasks"
+    },
+    "actions": {
+      "startCollecting": "Start Collecting",
+      "beginValidation": "Begin Validation",
+      "requestApproval": "Request Approval",
+      "queueForRelease": "Queue for Release",
+      "triggerPipeline": "Trigger Pipeline",
+      "generateReports": "Generate Reports"
+    },
+    "tabs": {
+      "overview": "Overview",
+      "validation": "Validation",
+      "approvals": "Approvals",
+      "pipeline": "Pipeline"
+    },
+    "overview": {
+      "tasks": "Tasks",
+      "environment": "Environment",
+      "risk": "Risk",
+      "breaking": "Breaking"
+    },
+    "create": {
+      "title": "New Release Candidate",
+      "namePlaceholder": "Release v2.0.0",
+      "versionPlaceholder": "2.0.0",
+      "submit": "Create Release"
+    },
+    "validation": {
+      "readiness": "Readiness",
+      "passed": "{{count}} passed",
+      "failed": "{{count}} failed",
+      "blocking": "({{count}} blocking)",
+      "blockingBadge": "Blocking",
+      "run": "Run Validation",
+      "validating": "Validating…"
+    },
+    "approval": {
+      "none": "No approval workflow initiated yet.",
+      "initiate": "Initiate Approval Workflow",
+      "sequence": "Sequence {{sequence}} · {{requirement}}",
+      "approve": "Approve",
+      "reject": "Reject",
+      "commentPlaceholder": "Comment (optional)",
+      "decidedAt": "Decided {{time}}",
+      "status": {
+        "pending": "Pending",
+        "approved": "Approved",
+        "rejected": "Rejected",
+        "expired": "Expired",
+        "skipped": "Skipped"
+      },
+      "level": {
+        "engineering": "Engineering",
+        "lead": "Lead",
+        "cto": "CTO",
+        "final": "Final"
+      }
+    },
+    "pipelineTab": {
+      "trigger": "Trigger Pipeline",
+      "empty": "No pipeline runs yet.",
+      "hide": "Hide",
+      "logs": "Logs",
+      "runStatus": {
+        "pending": "Pending",
+        "running": "Running",
+        "success": "Success",
+        "failed": "Failed",
+        "cancelled": "Cancelled"
+      }
+    },
+    "status": {
+      "draft": "Draft",
+      "collecting": "Collecting",
+      "validating": "Validating",
+      "ready": "Ready",
+      "approval_pending": "Approval Pending",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "queued": "Queued",
+      "pipeline_running": "Pipeline Running",
+      "pipeline_failed": "Pipeline Failed",
+      "released": "Released",
+      "cancelled": "Cancelled",
+      "archived": "Archived"
+    },
+    "riskLevel": {
+      "critical": "Critical",
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low",
+      "minimal": "Minimal"
+    },
+    "toast": {
+      "created": "Release created",
+      "createFailed": "Failed to create release",
+      "statusUpdated": "Status updated",
+      "transitionFailed": "Transition failed",
+      "validationComplete": "Validation complete",
+      "validationScore": "Score: {{score}}%",
+      "validationFailed": "Validation failed",
+      "reportsGenerated_one": "{{count}} report generated",
+      "reportsGenerated_other": "{{count}} reports generated",
+      "reportsFailed": "Report generation failed",
+      "pipelineTriggered": "Pipeline triggered",
+      "pipelineTriggerFailed": "Pipeline trigger failed",
+      "loadFailed": "Failed to load releases"
+    }
+  },
+  "repair": {
+    "title": "AI Repair Platform",
+    "description": "Automated failure analysis, Claude Code repair prompts, and patch application",
+    "newSession": "New Repair Session",
+    "kpi": {
+      "totalSessions": "Total Sessions",
+      "activeSessions": "Active Sessions",
+      "completedToday": "Completed Today",
+      "successRate": "Success Rate"
+    },
+    "filters": {
+      "allFailureTypes": "All Failure Types",
+      "failureType": "Failure Type",
+      "searchPlaceholder": "Search failure summary…"
+    },
+    "columns": {
+      "status": "Status",
+      "failureType": "Failure Type",
+      "summary": "Summary",
+      "source": "Source",
+      "retries": "Retries",
+      "created": "Created"
+    },
+    "loadingSessions": "Loading sessions…",
+    "empty": "No repair sessions found.",
+    "create": {
+      "title": "New Repair Session",
+      "sourceType": "Source Type",
+      "failureType": "Failure Type",
+      "failureSummary": "Failure Summary",
+      "summaryPlaceholder": "Describe the failure to repair…",
+      "submit": "Create Session"
+    },
+    "session": {
+      "title": "Repair Session",
+      "loading": "Loading session…",
+      "tabs": {
+        "overview": "Overview",
+        "prompt": "Prompt",
+        "response": "Response",
+        "patches": "Patches"
+      },
+      "rootCause": "Root Cause",
+      "confidence": "Confidence",
+      "effort": "Effort",
+      "approach": "Approach",
+      "noAnalysis": "No analysis yet. Run Analyze to detect the root cause.",
+      "analyze": "Analyze",
+      "history": "Session History ({{count}})",
+      "noEvents": "No events recorded.",
+      "generatePrompt": "Generate Prompt",
+      "promptBlocked": "Analysis must complete before a prompt can be generated.",
+      "responseType": "Response Type",
+      "claudeResponse": "Claude Code Response",
+      "responsePlaceholder": "Paste the Claude Code response here…",
+      "submitResponse": "Submit Response",
+      "pastResponses": "Past Responses ({{count}})",
+      "noResponses": "No responses recorded.",
+      "noPatches": "No patches extracted yet.",
+      "filesAffected_one": "{{count}} file",
+      "filesAffected_other": "{{count}} files",
+      "applied": "Applied",
+      "applyPatch": "Apply Patch",
+      "appliedAt": "Applied {{time}}",
+      "appliedBy": " by {{user}}",
+      "completeSession": "Complete Session"
+    },
+    "prompt": {
+      "version": "Prompt v{{version}}",
+      "tokens": "~{{count}} tokens",
+      "sent": "Sent {{time}}",
+      "notSent": "Not Sent",
+      "systemContext": "System Context",
+      "instructions": "Repair Instructions",
+      "constraints": "Constraints",
+      "successCriteria": "Success Criteria",
+      "copy": "Copy Full Prompt",
+      "markSent": "Mark as Sent",
+      "copied": "Prompt copied to clipboard",
+      "copiedDetail": "Prompt v{{version}} ready to paste into Claude Code.",
+      "copyFailed": "Failed to copy prompt"
+    },
+    "status": {
+      "pending": "Pending",
+      "analyzing": "Analyzing",
+      "generating_prompt": "Generating Prompt",
+      "awaiting_response": "Awaiting Response",
+      "applying": "Applying",
+      "completed": "Completed",
+      "failed": "Failed",
+      "cancelled": "Cancelled",
+      "retrying": "Retrying",
+      "timeout": "Timeout"
+    },
+    "failureType": {
+      "build_failure": "Build Failure",
+      "test_failure": "Test Failure",
+      "validation_failure": "Validation Failure",
+      "security_issue": "Security Issue",
+      "architecture_violation": "Architecture Violation",
+      "quality_issue": "Quality Issue",
+      "documentation_gap": "Documentation Gap",
+      "performance_issue": "Performance Issue",
+      "pipeline_failure": "Pipeline Failure"
+    },
+    "sourceType": {
+      "manual": "Manual",
+      "pipeline": "Pipeline",
+      "engineering_run": "Engineering Run",
+      "release": "Release",
+      "ai_review": "AI Review"
+    },
+    "responseType": {
+      "patch": "Patch",
+      "explanation": "Explanation",
+      "clarification_request": "Clarification Request",
+      "error": "Error"
+    },
+    "toast": {
+      "summaryRequired": "Failure summary is required",
+      "created": "Repair session created",
+      "createFailed": "Failed to create repair session",
+      "deleted": "Repair session deleted",
+      "deleteFailed": "Failed to delete repair session",
+      "responseRequired": "Response content is required",
+      "responseSubmitted": "Response submitted",
+      "responseFailed": "Failed to submit response",
+      "analysisStarted": "Analysis started",
+      "analysisFailed": "Failed to start analysis",
+      "sessionCancelled": "Session cancelled",
+      "cancelFailed": "Failed to cancel session",
+      "promptGenerated": "Prompt generated",
+      "promptFailed": "Failed to generate prompt",
+      "promptMarkedSent": "Prompt marked as sent",
+      "markSentFailed": "Failed to mark prompt as sent",
+      "patchApplied": "Patch applied",
+      "patchFailed": "Failed to apply patch",
+      "sessionCompleted": "Session completed",
+      "completeFailed": "Failed to complete session",
+      "loadDashboardFailed": "Failed to load repair dashboard",
+      "loadSessionsFailed": "Failed to load repair sessions",
+      "loadSessionFailed": "Failed to load repair session"
+    }
+  },
+  "supervisor": {
+    "title": "AI Engineering Supervisor",
+    "description": "Automated quality gate before every release",
+    "runReview": "Run AI Review",
+    "runningReview": "Running Review…",
+    "kpi": {
+      "overallScore": "Overall Score",
+      "criticalRisks": "Critical Risks",
+      "openRecommendations": "Open Recommendations",
+      "reviewsThisMonth": "Reviews This Month",
+      "notAvailable": "N/A"
+    },
+    "latestRecommendation": "Latest Recommendation:",
+    "tabs": {
+      "overview": "Overview",
+      "risks": "Risks",
+      "recommendations": "Recommendations",
+      "trends": "Trends"
+    },
+    "runToSeeScores": "Run a review to see scores",
+    "recentReviews": "Recent Reviews",
+    "noReviews": "No reviews yet",
+    "detectedRisks": "Detected Risks",
+    "unacknowledged": "{{count}} unacknowledged",
+    "openCount": "{{count}} open",
+    "scoreTrend30": "Score Trend (30 days)",
+    "architectureShort": "Architecture: {{value}}%",
+    "securityShort": "Security: {{value}}%",
+    "stats": {
+      "totalReviews": "Total Reviews",
+      "thisMonth": "This Month",
+      "architectureCompliance": "Architecture Compliance",
+      "securityPassRate": "Security Pass Rate"
+    },
+    "scoreCard": {
+      "overallScore": "Overall Score"
+    },
+    "risks": {
+      "empty": "No risks detected",
+      "blocking": "BLOCKING",
+      "acknowledge": "Acknowledge",
+      "recommendation": "Recommendation"
+    },
+    "recommendations": {
+      "empty": "No recommendations",
+      "markResolved": "Mark Resolved"
+    },
+    "effort": {
+      "trivial": "~1h",
+      "low": "1d",
+      "medium": "3d",
+      "high": "1w",
+      "very_high": "2w+"
+    },
+    "toast": {
+      "loadFailed": "Failed to load AI Supervisor dashboard",
+      "reviewCompleted": "AI review completed",
+      "reviewScore": "Score: {{score}}%",
+      "reviewFailed": "AI review failed"
+    }
+  },
+  "review": {
+    "status": {
+      "pending": "Pending",
+      "running": "Running",
+      "completed": "Completed",
+      "failed": "Failed",
+      "cancelled": "Cancelled"
+    },
+    "recommendation": {
+      "approve": "Approve",
+      "approve_with_warnings": "Approve with Warnings",
+      "needs_review": "Needs Review",
+      "reject": "Reject",
+      "critical_block": "Critical Block"
+    },
+    "dimension": {
+      "architecture": "Architecture",
+      "backend": "Backend",
+      "frontend": "Frontend",
+      "database": "Database",
+      "security": "Security",
+      "testing": "Testing",
+      "documentation": "Documentation",
+      "performance": "Performance",
+      "maintainability": "Maintainability"
+    }
+  },
+  "workspace": {
+    "title": "Engineering Workspace",
+    "description": "Unified monitoring across repair, validation, guardian, intelligence, and releases",
+    "nav": {
+      "repair": "AI Repair",
+      "supervisor": "Supervisor",
+      "releases": "Releases"
+    },
+    "loading": "Loading workspace…",
+    "kpi": {
+      "repairSuccess": "Repair Success",
+      "validationAccept": "Validation Accept",
+      "guardianAllow": "Guardian Allow",
+      "supervisorScore": "Supervisor Score",
+      "technicalDebt": "Technical Debt",
+      "inFlight": "In Flight",
+      "rate30d": "30-day rate",
+      "latestReview": "latest review",
+      "inFlightHint": "repairs + runs + validations"
+    },
+    "debtLevel": {
+      "critical": "Critical",
+      "high": "High",
+      "moderate": "Moderate",
+      "low": "Low",
+      "minimal": "Minimal"
+    },
+    "tabs": {
+      "live": "Live Monitor",
+      "timeline": "Timeline",
+      "releases": "Release Readiness",
+      "insights": "Insights"
+    },
+    "live": {
+      "activeRepairs": "Active Repairs ({{count}})",
+      "noRepairs": "None in flight.",
+      "runningValidations": "Running Validations ({{count}})",
+      "noValidations": "None running.",
+      "activeGuardianRuns": "Active Guardian Runs ({{count}})",
+      "noGuardianRuns": "None active.",
+      "attempt": "attempt {{number}}",
+      "patchRef": "patch {{id}}…"
+    },
+    "releases": {
+      "empty": "No releases yet.",
+      "columns": {
+        "release": "Release",
+        "status": "Status",
+        "readiness": "Readiness",
+        "checks": "Checks",
+        "risks": "Risks"
+      },
+      "ready": "Ready",
+      "blocking": "{{count}} blocking"
+    },
+    "insights": {
+      "empty": "No open insights. Generate them from the Intelligence APIs."
+    },
+    "timeline": {
+      "filters": {
+        "all": "All",
+        "repairs": "Repairs",
+        "validations": "Validations",
+        "guardian": "Guardian"
+      },
+      "loading": "Loading timeline…",
+      "empty": "No engineering events yet.",
+      "source": {
+        "repair": "Repair",
+        "validation": "Validation",
+        "guardian": "Guardian"
+      }
+    },
+    "search": {
+      "placeholder": "Search sessions, runs, releases, insights…",
+      "label": "Global engineering search",
+      "noMatches": "No matches.",
+      "repairSessions": "Repair sessions",
+      "guardianRuns": "Guardian runs",
+      "releases": "Releases",
+      "insights": "Insights"
+    },
+    "toast": {
+      "loadFailed": "Failed to load workspace",
+      "loadLiveFailed": "Failed to load live monitor",
+      "loadTimelineFailed": "Failed to load timeline"
+    }
+  }
+}

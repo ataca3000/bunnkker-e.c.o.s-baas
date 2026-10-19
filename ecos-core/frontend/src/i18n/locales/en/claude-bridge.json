@@ -1,0 +1,52 @@
+{
+  "title": "Claude AI Bridge",
+  "subtitle": "AI-powered operations assistant integrated with ECOS.",
+  "status": {
+    "connected": "Connected",
+    "disconnected": "Disconnected",
+    "connecting": "Connecting…",
+    "error": "Connection Error"
+  },
+  "assistant": {
+    "placeholder": "Ask Claude anything about your operations…",
+    "thinking": "Thinking…",
+    "errorResponse": "I encountered an error. Please try again.",
+    "clearChat": "Clear Chat",
+    "newSession": "New Session",
+    "copyResponse": "Copy",
+    "copied": "Copied!"
+  },
+  "capabilities": {
+    "title": "Capabilities",
+    "orderAnalysis": "Order Analysis",
+    "inventoryInsights": "Inventory Insights",
+    "demandForecasting": "Demand Forecasting",
+    "operationsPlanning": "Operations Planning",
+    "dataExport": "Data Export",
+    "reportGeneration": "Report Generation"
+  },
+  "sessions": {
+    "title": "Recent Sessions",
+    "noSessions": "No previous sessions.",
+    "deleteSession": "Delete",
+    "columns": {
+      "title": "Session",
+      "date": "Date",
+      "messages": "Messages"
+    }
+  },
+  "settings": {
+    "title": "Bridge Settings",
+    "apiKey": "API Key",
+    "model": "Model",
+    "temperature": "Response Creativity",
+    "maxTokens": "Max Response Length",
+    "systemContext": "System Context",
+    "save": "Save Settings"
+  },
+  "errors": {
+    "notConfigured": "Claude Bridge is not configured. Contact your administrator.",
+    "rateLimited": "Too many requests. Please wait a moment.",
+    "contextTooLong": "The conversation is too long. Start a new session."
+  }
+}
