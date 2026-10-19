@@ -10,6 +10,11 @@ import { useRouter } from 'next/navigation';
 import { toast } from '@/lib/toast';
 import { saveCustomerSession, clearCustomerSession, getCustomerAuthHeaders, getCustomerProfile } from '@/lib/customerAuth';
 
+function isSafeLocalUrl(target: string | null | undefined): boolean {
+    if (!target) return false;
+    return target.startsWith('/') && !target.startsWith('//') && !target.startsWith('/\\') && !/^\/[\\/]+/.test(target);
+}
+
 export default function UserAccount() {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState<'profile' | 'invoicing' | 'orders'>('profile');

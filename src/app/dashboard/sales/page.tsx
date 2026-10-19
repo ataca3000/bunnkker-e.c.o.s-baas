@@ -191,7 +191,9 @@ export default function SalesDashboard() {
             if (saved) {
                 posSessionIdRef.current = saved;
             } else {
-                const generated = `POS-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+                const randomBytes = new Uint32Array(1);
+                window.crypto.getRandomValues(randomBytes);
+                const generated = `POS-${randomBytes[0].toString(36).substring(0, 5).toUpperCase()}`;
                 sessionStorage.setItem('bunkker_pos_lease_session', generated);
                 posSessionIdRef.current = generated;
             }
