@@ -1,153 +1,139 @@
-# BUNKKER E.C.O.S.
-<img width="1279" height="591" alt="Captura de pantalla 2026-09-14 214300" src="https://github.com/user-attachments/assets/66e4bd2b-df7f-4fdc-82f0-052160a21d22" />
+<div align="center">
 
-**Ecosistema Comercial Omnipotente Sincronizado** — ERP/POS local-first para negocios físicos.
+# 🦁 BUNKKER E.C.O.S. & LION
+### Ecosistema Comercial Omnipotente Sincronizado
+**ERP & BaaS Local-First Soberano • Red Local P2P • Punto de Venta • Omnipulse Marketing**
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/ataca3000/bunnkker-e.c.o.s-baas&project-name=bunnkker-ecos)
-[![License: BSL 1.1](https://img.shields.io/badge/License-BSL_1.1-yellow.svg)](./LICENSE)
-[![Next.js](https://img.shields.io/badge/Next.js-15.5-black)](https://nextjs.org/)
-[![Electron](https://img.shields.io/badge/Electron-Desktop-47848F)](https://www.electronjs.org/)
-[![Prisma](https://img.shields.io/badge/Prisma-5.22-2D3748)](https://www.prisma.io/)
+[![Deploy with Vercel](https://img.shields.io/badge/Deploy-Vercel-black?style=for-the-badge&logo=vercel)](https://bunnkker-e-c-o-s-baas.vercel.app/)
+[![Security Audit: Clean](https://img.shields.io/badge/CodeQL-Secured_0_Alerts-success?style=for-the-badge&logo=githubactions&logoColor=white)](https://github.com/BRECHACORP/bunnkker-e.c.o.s-baas/security)
+[![Next.js](https://img.shields.io/badge/Next.js-15.5-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)](https://nextjs.org/)
+[![License: BSL 1.1](https://img.shields.io/badge/Licencia-BSL_1.1-blue?style=for-the-badge)](./LICENSE)
+[![Electron Desktop](https://img.shields.io/badge/Electron-Desktop_Win-47848F?style=for-the-badge&logo=electron&logoColor=white)](https://www.electronjs.org/)
 
-🔗 **Demo en vivo:** [bunnkker-e-c-o-s-baas.vercel.app](https://bunnkker-e-c-o-s-baas.vercel.app/)
+<br/>
+
+<img width="100%" alt="Bunkker ECOS Preview" src="https://github.com/user-attachments/assets/66e4bd2b-df7f-4fdc-82f0-052160a21d22" style="border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);" />
+
+<br/>
+
+🔗 **Demo en Producción:** [bunnkker-e-c-o-s-baas.vercel.app](https://bunnkker-e-c-o-s-baas.vercel.app/)
+
+</div>
 
 ---
 
-## Qué es
+## 🎮 Contribuciones y Actividad del Proyecto
 
-**BUNKKER E.C.O.S & LION** es un sistema integral para operar un negocio físico (ferreterías, abarrotes, bodegas de materiales, distribuidoras) desde múltiples terminales conectadas por WiFi local sobre una única base de datos central:
-- **BUNKKER E.C.O.S:** Plataforma de infraestructura, ERP soberano, base de datos local embebida (SQLite WAL) y sincronización híbrida.
-- **LION 🦁:** La mascota y gerente inteligente que personaliza, asiste y coordina la operación del negocio sin fricción ni bloqueos.
+<div align="center">
 
-Funciona de manera continua sin internet (Local-First). Cuando hay conexión, sincroniza con la nube automáticamente.
+<!-- Snake / Pacman Contribution Eater Animation -->
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/ataca3000/ataca3000/output/github-contribution-grid-snake-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/ataca3000/ataca3000/output/github-contribution-grid-snake.svg">
+  <img alt="Snake Eating Commits Game" src="https://raw.githubusercontent.com/ataca3000/ataca3000/output/github-contribution-grid-snake.svg" width="100%" />
+</picture>
 
-## Qué hace
-- **Plataforma de Administración y Operación:** Catálogo virtual local sin filas, sync híbrido bidireccional y multi-dispositivo LAN.
-- **3 Métodos de Entrega Integrados:**
-  1. `📦 PISO / CAJA`: Entrega inmediata y cobro en mostrador.
-  2. `🏗️ CARGA / PATIO`: Despacho para materiales pesados en patio de maniobras con pizarrones de carga.
-  3. `🛵 REPARTIDOR / OBRA`: Despacho a choferes para reparto en ruta con geolocalización y firma.
-- **Pizarras Públicas por Rol & Reclamo Exclusivo (Lock-Claim):** Los pedidos se publican en las colas de trabajo correspondientes (Caja, Patio, Chofer, Almacén). Quien toma un pedido lo bloquea para evitar duplicidades (*claim*), permitiendo liberación en 1-click.
-- **Trazabilidad Inmutable & Auditoría Forense (`OrderEvent`):** Cada estado y micro-operación del pedido (creación, toma, surtido, carga, despacho, foto de validación, firma del cliente y pase de entrega) queda registrado como un evento inmutable con fecha, hora, actor y rol.
-- **Timeout Fusible en Mostrador (1,500 ms):** Reserva de stock con protección de tiempo de espera (`Promise.race`) para evitar congelamiento de interfaz ante latencias de red Wi-Fi local.
-- **Asistente Oficial LION 🦁:** Gerente inteligente integrado en todo el sistema. Opera con motor local de inventario y pedidos en vivo sin exigir API keys de internet ni mostrar avisos molestos de pago.
-- **Acceso Multi-Dispositivo LAN (Wi-Fi Local):** Protocolo dinámico HTTP/HTTPS para que cualquier celular (iOS/Android), tablet o laptop en la red local (`http://192.168.x.x:3000`) ingrese por PIN sin rechazo de cookies.
-- **Punto de Venta (POS):** Cobro en efectivo, tarjeta (Stripe/MercadoPago), corte ciego de caja e inspección de transferencias.
-- **Licenciamiento 1 PC Maestro = 1 Tienda:** Licencia atada al HWID físico de la máquina con gateways QR dedicados por rol.
-- **Inventario:** Ubicación física por estante/fila, control de existencias con mutex de patio y drag & drop.
-- **Sincronización P2P:** Entre terminales por red WiFi/LAN sin servidor externo.
-- **Auditoría Cifrada:** Registro de operaciones cifrado en AES-256.
+<br/><br/>
 
-## Qué hace la red local y multi-dispositivo
+<table align="center" border="0">
+  <tr>
+    <td align="center">
+      <img src="https://github-readme-streak-stats.herokuapp.com/?user=ataca3000&theme=tokyonight&hide_border=true&border_radius=10" alt="GitHub Streak" width="380" />
+    </td>
+    <td align="center">
+      <img src="https://github-readme-stats.vercel.app/api?username=ataca3000&show_icons=true&theme=tokyonight&hide_border=true&border_radius=10&count_private=true" alt="GitHub Stats" width="380" />
+    </td>
+  </tr>
+</table>
 
-```
-Terminal Maestro (Next.js :3000 + Radio Server :3001)
-├── Caja Mobile / Celular (Acceso WiFi por IP LAN 192.168.X.X)
-├── Tablet Almacén / QR (Escaneo de estanterías y recolección)
-└── Chofer / Repartidor (PWA offline con captura de firma)
-```
+</div>
 
-El maestro corre Next.js en puerto 3000 y el radio server en 3001/3002. Los nodos y teléfonos abren el navegador apuntando a la IP del maestro (`http://192.168.x.x:3000`). Se detectan automáticamente por mDNS y conservan cookies de sesión mediante resolución dinámica de protocolo.
+---
 
-## Roles y PINs de Acceso
+## ⚡ ¿Qué es BUNKKER E.C.O.S.?
 
-| PIN Numérico | PIN Alfanumérico | Rol | Dashboard / Función |
-|---|---|---|---|
-| `0000` | `A0000` | Dueño (superadmin) | Panel completo con KPIs, IA y control total |
-| `1111` / `1234` | `A1111` | Gerente (admin) | Control operativo, activación de pagos web e inspección |
-| `2222` | `A2222` | Cajero (sales) | POS, cobro en efectivo/tarjeta, validación serial |
-| `3333` | `A3333` | Bodeguero (inventory) | Estanterías, escaneo QR, cola de surtido |
-| `4444` | `A4444` | Diseñador (marketing) | OMNIPULSE, editor de tienda, QR por rol |
-| `5555` | `A5555` | Chofer (driver) | Entregas, rutas GPS, firma digital del cliente |
-| `6666` | `A6666` | Patio (carga_descarga) | Carga/descarga, bahías y tiempos de patio |
-| `7777` | `A7777` | Mostrador (pickup) | Pick-Up y ventanillas de recolección |
+**BUNKKER E.C.O.S.** es una suite empresarial de **grado industrial** diseñada para ferreterías, abarrotes, distribuidoras y bodegas de materiales que necesitan operar de forma continua **sin depender del internet ni de servidores externos**:
 
-## Instalación local (desarrollo)
+* 🛡️ **Arquitectura Local-First:** Opera al 100% desconectado sobre SQLite WAL con sincronización LAN P2P y puente en tiempo real con Supabase / PostgreSQL cuando regresa la nube.
+* 🦁 **Asistente Gerencial LION:** Motor de Inteligencia Artificial que supervisa inventarios, alertas de merma y balance de stock directamente en el hardware local (sin costos de API externa).
+* 📦 **3 Métodos de Entrega Integrados:**
+  1. `📦 PISO / CAJA`: Cobro ultrarrápido con timeout fusible de 1,500ms contra latencias.
+  2. `🏗️ CARGA / PATIO`: Despacho para materiales pesados en patio de maniobras con exclusión de reclamo (*mutex*).
+  3. `🛵 REPARTO / OBRA`: App fuera de línea para choferes con geolocalización, bitácora y firma digital del cliente.
+* 📡 **Radio LAN P2P y Walkie-Talkie:** Comunicación y sincronización instantánea entre cajas y terminales móviles en la misma red Wi-Fi sin routers complejos.
+* 🌐 **OMNIPULSE:** Motor de publicación multired (16 redes sociales) con motor anti-spam Spintax $O(N)$ y jitter de humanización.
 
+---
+
+## 🔐 Seguridad y Auditoría de Grado Bancario
+
+Este repositorio ha sido sometido y blindado bajo el protocolo **N3** y auditorías avanzadas de **GitHub CodeQL**:
+
+| Vector de Seguridad | Estado | Protección Implementada |
+|---|:---:|---|
+| **SSRF (Server-Side Request Forgery)** | 🟢 BLINDADO | Inspección FQDN canónica, bloqueo de IPs privadas/LAN y reconstrucción de URLs de destino. |
+| **ReDoS (Polynomial Regular Expressions)** | 🟢 BLINDADO | Motor Spintax de escaneo lineal $O(N)$ sin evaluación polinomial. |
+| **Insecure Randomness (Criptografía)** | 🟢 BLINDADO | Eliminación de `Math.random()`; uso estricto de `window.crypto.getRandomValues`. |
+| **XSS y Open Redirects** | 🟢 BLINDADO | Enrutamiento seguro con Next.js `router.push()` y validador de rutas relativas `isSafeLocalUrl`. |
+| **DOM Injection (Image Schemas)** | 🟢 BLINDADO | Sanitización estricta de esquemas permitidos (`blob:`, `http://`, `https://`, `/storage/`). |
+
+---
+
+## 👥 Matriz de Roles y PINs Operativos
+
+El acceso multi-dispositivo permite que cualquier smartphone o tablet en la red Wi-Fi ingrese sin instalar apps, usando PINs unificados:
+
+| PIN Clásico | PIN Canónico | Rol | Módulo Asignado |
+|:---:|:---:|---|---|
+| `0000` | `A0000` | **Dueño (Superadmin)** | KPIs ejecutivos, IA, auditoría forense y control total. |
+| `1111` / `1234` | `A1111` | **Gerente (Admin)** | Control de precios, activación de pasarelas y cortes. |
+| `2222` | `A2222` | **Cajero (POS)** | Cobro efectivo/tarjeta, leases de carrito y tickets. |
+| `3333` | `A3333` | **Bodeguero (Almacén)** | Escaneo QR de estantes, recolección y stock. |
+| `4444` | `A4444` | **Marketing (Diseño)** | OMNIPULSE, editor de catálogo y difusión multired. |
+| `5555` | `A5555` | **Chofer (Driver)** | Entregas en ruta, GPS y firma táctil forense. |
+| `6666` | `A6666` | **Patio (Maniobras)** | Carga pesada, grúas y bahías de trailers. |
+| `7777` | `A7777` | **Mostrador (Pick-Up)** | Ventanilla de entrega y paquetes listos. |
+
+---
+
+## 🚀 Puesta en Marcha (Desarrollo)
+
+### 1. Clonar e Instalar
 ```bash
-# Clonar
-git clone https://github.com/ataca3000/bunnkker-e.c.o.s-baas.git
+git clone https://github.com/BRECHACORP/bunnkker-e.c.o.s-baas.git
 cd bunnkker-e.c.o.s-baas
-
-# Instalar dependencias
 npm install --legacy-peer-deps
+```
 
-# Configurar base de datos local
+### 2. Variables de Entorno y Base de Datos
+```bash
 cp .env.example .env.local
-# Editar .env.local con tu DATABASE_URL de Supabase o SQLite
-
-# Generar cliente Prisma
 npx prisma generate
-
-# Sembrar datos de prueba
 npm run db:seed
+```
 
-# Arrancar (Next.js + Radio Server)
+### 3. Iniciar Servidores (Web + Radio LAN)
+```bash
 npm run dev
 ```
+> Abre en tu navegador [http://localhost:3000](http://localhost:3000) o ingresa desde cualquier celular conectado al mismo Wi-Fi con la IP local (`http://192.168.x.x:3000`).
 
-## Deploy en Vercel
+---
 
-1. Conectar el repo en [vercel.com](https://vercel.com)
-2. Configurar variables de entorno:
-   - `DATABASE_URL` — URL de Supabase PostgreSQL
-   - `INTERNAL_API_SECRET` — clave secreta para firmas HMAC
-   - `COOKIE_SECRET` — secreto para cookies de sesión
-3. Deploy automático en cada push a `main`
+## 📦 Empaquetado de Escritorio (.EXE Windows)
 
-## Empaquetar como .exe (Windows)
-
+Para generar el instalador autónomo para Windows:
 ```bash
 npm run build:standalone
 npm run dist:win
 ```
-
-Genera un instalador NSIS en la carpeta `dist/`.
-
-## Estructura principal
-
-```
-├── src/
-│   ├── app/                  # Páginas y API routes (Next.js App Router)
-│   │   ├── login/            # Login dual (cliente + staff)
-│   │   ├── dashboard/        # Dashboards por rol (sales, inventory, etc.)
-│   │   └── api/              # Endpoints REST
-│   ├── components/dashboard/ # Componentes Worker por rol
-│   ├── lib/                  # Servicios core
-│   │   ├── ai/               # Motor IA local (engine + balanceEffect)
-│   │   ├── omnipulse/        # Marketing 16 redes sociales
-│   │   ├── audit.ts          # Auditoría cifrada AES-256
-│   │   ├── localSync.ts      # Sync offline WAL + mDNS
-│   │   ├── prisma.ts         # Cliente Prisma (PostgreSQL/SQLite)
-│   │   └── redis.ts          # Redis con fallback en memoria
-│   └── context/              # AuthContext (polling cada 10s)
-├── prisma/
-│   ├── schema.prisma         # 13 modelos (PostgreSQL)
-│   └── seed.js               # Datos de prueba
-├── electron-main.js          # Ciclo de vida Electron (maestro/nodo)
-├── radio-server.js           # Sync P2P (:3001) + Radio voz (:3002)
-└── preload.js                # Bridge IPC Electron
-```
-
-## Documentación técnica
-
-Los documentos de arquitectura y registro están en el directorio `docs/`:
-
-- [Memoria Técnica INDAUTOR](./docs/BUNKKER_ECOS_MEMORIA_TECNICA_INDAUTOR.md)
-- [Arquitectura del Sistema](./docs/ARCHITECTURE.md)
-- [Mapa de Funcionalidad](./docs/FUNCTIONALITY_MAP.md)
-- [Mapa de Roles](./docs/ROLES_MAP.md)
-- [Políticas de Seguridad](./docs/SECURITY.md)
+El instalador NSIS optimizado se creará dentro de `dist-build-win/`.
 
 ---
 
-## Licencia
+## 📜 Licencia y Registro de Autor
 
-**Business Source License 1.1** — Puedes ver, modificar y probar el código libremente. Uso en producción requiere licencia comercial. Ver [LICENSE](./LICENSE) para detalles.
-
-Se convierte automáticamente en Apache 2.0 el 14 de septiembre de 2030.
-
----
+**Business Source License 1.1 (BSL 1.1)** — Libre para visualización, pruebas, auditoría y desarrollo local. Para implementación comercial en producción se requiere licencia de uso. Se convertirá automáticamente a **Apache 2.0** en septiembre de 2030.
 
 © 2026 **Luis Felipe Durán Salinas (Philip Durán) / Brecha Soluciones S.A. de C.V.**  
-Todos los derechos reservados. Obra registrada ante INDAUTOR — México.
+*Obra registrada y protegida ante el Instituto Nacional del Derecho de Autor (INDAUTOR) — México.*
