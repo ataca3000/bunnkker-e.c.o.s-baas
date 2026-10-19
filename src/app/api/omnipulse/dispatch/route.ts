@@ -111,7 +111,8 @@ async function publishToNetwork(
                     return { success: false, error: 'Instancia de Mastodon inválida' };
                 }
                 const cleanInstance = instance.toLowerCase();
-                if (['localhost', '127.0.0.1', '0.0.0.0'].includes(cleanInstance) || cleanInstance.endsWith('.local') || cleanInstance.endsWith('.internal')) {
+                const isPrivateIp = /^(?:10\.|127\.|172\.(?:1[6-9]|2[0-9]|3[01])\.|192\.168\.|169\.254\.|0\.|::1|fc00:|fe80:)/.test(cleanInstance);
+                if (isPrivateIp || cleanInstance === 'localhost' || cleanInstance.endsWith('.local') || cleanInstance.endsWith('.internal')) {
                     return { success: false, error: 'Instancia de red privada no permitida' };
                 }
                 const safeToken = (accessToken || '').replace(/[^a-zA-Z0-9_-]/g, '');

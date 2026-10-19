@@ -12,7 +12,21 @@ import { saveCustomerSession, clearCustomerSession, getCustomerAuthHeaders, getC
 
 function isSafeLocalUrl(target: string | null | undefined): boolean {
     if (!target) return false;
-    return target.startsWith('/') && !target.startsWith('//') && !target.startsWith('/\\') && !/^\/[\\/]+/.test(target);
+    if (
+        !target.startsWith('/') ||
+        target.startsWith('//') ||
+        target.startsWith('/\\') ||
+        target.includes('\\') ||
+        /^\/[\\/]+/.test(target)
+    ) {
+        return false;
+    }
+    try {
+        const dummy = new URL(target, 'http://localhost');
+        return dummy.origin === 'http://localhost' && !target.toLowerCase().includes('javascript:');
+    } catch {
+        return false;
+    }
 }
 
 export default function UserAccount() {
@@ -141,10 +155,10 @@ export default function UserAccount() {
 
                 const searchParams = new URLSearchParams(window.location.search);
                 const redirectParam = searchParams.get('redirect');
-                if (redirectParam) {
-                    window.location.href = redirectParam;
-                } else if (data.redirect) {
-                    window.location.href = data.redirect;
+                if (redirectParam && isSafeLocalUrl(redirectParam)) {
+                    router.push(redirectParam);
+                } else if (data.redirect && isSafeLocalUrl(data.redirect)) {
+                    router.push(data.redirect);
                 } else {
                     fetchProfile();
                 }
