@@ -1,8 +1,10 @@
 <div align="center">
 
-# 🦁 BUNKKER E.C.O.S. & LION
+<img src="./docs/assets/bunkker-logo-3d.jpg" width="120" alt="BUNKKER Logo 3D" style="margin-bottom: 8px;" />
+
+# BUNKKER E.C.O.S.
 ### Ecosistema Comercial Omnipotente Sincronizado
-**ERP & BaaS Local-First Soberano • Red Local P2P • Punto de Venta • Omnipulse Marketing**
+**ERP & BaaS Local-First Soberano • Red LAN P2P • Punto de Venta • Omnipulse Marketing**
 
 [![Deploy with Vercel](https://img.shields.io/badge/Deploy-Vercel-black?style=for-the-badge&logo=vercel)](https://bunnkker-e-c-o-s-baas.vercel.app/)
 [![Security Audit: Clean](https://img.shields.io/badge/CodeQL-Secured_0_Alerts-success?style=for-the-badge&logo=githubactions&logoColor=white)](https://github.com/BRECHACORP/bunnkker-e.c.o.s-baas/security)
@@ -12,22 +14,21 @@
 
 <br/>
 
-![Uploading Captura de pantalla 2026-10-19 152715.png…]()
+<img width="100%" alt="BUNKKER - Tecnología que Genera Impacto Real" src="./docs/assets/bunkker-hero-dome.jpg" style="border-radius: 14px; box-shadow: 0 12px 36px rgba(0,0,0,0.6);" />
 
+<br/><br/>
 
-<br/>
-
-🔗 **Demo en Producción:** [bunnkker-e-c-o-s-baas.vercel.app](https://bunnkker-e-c-o-s-baas.vercel.app/)
+🔗 **Demo Oficial en Vivo:** [bunnkker-e-c-o-s-baas.vercel.app](https://bunnkker-e-c-o-s-baas.vercel.app/)
 
 </div>
 
 ---
 
-## 🎮 Contribuciones y Actividad del Proyecto
+## 🎮 Actividad y Contribuciones en Tiempo Real
 
 <div align="center">
 
-<!-- Snake / Pacman Contribution Eater Animation -->
+<!-- Snake Game Eating Commits Animation -->
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/ataca3000/ataca3000/output/github-contribution-grid-snake-dark.svg">
   <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/ataca3000/ataca3000/output/github-contribution-grid-snake.svg">
@@ -51,11 +52,27 @@
 
 ---
 
+## 🖥️ Suite Operativa y Módulos de Control
+
+<div align="center">
+  <img width="100%" alt="BUNKKER ERP Dashboard" src="./docs/assets/bunkker-erp-dashboard.jpg" style="border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.5);" />
+  <p><em>Dashboard General "Camaleón ERP": KPIs en tiempo real, control de ventas, inventario activo y sincronización híbrida con Google Cloud.</em></p>
+</div>
+
+<br/>
+
+<div align="center">
+  <img width="100%" alt="Ecosistema de Dispositivos y Despliegue" src="./docs/assets/bunkker-ecosystem-grid.jpg" style="border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.5);" />
+  <p><em>Arquitectura física y distribuida: Servidores locales P2P, hardware en caja, red multi-dispositivo LAN y soporte offline total.</em></p>
+</div>
+
+---
+
 ## ⚡ ¿Qué es BUNKKER E.C.O.S.?
 
 **BUNKKER E.C.O.S.** es una suite empresarial de **grado industrial** diseñada para ferreterías, abarrotes, distribuidoras y bodegas de materiales que necesitan operar de forma continua **sin depender del internet ni de servidores externos**:
 
-* 🛡️ **Arquitectura Local-First:** Opera al 100% desconectado sobre SQLite WAL con sincronización LAN P2P y puente en tiempo real con Supabase / PostgreSQL cuando regresa la nube.
+* 🛡️ **Arquitectura Local-First Soberana:** Opera al 100% desconectado sobre SQLite WAL con sincronización LAN P2P y puente en tiempo real con Supabase / PostgreSQL cuando regresa la nube.
 * 🦁 **Asistente Gerencial LION:** Motor de Inteligencia Artificial que supervisa inventarios, alertas de merma y balance de stock directamente en el hardware local (sin costos de API externa).
 * 📦 **3 Métodos de Entrega Integrados:**
   1. `📦 PISO / CAJA`: Cobro ultrarrápido con timeout fusible de 1,500ms contra latencias.
@@ -80,7 +97,7 @@ Este repositorio ha sido sometido y blindado bajo el protocolo **N3** y auditor�
 
 ---
 
-## 👥 Matriz de Roles y PINs Operativos
+## 👥 Matriz de Roles y PINs Canónicos
 
 El acceso multi-dispositivo permite que cualquier smartphone o tablet en la red Wi-Fi ingrese sin instalar apps, usando PINs unificados:
 
@@ -134,9 +151,9 @@ El instalador NSIS optimizado se creará dentro de `dist-build-win/`.
 ![Uploading image.png…]()
 
 
-## 📜 Licencia y Registro de Autor
+## 📜 Licencia y Registro Institucional
 
 **Business Source License 1.1 (BSL 1.1)** — Libre para visualización, pruebas, auditoría y desarrollo local. Para implementación comercial en producción se requiere licencia de uso. Se convertirá automáticamente a **Apache 2.0** en septiembre de 2030.
 
-© 2026 **Luis Felipe Durán Salinas (Philip Durán) / Brecha Soluciones S.A. de C.V.**  
+© 2026 **Brecha Soluciones S.A. de C.V. / BUNKKER E.C.O.S. Team**  
 *Obra registrada y protegida ante el Instituto Nacional del Derecho de Autor (INDAUTOR) — México.*
