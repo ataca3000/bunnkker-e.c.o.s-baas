@@ -154,6 +154,9 @@ export default function OrderPickingAssistant({
         if (mode === 'deconstruction') return '↩️ Confirmar Stock de Vuelta (100%)';
         if (role === 'sales') return '💳 Pasar a Cobro y Ticket';
         if (role === 'driver') return '🚚 Carga Verificada — Salir a Ruta';
+        if (role === 'inventory') {
+            return order?.deliveryType === 'PATIO' ? '🏗️ Entregar a Bahía de Carga (Patio)' : '🏪 Entregar a Mostrador (Caja)';
+        }
         if (role === 'carga' || order?.deliveryType === 'PATIO') return '🏗️ Listo en Bahía de Patio (PoD)';
         return '🛍️ Marcar Listo para Entrega';
     };
@@ -286,13 +289,15 @@ export default function OrderPickingAssistant({
                                     </button>
                                 )}
 
-                                <button
-                                    onClick={handleSelectAll}
-                                    className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 font-bold text-xs flex items-center gap-1.5 border border-slate-700 transition-colors ml-auto"
-                                >
-                                    <CheckCheck size={14} />
-                                    <span>Marcar todos</span>
-                                </button>
+                                {mode === 'deconstruction' && (
+                                    <button
+                                        onClick={handleSelectAll}
+                                        className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 font-bold text-xs flex items-center gap-1.5 border border-slate-700 transition-colors ml-auto"
+                                    >
+                                        <CheckCheck size={14} />
+                                        <span>Restituir todos</span>
+                                    </button>
+                                )}
                             </>
                         ) : (
                             <button

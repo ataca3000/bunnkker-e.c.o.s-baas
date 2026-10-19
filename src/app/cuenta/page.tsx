@@ -220,32 +220,48 @@ export default function UserAccount() {
 
     const getOrderProgress = (order: any) => {
         const status = String(order.status || '').toUpperCase();
+        const isCancelled = ['CANCELLED', 'REFUNDED'].includes(status);
         const received = ['DELIVERED', 'COMPLETED'].includes(status);
         const paymentConfirmed = Boolean(order.confirmedAt) || ['PAID', 'OUT_FOR_DELIVERY', 'CLAIMED', 'READY_FOR_PICKUP_PAID'].includes(status);
         const readyForPayment = ['READY_TO_SHIP', 'READY_FOR_PICKUP'].includes(status);
-        const activeStep = received ? 2 : readyForPayment || paymentConfirmed ? 1 : 0;
-        const detail = received
-            ? 'Entregado y completado exitosamente.'
-            : ['OUT_FOR_DELIVERY', 'CLAIMED'].includes(status)
-                ? 'Pago confirmado. El pedido va en camino a tu domicilio.'
-                : paymentConfirmed
-                    ? 'Pago confirmado. Almacén está preparando tus productos.'
-                    : readyForPayment
-                        ? 'El pedido ya fue empacado. Pasa a caja a pagar para recogerlo.'
-                        : 'Pedido generado en espera. Pasa a caja en sucursal.';
-        return { activeStep, paymentConfirmed, detail };
+        const activeStep = isCancelled ? -1 : received ? 2 : (paymentConfirmed || readyForPayment) ? 1 : 0;
+        
+        let detail = 'Pedido generado en espera. Pasa a caja en sucursal.';
+        if (isCancelled) {
+            detail = 'El pedido ha sido cancelado.';
+        } else if (received) {
+            detail = 'Entregado y completado exitosamente con comprobante.';
+        } else if (['OUT_FOR_DELIVERY', 'CLAIMED'].includes(status)) {
+            detail = 'Pago confirmado. El repartidor va en camino a tu domicilio.';
+        } else if (status === 'READY_FOR_PICKUP_PAID') {
+            detail = 'Pago confirmado en Caja. Tu pedido está empacado y listo para entrega física.';
+        } else if (status === 'READY_FOR_PICKUP') {
+            detail = 'Tus artículos ya fueron recolectados. Pasa a Caja a realizar tu pago y recibir tu ticket.';
+        } else if (status === 'PREPARANDO') {
+            detail = paymentConfirmed
+                ? 'Pago confirmado. Personal de almacén está recolectando tus artículos en anaquel.'
+                : 'Personal de almacén está preparando tus productos. Puedes pagar en Caja mientras se empaca.';
+        } else if (paymentConfirmed) {
+            detail = 'Pago confirmado en Caja. En espera de recolección en anaqueles.';
+        }
+
+        return { activeStep, paymentConfirmed, detail, isCancelled };
     };
 
     const getOrderEventLabel = (eventType: string) => ({
         ORDER_CREATED: 'Pedido generado',
         CASHIER_CLAIMED: 'Pedido tomado por caja',
-        PAYMENT_CONFIRMED: 'Pago confirmado',
-        LOADING_CLAIMED: 'Empaque en proceso',
-        LOADING_COMPLETED: 'Empaque completado',
+        PAYMENT_CONFIRMED: 'Pago confirmado en Caja',
+        LOADING_CLAIMED: 'Recolección en proceso',
+        LOADING_COMPLETED: 'Recolección completada',
+        ORDER_CLAIMED: 'Pedido tomado para preparación',
+        ORDER_DELEGATED: 'Pedido reasignado de área',
         DRIVER_CLAIMED: 'Asignado a repartidor',
-        DELIVERY_RECEIVED: 'Entrega finalizada',
-        PICKUP_RECEIVED: 'Entregado en mostrador',
-        ORDER_CANCELLED: 'Pedido cancelado'
+        DELIVERY_RECEIVED: 'Entrega finalizada en domicilio',
+        ORDER_DELIVERED_POD: 'Entrega física completada con comprobante',
+        PICKUP_RECEIVED: 'Entregado en mostrador/patio',
+        ORDER_CANCELLED: 'Pedido cancelado',
+        RESTOCK_COMPLETED: 'Artículos devueltos al anaquel'
     } as Record<string, string>)[eventType] || eventType.replaceAll('_', ' ');
 
     if (loading) {
@@ -750,13 +766,15 @@ export default function UserAccount() {
 
                                                             <div className="text-right">
                                                                 <span className={`px-3 py-1 text-[10px] font-bold uppercase rounded-full border ${
-                                                                    progress.activeStep === 2
-                                                                        ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
-                                                                        : progress.activeStep === 1
-                                                                            ? 'bg-sky-500/20 text-sky-400 border-sky-500/30'
-                                                                            : 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+                                                                    progress.isCancelled
+                                                                        ? 'bg-rose-500/20 text-rose-400 border-rose-500/30'
+                                                                        : progress.activeStep === 2
+                                                                            ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                                                                            : progress.activeStep === 1
+                                                                                ? 'bg-sky-500/20 text-sky-400 border-sky-500/30'
+                                                                                : 'bg-amber-500/20 text-amber-400 border-amber-500/30'
                                                                 }`}>
-                                                                    {steps[progress.activeStep]}
+                                                                    {progress.isCancelled ? 'Cancelado' : steps[progress.activeStep]}
                                                                 </span>
                                                                 <p className="text-lg font-black text-white mt-1">
                                                                     ${Number(order.total || 0).toFixed(2)} MXN

@@ -51,18 +51,23 @@ export default function SuperAdminDashboard({
         }
     }, []);
 
+    const isValidSale = (o: any) => {
+        if (!o || o.status === 'cancelled' || o.status === 'refunded') return false;
+        return Boolean(o.confirmedAt) || ['paid', 'COMPLETED', 'READY_TO_SHIP', 'OUT_FOR_DELIVERY', 'DELIVERED', 'READY_FOR_PICKUP_PAID'].includes(o.status);
+    };
+
     const yesterdaySales = orders
-        .filter((o: any) => ['paid', 'COMPLETED', 'READY_TO_SHIP', 'OUT_FOR_DELIVERY', 'DELIVERED'].includes(o.status) && new Date(o.date).toDateString() === yesterday.toDateString())
-        .reduce((sum: number, o: any) => sum + o.total, 0);
+        .filter((o: any) => isValidSale(o) && new Date(o.date).toDateString() === yesterday.toDateString())
+        .reduce((sum: number, o: any) => sum + (Number(o.total) || 0), 0);
 
     const todaySales = orders
-        .filter((o: any) => ['paid', 'COMPLETED', 'READY_TO_SHIP', 'OUT_FOR_DELIVERY', 'DELIVERED'].includes(o.status) && new Date(o.date).toDateString() === new Date().toDateString())
-        .reduce((sum: number, o: any) => sum + o.total, 0);
+        .filter((o: any) => isValidSale(o) && new Date(o.date).toDateString() === new Date().toDateString())
+        .reduce((sum: number, o: any) => sum + (Number(o.total) || 0), 0);
 
     const salesDiff = yesterdaySales > 0 ? ((todaySales - yesterdaySales) / yesterdaySales) * 100 : (todaySales > 0 ? 100 : 0);
 
     const todayOrders = orders.filter((o: any) =>
-        ['paid', 'COMPLETED', 'READY_TO_SHIP', 'OUT_FOR_DELIVERY', 'DELIVERED'].includes(o.status) && new Date(o.date).toDateString() === new Date().toDateString()
+        isValidSale(o) && new Date(o.date).toDateString() === new Date().toDateString()
     ).length;
 
     const [chartMode, setChartMode] = useState<'bar' | 'area'>('bar');
@@ -74,7 +79,7 @@ export default function SuperAdminDashboard({
             d.setDate(d.getDate() - i);
             const dateStr = d.toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric' });
             const dayOrders = orders.filter((o: any) =>
-                ['paid', 'COMPLETED', 'READY_TO_SHIP', 'OUT_FOR_DELIVERY', 'DELIVERED'].includes(o.status) &&
+                isValidSale(o) &&
                 new Date(o.date).toDateString() === d.toDateString()
             );
             const salesOnDate = dayOrders.reduce((sum: number, o: any) => sum + (Number(o.total) || 0), 0);

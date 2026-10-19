@@ -21,7 +21,7 @@ export default function DeliveryDashboard() {
     
     // Convert ERP Orders to DeliveryOrders
     const orders: DeliveryOrder[] = allOrders
-        .filter(o => (o.deliveryMethod === 'repartidor' || o.deliveryType === 'DELIVERY') && ['OUT_FOR_DELIVERY', 'claimed', 'processing', 'shipping', 'ready_for_delivery', 'delivered', 'DELIVERED', 'rejected', 'no_answer'].includes(o.status))
+        .filter(o => (o.deliveryMethod === 'repartidor' || o.deliveryType === 'DELIVERY') && !['cancelled', 'refunded'].includes(o.status))
         .map(o => ({
             id: o.id,
             customerName: o.customer?.name || 'Cliente',

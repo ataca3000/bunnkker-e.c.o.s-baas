@@ -391,7 +391,7 @@ export const useCart = () => {
 
         // Validación Límite Freemium (300 Ventas Máximo sin Licencia Activa)
         const lic = checkLicenseStatus();
-        const VALID_SALES = ['paid', 'COMPLETED', 'READY_TO_SHIP', 'OUT_FOR_DELIVERY', 'DELIVERED'];
+        const VALID_SALES = ['paid', 'COMPLETED', 'READY_TO_SHIP', 'OUT_FOR_DELIVERY', 'DELIVERED', 'READY_FOR_PICKUP_PAID'];
         const completedSalesCount = state.orders.filter(o => VALID_SALES.includes(o.status)).length;
         if (lic.status !== 'active' && completedSalesCount >= 300) {
             toast.error('⚠️ Límite Freemium alcanzado (300/300 ventas). Para continuar vendiendo, activa tu Suscripción Mensual PRO ($200 MXN / mes).', '🔒 Límite Alcanzado');

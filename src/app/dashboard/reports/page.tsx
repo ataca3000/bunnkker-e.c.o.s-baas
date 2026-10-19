@@ -31,7 +31,7 @@ export default function ReportsAndBackups() {
     }, []);
 
     // Compute metrics from live orders data
-    const VALID_SALES_STATUSES = ['paid', 'COMPLETED', 'READY_TO_SHIP', 'OUT_FOR_DELIVERY', 'DELIVERED'];
+    const VALID_SALES_STATUSES = ['paid', 'COMPLETED', 'READY_TO_SHIP', 'OUT_FOR_DELIVERY', 'DELIVERED', 'READY_FOR_PICKUP_PAID'];
 
     useEffect(() => {
         if (!orders.length) return;

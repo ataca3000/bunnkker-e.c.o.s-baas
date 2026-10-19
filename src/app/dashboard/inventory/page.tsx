@@ -33,7 +33,7 @@ import CloudBackupConfigWidget from '@/components/admin/CloudBackupConfigWidget'
 import OrderPickingAssistant from '@/components/orders/OrderPickingAssistant';
 
 export default function InventoryDashboard() {
-    const { products, formatCurrency, orders, completeLoading } = useCart();
+    const { products, formatCurrency, orders, startLoading, completeLoading } = useCart();
     const { profile, isReadOnly } = useAuth();
     
     const [searchTerm, setSearchTerm] = useState('');
@@ -984,10 +984,23 @@ export default function InventoryDashboard() {
     };
 
     const pendingPrepOrders = (orders || []).filter(o => {
+        // Aislamiento estricto: pedidos a domicilio son 100% exclusivos de la ruta de repartidor
+        if (o.deliveryType === 'DELIVERY' || o.deliveryMethod === 'repartidor') return false;
         const isNotLoaded = !o.isLoaded && !['DELIVERED', 'COMPLETED', 'cancelled', 'refunded'].includes(o.status);
         if (onlyMyOrders && o.loadedByUid && o.loadedByUid !== profile?.uid) return false;
         return isNotLoaded;
     });
+
+    const handleStartPicking = async (order: any) => {
+        try {
+            if (!order.loadedByUid || order.loadedByUid !== profile?.uid) {
+                await startLoading(order.id);
+            }
+            setPickingOrder(order);
+        } catch (err: any) {
+            toast.error(err.message || 'No se pudo tomar el pedido. Puede que otro operador ya lo haya tomado.');
+        }
+    };
 
     const cancelledRestockOrders = (orders || []).filter(o => 
         (o.status === 'cancelled' || o.status === 'refunded') && 
@@ -1506,31 +1519,13 @@ export default function InventoryDashboard() {
                                                                     🔒 Tomado por {order.loadedBy || 'otro operador'}
                                                                 </div>
                                                             ) : (
-                                                                <div className="flex gap-2">
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => setPickingOrder(order)}
-                                                                        className="flex-1 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-md active:scale-95 flex items-center justify-center gap-1.5"
-                                                                    >
-                                                                        <span>🤖</span> Surtir con IA
-                                                                    </button>
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => finalizeOrderAndNotify(order.id, 'caja')}
-                                                                        className="px-3 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs uppercase rounded-xl transition-all"
-                                                                        title="Marcar listo en Caja sin abrir asistente"
-                                                                    >
-                                                                        ✓ Caja
-                                                                    </button>
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => finalizeOrderAndNotify(order.id, 'carga')}
-                                                                        className="px-3 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs uppercase rounded-xl transition-all"
-                                                                        title="Marcar listo en Patio/Carga sin abrir asistente"
-                                                                    >
-                                                                        🏗️ Patio
-                                                                    </button>
-                                                                </div>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => handleStartPicking(order)}
+                                                                    className="w-full py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-md active:scale-95 flex items-center justify-center gap-1.5"
+                                                                >
+                                                                    <span>📦</span> {isClaimedByMe ? 'Continuar Surtido (1 a 1)' : 'Tomar Pedido y Surtir (1 a 1)'}
+                                                                </button>
                                                             )}
                                                         </div>
                                                     </div>

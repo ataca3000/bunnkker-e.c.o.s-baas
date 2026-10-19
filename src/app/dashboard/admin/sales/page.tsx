@@ -17,8 +17,10 @@ export default function SalesAdmin() {
         (order.customer?.name || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    const isValidSale = (o: any) => !['cancelled', 'refunded'].includes(o.status) && (Boolean(o.confirmedAt) || ['paid', 'COMPLETED', 'READY_TO_SHIP', 'OUT_FOR_DELIVERY', 'DELIVERED', 'READY_FOR_PICKUP_PAID'].includes(o.status));
+
     const totalSales = orders
-        .filter(o => ['paid', 'COMPLETED', 'READY_TO_SHIP', 'OUT_FOR_DELIVERY', 'DELIVERED'].includes(o.status))
+        .filter(isValidSale)
         .reduce((sum, o) => sum + (Number(o.total) || 0), 0);
 
     const handleCancel = async (orderId: string, customerPhone: string) => {
@@ -116,15 +118,15 @@ export default function SalesAdmin() {
                                     <td style={{ padding: '15px', fontWeight: 'bold' }}>${order.total.toFixed(2)}</td>
                                     <td style={{ padding: '15px' }}>
                                         <span style={{
-                                            backgroundColor: ['paid', 'COMPLETED', 'DELIVERED'].includes(order.status) ? '#e8f8f5' : order.status === 'cancelled' ? '#fdedec' : '#fff8e1',
-                                            color: ['paid', 'COMPLETED', 'DELIVERED'].includes(order.status) ? '#27ae60' : order.status === 'cancelled' ? '#c0392b' : '#f39c12',
+                                            backgroundColor: (['paid', 'COMPLETED', 'DELIVERED', 'READY_FOR_PICKUP_PAID'].includes(order.status) || order.confirmedAt) ? '#e8f8f5' : order.status === 'cancelled' || order.status === 'refunded' ? '#fdedec' : '#fff8e1',
+                                            color: (['paid', 'COMPLETED', 'DELIVERED', 'READY_FOR_PICKUP_PAID'].includes(order.status) || order.confirmedAt) ? '#27ae60' : order.status === 'cancelled' || order.status === 'refunded' ? '#c0392b' : '#f39c12',
                                             padding: '4px 10px', borderRadius: '15px', fontSize: '0.75rem', fontWeight: 'bold', textTransform: 'uppercase',
                                             display: 'inline-flex', alignItems: 'center', gap: '5px'
                                         }}>
-                                            {['paid', 'COMPLETED', 'DELIVERED'].includes(order.status) && <CheckCircle size={12} />}
-                                            {order.status === 'cancelled' && <XCircle size={12} />}
-                                            {['pending', 'pending_confirmation', 'pending_payment'].includes(order.status) && <AlertTriangle size={12} />}
-                                            {['paid', 'COMPLETED', 'DELIVERED'].includes(order.status) ? 'PAGADO' : order.status === 'cancelled' ? 'CANCELADO' : 'PENDIENTE'}
+                                            {(['paid', 'COMPLETED', 'DELIVERED', 'READY_FOR_PICKUP_PAID'].includes(order.status) || order.confirmedAt) && <CheckCircle size={12} />}
+                                            {(order.status === 'cancelled' || order.status === 'refunded') && <XCircle size={12} />}
+                                            {['pending', 'pending_confirmation', 'pending_payment', 'PREPARANDO', 'READY_FOR_PICKUP', 'READY_TO_SHIP'].includes(order.status) && !order.confirmedAt && <AlertTriangle size={12} />}
+                                            {(['paid', 'COMPLETED', 'DELIVERED', 'READY_FOR_PICKUP_PAID'].includes(order.status) || order.confirmedAt) ? 'PAGADO' : (order.status === 'cancelled' || order.status === 'refunded') ? 'CANCELADO' : 'PENDIENTE'}
                                         </span>
                                     </td>
                                     <td style={{ padding: '15px' }}>
@@ -137,9 +139,9 @@ export default function SalesAdmin() {
                                             >
                                                 <FileText size={18} />
                                             </button>
-                                            {['paid', 'COMPLETED'].includes(order.status) && (
+                                            {!['DELIVERED', 'COMPLETED', 'cancelled', 'refunded'].includes(order.status) && (
                                                 <button
-                                                    title="Cancelar y Devolver"
+                                                    title="Cancelar y Devolver a Anaquel"
                                                     aria-label="Cancelar y Devolver"
                                                     onClick={() => handleCancel(order.id, order.customer?.phone || '')}
                                                     style={{ background: 'none', border: 'none', color: '#c0392b', cursor: 'pointer' }}

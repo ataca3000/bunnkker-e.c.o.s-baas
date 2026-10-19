@@ -793,11 +793,13 @@ export default function SalesDashboard() {
         'refunded'
     ];
 
-    const pendingOrders = orders.filter(o => PENDING_CASHIER_STATUSES.includes(o.status) && !isTestOrder(o));
+    const isStoreOrder = (o: any) => o.deliveryType !== 'DELIVERY' && o.deliveryMethod !== 'repartidor';
 
-    const pendingPrepOrders = orders.filter(o => !o.isLoaded && !['DELIVERED', 'COMPLETED', 'cancelled', 'refunded'].includes(o.status) && !isTestOrder(o));
-    const readyToPayOrders = orders.filter(o => (o.isLoaded || ['READY_TO_SHIP', 'READY_FOR_PICKUP'].includes(o.status)) && !o.confirmedAt && o.status !== 'paid' && !['DELIVERED', 'COMPLETED', 'cancelled', 'refunded'].includes(o.status) && !isTestOrder(o));
-    const cancelledOrders = orders.filter(o => (o.status === 'cancelled' || o.status === 'refunded') && !isTestOrder(o));
+    const pendingOrders = orders.filter(o => isStoreOrder(o) && PENDING_CASHIER_STATUSES.includes(o.status) && !isTestOrder(o));
+
+    const pendingPrepOrders = orders.filter(o => isStoreOrder(o) && !o.isLoaded && !['DELIVERED', 'COMPLETED', 'cancelled', 'refunded'].includes(o.status) && !isTestOrder(o));
+    const readyToPayOrders = orders.filter(o => isStoreOrder(o) && (o.isLoaded || ['READY_TO_SHIP', 'READY_FOR_PICKUP'].includes(o.status)) && !o.confirmedAt && o.status !== 'paid' && !['DELIVERED', 'COMPLETED', 'cancelled', 'refunded'].includes(o.status) && !isTestOrder(o));
+    const cancelledOrders = orders.filter(o => isStoreOrder(o) && (o.status === 'cancelled' || o.status === 'refunded') && !isTestOrder(o));
     const cancelledReacomodoOrders = cancelledOrders.filter(o => o.rejectionReason !== 'CANCELADA_STOCK_RESTITUIDO');
 
     const displayedOrders = pendingOrders.filter(o => {

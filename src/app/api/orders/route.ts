@@ -540,18 +540,20 @@ export async function PATCH(request: NextRequest) {
                         throw new Error('ORDER_CONFLICT:El pedido no está listo, ya fue pagado o pertenece a otro cajero.');
                     }
 
-                    // REGLA FLEXIBLE / OPERADOR ÚNICO:
-                    // Si el pedido no estaba cargado pero el cobro se hace en caja o con bandera de auto-preparación/operador único,
-                    // se auto-completa el surtido (isLoaded = true) permitiendo operación fluida sin requerir otro operador.
-                    const isSelfPreparation = Boolean(updates.selfPreparation || body.selfPreparation || current.deliveryType === 'LOCAL' || current.vendedorId === auth.uid || cashierRoles.includes(actorRole));
+                    // REGLA ESTRICTA DE PREPARACIÓN EN CAJA:
+                    // Solo se marca isLoaded=true al cobrar si es una venta LOCAL directa de mostrador,
+                    // o si el cajero explícitamente tiene asignado el pedido (selfPreparation / loadedByUid === auth.uid).
+                    // Para pedidos de almacén o patio, el cobro NO brinca la recolección física.
+                    const isSelfPreparation = Boolean(
+                        updates.selfPreparation || 
+                        body.selfPreparation || 
+                        current.deliveryType === 'LOCAL' || 
+                        (current.loadedByUid === auth.uid)
+                    );
                     let effectiveIsLoaded = current.isLoaded;
 
-                    if (!effectiveIsLoaded) {
-                        if (isSelfPreparation) {
-                            effectiveIsLoaded = true;
-                        } else if (!['READY_TO_SHIP', 'READY_FOR_PICKUP', 'READY_FOR_PICKUP_PAID', 'COMPLETED'].includes(current.status)) {
-                            throw new Error('ORDER_CONFLICT:El pedido aún está siendo preparado en almacén. Almacén debe marcarlo como LISTO antes de cobrar, o activa "Preparar en Caja".');
-                        }
+                    if (!effectiveIsLoaded && isSelfPreparation) {
+                        effectiveIsLoaded = true;
                     }
 
                     // FLOTACIÓN ESTRICTA: En caja se asegura la existencia y se aparta en reservedStock.
@@ -608,7 +610,7 @@ export async function PATCH(request: NextRequest) {
                         actorId: auth.uid,
                         actorName,
                         actorRole,
-                        details: { paymentMethod: updates.paymentMethod || 'cash', total: current.total }
+                        details: { paymentMethod: updates.paymentMethod || 'cash', total: current.total, isLoaded: effectiveIsLoaded }
                     });
                     return tx.order.findUnique({ where: { id }, include: { customer: true, items: true } });
                 });
@@ -621,19 +623,37 @@ export async function PATCH(request: NextRequest) {
             }
         }
 
-        if (action === 'claim_loading') {
+        if (action === 'claim_loading' || action === 'claim_order') {
             if (!loadingRoles.includes(actorRole)) return NextResponse.json({ success: false, error: 'Rol sin permiso para preparar pedidos.' }, { status: 403 });
             const current = await prisma.order.findUnique({ where: { id } });
-            const loadingStatuses = ['pending_payment', 'pending_confirmation', 'paid', 'PREPARANDO', 'NIGHT_QUEUE', 'PENDIENTE_LLEGADA'];
-            if (!current || !loadingStatuses.includes(current.status) || current.isLoaded) {
-                return NextResponse.json({ success: false, error: 'El pedido ya no está disponible para almacén.' }, { status: 409 });
+            if (!current) return NextResponse.json({ success: false, error: 'Pedido no encontrado.' }, { status: 404 });
+            
+            // REGLA AISLAMIENTO DELIVERY:
+            if (current.deliveryType === 'DELIVERY' && actorRole !== 'driver' && !['admin', 'superadmin'].includes(actorRole)) {
+                return NextResponse.json({ success: false, error: 'Los pedidos a domicilio son exclusivos para repartidores.' }, { status: 403 });
+            }
+
+            const loadingStatuses = ['pending', 'pending_payment', 'pending_confirmation', 'paid', 'PREPARANDO', 'NIGHT_QUEUE', 'PENDIENTE_LLEGADA'];
+            if (!loadingStatuses.includes(current.status) || current.isLoaded) {
+                return NextResponse.json({ success: false, error: 'El pedido ya no está disponible para preparación.' }, { status: 409 });
+            }
+            if (current.loadedByUid && current.loadedByUid !== auth.uid) {
+                return NextResponse.json({ success: false, error: `Este pedido ya fue tomado por ${current.loadedBy || 'otro operador'}.` }, { status: 409 });
+            }
+            if (current.loadedByUid === auth.uid) {
+                return NextResponse.json({ success: true, data: current, alreadyClaimed: true });
             }
             const claimed = await prisma.order.updateMany({
                 where: { id, status: current.status, isLoaded: false, loadedByUid: null },
-                data: { loadedBy: actorName, loadedByUid: auth.uid, loadingStartedAt: new Date() }
+                data: { 
+                    loadedBy: actorName, 
+                    loadedByUid: auth.uid, 
+                    loadingStartedAt: new Date(),
+                    status: current.status === 'paid' ? 'paid' : 'PREPARANDO'
+                }
             });
-            if (claimed.count !== 1) return NextResponse.json({ success: false, error: 'Otro almacenista tomó este pedido.' }, { status: 409 });
-            await prisma.orderEvent.create({ data: { orderId: id, eventType: 'LOADING_CLAIMED', fromStatus: current.status, toStatus: current.status, actorId: auth.uid, actorName, actorRole } });
+            if (claimed.count !== 1) return NextResponse.json({ success: false, error: 'Otro operador tomó este pedido.' }, { status: 409 });
+            await prisma.orderEvent.create({ data: { orderId: id, eventType: 'LOADING_CLAIMED', fromStatus: current.status, toStatus: current.status === 'paid' ? 'paid' : 'PREPARANDO', actorId: auth.uid, actorName, actorRole } });
             const order = await prisma.order.findUnique({ where: { id } });
             return NextResponse.json({ success: true, data: order });
         }
@@ -646,7 +666,11 @@ export async function PATCH(request: NextRequest) {
             }
             
             // Si el operador especifica dónde queda listo: 'caja' (PICKUP/MOSTRADOR) o 'carga' (PATIO/BAHÍA DE CARGA)
-            const targetLocation = body.targetLocation || updates.targetLocation;
+            let targetLocation = body.targetLocation || updates.targetLocation;
+            if (actorRole === 'inventory' && !targetLocation) {
+                targetLocation = current.deliveryType === 'PATIO' ? 'carga' : 'caja';
+            }
+
             let effectiveDeliveryType = current.deliveryType;
             if (targetLocation === 'caja') {
                 effectiveDeliveryType = 'PICKUP';
@@ -685,7 +709,8 @@ export async function PATCH(request: NextRequest) {
                     actorRole,
                     details: JSON.stringify({
                         targetLocation: targetLocation || (effectiveDeliveryType === 'PATIO' ? 'carga' : 'caja'),
-                        deliveryType: effectiveDeliveryType
+                        deliveryType: effectiveDeliveryType,
+                        role: actorRole
                     })
                 } 
             });
@@ -867,13 +892,20 @@ export async function PATCH(request: NextRequest) {
         }
 
         if (action === 'confirm_pickup_receipt') {
-            if (!['pickup', 'inventory', 'carga_descarga', 'driver', 'sales', 'billing', 'admin', 'superadmin'].includes(actorRole)) {
+            if (actorRole === 'inventory') {
+                return NextResponse.json({ success: false, error: 'El personal de almacén no realiza entregas al cliente. La entrega corresponde a Caja o Patio de Carga.' }, { status: 403 });
+            }
+            if (!['pickup', 'carga_descarga', 'driver', 'sales', 'billing', 'admin', 'superadmin'].includes(actorRole)) {
                 return NextResponse.json({ success: false, error: 'Rol sin permiso para entregar pedidos pickup.' }, { status: 403 });
             }
             const order = await prisma.$transaction(async (tx) => {
                 const current = await tx.order.findUnique({ where: { id }, include: { items: true } });
-                if (!current || !['READY_FOR_PICKUP_PAID', 'READY_FOR_PICKUP', 'paid'].includes(current.status) || !current.confirmedAt) {
-                    throw new Error('ORDER_CONFLICT:El pedido debe estar preparado y pagado antes de entregarlo.');
+                if (!current) throw new Error('ORDER_CONFLICT:Pedido no encontrado.');
+                if (!current.confirmedAt && current.status !== 'paid' && current.status !== 'READY_FOR_PICKUP_PAID') {
+                    throw new Error('ORDER_CONFLICT:El cliente debe pagar primero en Caja antes de recibir la mercancía.');
+                }
+                if (!current.isLoaded) {
+                    throw new Error('ORDER_CONFLICT:El pedido aún está siendo preparado en almacén.');
                 }
 
                 const signatureData = updates.signatureData || body.signatureData || null;
