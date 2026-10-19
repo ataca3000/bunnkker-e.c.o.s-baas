@@ -37,10 +37,15 @@ async function publishToNetwork(
             // ─── GRUPO B: Token Directo ────────────────────────────────────
             case 'telegram': {
                 if (!channelId) return { success: false, error: 'Falta el ID del canal de Telegram' };
-                const tgRes = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+                // SSRF Guard: Validar formato estricto de token de Bot de Telegram (ej: 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11)
+                if (!/^\d+:[A-Za-z0-9_-]+$/.test(token)) {
+                    return { success: false, error: 'Token de Telegram con formato inválido' };
+                }
+                const safeChannelId = channelId.replace(/[^@a-zA-Z0-9_-]/g, '');
+                const tgRes = await fetch(`https://api.telegram.org/bot${encodeURIComponent(token)}/sendMessage`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ chat_id: channelId, text: trimmedText, parse_mode: 'HTML' }),
+                    body: JSON.stringify({ chat_id: safeChannelId, text: trimmedText, parse_mode: 'HTML' }),
                 });
                 const tgData = await tgRes.json();
                 if (tgData.ok) return { success: true, externalId: String(tgData.result.message_id) };
@@ -49,6 +54,19 @@ async function publishToNetwork(
 
             case 'discord': {
                 // token = Webhook URL completa de Discord
+                // SSRF Guard: Validar que apunte exclusivamente a los dominios oficiales de webhooks de Discord
+                try {
+                    const parsed = new URL(token);
+                    if (
+                        (parsed.hostname !== 'discord.com' && parsed.hostname !== 'discordapp.com') ||
+                        parsed.protocol !== 'https:' ||
+                        !parsed.pathname.startsWith('/api/webhooks/')
+                    ) {
+                        return { success: false, error: 'URL de webhook de Discord inválida o no autorizada' };
+                    }
+                } catch {
+                    return { success: false, error: 'URL de webhook de Discord malformada' };
+                }
                 const dcRes = await fetch(token, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -88,9 +106,18 @@ async function publishToNetwork(
             case 'mastodon': {
                 // token = "instance_url|access_token"  ej: "mastodon.social|abc123"
                 const [instance, accessToken] = token.split('|');
-                const mRes = await fetch(`https://${instance}/api/v1/statuses`, {
+                // SSRF Guard: Validar que sea un dominio FQDN legítimo y prohibir rangos locales/privados
+                if (!instance || !/^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/.test(instance)) {
+                    return { success: false, error: 'Instancia de Mastodon inválida' };
+                }
+                const cleanInstance = instance.toLowerCase();
+                if (['localhost', '127.0.0.1', '0.0.0.0'].includes(cleanInstance) || cleanInstance.endsWith('.local') || cleanInstance.endsWith('.internal')) {
+                    return { success: false, error: 'Instancia de red privada no permitida' };
+                }
+                const safeToken = (accessToken || '').replace(/[^a-zA-Z0-9_-]/g, '');
+                const mRes = await fetch(`https://${cleanInstance}/api/v1/statuses`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+                    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${safeToken}` },
                     body: JSON.stringify({ status: trimmedText.slice(0, 500) }),
                 });
                 const mData = await mRes.json();
