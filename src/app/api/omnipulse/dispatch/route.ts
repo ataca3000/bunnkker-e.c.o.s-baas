@@ -53,8 +53,8 @@ async function publishToNetwork(
             }
 
             case 'discord': {
-                // token = Webhook URL completa de Discord
-                // SSRF Guard: Validar que apunte exclusivamente a los dominios oficiales de webhooks de Discord
+                // token = Webhook URL completa de Discord (ej: https://discord.com/api/webhooks/123456789/abcdef-ghijk)
+                // SSRF Guard: Validar dominio oficial y reconstruir URL con origen fijo
                 try {
                     const parsed = new URL(token);
                     if (
@@ -64,17 +64,24 @@ async function publishToNetwork(
                     ) {
                         return { success: false, error: 'URL de webhook de Discord inválida o no autorizada' };
                     }
+                    const parts = parsed.pathname.split('/').filter(Boolean);
+                    const webhookId = parts[2];
+                    const webhookToken = parts[3];
+                    if (!webhookId || !/^\d+$/.test(webhookId) || !webhookToken || !/^[A-Za-z0-9_-]+$/.test(webhookToken)) {
+                        return { success: false, error: 'Identificadores de webhook de Discord inválidos' };
+                    }
+                    const safeDiscordUrl = `https://${parsed.hostname}/api/webhooks/${encodeURIComponent(webhookId)}/${encodeURIComponent(webhookToken)}`;
+                    const dcRes = await fetch(safeDiscordUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ content: trimmedText }),
+                    });
+                    if (dcRes.ok) return { success: true, externalId: `discord_${Date.now()}` };
+                    const dcErr = await dcRes.text();
+                    return { success: false, error: dcErr };
                 } catch {
                     return { success: false, error: 'URL de webhook de Discord malformada' };
                 }
-                const dcRes = await fetch(token, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ content: trimmedText }),
-                });
-                if (dcRes.ok) return { success: true, externalId: `discord_${Date.now()}` };
-                const dcErr = await dcRes.text();
-                return { success: false, error: dcErr };
             }
 
             // ─── GRUPO C: Protocolos Abiertos ─────────────────────────────

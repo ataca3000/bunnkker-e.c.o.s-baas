@@ -56,7 +56,7 @@ export function EcosImageUpload({
     if (file) handleFile(file);
   }
 
-  const safePreview = isSafeImageUrl(preview) ? preview : null;
+  const safePreview = (preview && !/^(javascript|vbscript):/i.test(preview) && /^https?:\/\/|^blob:|^\/(?!\/)/i.test(preview)) ? preview : null;
 
   return (
     <div className="flex items-start gap-4">
