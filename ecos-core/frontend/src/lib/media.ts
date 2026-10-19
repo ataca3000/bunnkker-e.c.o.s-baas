@@ -9,11 +9,29 @@ import { env } from '@/lib/env';
  *  - /storage/... path            → prepend backend origin when API URL is absolute
  *  - relative path (no leading /) → treated as a storage-relative path → /storage/{path}
  */
+/**
+ * Validate that an image URL uses an allowed, safe scheme and does not contain dangerous protocols like javascript:
+ */
+export function isSafeImageUrl(url: string | null | undefined): boolean {
+  if (!url || typeof url !== 'string') return false;
+  const trimmed = url.trim();
+  if (/^(javascript|vbscript):/i.test(trimmed)) return false;
+  return (
+    trimmed.startsWith('blob:') ||
+    trimmed.startsWith('data:image/') ||
+    trimmed.startsWith('http://') ||
+    trimmed.startsWith('https://') ||
+    (trimmed.startsWith('/') && !trimmed.startsWith('//') && !trimmed.startsWith('/\\'))
+  );
+}
+
 export function getMediaUrl(path: string | null | undefined): string | null {
   if (!path || path.trim() === '') return null;
+  const trimmed = path.trim();
+  if (/^(javascript|vbscript):/i.test(trimmed)) return null;
 
-  // Already a full URL — use as-is
-  if (path.startsWith('http://') || path.startsWith('https://')) return path;
+  // Already a full URL — use as-is if http/https
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed;
 
   // Derive the backend origin from VITE_API_URL (e.g. "http://localhost:8000/api")
   // If the API URL is relative ("/api") we're on the same origin as the backend

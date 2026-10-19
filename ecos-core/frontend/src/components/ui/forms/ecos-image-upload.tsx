@@ -2,7 +2,7 @@ import { useRef, useState, type DragEvent } from 'react';
 import { ImageIcon, Upload, X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { getMediaUrl } from '@/lib/media';
+import { getMediaUrl, isSafeImageUrl } from '@/lib/media';
 import { cn } from '@/lib/utils';
 
 export type EcosImageUploadProps = {
@@ -56,6 +56,8 @@ export function EcosImageUpload({
     if (file) handleFile(file);
   }
 
+  const safePreview = isSafeImageUrl(preview) ? preview : null;
+
   return (
     <div className="flex items-start gap-4">
       {/* Drop zone / preview */}
@@ -71,13 +73,13 @@ export function EcosImageUpload({
         className={cn(
           'relative size-24 rounded-lg border-2 border-dashed cursor-pointer overflow-hidden transition-colors',
           'flex items-center justify-center bg-muted/30',
-          dragOver ? 'border-ring bg-primary/5' : preview ? 'border-border' : 'border-input',
+          dragOver ? 'border-ring bg-primary/5' : safePreview ? 'border-border' : 'border-input',
           disabled && 'cursor-not-allowed opacity-50',
         )}
       >
-        {preview ? (
+        {safePreview ? (
           <>
-            <img src={preview} alt="Preview" className="size-full object-cover" />
+            <img src={safePreview} alt="Preview" className="size-full object-cover" />
             <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
               <Upload className="size-5 text-white" />
             </div>
@@ -107,10 +109,10 @@ export function EcosImageUpload({
           onClick={() => inputRef.current?.click()}
         >
           <Upload className="size-3.5" />
-          {preview ? 'Replace' : 'Choose Image'}
+          {safePreview ? 'Replace' : 'Choose Image'}
         </Button>
 
-        {preview && (
+        {safePreview && (
           <Button
             type="button"
             variant="ghost"

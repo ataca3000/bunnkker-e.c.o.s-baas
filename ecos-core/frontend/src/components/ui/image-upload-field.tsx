@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ImageIcon, Upload, X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { getMediaUrl } from '@/lib/media';
+import { getMediaUrl, isSafeImageUrl } from '@/lib/media';
 import { cn } from '@/lib/utils';
 
 type ImageUploadFieldProps = {
@@ -43,6 +43,8 @@ export function ImageUploadField({ existingUrl, onChange }: ImageUploadFieldProp
     onChange(file);
   }
 
+  const safePreview = isSafeImageUrl(preview) ? preview : null;
+
   return (
     <div className="flex items-start gap-4">
       <div
@@ -53,12 +55,12 @@ export function ImageUploadField({ existingUrl, onChange }: ImageUploadFieldProp
         className={cn(
           'relative size-24 rounded-lg border-2 border-dashed cursor-pointer',
           'flex items-center justify-center overflow-hidden transition-colors hover:border-ring bg-muted/30',
-          preview ? 'border-border' : 'border-input',
+          safePreview ? 'border-border' : 'border-input',
         )}
       >
-        {preview ? (
+        {safePreview ? (
           <>
-            <img src={preview} alt="Preview" className="size-full object-cover" />
+            <img src={safePreview} alt="Preview" className="size-full object-cover" />
             <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
               <Upload className="size-5 text-white" />
             </div>
@@ -83,9 +85,9 @@ export function ImageUploadField({ existingUrl, onChange }: ImageUploadFieldProp
           onClick={() => inputRef.current?.click()}
         >
           <Upload className="size-3.5" />
-          {preview ? 'Replace' : 'Choose Image'}
+          {safePreview ? 'Replace' : 'Choose Image'}
         </Button>
-        {preview && (
+        {safePreview && (
           <Button
             type="button"
             variant="ghost"
