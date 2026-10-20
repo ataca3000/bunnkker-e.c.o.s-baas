@@ -12,7 +12,7 @@
 
 <br/>
 
-<img width="100%" alt="Bunkker ECOS Preview" src="https://github.com/user-attachments/assets/66e4bd2b-df7f-4fdc-82f0-052160a21d22" style="border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);" />
+
 
 <br/>
 
@@ -129,7 +129,9 @@ npm run dist:win
 ```
 El instalador NSIS optimizado se creará dentro de `dist-build-win/`.
 
----
+
+![Uploading image.png…]()
+
 
 ## 📜 Licencia y Registro de Autor
 
