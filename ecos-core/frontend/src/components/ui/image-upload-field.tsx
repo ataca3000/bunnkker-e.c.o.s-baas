@@ -43,7 +43,7 @@ export function ImageUploadField({ existingUrl, onChange }: ImageUploadFieldProp
     onChange(file);
   }
 
-  const safePreview = (preview && !/^(javascript|vbscript):/i.test(preview) && /^https?:\/\/|^blob:|^\/(?!\/)/i.test(preview)) ? preview : null;
+  const safePreview = (preview && !/^(javascript|vbscript):/i.test(preview) && /^https?:\/\/|^blob:|^\/(?!\/)/i.test(preview)) ? encodeURI(preview) : null;
 
   return (
     <div className="flex items-start gap-4">

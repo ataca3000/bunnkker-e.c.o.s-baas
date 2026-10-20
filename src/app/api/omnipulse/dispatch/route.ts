@@ -70,7 +70,7 @@ async function publishToNetwork(
                     if (!webhookId || !/^\d+$/.test(webhookId) || !webhookToken || !/^[A-Za-z0-9_-]+$/.test(webhookToken)) {
                         return { success: false, error: 'Identificadores de webhook de Discord inválidos' };
                     }
-                    const safeDiscordUrl = `https://${parsed.hostname}/api/webhooks/${encodeURIComponent(webhookId)}/${encodeURIComponent(webhookToken)}`;
+                    const safeDiscordUrl = `https://discord.com/api/webhooks/${encodeURIComponent(webhookId)}/${encodeURIComponent(webhookToken)}`;
                     const dcRes = await fetch(safeDiscordUrl, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
