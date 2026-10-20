@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
 
         const newTicket = await prisma.supportTicket.create({
             data: {
-                folio: folio || `TKT-${Math.floor(1000 + Math.random() * 9000)}`,
+                folio: folio || `TKT-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
                 customerEmail: customerEmail || 'anonimo@tienda.com',
                 customerName: customerName || 'Anónimo',
                 message,

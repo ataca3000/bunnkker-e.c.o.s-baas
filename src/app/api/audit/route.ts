@@ -29,11 +29,11 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
     const auth = validateApiSession(request);
-    // Audit logs can be created by any authenticated user
+    if (!auth.ok) return auth.response;
 
     try {
         const body = await request.json();
-        const { action, details, userId } = body;
+        const { action, details } = body;
 
         if (!action) {
             return NextResponse.json({ success: false, error: 'Action is required.' }, { status: 400 });
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
             data: {
                 action,
                 details: details || '',
-                userId: userId || (auth.ok ? auth.uid : 'unknown'),
+                userId: auth.uid,
             }
         });
 
