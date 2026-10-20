@@ -88,7 +88,7 @@ export function Catalog({
             />
           </div>
           <button 
-            className="flex items-center justify-center px-3 sm:px-4 py-2.5 sm:py-3 border border-white/10 rounded-xl text-white bg-blue-600/20 hover:bg-blue-600/40 backdrop-blur-md transition-colors shadow-[0_0_15px_rgba(37,99,235,0.1)] hover:border-blue-500/50 focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs sm:text-sm"
+            className="flex min-h-12 items-center justify-center gap-2 px-4 sm:px-5 py-3 border border-cyan-400/30 rounded-xl text-white bg-cyan-500/15 hover:bg-cyan-500/30 backdrop-blur-md transition-colors shadow-[0_0_18px_rgba(34,211,238,0.12)] hover:border-cyan-400/60 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-sm font-bold"
             onClick={onOpenScanner}
             title="Escanear con Cámara (F5)"
           >
@@ -131,7 +131,7 @@ export function Catalog({
               key={product.id}
               onClick={() => onAddProduct(product)}
               disabled={isOutOfStock}
-              className={`w-full flex items-center text-left bg-white/5 hover:bg-white/10 backdrop-blur-sm border rounded-xl overflow-hidden transition-all focus:outline-none focus:ring-2 focus:ring-cyan-500/50 group p-2.5 gap-3 ${
+              className={`w-full min-h-[78px] flex items-center text-left bg-white/5 hover:bg-white/10 backdrop-blur-sm border rounded-xl overflow-hidden transition-all focus:outline-none focus:ring-2 focus:ring-cyan-500/50 group p-3.5 gap-3.5 ${
                 isOutOfStock
                   ? 'opacity-40 cursor-not-allowed border-red-500/20 bg-red-950/10'
                   : isMaxInCart
@@ -139,7 +139,7 @@ export function Catalog({
                     : 'border-white/5 hover:border-cyan-500/30'
               }`}
             >
-              <div className={`h-11 w-11 sm:h-12 sm:w-12 rounded-lg flex-shrink-0 flex items-center justify-center bg-zinc-800 mix-blend-overlay opacity-70`}>
+              <div className={`h-14 w-14 sm:h-16 sm:w-16 rounded-lg flex-shrink-0 flex items-center justify-center bg-zinc-800 mix-blend-overlay opacity-70`}>
                 {product.image ? (
                   <img src={product.image} alt={product.name} className="w-full h-full object-cover rounded-lg" />
                 ) : (

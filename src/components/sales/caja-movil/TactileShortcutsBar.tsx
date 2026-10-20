@@ -45,7 +45,7 @@ export function TactileShortcutsBar({
             {/* F1: Buscar */}
             <button
                 onClick={() => { triggerHaptic(); onSearchClick(); }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white border border-white/5 transition-all active:scale-95 text-xs font-semibold shrink-0"
+                className="flex min-h-12 items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white border border-white/5 transition-all active:scale-95 text-xs font-semibold shrink-0"
                 title="Buscar o enfocar escáner (F1 o /)"
             >
                 <Search className="w-3.5 h-3.5 text-blue-400" />
@@ -57,7 +57,7 @@ export function TactileShortcutsBar({
             <button
                 onClick={() => { triggerHaptic(); onCobrarClick(); }}
                 disabled={!canCobrar}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl transition-all active:scale-95 text-xs font-black uppercase tracking-wider shrink-0 ${
+                className={`flex min-h-14 items-center gap-2 px-5 py-3 rounded-xl transition-all active:scale-95 text-sm font-black uppercase tracking-wider shrink-0 ${
                     canCobrar
                         ? 'bg-emerald-500 hover:bg-emerald-400 text-black shadow-[0_0_15px_rgba(16,185,129,0.3)] animate-pulse'
                         : 'bg-zinc-800 text-zinc-500 cursor-not-allowed border border-white/5'
@@ -89,7 +89,7 @@ export function TactileShortcutsBar({
             {/* F5: Cámara Escáner */}
             <button
                 onClick={() => { triggerHaptic(); onCameraClick(); }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white border border-white/5 transition-all active:scale-95 text-xs font-semibold shrink-0"
+                className="flex min-h-12 items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white border border-white/5 transition-all active:scale-95 text-xs font-semibold shrink-0"
                 title="Escanear con cámara (F5 o C)"
             >
                 <Camera className="w-3.5 h-3.5 text-indigo-400" />
@@ -100,7 +100,7 @@ export function TactileShortcutsBar({
             {/* F8: Historial Tickets */}
             <button
                 onClick={() => { triggerHaptic(); onHistoryClick(); }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white border border-white/5 transition-all active:scale-95 text-xs font-semibold shrink-0"
+                className="flex min-h-12 items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white border border-white/5 transition-all active:scale-95 text-xs font-semibold shrink-0"
                 title="Bitácora de Tickets y Reimpresión (F8)"
             >
                 <History className="w-3.5 h-3.5 text-amber-400" />
@@ -111,7 +111,7 @@ export function TactileShortcutsBar({
             {/* F10: Corte Caja Ciego */}
             <button
                 onClick={() => { triggerHaptic(); onCorteClick(); }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white border border-white/5 transition-all active:scale-95 text-xs font-semibold shrink-0"
+                className="flex min-h-12 items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white border border-white/5 transition-all active:scale-95 text-xs font-semibold shrink-0"
                 title="Corte de Caja Ciego (F10)"
             >
                 <TerminalSquare className="w-3.5 h-3.5 text-rose-400" />
