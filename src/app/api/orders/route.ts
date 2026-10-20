@@ -334,7 +334,7 @@ export async function POST(request: NextRequest) {
                     });
                 }
 
-                // Si aún no existe en BD (p.ej. producto del catálogo en frío o mock local), auto-crearlo para no romper la venta
+                // Si aún no existe en BD, crearlo con stock 0 (sin inventario fantasma)
                 if (!current) {
                     const createdProd = await tx.product.create({
                         data: {
@@ -342,7 +342,7 @@ export async function POST(request: NextRequest) {
                             tenantId,
                             name: item.name || `Producto ${prodId}`,
                             price: Number(item.price ?? item.precio ?? 0),
-                            stock: 100,
+                            stock: 0,
                             reservedStock: 0,
                             category: item.category || 'General'
                         }
@@ -359,13 +359,9 @@ export async function POST(request: NextRequest) {
                 if (availableStock < qty) {
                     throw new Error(`INSUFFICIENT_STOCK: Inventario insuficiente para el producto "${current.name || prodId}". Disponible: ${availableStock}, solicitado: ${qty}.`);
                 }
-                if (!isCashierRequest) {
-                    await tx.product.update({
-                        where: { id: current.id },
-                        data: { stock: { decrement: qty } }
-                    });
-                }
 
+                // El stock físico NO se descuenta aquí en la creación.
+                // Se apartará en reservedStock al confirmar pago, y se descontará físicamente al validar entrega (PoD).
                 resolvedOrderItems.push({
                     productId: current.id,
                     cantidad: qty,
@@ -377,6 +373,16 @@ export async function POST(request: NextRequest) {
             const initialStatus = isClientOrder
                 ? 'pending_payment'
                 : (body.status || 'paid');
+
+            // Si la orden nace pagada de inmediato, apartar en reservedStock de forma segura
+            if (initialStatus === 'paid') {
+                for (const roi of resolvedOrderItems) {
+                    await tx.product.update({
+                        where: { id: roi.productId },
+                        data: { reservedStock: { increment: roi.cantidad } }
+                    });
+                }
+            }
 
                     const isPending = ['pending_payment', 'pending_confirmation'].includes(initialStatus);
 
@@ -721,28 +727,38 @@ export async function PATCH(request: NextRequest) {
             if (actorRole === 'driver') {
                 return NextResponse.json({ success: false, error: 'El repartidor no puede delegar pedidos de tienda.' }, { status: 403 });
             }
-            const targetRole = body.targetRole || body.targetLocation || 'caja';
             const current = await prisma.order.findUnique({ where: { id } });
             if (!current) return NextResponse.json({ success: false, error: 'Pedido no encontrado' }, { status: 404 });
 
-            await prisma.order.update({
-                where: { id },
-                data: {
-                    vendedorId: targetRole === 'caja' ? null : current.vendedorId,
-                    loadedByUid: null,
-                    loadedBy: null
-                }
-            });
+            if (['DELIVERED', 'COMPLETED'].includes(current.status)) {
+                return NextResponse.json({ success: false, error: 'No se puede desasignar un pedido que ya fue entregado.' }, { status: 409 });
+            }
 
-            await writeOrderEvent(prisma as any, {
-                orderId: id,
-                eventType: 'ORDER_DELEGATED',
-                fromStatus: current.status,
-                toStatus: current.status,
-                actorId: auth.uid,
-                actorName,
-                actorRole,
-                details: { delegatedTo: targetRole, reason: body.reason || 'Operador ocupado / Delegación rápida' }
+            if (current.loadedByUid && current.loadedByUid !== auth.uid && !['superadmin', 'admin', 'sales'].includes(actorRole)) {
+                return NextResponse.json({ success: false, error: 'Solo el operador que tomó el pedido o un administrador pueden liberarlo.' }, { status: 403 });
+            }
+
+            const targetRole = body.targetRole || body.targetLocation || 'caja';
+            await prisma.$transaction(async (tx) => {
+                await tx.order.update({
+                    where: { id },
+                    data: {
+                        vendedorId: targetRole === 'caja' ? null : current.vendedorId,
+                        loadedByUid: null,
+                        loadedBy: null
+                    }
+                });
+
+                await writeOrderEvent(tx, {
+                    orderId: id,
+                    eventType: 'ORDER_DELEGATED',
+                    fromStatus: current.status,
+                    toStatus: current.status,
+                    actorId: auth.uid,
+                    actorName,
+                    actorRole,
+                    details: { delegatedTo: targetRole, reason: body.reason || 'Operador ocupado / Delegación rápida' }
+                });
             });
 
             return NextResponse.json({ success: true, message: `Pedido delegado a ${targetRole}` });
@@ -796,8 +812,26 @@ export async function PATCH(request: NextRequest) {
         }
 
         if (action === 'return_to_shelf') {
+            const allowedRestockRoles = ['inventory', 'carga_descarga', 'admin', 'superadmin'];
+            if (!allowedRestockRoles.includes(actorRole)) {
+                return NextResponse.json({ success: false, error: 'Rol sin permiso para reincorporar productos a anaquel.' }, { status: 403 });
+            }
+
             const current = await prisma.order.findUnique({ where: { id }, include: { items: true } });
             if (!current) return NextResponse.json({ success: false, error: 'Pedido no encontrado' }, { status: 404 });
+
+            // Idempotencia: Si ya fue restituido, retornar 200 sin volver a sumar stock
+            if (current.rejectionReason === 'CANCELADA_STOCK_RESTITUIDO') {
+                return NextResponse.json({ success: true, data: current, message: 'Este pedido ya fue restituido a estante con anterioridad.' });
+            }
+
+            // Ventas cerradas y entregadas son inmutables
+            if (['DELIVERED', 'COMPLETED'].includes(current.status)) {
+                return NextResponse.json({ 
+                    success: false, 
+                    error: 'VENTA_CERRADA: El pedido ya fue entregado al cliente. No procede restitución a anaquel sin movimiento de recepción nuevo.' 
+                }, { status: 409 });
+            }
 
             const updated = await prisma.$transaction(async (tx) => {
                 for (const item of current.items) {
@@ -914,11 +948,13 @@ export async function PATCH(request: NextRequest) {
                 // DEDUCCIÓN FINAL AL VALIDAR ENTREGA EN TIENDA / PATIO:
                 // Se descuenta físicamente de 'stock' y se limpia la reserva 'reservedStock'.
                 for (const item of current.items) {
+                    const prod = await tx.product.findUnique({ where: { id: item.productId }, select: { reservedStock: true } });
+                    const newReserved = Math.max(0, (prod?.reservedStock || 0) - item.cantidad);
                     await tx.product.update({
                         where: { id: item.productId },
                         data: {
                             stock: { decrement: item.cantidad },
-                            reservedStock: { decrement: item.cantidad }
+                            reservedStock: newReserved
                         }
                     });
                 }
@@ -1006,8 +1042,16 @@ export async function PATCH(request: NextRequest) {
 
         let order;
         if (updates.status === 'cancelled') {
+            // Regla inquebrantable de inventario real: Las ventas finalizadas y entregadas son inmutables
+            if (['DELIVERED', 'COMPLETED'].includes(current.status)) {
+                return NextResponse.json({ 
+                    success: false, 
+                    error: 'VENTA_CERRADA_INMUTABLE: El pedido ya fue entregado y la venta está cerrada. No se puede cancelar para evitar recuentos de stock fantasma.' 
+                }, { status: 409 });
+            }
+
             if (!prismaUpdates.rejectionReason) {
-                prismaUpdates.rejectionReason = 'CANCELADO_PENDIENTE_REACOMODO';
+                prismaUpdates.rejectionReason = current.isLoaded ? 'CANCELADO_PENDIENTE_REACOMODO' : 'CANCELADA_POR_USUARIO';
             }
             order = await prisma.$transaction(async (tx) => {
                 const changed = await tx.order.updateMany({
@@ -1016,25 +1060,17 @@ export async function PATCH(request: NextRequest) {
                 });
                 if (changed.count !== 1) throw new Error('ORDER_CONFLICT:El pedido cambió mientras se cancelaba.');
 
-                // CANCELACIÓN INTELIGENTE:
-                // Si la venta ya había descontado el stock físico directamente (venta local COMPLETED / delivery DELIVERED):
-                // -> Incrementamos 'stock' físico para regresarlo a anaquel.
-                // Si la orden estaba en proceso (preventa / picking / ruta) y tenía el stock en 'reservedStock':
-                // -> Decrementamos 'reservedStock' para liberar el apartado sin tocar stock físico.
-                if (current.confirmedAt) {
-                    const wasPhysicalStockDeducted = current.status === 'DELIVERED' || current.status === 'COMPLETED' || current.deliveryType === 'LOCAL';
+                // CANCELACIÓN EN VIVO:
+                // Si la orden tenía stock apartado en 'reservedStock' (pedido pagado/confirmado),
+                // se libera la reserva limpiando el apartado sin tocar stock físico.
+                if (current.confirmedAt || current.status === 'paid') {
                     for (const item of current.items) {
-                        if (wasPhysicalStockDeducted) {
-                            await tx.product.update({
-                                where: { id: item.productId },
-                                data: { stock: { increment: item.cantidad } }
-                            });
-                        } else {
-                            await tx.product.update({ 
-                                where: { id: item.productId }, 
-                                data: { reservedStock: { decrement: item.cantidad } } 
-                            });
-                        }
+                        const prod = await tx.product.findUnique({ where: { id: item.productId }, select: { reservedStock: true } });
+                        const newReserved = Math.max(0, (prod?.reservedStock || 0) - item.cantidad);
+                        await tx.product.update({ 
+                            where: { id: item.productId }, 
+                            data: { reservedStock: newReserved } 
+                        });
                     }
                 }
 
@@ -1047,7 +1083,10 @@ export async function PATCH(request: NextRequest) {
                     actorId: auth.uid,
                     actorName,
                     actorRole,
-                    details: { stockRestored: Boolean(current.confirmedAt) }
+                    details: { 
+                        stockReservedReleased: Boolean(current.confirmedAt || current.status === 'paid'),
+                        pendingReacomodo: Boolean(current.isLoaded)
+                    }
                 });
                 return updated;
             });
@@ -1062,11 +1101,13 @@ export async function PATCH(request: NextRequest) {
                 // DEDUCCIÓN FINAL AL VALIDAR ENTREGA CON COMPROBANTE/FIRMA (DELIVERED):
                 if (updates.status === 'DELIVERED' && current.status !== 'DELIVERED') {
                     for (const item of current.items) {
+                        const prod = await tx.product.findUnique({ where: { id: item.productId }, select: { reservedStock: true } });
+                        const newReserved = Math.max(0, (prod?.reservedStock || 0) - item.cantidad);
                         await tx.product.update({
                             where: { id: item.productId },
                             data: {
                                 stock: { decrement: item.cantidad },
-                                reservedStock: { decrement: item.cantidad }
+                                reservedStock: newReserved
                             }
                         });
                     }
