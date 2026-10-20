@@ -189,13 +189,9 @@ export default function AdminAsistente() {
                 }
             }
 
-            const storedKey = typeof window !== 'undefined' ? localStorage.getItem('bunkker_gemini_key') : null;
             const response = await fetch('/api/ai/chat', {
                 method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    ...(storedKey ? { 'x-gemini-key': storedKey } : {})
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     messages: messages.concat([{ role: 'user', content: userMsg }]),
                     contextData,
