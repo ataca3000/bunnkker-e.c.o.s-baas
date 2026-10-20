@@ -542,8 +542,8 @@ export async function PATCH(request: NextRequest) {
             try {
                 const order = await prisma.$transaction(async (tx) => {
                     const current = await tx.order.findUnique({ where: { id }, include: { items: true } });
-                    if (!current || !cashierReadyStatuses.includes(current.status) || current.confirmedAt || (current.vendedorId && current.vendedorId !== auth.uid) || (current.expiresAt && current.expiresAt.getTime() <= Date.now())) {
-                        throw new Error('ORDER_CONFLICT:El pedido no está listo, ya fue pagado o pertenece a otro cajero.');
+                    if (!current || !cashierReadyStatuses.includes(current.status) || current.confirmedAt) {
+                        throw new Error('ORDER_CONFLICT:El pedido no está listo o ya fue pagado.');
                     }
 
                     // REGLA ESTRICTA DE PREPARACIÓN EN CAJA:
@@ -584,18 +584,14 @@ export async function PATCH(request: NextRequest) {
                         where: {
                             id,
                             status: current.status,
-                            confirmedAt: null,
-                            OR: [
-                                { vendedorId: auth.uid },
-                                { vendedorId: null }
-                            ]
+                            confirmedAt: null
                         },
                         data: {
                             status: nextStatus,
                             paymentMethod: updates.paymentMethod || 'cash',
                             confirmedAt: new Date(),
-                            vendedorId: auth.uid,
-                            vendedorName: actorName,
+                            vendedorId: current.vendedorId || auth.uid,
+                            vendedorName: current.vendedorName || actorName,
                             ...(effectiveIsLoaded && !current.isLoaded ? {
                                 isLoaded: true,
                                 loadedBy: actorName,
@@ -960,10 +956,11 @@ export async function PATCH(request: NextRequest) {
                 }
 
                 const updated = await tx.order.updateMany({
-                    where: { id, status: current.status, confirmedAt: { not: null } },
+                    where: { id, status: current.status },
                     data: { 
                         status: 'DELIVERED', 
                         completedAt: new Date(),
+                        confirmedAt: current.confirmedAt || new Date(),
                         ...(signatureData ? { signatureData } : {}),
                         ...(photoData ? { photoData } : {})
                     }

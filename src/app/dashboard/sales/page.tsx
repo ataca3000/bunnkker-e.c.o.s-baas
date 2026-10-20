@@ -787,8 +787,11 @@ export default function SalesDashboard() {
         'pending_payment',
         'pending_confirmation',
         'pending',
+        'paid',
+        'PREPARANDO',
         'READY_TO_SHIP',
         'READY_FOR_PICKUP',
+        'READY_FOR_PICKUP_PAID',
         'pending_delivery',
         'NIGHT_QUEUE',
         'cancelled',
@@ -800,7 +803,7 @@ export default function SalesDashboard() {
     const pendingOrders = orders.filter(o => isStoreOrder(o) && PENDING_CASHIER_STATUSES.includes(o.status) && !isTestOrder(o));
 
     const pendingPrepOrders = orders.filter(o => isStoreOrder(o) && !o.isLoaded && !['DELIVERED', 'COMPLETED', 'cancelled', 'refunded'].includes(o.status) && !isTestOrder(o));
-    const readyToPayOrders = orders.filter(o => isStoreOrder(o) && (o.isLoaded || ['READY_TO_SHIP', 'READY_FOR_PICKUP'].includes(o.status)) && !o.confirmedAt && o.status !== 'paid' && !['DELIVERED', 'COMPLETED', 'cancelled', 'refunded'].includes(o.status) && !isTestOrder(o));
+    const readyToPayOrders = orders.filter(o => isStoreOrder(o) && (o.isLoaded || ['READY_TO_SHIP', 'READY_FOR_PICKUP'].includes(o.status)) && !o.confirmedAt && o.status !== 'paid' && o.status !== 'READY_FOR_PICKUP_PAID' && !['DELIVERED', 'COMPLETED', 'cancelled', 'refunded'].includes(o.status) && !isTestOrder(o));
     const cancelledOrders = orders.filter(o => isStoreOrder(o) && (o.status === 'cancelled' || o.status === 'refunded') && !isTestOrder(o));
     const cancelledReacomodoOrders = cancelledOrders.filter(o => o.rejectionReason !== 'CANCELADA_STOCK_RESTITUIDO');
 
@@ -810,9 +813,11 @@ export default function SalesDashboard() {
             if (!isMine) return false;
         }
         if (orderFilter === 'pending') {
-            if (!['pending_payment', 'pending_confirmation', 'pending', 'NIGHT_QUEUE'].includes(o.status)) return false;
+            const isUnpaid = !o.confirmedAt && o.status !== 'paid' && o.status !== 'READY_FOR_PICKUP_PAID';
+            if (!isUnpaid || !['pending_payment', 'pending_confirmation', 'pending', 'NIGHT_QUEUE', 'READY_FOR_PICKUP'].includes(o.status)) return false;
         } else if (orderFilter === 'ready') {
-            if (!['READY_TO_SHIP', 'READY_FOR_PICKUP'].includes(o.status)) return false;
+            const isReady = ['READY_TO_SHIP', 'READY_FOR_PICKUP_PAID'].includes(o.status) || (Boolean(o.isLoaded) && (Boolean(o.confirmedAt) || o.status === 'paid')) || o.status === 'READY_FOR_PICKUP';
+            if (!isReady) return false;
         } else if (orderFilter === 'delivery') {
             if (o.status !== 'pending_delivery') return false;
         } else if (orderFilter === 'cancelled') {
@@ -1092,7 +1097,7 @@ export default function SalesDashboard() {
                                                 : 'bg-zinc-900/80 text-zinc-300 hover:text-white border border-white/10 hover:bg-zinc-800'
                                             }`}
                                     >
-                                        Por Cobrar ({pendingOrders.filter(o => ['pending_payment', 'pending_confirmation', 'pending', 'NIGHT_QUEUE'].includes(o.status)).length})
+                                        Por Cobrar ({pendingOrders.filter(o => ['pending_payment', 'pending_confirmation', 'pending', 'NIGHT_QUEUE', 'READY_FOR_PICKUP'].includes(o.status) && !o.confirmedAt && o.status !== 'paid' && o.status !== 'READY_FOR_PICKUP_PAID').length})
                                     </button>
                                     <button
                                         onClick={() => setOrderFilter('ready')}
@@ -1101,7 +1106,7 @@ export default function SalesDashboard() {
                                                 : 'bg-zinc-900/80 text-zinc-300 hover:text-white border border-white/10 hover:bg-zinc-800'
                                             }`}
                                     >
-                                        Listos Entrega ({pendingOrders.filter(o => ['READY_TO_SHIP', 'READY_FOR_PICKUP'].includes(o.status)).length})
+                                        Listos Entrega ({pendingOrders.filter(o => ['READY_TO_SHIP', 'READY_FOR_PICKUP_PAID'].includes(o.status) || (Boolean(o.isLoaded) && (Boolean(o.confirmedAt) || o.status === 'paid')) || o.status === 'READY_FOR_PICKUP').length})
                                     </button>
                                     <button
                                         onClick={() => setOrderFilter('delivery')}

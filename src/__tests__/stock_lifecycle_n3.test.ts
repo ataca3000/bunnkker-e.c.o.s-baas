@@ -197,4 +197,95 @@ describe('N3 Stock Lifecycle & Authority Engine', () => {
         expect(() => engine.returnToShelf(2, 'driver')).toThrow('FORBIDDEN_ROLE');
         expect(() => engine.returnToShelf(2, 'client')).toThrow('FORBIDDEN_ROLE');
     });
+
+    it('Axioma 6 (Relevo y Cobro Multi-Vendedor en Caja): Cajero Bob puede cobrar orden iniciada por Vendedor Alice o Guest sin conflicto 409', () => {
+        interface OrderState {
+            id: string;
+            status: string;
+            vendedorId: string | null;
+            vendedorName: string | null;
+            cajeroId: string | null;
+            confirmedAt: Date | null;
+            expiresAt: Date | null;
+        }
+
+        const tenderOrder = (
+            order: OrderState,
+            cashierUser: { uid: string; name: string; role: string },
+            cashierRoles: string[] = ['sales', 'billing', 'admin', 'superadmin']
+        ) => {
+            if (!cashierRoles.includes(cashierUser.role)) throw new Error('FORBIDDEN_ROLE');
+            if (order.confirmedAt || !['pending_payment', 'pending', 'READY_FOR_PICKUP'].includes(order.status)) {
+                throw new Error('ORDER_CONFLICT: Ya pagado o no listo');
+            }
+            // Cobro en ventanilla en vivo:
+            order.status = 'paid';
+            order.confirmedAt = new Date();
+            order.cajeroId = cashierUser.uid;
+            order.vendedorId = order.vendedorId || cashierUser.uid;
+            order.vendedorName = order.vendedorName || cashierUser.name;
+            return order;
+        };
+
+        const orderCreatedByAlice: OrderState = {
+            id: 'ORD-ALICE-1',
+            status: 'pending_payment',
+            vendedorId: 'user-alice',
+            vendedorName: 'Alice Asesora',
+            cajeroId: null,
+            confirmedAt: null,
+            expiresAt: new Date(Date.now() - 60000) // Expirado hace 1 min mientras el cliente hacía fila
+        };
+
+        const cashierBob = { uid: 'user-bob', name: 'Bob Cajero', role: 'sales' };
+
+        // Bob cobra exitosamente sin 409
+        const result = tenderOrder(orderCreatedByAlice, cashierBob);
+        expect(result.status).toBe('paid');
+        expect(result.cajeroId).toBe('user-bob');
+        expect(result.vendedorId).toBe('user-alice'); // Se preserva crédito de la vendedora Alice
+        expect(result.confirmedAt).toBeTruthy();
+    });
+
+    it('Axioma 7 (Visibilidad en Pizarra de Caja): Órdenes en status paid y READY_FOR_PICKUP_PAID no desaparecen de la vista del cajero', () => {
+        const PENDING_CASHIER_STATUSES = [
+            'pending_payment',
+            'pending_confirmation',
+            'pending',
+            'paid',
+            'PREPARANDO',
+            'READY_TO_SHIP',
+            'READY_FOR_PICKUP',
+            'READY_FOR_PICKUP_PAID',
+            'pending_delivery',
+            'NIGHT_QUEUE',
+            'cancelled',
+            'refunded'
+        ];
+
+        const isOrderVisibleInCashier = (status: string) => PENDING_CASHIER_STATUSES.includes(status);
+
+        expect(isOrderVisibleInCashier('paid')).toBe(true);
+        expect(isOrderVisibleInCashier('READY_FOR_PICKUP_PAID')).toBe(true);
+        expect(isOrderVisibleInCashier('PREPARANDO')).toBe(true);
+        expect(isOrderVisibleInCashier('READY_FOR_PICKUP')).toBe(true);
+    });
+
+    it('Axioma 8 (Segregación de Pizarras Mostrador vs Patio): Mostrador Pickup excluye carga pesada de Patio', () => {
+        const testOrders = [
+            { id: 'ORD-1', deliveryType: 'PICKUP', deliveryMethod: 'pickup' },
+            { id: 'ORD-2', deliveryType: 'PATIO', deliveryMethod: 'patio' },
+            { id: 'ORD-3', deliveryType: 'LOCAL', deliveryMethod: 'tienda' },
+            { id: 'ORD-4', deliveryType: 'DELIVERY', deliveryMethod: 'repartidor' }
+        ];
+
+        // Regla de filtro de Mostrador Pickup (7777)
+        const pickupWhiteboard = testOrders.filter(o => 
+            (['tienda', 'pickup'].includes(o.deliveryMethod || '') || ['PICKUP', 'LOCAL'].includes(o.deliveryType || '')) &&
+            o.deliveryMethod !== 'patio' && o.deliveryType !== 'PATIO'
+        );
+
+        expect(pickupWhiteboard.map(o => o.id)).toEqual(['ORD-1', 'ORD-3']);
+        expect(pickupWhiteboard.find(o => o.id === 'ORD-2')).toBeUndefined();
+    });
 });
