@@ -102,3 +102,45 @@ The repository maintains an external Markdown-based document cache inside `.agen
 3. **Failure Tracking:** If an approach fails, log the evidence in `.agents/learning/penalties/` and `.agents/logs/failures/` to prevent recurrence.
 4. **Zero Code Pollution:** Markdown files act exclusively as external disk memory inside `.agents/` and never interfere with software compilation or runtime execution.
 
+---
+
+## 4. Protocolo de Fontanería Sistémica & Reglas de Trabajo End-to-End
+
+### 4.1 Principio del Fontanero de Tuberías
+No analizar archivos ni funciones de forma aislada. Entrar en las tuberías del sistema para rastrear el flujo circulatorio completo:
+`Evento Iniciador → Entrada de Datos → Validaciones/Compuertas Lógicas → Mutación de Estado → Propagación (DB/Sockets/Store) → Consumo por otros Actores → Resultado Observable`.
+
+### 4.2 Cuestionario Obligatorio por Cada Compuerta
+En cada bifurcación o paso de un flujo, responder explícitamente:
+1. ¿Qué acción ocurre y qué condición permite que ocurra?
+2. ¿De qué dato, estado, usuario, rol o acción previa depende?
+3. ¿Qué camino sigue si la condición se cumple y cuál si es rechazada?
+4. ¿Qué dato crea, modifica, elimina o transmite (DB, memoria, sockets)?
+5. ¿Qué otras partes del sistema o terminales de rol afecta?
+6. ¿Qué ocurre después y quién recibe ese resultado?
+7. ¿Qué podría fallar, quedar pendiente o duplicarse por fallas de red Wi-Fi?
+8. ¿Cómo se recupera el sistema ante el error (idempotencia y fail-closed)?
+
+### 4.3 Mapa Vivo del Sistema Circulatorio
+Mantener y contrastar visualmente el sistema bajo esta taxonomía:
+- **Raíces:** Entradas (cliente catálogo, terminal caja, tablet patio, escáner almacén, app repartidor).
+- **Tronco/Corazón:** Servidor central / Base de datos autoridad única (SQLite WAL / Next.js API / Socket Radio).
+- **Ramas/Arterias:** Llamadas API, eventos de orden (`OrderEvent`), sincronizadores (`BroadcastChannel`, `Socket.IO`, `IndexedDB`).
+- **Compuertas:** Estados de validación (`pending_payment` → `paid` → `isLoaded` → `DELIVERED`).
+- **Órganos:** Pizarras públicas por rol (Caja, Almacén, Patio, Reparto, Auditoría).
+- **Salidas:** Ticket digital, comprobante PoD (firma/foto), cierre contable, inventario físico deducido.
+
+### 4.4 Estados del Mapa de Tuberías
+Todo nodo o conexión auditada debe clasificarse con rigor:
+- **`[IMPLEMENTADO]`**: Existe, comprobado con evidencia de código y conectado E2E.
+- **`[PARCIAL]`**: Existe una parte, pero el recorrido se corta o no actualiza al siguiente actor.
+- **`[PENDIENTE]`**: Diseñado o requerido, pero aún no existe en el código.
+- **`[ROTO/DUDOSO]`**: Conexión fallida, estado desfasado o riesgo de desincronización detectado.
+
+### 4.5 Regla de Implementación No-Aislada
+Antes de modificar código:
+1. Declarar el flujo completo a intervenir, sus compuertas lógicas y los actores afectados.
+2. Describir caminos de éxito, rechazo y recuperación.
+3. Prohibido escribir parches cosméticos o funciones aisladas que dejen desconectada la circulación entre pantallas y base de datos.
+
+
