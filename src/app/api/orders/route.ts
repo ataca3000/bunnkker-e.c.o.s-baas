@@ -185,9 +185,8 @@ export async function POST(request: NextRequest) {
             // Si no hay cuenta autenticada de cliente ni sesión de empleado:
             if (!authenticatedCustomerId) {
                 const isGuestRequest = Boolean(body.asRequest || paymentMethod === 'pago_caja' || body.status === 'pending_payment');
-                const hasContact = Boolean(clientData?.phone || clientData?.name || body.customerEmail);
 
-                if (!isGuestRequest || !hasContact) {
+                if (!isGuestRequest) {
                     return staffSession.response || NextResponse.json({ success: false, error: 'Debes iniciar sesión para realizar ventas directas.' }, { status: 401 });
                 }
             }
