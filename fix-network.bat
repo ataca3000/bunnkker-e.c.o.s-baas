@@ -10,8 +10,8 @@ echo ========================================================
 echo Configurando IP estatica no duplicada para ERP BUNKKER...
 echo ========================================================
 echo.
-echo Asignando IP fija: 192.168.1.188 / Gateway: 192.168.1.254...
-netsh interface ipv4 set address name="Ethernet" static 192.168.1.188 255.255.255.0 192.168.1.254 1
+echo Asignando IP fija libre: 192.168.1.222 / Gateway: 192.168.1.254...
+netsh interface ipv4 set address name="Ethernet" static 192.168.1.222 255.255.255.0 192.168.1.254 1
 netsh interface ipv4 set dnsservers name="Ethernet" static 1.1.1.1 primary
 netsh interface ipv4 add dnsservers name="Ethernet" 8.8.8.8 index=2
 
