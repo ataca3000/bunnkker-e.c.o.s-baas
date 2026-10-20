@@ -11,10 +11,11 @@
     "require": {
         "php": "^8.2",
         "guzzlehttp/guzzle": "^7.15.2",
-        "laravel/framework": "^12.0",
+        "laravel/framework": "^12.69.0",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.10.1",
-        "league/commonmark": "^2.10.4"
+        "league/commonmark": "^2.10.4",
+        "league/flysystem": "^3.36.0"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
