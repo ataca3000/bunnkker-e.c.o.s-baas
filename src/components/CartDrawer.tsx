@@ -139,13 +139,17 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
         if (!data.name) data.name = isStaff ? 'Cliente Mostrador' : (customerAccount?.name || 'Cliente');
         if (!data.phone) data.phone = customerAccount?.phone || formData.phone || '0000000000';
 
-        if (!isStaff && data.deliveryMethod === 'repartidor' && !data.address) {
-            toast.warning('Completa los datos obligatorios de entrega (dirección).');
+        if (!data.name.trim() || !data.phone.trim()) {
+            toast.warning('Completa tu nombre y teléfono para encargar el pedido.');
+            return;
+        }
+        if (data.deliveryMethod === 'repartidor' && (!data.address.trim() || !Number.isFinite(data.lat) || !Number.isFinite(data.lng) || (data.lat === 0 && data.lng === 0))) {
+            toast.warning('Completa la dirección y marca la ubicación de entrega en el mapa.');
             return;
         }
 
         setIsProcessing(true);
-        const orderId = `ORD-${Date.now().toString().slice(-6)}-${Math.floor(Math.random() * 100)}`;
+        const orderId = `ORD-${crypto.randomUUID()}`;
         const socket = (window as any).__inventorySocket;
         let reservationHeld = false;
         let orderCreated = false;
@@ -174,13 +178,13 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
             const { deliveryPin, queuedOffline } = result;
             const finalTotal = total + data.tip;
 
-            if (!queuedOffline) {
-                toast.success(
-                    `Pedido ${orderId} en espera · Total: $${finalTotal.toFixed(2)}. Pasa a caja cuando almacén lo marque listo.${deliveryPin ? ` PIN de entrega: ${deliveryPin}.` : ''}`,
-                    'Pedido generado',
-                    8000
-                );
-            }
+            toast.success(
+                queuedOffline
+                    ? `Pedido ${orderId} guardado localmente · Total: $${finalTotal.toFixed(2)}. Se sincronizará al recuperar conexión.`
+                    : `Pedido ${orderId} en espera · Total: $${finalTotal.toFixed(2)}. Pasa a caja cuando almacén lo marque listo.${deliveryPin ? ` PIN de entrega: ${deliveryPin}.` : ''}`,
+                queuedOffline ? 'Pedido guardado sin conexión' : 'Pedido generado',
+                8000
+            );
             setStep('cart');
             onClose();
         } catch (err) {

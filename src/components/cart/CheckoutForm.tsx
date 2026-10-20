@@ -71,8 +71,8 @@ export function CheckoutForm({ formData, onChange, userRole, onClose, isLoggedIn
                         Entrega
                     </label>
                     <div style={{ display: 'flex', gap: '5px' }}>
-                        {(['piso', 'patio', 'repartidor'] as const).map(method => {
-                            const labels: Record<string, string> = { piso: '📦 Piso/Caja', patio: '🏗️ Carga/Patio', repartidor: '🛵 Repartidor' };
+                        {(['pickup', 'patio', 'repartidor'] as const).map(method => {
+                            const labels: Record<string, string> = { pickup: 'Recoger en tienda', patio: 'Recoger en patio', repartidor: 'Entrega por repartidor' };
                             return (
                                 <button
                                     key={method}
@@ -176,7 +176,7 @@ export function CheckoutForm({ formData, onChange, userRole, onClose, isLoggedIn
                 <h3 className={styles.checkoutTitle} style={{ margin: 0 }}>Datos de Cliente</h3>
                 {isStaff && (
                     <button
-                        onClick={() => set({ name: 'Cliente Mostrador', phone: '0000000000', address: 'Mostrador', deliveryMethod: 'piso' })}
+                        onClick={() => set({ name: 'Cliente Mostrador', phone: '0000000000', address: 'Mostrador', deliveryMethod: 'pickup' })}
                         className="bg-zinc-800 text-white text-xs px-3 py-1 rounded-full font-bold hover:bg-zinc-700 transition"
                     >
                         ⚡ Venta Rápida
@@ -199,12 +199,15 @@ export function CheckoutForm({ formData, onChange, userRole, onClose, isLoggedIn
                     onChange={e => set({ phone: e.target.value })}
                     className={styles.formInput}
                 />
-                <textarea
-                    placeholder="Dirección de Entrega Completa (Calle, Num, Ref)"
-                    value={formData.address}
-                    onChange={e => set({ address: e.target.value })}
-                    className={styles.formTextarea}
-                />
+                {formData.deliveryMethod === 'repartidor' && (
+                    <textarea
+                        placeholder="Dirección de entrega completa (calle, número y referencias)"
+                        value={formData.address}
+                        onChange={e => set({ address: e.target.value })}
+                        className={styles.formTextarea}
+                        required
+                    />
+                )}
 
                 {/* ── Facturación CFDI ────────────────────────────── */}
                 <label className={styles.invoiceLabel}>
@@ -306,7 +309,7 @@ export function CartFooter({
                         onClick={onConfirm}
                         className={`bunkker-btn ${styles.confirmBtn}`}
                     >
-                        {isProcessing ? 'PROCESANDO...' : 'GENERAR PEDIDO EN ESPERA'} <Truck size={20} />
+                        {isProcessing ? 'PROCESANDO...' : 'ENCARGAR PEDIDO'} <Truck size={20} />
                     </button>
                 </div>
             )}
