@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "destination": "usb",
+  "usbPath": "D:/BUNKKER_BACKUPS",
+  "frequencyMinutes": 120,
+  "retentionDays": 30,
+  "region": "us-central1",
+  "encryptAES256": true,
+  "autoSyncOnCut": true,
+  "lastBackupAt": null,
+  "lastBackupSize": null,
+  "lastBackupHash": null
+}
