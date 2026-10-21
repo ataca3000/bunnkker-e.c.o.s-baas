@@ -459,12 +459,27 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const cookieStore = await cookies();
-  cookieStore.delete('msj-session');
-  cookieStore.delete('msj-role');
-  cookieStore.delete('msj-role-sig');
-  cookieStore.delete('msj-worker-vip');
-  cookieStore.delete('msj-worker-vip-sig');
+  try {
+    const cookieStore = await cookies();
+    cookieStore.delete('msj-session');
+    cookieStore.delete('msj-role');
+    cookieStore.delete('msj-role-sig');
+    cookieStore.delete('msj-worker-vip');
+    cookieStore.delete('msj-worker-vip-sig');
+    cookieStore.delete('admincom_session');
+  } catch {
+    // Si se ejecuta en contexto sin async request store (ej. unit tests), continuamos limpiando en el response
+  }
   
-  return NextResponse.json({ success: true });
+  const response = NextResponse.json({ success: true });
+  response.cookies.delete('msj-session');
+  response.cookies.delete('msj-role');
+  response.cookies.delete('msj-role-sig');
+  response.cookies.delete('msj-worker-vip');
+  response.cookies.delete('msj-worker-vip-sig');
+  response.cookies.delete('admincom_session');
+
+  return response;
 }
+
+

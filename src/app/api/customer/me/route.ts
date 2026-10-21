@@ -21,7 +21,7 @@ async function resolveCustomerId(req: NextRequest): Promise<string | null> {
         if (!candidate) continue;
         try {
             const { payload } = await jwtVerify(candidate, JWT_SECRET);
-            if (payload.role === 'customer' && payload.uid) {
+            if ((payload.role === 'customer' || payload.role === 'client') && payload.uid) {
                 return payload.uid as string;
             }
         } catch {
@@ -29,7 +29,7 @@ async function resolveCustomerId(req: NextRequest): Promise<string | null> {
         }
     }
 
-    if (msjSession && msjRole === 'client' && msjSig) {
+    if (msjSession && (msjRole === 'client' || msjRole === 'customer') && msjSig) {
         if (verifyRoleSignature(msjRole, msjSession, msjSig)) {
             return msjSession;
         }

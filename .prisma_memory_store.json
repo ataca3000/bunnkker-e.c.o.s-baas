@@ -182,6 +182,53 @@
       "phone": "5599887766",
       "pin": "1234",
       "name": "Test User"
+    },
+    {
+      "id": "af1bd6f3-82cd-46fe-a330-2b9600c570dd",
+      "tenantId": "default",
+      "createdAt": "2026-10-21T20:51:02.354Z",
+      "name": "Victima Legítima",
+      "email": "victim_1792615862351@test.com",
+      "phone": "5515862351",
+      "pin": "1234"
+    },
+    {
+      "id": "8f0d1747-141a-4eac-bbdc-4313803aad79",
+      "tenantId": "default",
+      "createdAt": "2026-10-21T20:51:02.416Z",
+      "name": "Usuario Valido",
+      "email": "user_ok_1792615862416@test.com",
+      "phone": "5515862416",
+      "pin": "CORRECT_PASS"
+    },
+    {
+      "id": "4b40315b-3386-43a9-b785-fdaaf8f85623",
+      "tenantId": "default",
+      "createdAt": "2026-10-21T20:51:02.480Z",
+      "name": "Nuevo Cliente Bunkker",
+      "email": "new_1792615862473@test.com",
+      "phone": "006e65775f31",
+      "pin": "new_pass_4321",
+      "address": "Calle 10 #40",
+      "rfc": null
+    },
+    {
+      "id": "c659be7a-56f7-4918-a260-4799be54f4a6",
+      "tenantId": "default",
+      "createdAt": "2026-10-21T20:51:41.827Z",
+      "name": "Victima Legítima",
+      "email": "victim_1792615901822@test.com",
+      "phone": "5515901822",
+      "pin": "1234"
+    },
+    {
+      "id": "ff06a999-a233-4f8b-b9d4-c8e9b8ac611f",
+      "tenantId": "default",
+      "createdAt": "2026-10-21T20:51:41.854Z",
+      "name": "Usuario Valido",
+      "email": "user_ok_1792615901854@test.com",
+      "phone": "5515901854",
+      "pin": "CORRECT_PASS"
     }
   ],
   "order": [

@@ -164,7 +164,7 @@ export async function POST(request: NextRequest) {
                 if (!cand) continue;
                 try {
                     const { payload } = await jwtVerify(cand, CUSTOMER_JWT_SECRET);
-                    if (payload.role === 'customer' && typeof payload.uid === 'string') {
+                    if ((payload.role === 'customer' || payload.role === 'client') && typeof payload.uid === 'string') {
                         authenticatedCustomerId = payload.uid;
                         break;
                     }
@@ -177,7 +177,7 @@ export async function POST(request: NextRequest) {
                 const sessionVal = request.cookies.get('msj-session')?.value || headerSession;
                 const roleVal = request.cookies.get('msj-role')?.value || headerRole;
                 const sigVal = request.cookies.get('msj-role-sig')?.value || headerSig;
-                if (sessionVal && roleVal === 'client' && sigVal && verifyRoleSignature(roleVal, sessionVal, sigVal)) {
+                if (sessionVal && (roleVal === 'client' || roleVal === 'customer') && sigVal && verifyRoleSignature(roleVal, sessionVal, sigVal)) {
                     authenticatedCustomerId = sessionVal;
                 }
             }

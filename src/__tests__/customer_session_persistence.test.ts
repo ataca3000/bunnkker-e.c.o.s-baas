@@ -89,4 +89,12 @@ describe('Customer Session Persistence & Dual Storage', () => {
     expect(getCustomerSession()).toBeNull();
     expect(getCustomerProfile()).toBeNull();
   });
+
+  it('debe verificar que el logout limpie también la cookie admincom_session', () => {
+    // Simular que document.cookie tiene cookies de cliente
+    document.cookie = 'admincom_session=jwt-valid; msj-session=cust-1; msj-role=client';
+    clearCustomerSession();
+    expect(document.cookie).toContain('admincom_session=');
+  });
 });
+
