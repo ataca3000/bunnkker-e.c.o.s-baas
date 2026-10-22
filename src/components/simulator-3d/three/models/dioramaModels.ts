@@ -3397,7 +3397,8 @@ export function createNeonDataArcBeam(
   start: THREE.Vector3,
   end: THREE.Vector3,
   arcHeight: number = 3.6,
-  color: number = 0x38bdf8
+  color: number = 0x38bdf8,
+  label?: string
 ): {
   group: THREE.Group;
   curve: THREE.CatmullRomCurve3;
@@ -3416,29 +3417,82 @@ export function createNeonDataArcBeam(
     end.clone(),
   ]);
 
-  // Translucent glowing neon tube
-  const tubeGeo = new THREE.TubeGeometry(curve, 36, 0.022, 6, false);
+  // Core neon tube
+  const tubeGeo = new THREE.TubeGeometry(curve, 64, 0.055, 8, false);
   const tubeMat = new THREE.MeshStandardMaterial({
     color,
     emissive: color,
-    emissiveIntensity: 0.9,
-    transparent: true,
-    opacity: 0.75,
-    roughness: 0.2,
+    emissiveIntensity: 1.6,
+    roughness: 0.1,
+    metalness: 0.2,
   });
   const tubeMesh = new THREE.Mesh(tubeGeo, tubeMat);
   group.add(tubeMesh);
 
-  // Moving glowing pulse bead
-  const beadGeo = new THREE.SphereGeometry(0.12, 12, 12);
+  // Outer additive glowing aura (halo neón para máxima diferenciación y contraste)
+  const auraGeo = new THREE.TubeGeometry(curve, 48, 0.11, 8, false);
+  const auraMat = new THREE.MeshBasicMaterial({
+    color,
+    transparent: true,
+    opacity: 0.28,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+  });
+  const auraMesh = new THREE.Mesh(auraGeo, auraMat);
+  group.add(auraMesh);
+
+  // Moving glowing pulse bead (aumentado para mayor visibilidad y diferenciación)
+  const beadGeo = new THREE.SphereGeometry(0.22, 16, 16);
   const beadMat = new THREE.MeshBasicMaterial({
     color: 0xffffff,
     transparent: true,
-    opacity: 0.95,
+    opacity: 0.98,
   });
   const pulseBead = new THREE.Mesh(beadGeo, beadMat);
   pulseBead.position.copy(start);
   group.add(pulseBead);
+
+  // Floating state badge label at apex
+  if (label) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 380;
+    canvas.height = 80;
+    const ctx = canvas.getContext('2d')!;
+
+    // Pill background
+    const hexColor = '#' + color.toString(16).padStart(6, '0');
+    ctx.fillStyle = 'rgba(10, 15, 29, 0.94)';
+    ctx.strokeStyle = hexColor;
+    ctx.lineWidth = 4;
+    if (ctx.roundRect) {
+      ctx.beginPath();
+      ctx.roundRect(4, 4, 372, 72, 20);
+      ctx.fill();
+      ctx.stroke();
+    } else {
+      ctx.fillRect(4, 4, 372, 72);
+      ctx.strokeRect(4, 4, 372, 72);
+    }
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 22px "Plus Jakarta Sans", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, 190, 40);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    const spriteMat = new THREE.SpriteMaterial({
+      map: texture,
+      transparent: true,
+      depthTest: false,
+    });
+    const labelSprite = new THREE.Sprite(spriteMat);
+    labelSprite.position.set(midX, midY + 0.45, midZ);
+    labelSprite.scale.set(2.4, 0.52, 1.0);
+    group.add(labelSprite);
+  }
 
   return { group, curve, pulseBead };
 }

@@ -180,9 +180,52 @@ export const BunkkerErpHud: React.FC<BunkkerErpHudProps> = ({
               </div>
             </div>
 
+            {/* Leyenda de Tuberías y Estados Circulatorios (N3 Protocol) */}
+            <div className="p-2 rounded-xl bg-slate-900/90 border border-cyan-500/30 space-y-1.5">
+              <div className="text-[10px] font-black text-cyan-300 uppercase tracking-wider flex items-center justify-between">
+                <span>⚡ Tuberías & Estados Neón</span>
+                <span className="text-[9px] text-slate-400 font-mono">8 Fases E2E</span>
+              </div>
+              <div className="grid grid-cols-2 gap-1 text-[9px] font-bold">
+                <div className="flex items-center gap-1.5 px-1.5 py-1 rounded bg-slate-950/80 border border-lime-500/40 text-lime-300">
+                  <span className="w-2 h-2 rounded-full bg-[#84cc16] shadow-[0_0_8px_#84cc16]"></span>
+                  <span className="truncate">1. Auto-Pedido QR</span>
+                </div>
+                <div className="flex items-center gap-1.5 px-1.5 py-1 rounded bg-slate-950/80 border border-cyan-500/40 text-cyan-300">
+                  <span className="w-2 h-2 rounded-full bg-[#00f0ff] shadow-[0_0_8px_#00f0ff]"></span>
+                  <span className="truncate">2. Bloqueo & Cobro</span>
+                </div>
+                <div className="flex items-center gap-1.5 px-1.5 py-1 rounded bg-slate-950/80 border border-sky-500/40 text-sky-300">
+                  <span className="w-2 h-2 rounded-full bg-[#06b6d4] shadow-[0_0_8px_#06b6d4]"></span>
+                  <span className="truncate">3. Racks Almacén</span>
+                </div>
+                <div className="flex items-center gap-1.5 px-1.5 py-1 rounded bg-slate-950/80 border border-fuchsia-500/40 text-fuchsia-300">
+                  <span className="w-2 h-2 rounded-full bg-[#d946ef] shadow-[0_0_8px_#d946ef]"></span>
+                  <span className="truncate">4. Mesa Packing</span>
+                </div>
+                <div className="flex items-center gap-1.5 px-1.5 py-1 rounded bg-slate-950/80 border border-orange-500/40 text-orange-300">
+                  <span className="w-2 h-2 rounded-full bg-[#f97316] shadow-[0_0_8px_#f97316]"></span>
+                  <span className="truncate">5A. Carga Patio</span>
+                </div>
+                <div className="flex items-center gap-1.5 px-1.5 py-1 rounded bg-slate-950/80 border border-violet-500/40 text-violet-300">
+                  <span className="w-2 h-2 rounded-full bg-[#8b5cf6] shadow-[0_0_8px_#8b5cf6]"></span>
+                  <span className="truncate">5B. Ruta Reparto</span>
+                </div>
+                <div className="flex items-center gap-1.5 px-1.5 py-1 rounded bg-slate-950/80 border border-emerald-500/40 text-emerald-300">
+                  <span className="w-2 h-2 rounded-full bg-[#10b981] shadow-[0_0_8px_#10b981]"></span>
+                  <span className="truncate">6. Firma PoD OK</span>
+                </div>
+                <div className="flex items-center gap-1.5 px-1.5 py-1 rounded bg-slate-950/80 border border-amber-500/40 text-amber-300">
+                  <span className="w-2 h-2 rounded-full bg-[#fbbf24] shadow-[0_0_8px_#fbbf24]"></span>
+                  <span className="truncate">🧾 Ticket Validado</span>
+                </div>
+              </div>
+            </div>
+
             {/* Live Orders Scoreboard */}
             <div className="space-y-2">
               <div className="text-[11px] font-bold text-slate-300 uppercase tracking-wider flex items-center justify-between">
+                <span>Pizarra de Estados en Tiempo Real</span>
                 <span>Pizarra de Estados en Tiempo Real</span>
                 <span className="text-[10px] text-slate-400">{orders.length} pedidos</span>
               </div>

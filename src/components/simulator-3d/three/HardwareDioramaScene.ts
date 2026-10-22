@@ -1034,21 +1034,25 @@ export class HardwareDioramaScene {
     const clientePos = new THREE.Vector3(-15.0, 1.8, 8.5);
     const bunkkerPos = new THREE.Vector3(15.5, 3.8, -9.5);
     const almacenPos = new THREE.Vector3(-14.0, 3.2, -11.0);
+    const surtidoPos = new THREE.Vector3(0.0, 2.2, -0.5);
     const cajaPos = new THREE.Vector3(-4.5, 2.2, 10.5);
     const cargaPos = new THREE.Vector3(-14.0, 2.2, -10.5);
     const domicilioPos = new THREE.Vector3(25.0, 2.0, 9.5);
 
+    // Conexiones de alta diferenciación cromática según los estratos del sistema Bunkker
     const arcsConfig = [
-      { id: 'cli-bunkker', start: clientePos, end: bunkkerPos, height: 6.8, color: 0x00f0ff },
-      { id: 'bunkker-alm', start: bunkkerPos, end: almacenPos, height: 6.2, color: 0x38bdf8 },
-      { id: 'alm-carga', start: almacenPos, end: cargaPos, height: 3.5, color: 0xeab308 },
-      { id: 'bunkker-caja', start: bunkkerPos, end: cajaPos, height: 6.0, color: 0x10b981 },
-      { id: 'caja-carga', start: cajaPos, end: cargaPos, height: 5.6, color: 0x34d399 },
-      { id: 'bunkker-dom', start: bunkkerPos, end: domicilioPos, height: 5.8, color: 0xf97316 },
+      { id: 'cli-bunkker', start: clientePos, end: bunkkerPos, height: 7.2, color: 0x84cc16, label: '📱 1. AUTO-PEDIDO QR' },
+      { id: 'bunkker-caja', start: bunkkerPos, end: cajaPos, height: 6.4, color: 0x00f0ff, label: '💳 2. BLOQUEO WAL & COBRO' },
+      { id: 'bunkker-alm', start: bunkkerPos, end: almacenPos, height: 6.5, color: 0x06b6d4, label: '📦 3. SURTIDO EN ESTANTES' },
+      { id: 'alm-surtido', start: almacenPos, end: surtidoPos, height: 4.8, color: 0xd946ef, label: '🏷️ 4. CONTROL & ETIQUETADO' },
+      { id: 'surtido-carga', start: surtidoPos, end: cargaPos, height: 5.2, color: 0xf97316, label: '🚜 5A. PATIO & MONTACARGAS' },
+      { id: 'surtido-dom', start: surtidoPos, end: domicilioPos, height: 5.8, color: 0x8b5cf6, label: '🚛 5B. RUTA REPARTO' },
+      { id: 'dom-bunkker', start: domicilioPos, end: bunkkerPos, height: 6.8, color: 0x10b981, label: '✍️ 6. FIRMA PoD / CIERRE' },
+      { id: 'caja-carga', start: cajaPos, end: cargaPos, height: 5.6, color: 0xfbbf24, label: '🧾 TICKET DIGITAL VALIDADO' },
     ];
 
     arcsConfig.forEach((cfg) => {
-      const beam = createNeonDataArcBeam(cfg.start, cfg.end, cfg.height, cfg.color);
+      const beam = createNeonDataArcBeam(cfg.start, cfg.end, cfg.height, cfg.color, cfg.label);
       this.scene.add(beam.group);
       this.erpBeams.push({
         id: cfg.id,
@@ -1225,23 +1229,23 @@ export class HardwareDioramaScene {
       activeSignalEmoji: '📲',
     });
 
-    // Step 1: Client phone -> Bunkker NOC
-    this.spawnErpSignalPacket(clientePos, bunkkerPos, 6.8, '📲', 'PED-01: LEVANTA PEDIDO', '#00f0ff', 0.5, () => {
-      // Step 2: Bunkker -> Almacén
+    // Step 1: Client phone -> Bunkker NOC (Verde Lima Neón)
+    this.spawnErpSignalPacket(clientePos, bunkkerPos, 6.8, '📱', '1. AUTO-PEDIDO QR', '#84cc16', 0.5, () => {
+      // Step 2: Bunkker -> Almacén (Turquesa Bodega)
       this.updateErpOrderStatus('ORD-01', 'preparando', '2/5: Bunkker asigna a Almacén. Preparando bultos en racks.', 0.4, '📦');
-      this.spawnErpSignalPacket(bunkkerPos, almacenPos, 6.2, '📦', 'PREPARAR EN ALMACÉN', '#38bdf8', 0.5, () => {
+      this.spawnErpSignalPacket(bunkkerPos, almacenPos, 6.2, '📦', '3. SURTIDO EN ESTANTES', '#06b6d4', 0.5, () => {
         // Physical box launched on conveyor towards dock/carga
         this.launchBox('carga', 'Cemento Portland 50kg', '#ORD-01', 'Carga Pesada & Obra');
 
-        // Step 3: Almacén -> Carga + Notification to Client Phone
+        // Step 3: Almacén -> Carga + Notification to Client Phone (Ámbar)
         setTimeout(() => {
           this.updateErpOrderStatus('ORD-01', 'listo_para_cobro', '3/5: Pedido listo en Carga. Notificación al cliente: pase a pagar en Caja.', 0.65, '🔔');
-          this.spawnErpSignalPacket(cargaPos, clientePos, 6.0, '🔔', 'NOTIF: PASE A CAJA', '#f59e0b', 0.5, () => {
-            // Step 4: Client goes to Caja & Pays
+          this.spawnErpSignalPacket(cargaPos, clientePos, 6.0, '🔔', 'NOTIF: PASE A CAJA', '#fbbf24', 0.5, () => {
+            // Step 4: Client goes to Caja & Pays (Verde Validación)
             setTimeout(() => {
               this.updateErpOrderStatus('ORD-01', 'en_carga', '4/5: Cliente paga en Caja. Caja emite ticket y valida en ERP.', 0.85, '💳');
               this.callbacks.onSoundTrigger('cash');
-              this.spawnErpSignalPacket(cajaPos, cargaPos, 5.6, '💳', 'TICKET & COBRO VALIDADO', '#10b981', 0.5, () => {
+              this.spawnErpSignalPacket(cajaPos, cargaPos, 5.6, '🧾', 'TICKET & COBRO VALIDADO', '#22c55e', 0.5, () => {
                 // Step 5: Cargo Operator validates ticket & hands over goods
                 this.updateErpOrderStatus('ORD-01', 'completado_ok', '5/5: Operador de carga entrega mercancía en patio. Pedido cerrado en OK.', 1.0, '✅');
                 this.spawnCelebrationMilestone('carga', 'Cemento Portland 50kg', '#ORD-01', cargaPos);
@@ -1280,17 +1284,17 @@ export class HardwareDioramaScene {
       activeSignalEmoji: '📱',
     });
 
-    this.spawnErpSignalPacket(clientePos, bunkkerPos, 6.8, '📱', 'PED-02: ORDEN DOMICILIO', '#f59e0b', 0.5, () => {
+    this.spawnErpSignalPacket(clientePos, bunkkerPos, 6.8, '📱', '1. AUTO-PEDIDO DOMICILIO', '#84cc16', 0.5, () => {
       // Step 2: Repartidor prepara en Almacén
       this.updateErpOrderStatus('ORD-02', 'preparando', '2/4: Repartidor prepara y empaca el pedido en almacén.', 0.4, '📦');
-      this.spawnErpSignalPacket(bunkkerPos, almacenPos, 6.2, '📦', 'REPARTIDOR PREPARA', '#fb923c', 0.5, () => {
+      this.spawnErpSignalPacket(bunkkerPos, almacenPos, 6.2, '📦', '3. REPARTIDOR PREPARA', '#06b6d4', 0.5, () => {
         // Physical box launched to Domicilio
         this.launchBox('domicilio', 'Taladro Percutor 20V', '#ORD-02', 'Herramientas Eléctricas');
 
-        // Step 3: En ruta
+        // Step 3: En ruta (Violeta Ruta)
         setTimeout(() => {
           this.updateErpOrderStatus('ORD-02', 'en_ruta', '3/4: Repartidor en ruta con camioneta hacia domicilio.', 0.7, '🚚');
-          this.spawnErpSignalPacket(entregasPos, domicilioPos, 4.5, '🚚', 'EN RUTA A DOMICILIO', '#f97316', 0.5, () => {
+          this.spawnErpSignalPacket(entregasPos, domicilioPos, 4.5, '🚛', '5B. RUTA REPARTO', '#8b5cf6', 0.5, () => {
             // Step 4: Llega a domicilio, cliente recibe en bateo residencial, firma digital
             setTimeout(() => {
               this.updateErpOrderStatus('ORD-02', 'completado_ok', '4/4: Entrega en bateo residencial. Repartidor toma firma digital y regresa: OK!', 1.0, '✍️');
@@ -1299,8 +1303,8 @@ export class HardwareDioramaScene {
               this.spawnCelebrationMilestone('domicilio', 'Taladro Percutor 20V', '#ORD-02', domicilioPos);
               this.callbacks.onSoundTrigger('success');
 
-              // Confirmation pulse back to Bunkker
-              this.spawnErpSignalPacket(domicilioPos, bunkkerPos, 6.5, '✍️', 'FIRMA CONFIRMADA OK', '#a855f7', 0.5);
+              // Confirmation pulse back to Bunkker (Verde Esmeralda Cierre)
+              this.spawnErpSignalPacket(domicilioPos, bunkkerPos, 6.5, '✍️', '6. FIRMA PoD / CIERRE', '#10b981', 0.5);
             }, 600);
           });
         }, 1400);
@@ -1330,15 +1334,15 @@ export class HardwareDioramaScene {
       activeSignalEmoji: '⚡',
     });
 
-    // Rapid pulse Caja -> Bunkker
-    this.spawnErpSignalPacket(cajaPos, bunkkerPos, 6.0, '⚡', 'PED-03: CAJA EXPRÉS', '#10b981', 0.55, () => {
+    // Rapid pulse Caja -> Bunkker (Cian Eléctrico Bloqueo & Cobro)
+    this.spawnErpSignalPacket(cajaPos, bunkkerPos, 6.0, '💳', '2. BLOQUEO WAL & COBRO', '#00f0ff', 0.55, () => {
       // Launch box down conveyor into Bateo en Caja
       this.launchBox('caja', 'Caja Herramientas 128 Pzs', '#ORD-03', 'Herramientas Eléctricas');
       this.callbacks.onSoundTrigger('scan');
 
-      // Response Bunkker -> Caja
+      // Response Bunkker -> Caja (Verde Validación)
       setTimeout(() => {
-        this.spawnErpSignalPacket(bunkkerPos, cajaPos, 6.0, '✅', 'VALIDADO & COBRADO', '#22c55e', 0.55, () => {
+        this.spawnErpSignalPacket(bunkkerPos, cajaPos, 6.0, '🧾', 'TICKET VALIDADO OK', '#22c55e', 0.55, () => {
           this.updateErpOrderStatus('ORD-03', 'completado_ok', '3/3: Cajero valida en mostrador, cobra y entrega en Bateo en Caja. OK!', 1.0, '✅');
           this.callbacks.onSoundTrigger('cash');
           this.spawnCelebrationMilestone('caja', 'Caja Herramientas 128 Pzs', '#ORD-03', cajaPos);
