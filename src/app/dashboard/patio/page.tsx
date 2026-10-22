@@ -26,10 +26,15 @@ export default function PatioDashboard() {
     const [deconstructingOrder, setDeconstructingOrder] = useState<any | null>(null);
     const [onlyMyLoads, setOnlyMyLoads] = useState(false);
 
-    // 1. Cargas pendientes de surtir en Almacén
+    // 1. Cargas pendientes de surtir en Almacén destinadas a Patio / Bahía de Carga
     const pendingLoads = useMemo(() => {
         return orders.filter(o => {
             if (onlyMyLoads && o.loadedByUid && o.loadedByUid !== profile?.uid) return false;
+            // Exclusivo para pedidos de Patio / Carga pesada (no repartidor ni mostrador general)
+            const isPatioOrder = o.deliveryType === 'PATIO' || (o as any).deliveryMethod === 'patio' || (o as any).selectedDeliveryLocation === 'carga';
+            const isDelivery = o.deliveryType === 'DELIVERY' || (o as any).deliveryMethod === 'repartidor';
+            if (!isPatioOrder || isDelivery) return false;
+
             const validStatus = ['READY_TO_SHIP', 'paid', 'pending_payment', 'pending_confirmation', 'paid_pending_delivery', 'PREPARANDO', 'READY_FOR_PICKUP', 'NIGHT_QUEUE', 'PENDIENTE_LLEGADA'].includes(o.status);
             const notLoaded = !(o as any).isLoaded && !['DELIVERED', 'READY_FOR_PICKUP_PAID', 'OUT_FOR_DELIVERY', 'COMPLETED'].includes(o.status);
             const custName = o.customer?.name || o.customerName || 'Cliente';
@@ -48,7 +53,7 @@ export default function PatioDashboard() {
         return orders.filter(o => {
             if (onlyMyLoads && o.loadedByUid !== profile?.uid && (o as any).deliveryProof?.deliveredByUid !== profile?.uid) return false;
             const isLoaded = (o as any).isLoaded;
-            const isPatioLocation = o.deliveryType === 'PATIO' || (o as any).selectedDeliveryLocation === 'carga';
+            const isPatioLocation = (o.deliveryType === 'PATIO' || (o as any).deliveryMethod === 'patio' || (o as any).selectedDeliveryLocation === 'carga') && o.deliveryType !== 'DELIVERY' && (o as any).deliveryMethod !== 'repartidor';
             const notDelivered = o.status !== 'DELIVERED';
             const custName = o.customer?.name || o.customerName || 'Cliente';
             const matchesSearch = o.id.toLowerCase().includes(searchTerm.toLowerCase()) || 

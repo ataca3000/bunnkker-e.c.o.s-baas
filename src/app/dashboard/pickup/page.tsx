@@ -20,10 +20,11 @@ export default function PickupDashboard() {
     const [pickingOrder, setPickingOrder] = useState<any | null>(null);
     const [deconstructingOrder, setDeconstructingOrder] = useState<any | null>(null);
     
-    // Filtrar pedidos que sean para recoger en mostrador/tienda (excluyendo patio de carga pesada)
+    // Filtrar pedidos que sean para recoger en mostrador/tienda (excluyendo patio de carga pesada y repartidor a domicilio)
     const orders = allOrders.filter(o => 
         (['tienda', 'pickup'].includes(o.deliveryMethod || '') || ['PICKUP', 'LOCAL'].includes(o.deliveryType || '')) &&
-        o.deliveryMethod !== 'patio' && o.deliveryType !== 'PATIO'
+        o.deliveryMethod !== 'patio' && o.deliveryType !== 'PATIO' &&
+        o.deliveryMethod !== 'repartidor' && o.deliveryType !== 'DELIVERY'
     );
 
     const markAsDelivered = async (orderId: string) => {

@@ -16,12 +16,13 @@ const LoadingFallback = () => (
 
 // Dynamic Imports for Code Splitting
 const SuperAdminDashboard = dynamic(() => import('@/components/dashboard/SuperAdminDashboard'), { loading: () => <LoadingFallback /> });
-// Los roles operativos usan sus consolas completas y funcionales, no resúmenes.
+// Consolas operativas designadas para cada rol (entorno personal e independiente)
 const SalesDashboard = dynamic(() => import('@/app/dashboard/sales/page'), { loading: () => <LoadingFallback /> });
 const InventoryDashboard = dynamic(() => import('@/app/dashboard/inventory/page'), { loading: () => <LoadingFallback /> });
-const CargaDescargaDashboardWorker = dynamic(() => import('@/components/dashboard/CargaDescargaDashboardWorker'), { loading: () => <LoadingFallback /> });
+const PatioDashboard = dynamic(() => import('@/app/dashboard/patio/page'), { loading: () => <LoadingFallback /> });
+const DeliveryDashboard = dynamic(() => import('@/app/dashboard/delivery/page'), { loading: () => <LoadingFallback /> });
+const PickupDashboard = dynamic(() => import('@/app/dashboard/pickup/page'), { loading: () => <LoadingFallback /> });
 const MarketingDashboard = dynamic(() => import('@/app/dashboard/marketing/page'), { loading: () => <LoadingFallback /> });
-const DeliveryDashboardWorker = dynamic(() => import('@/components/dashboard/DeliveryDashboardWorker'), { loading: () => <LoadingFallback /> });
 
 export default function DashboardRouter() {
     const { orders, products, maintenanceBalance, ownerBalance, siteConfig, formatCurrency, startLoading, completeLoading } = useCart();
@@ -46,28 +47,24 @@ export default function DashboardRouter() {
     const userName = profile?.displayName?.split(' ')[0] || 'Trabajador';
     const role     = profile?.role || 'superadmin';
 
-    /* ── Role routing ── */
+    /* ── Role routing: cada rol tiene su copia de dashboard designado, personal e independiente ── */
     if (role === 'sales' || role === 'billing') {
         return <SalesDashboard />;
     }
     if (role === 'inventory') {
         return <InventoryDashboard />;
     }
-    if (role === 'carga_descarga') {
-        return (
-            <CargaDescargaDashboardWorker
-                userName={userName} greeting={greeting}
-                orders={orders} startLoading={startLoading}
-                completeLoading={completeLoading} profile={profile}
-                signOut={signOut} formatCurrency={formatCurrency}
-            />
-        );
+    if (role === 'carga_descarga' || role === 'patio') {
+        return <PatioDashboard />;
+    }
+    if (role === 'driver' || role === 'delivery') {
+        return <DeliveryDashboard />;
+    }
+    if (role === 'pickup' || role === 'mostrador') {
+        return <PickupDashboard />;
     }
     if (role === 'marketing') {
         return <MarketingDashboard />;
-    }
-    if (role === 'driver') {
-        return <DeliveryDashboardWorker userName={userName} greeting={greeting} orders={orders} signOut={signOut} />;
     }
 
     /* ── Default: Super Admin ── */

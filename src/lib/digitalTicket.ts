@@ -37,6 +37,7 @@ export interface DigitalTicket {
   loadedBy?: string | null;
   validationSerial?: string;
   deliveryType?: 'PATIO' | 'CAJA';
+  notes?: string[];
 }
 
 const STORAGE_PREFIX = '_bunkker_tickets_';
@@ -171,5 +172,27 @@ export function updateTicketFacturaStatus(cajaId: string, ticketId: string, rfc:
       return true;
     }
   } catch (e) {}
+  return false;
+}
+
+export function addNoteToDigitalTicket(cajaId: string, ticketId: string, noteText: string): boolean {
+  if (!noteText || !noteText.trim()) return false;
+  const safeCaja = cajaId || 'caja_1';
+  const storageKey = `${STORAGE_PREFIX}${safeCaja}`;
+  try {
+    const raw = localStorage.getItem(storageKey);
+    if (!raw) return false;
+    const tickets: DigitalTicket[] = JSON.parse(raw);
+    const index = tickets.findIndex(t => t.id === ticketId || t.orderId === ticketId);
+    if (index !== -1) {
+      const currentNotes = tickets[index].notes || [];
+      const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      tickets[index].notes = [...currentNotes, `[${timestamp}] ${noteText.trim()}`];
+      localStorage.setItem(storageKey, JSON.stringify(tickets));
+      return true;
+    }
+  } catch (e) {
+    console.error('Error adding note to ticket:', e);
+  }
   return false;
 }

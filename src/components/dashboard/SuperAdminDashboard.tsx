@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useMemo, useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { AreaChart, Area, BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Users, FileText, ShieldCheck, CheckCircle, Maximize2, Share2, Map, TrendingUp, Zap, Package, ShoppingCart, Truck, Settings, ReceiptText, BookOpen, Cloud, BarChart3, Headphones, Terminal } from 'lucide-react';
+import { Users, FileText, ShieldCheck, CheckCircle, Maximize2, Share2, Map, TrendingUp, Zap, Package, ShoppingCart, Truck, Settings, ReceiptText, BookOpen, Cloud, BarChart3, Headphones, Terminal, Store } from 'lucide-react';
 import Link from 'next/link';
 import StaffRankingWidget from '@/components/admin/StaffRankingWidget';
 import RestockAlertWidget from '@/components/admin/RestockAlertWidget';
@@ -111,23 +111,24 @@ export default function SuperAdminDashboard({
     /* ── Module categories ── */
     const isModuleActive = (id: string) => {
         if (!siteConfig?.activeModules) return true; // show all if not configured
-        // Some core modules are always active or not in the toggle list
-        if (['team', 'purchases', 'reports', 'soporte'].includes(id)) return true;
+        // Core designated operational modules are always accessible to Super Admin
+        if (['team', 'purchases', 'reports', 'soporte', 'sales', 'inventory', 'patio', 'pickup', 'delivery'].includes(id)) return true;
         return siteConfig.activeModules.includes(id);
     };
 
     const categoryAdminVentas = [
-        { id: 'sales',      title: 'Control de Ventas',  icon: <ShoppingCart size={26} />, color: '#0ea5e9', href: '/dashboard/admin/sales', desc: 'POS, corte de caja y registro de transacciones.' },
-
+        { id: 'sales',      title: 'Caja y Ventas POS',  icon: <ShoppingCart size={26} />, color: '#0ea5e9', href: '/dashboard/sales',       desc: 'Terminal POS, corte de caja, cobro y emisión de tickets.' },
         { id: 'crm',        title: 'Clientes y CRM',      icon: <Users size={26} />,         color: '#0ea5e9', href: '/dashboard/crm',         desc: 'Base de clientes y seguimiento de relaciones.' },
         { id: 'team',       title: 'Gestión de Equipo',   icon: <ShieldCheck size={26} />,   color: '#10b981', href: '/dashboard/team',         desc: 'Roles, permisos y control de personal.' },
         { id: 'users',      title: 'Usuarios y Nodos',    icon: <BookOpen size={26} />,      color: '#8b5cf6', href: '/dashboard/admin/users',  desc: 'Administración de cuentas de acceso al sistema.' },
     ].filter(m => isModuleActive(m.id));
 
     const categoryOpLog = [
-        { id: 'inventory',  title: 'Control de Inventario',  icon: <Package size={26} />,      color: '#ef4444', href: '/dashboard/inventory', desc: 'Catálogo, stock, importaciones y baúl de merma.' },
-        { id: 'purchases',  title: 'Compras y Proveedores',   icon: <ShoppingCart size={26} />, color: '#f59e0b', href: '/dashboard/purchases', desc: 'Órdenes de compra y gestión de proveedores.' },
-        { id: 'delivery',   title: 'Gestión de Entregas',     icon: <Truck size={26} />,        color: '#10b981', href: '/dashboard/delivery',  desc: 'Rutas, estado de envíos y logística de reparto.' },
+        { id: 'inventory',  title: 'Control de Inventario',  icon: <Package size={26} />,      color: '#ef4444', href: '/dashboard/inventory', desc: 'Catálogo, estantes, stock, importaciones y merma.' },
+        { id: 'patio',      title: 'Patio Carga y Descarga', icon: <Truck size={26} />,        color: '#f59e0b', href: '/dashboard/patio',     desc: 'Surtido, verificación y despacho de material pesado.' },
+        { id: 'pickup',     title: 'Mostrador y Pickup',     icon: <Store size={26} />,        color: '#8b5cf6', href: '/dashboard/pickup',    desc: 'Entrega rápida en mostrador y pedidos de tienda.' },
+        { id: 'delivery',   title: 'Gestión de Reparto',     icon: <Truck size={26} />,        color: '#10b981', href: '/dashboard/delivery',  desc: 'Rutas GPS, firma offline y pedidos a domicilio.' },
+        { id: 'purchases',  title: 'Compras y Proveedores',   icon: <ShoppingCart size={26} />, color: '#6366f1', href: '/dashboard/purchases', desc: 'Órdenes de compra y gestión de proveedores.' },
     ].filter(m => isModuleActive(m.id));
 
     const categoryMarketing = [

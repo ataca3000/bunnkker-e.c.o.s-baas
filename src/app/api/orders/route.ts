@@ -32,34 +32,8 @@ export async function GET() {
     try {
         await ensureDbColumns();
         const now = new Date();
-        const expiredOrders = await prisma.order.findMany({
-            where: {
-                expiresAt: { lte: now },
-                confirmedAt: null,
-                status: { in: ['pending_payment', 'pending_confirmation', 'NIGHT_QUEUE', 'PENDIENTE_LLEGADA', 'PREPARANDO', 'READY_TO_SHIP', 'READY_FOR_PICKUP'] }
-            },
-            select: { id: true, status: true }
-        });
-        for (const expired of expiredOrders) {
-            const cancelled = await prisma.order.updateMany({
-                where: { id: expired.id, status: expired.status, confirmedAt: null },
-                data: { status: 'cancelled', completedAt: now, rejectionReason: 'Reserva de pago vencida' }
-            });
-            if (cancelled.count === 1) {
-                await prisma.orderEvent.create({
-                    data: {
-                        orderId: expired.id,
-                        eventType: 'ORDER_EXPIRED',
-                        fromStatus: expired.status,
-                        toStatus: 'cancelled',
-                        actorId: 'SYSTEM',
-                        actorName: 'Sistema',
-                        actorRole: 'system',
-                        details: JSON.stringify({ reason: 'La reserva de stock venció a las dos horas.' })
-                    }
-                });
-            }
-        }
+        // Auto-cancellation loop removed to prevent legitimate store, patio, and delivery orders from disappearing.
+        // Orders remain active until explicitly tendered, fulfilled, or cancelled by cashier/admin.
 
         const orders = await prisma.order.findMany({
             include: { 
@@ -397,7 +371,7 @@ export async function POST(request: NextRequest) {
                             vendedorId: isCashierRequest ? null : body.vendedorId || null,
                             vendedorName: isCashierRequest ? null : body.vendedorName || null,
                             confirmedAt: isCashierRequest ? null : body.confirmedAt ? new Date(body.confirmedAt) : new Date(),
-                            expiresAt: body.expiresAt ? new Date(body.expiresAt) : isPending ? new Date(Date.now() + 30 * 60 * 1000) : null,
+                            expiresAt: body.expiresAt ? new Date(body.expiresAt) : null,
                     deliveryPin: body.deliveryPin || null,
                     deliveryLat: typeof deliveryLat === 'number' ? deliveryLat : null,
                     deliveryLng: typeof deliveryLng === 'number' ? deliveryLng : null,
