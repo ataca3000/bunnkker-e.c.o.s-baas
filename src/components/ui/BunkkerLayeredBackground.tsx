@@ -30,8 +30,8 @@ export default function BunkkerLayeredBackground() {
         };
         window.addEventListener('resize', handleResize);
 
-        // Crear 45 partículas cuánticas
-        const particleCount = 45;
+        // Partículas ultra-ligeras (sin shadowBlur para evitar consumo de CPU)
+        const particleCount = 20;
         const particles: Array<{
             x: number;
             y: number;
@@ -46,7 +46,6 @@ export default function BunkkerLayeredBackground() {
         const colors = [
             'rgba(56, 189, 248, ', // sky-400
             'rgba(14, 165, 233, ', // cyan-500
-            'rgba(99, 102, 241, ', // indigo-500
             'rgba(224, 242, 254, '  // sky-100
         ];
 
@@ -54,16 +53,36 @@ export default function BunkkerLayeredBackground() {
             particles.push({
                 x: Math.random() * width,
                 y: Math.random() * height,
-                radius: Math.random() * 2 + 0.8,
-                speedX: (Math.random() - 0.5) * 0.4,
-                speedY: -Math.random() * 0.5 - 0.1, // Flotación ascendente suave
-                alpha: Math.random() * 0.7 + 0.2,
-                alphaDelta: (Math.random() * 0.01 + 0.003) * (Math.random() > 0.5 ? 1 : -1),
+                radius: Math.random() * 1.5 + 0.8,
+                speedX: (Math.random() - 0.5) * 0.3,
+                speedY: -Math.random() * 0.4 - 0.1,
+                alpha: Math.random() * 0.5 + 0.2,
+                alphaDelta: (Math.random() * 0.008 + 0.002) * (Math.random() > 0.5 ? 1 : -1),
                 color: colors[Math.floor(Math.random() * colors.length)],
             });
         }
 
-        const render = () => {
+        let isVisible = true;
+        let lastTime = 0;
+        const fpsInterval = 1000 / 30; // Limitar a 30 FPS para máximo rendimiento de GPU/CPU
+
+        const handleVisibilityChange = () => {
+            isVisible = !document.hidden;
+            if (isVisible) {
+                lastTime = performance.now();
+                animationFrameId = requestAnimationFrame(render);
+            }
+        };
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        const render = (currentTime: number = 0) => {
+            if (!isVisible) return;
+            animationFrameId = requestAnimationFrame(render);
+
+            const elapsed = currentTime - lastTime;
+            if (elapsed < fpsInterval) return;
+            lastTime = currentTime - (elapsed % fpsInterval);
+
             ctx.clearRect(0, 0, width, height);
 
             for (let i = 0; i < particles.length; i++) {
@@ -72,7 +91,7 @@ export default function BunkkerLayeredBackground() {
                 p.y += p.speedY;
                 p.alpha += p.alphaDelta;
 
-                if (p.alpha <= 0.1 || p.alpha >= 0.85) {
+                if (p.alpha <= 0.1 || p.alpha >= 0.7) {
                     p.alphaDelta = -p.alphaDelta;
                 }
 
@@ -82,19 +101,16 @@ export default function BunkkerLayeredBackground() {
 
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-                ctx.fillStyle = `${p.color}${Math.max(0.1, Math.min(0.85, p.alpha))})`;
-                ctx.shadowBlur = 10;
-                ctx.shadowColor = 'rgba(14, 165, 233, 0.8)';
+                ctx.fillStyle = `${p.color}${Math.max(0.1, Math.min(0.7, p.alpha))})`;
                 ctx.fill();
             }
-
-            animationFrameId = requestAnimationFrame(render);
         };
 
-        render();
+        animationFrameId = requestAnimationFrame(render);
 
         return () => {
             window.removeEventListener('resize', handleResize);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
             cancelAnimationFrame(animationFrameId);
         };
     }, []);
