@@ -1,6 +1,6 @@
-import MarketingPage from '../marketing/page';
+import { redirect } from 'next/navigation';
 
 export default function DesignConsole() {
-    return <MarketingPage />;
+    redirect('/dashboard/marketing?tab=studio');
 }
 

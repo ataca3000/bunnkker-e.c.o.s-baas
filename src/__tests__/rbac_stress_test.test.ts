@@ -98,8 +98,8 @@ describe('RBAC High Concurrency & Pre-cached Logic Stress Test', () => {
     console.log(`[MUTEX TEST] ✅ Simulación Mutex de 100 piezas completada: 15 vendidas, 2 reservadas, 83 libres.`);
   });
 
-  it('should archive stress test results to lfeds mirror archivario', () => {
-    const reportPath = path.resolve(process.cwd(), 'lfeds/.agents/STRESS_TEST_REPORT.md');
+  it('should archive stress test results to .agents simulation logs', () => {
+    const reportPath = path.resolve(process.cwd(), '.agents/logs/simulations/STRESS_TEST_REPORT.md');
     const reportContent = `# Reporte de Pruebas de Estrés & Estratos RBAC (Archivario de Base)
 
 > **Fecha de Ejecución:** ${new Date().toISOString()}
