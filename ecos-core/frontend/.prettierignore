@@ -1,7 +1,0 @@
-node_modules
-dist
-build
-coverage
-*.local
-package-lock.json
-public
