@@ -37,6 +37,8 @@ export interface DigitalTicket {
   loadedBy?: string | null;
   validationSerial?: string;
   deliveryType?: 'PATIO' | 'CAJA';
+  status?: 'COMPLETADO' | 'CANCELADO';
+  cancellationReason?: string;
   notes?: string[];
 }
 
@@ -193,6 +195,30 @@ export function addNoteToDigitalTicket(cajaId: string, ticketId: string, noteTex
     }
   } catch (e) {
     console.error('Error adding note to ticket:', e);
+  }
+  return false;
+}
+
+export function cancelDigitalTicket(cajaId: string, ticketId: string, reason: string): boolean {
+  if (!reason || !reason.trim()) return false;
+  const safeCaja = cajaId || 'caja_1';
+  const storageKey = `${STORAGE_PREFIX}${safeCaja}`;
+  try {
+    const raw = localStorage.getItem(storageKey);
+    if (!raw) return false;
+    const tickets: DigitalTicket[] = JSON.parse(raw);
+    const index = tickets.findIndex(t => t.id === ticketId || t.orderId === ticketId);
+    if (index !== -1) {
+      const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      tickets[index].status = 'CANCELADO';
+      tickets[index].cancellationReason = reason.trim();
+      const currentNotes = tickets[index].notes || [];
+      tickets[index].notes = [...currentNotes, `[${timestamp} - CANCELACIÓN] Motivo: ${reason.trim()}`];
+      localStorage.setItem(storageKey, JSON.stringify(tickets));
+      return true;
+    }
+  } catch (e) {
+    console.error('Error cancelling ticket:', e);
   }
   return false;
 }

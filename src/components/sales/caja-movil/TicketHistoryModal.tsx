@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { History, Search, FileText, Printer, X, Eye, Calendar, User, DollarSign, CheckCircle2, MessageSquare, Plus, Check } from 'lucide-react';
-import { getDigitalTickets, addNoteToDigitalTicket, type DigitalTicket } from '@/lib/digitalTicket';
+import { History, Search, FileText, Printer, X, Eye, Calendar, User, DollarSign, CheckCircle2, MessageSquare, Plus, Check, Ban, AlertOctagon } from 'lucide-react';
+import { getDigitalTickets, addNoteToDigitalTicket, cancelDigitalTicket, type DigitalTicket } from '@/lib/digitalTicket';
 
 interface TicketHistoryModalProps {
     isOpen: boolean;
@@ -16,6 +16,8 @@ export function TicketHistoryModal({ isOpen, onClose, cajaId = 'caja_1', onSelec
     const [searchTerm, setSearchTerm] = useState('');
     const [activeNoteTicketId, setActiveNoteTicketId] = useState<string | null>(null);
     const [noteInput, setNoteInput] = useState('');
+    const [cancellingTicketId, setCancellingTicketId] = useState<string | null>(null);
+    const [cancelReasonInput, setCancelReasonInput] = useState('');
 
     useEffect(() => {
         if (isOpen) {
@@ -32,6 +34,14 @@ export function TicketHistoryModal({ isOpen, onClose, cajaId = 'caja_1', onSelec
         setTickets(getDigitalTickets(cajaId));
         setActiveNoteTicketId(null);
         setNoteInput('');
+    };
+
+    const handleCancelTicket = (ticketId: string) => {
+        if (!cancelReasonInput.trim()) return;
+        cancelDigitalTicket(cajaId, ticketId, cancelReasonInput.trim());
+        setTickets(getDigitalTickets(cajaId));
+        setCancellingTicketId(null);
+        setCancelReasonInput('');
     };
 
     if (!isOpen) return null;
@@ -103,6 +113,15 @@ export function TicketHistoryModal({ isOpen, onClose, cajaId = 'caja_1', onSelec
                                             <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 font-mono">
                                                 {t.orderId}
                                             </span>
+                                            {t.status === 'CANCELADO' ? (
+                                                <span className="text-[9px] px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-400 font-bold border border-rose-500/30 flex items-center gap-1">
+                                                    <Ban className="w-2.5 h-2.5" /> CANCELADO
+                                                </span>
+                                            ) : (
+                                                <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold border border-emerald-500/30 flex items-center gap-1">
+                                                    <CheckCircle2 className="w-2.5 h-2.5" /> VÁLIDO
+                                                </span>
+                                            )}
                                             {t.facturaStatus === 'facturado' && (
                                                 <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold border border-emerald-500/30">
                                                     SAT: {t.facturaRfc}
@@ -119,7 +138,7 @@ export function TicketHistoryModal({ isOpen, onClose, cajaId = 'caja_1', onSelec
 
                                     <div className="flex items-center gap-3 shrink-0">
                                         <div className="text-right">
-                                            <div className="font-black text-white text-sm font-mono">
+                                            <div className={`font-black text-sm font-mono ${t.status === 'CANCELADO' ? 'line-through text-zinc-500' : 'text-white'}`}>
                                                 ${t.total.toFixed(2)}
                                             </div>
                                             <div className="text-[10px] text-zinc-400">
@@ -136,6 +155,17 @@ export function TicketHistoryModal({ isOpen, onClose, cajaId = 'caja_1', onSelec
                                             <span>Nota</span>
                                         </button>
 
+                                        {t.status !== 'CANCELADO' && (
+                                            <button
+                                                onClick={() => setCancellingTicketId(cancellingTicketId === t.id ? null : t.id)}
+                                                className="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs font-bold flex items-center gap-1 transition-all active:scale-95"
+                                                title="Cancelar ticket (registra motivo en auditoría sin borrar el registro)"
+                                            >
+                                                <Ban className="w-3.5 h-3.5" />
+                                                <span>Cancelar</span>
+                                            </button>
+                                        )}
+
                                         <button
                                             onClick={() => {
                                                 onSelectTicket(t);
@@ -149,6 +179,45 @@ export function TicketHistoryModal({ isOpen, onClose, cajaId = 'caja_1', onSelec
                                         </button>
                                     </div>
                                 </div>
+
+                                {/* Formulario para cancelar ticket con motivo */}
+                                {cancellingTicketId === t.id && (
+                                    <div className="pt-2 border-t border-rose-500/30 bg-rose-950/20 p-2.5 rounded-lg flex flex-col gap-2">
+                                        <div className="flex items-center gap-1.5 text-xs text-rose-300 font-bold">
+                                            <AlertOctagon className="w-3.5 h-3.5 text-rose-400" />
+                                            <span>Motivo obligatorio de cancelación (el ticket no se borrará):</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="text"
+                                                placeholder="Ej. Devolución de mercancía por daño o error de cobro..."
+                                                value={cancelReasonInput}
+                                                onChange={(e) => setCancelReasonInput(e.target.value)}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') handleCancelTicket(t.id);
+                                                }}
+                                                className="flex-1 bg-black/60 border border-rose-500/40 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-rose-400"
+                                                autoFocus
+                                            />
+                                            <button
+                                                onClick={() => handleCancelTicket(t.id)}
+                                                className="px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-lg flex items-center gap-1 shrink-0 transition-all active:scale-95"
+                                            >
+                                                <Ban className="w-3 h-3" />
+                                                <span>Confirmar Anulación</span>
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    setCancellingTicketId(null);
+                                                    setCancelReasonInput('');
+                                                }}
+                                                className="p-1 text-zinc-400 hover:text-white"
+                                            >
+                                                <X className="w-3.5 h-3.5" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
 
                                 {/* Notas registradas en el ticket */}
                                 {t.notes && t.notes.length > 0 && (

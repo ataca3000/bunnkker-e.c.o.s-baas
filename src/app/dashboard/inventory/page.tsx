@@ -31,6 +31,7 @@ import { toast } from '@/lib/toast';
 import { useERPStore } from '@/store/useERPStore';
 import CloudBackupConfigWidget from '@/components/admin/CloudBackupConfigWidget';
 import OrderPickingAssistant from '@/components/orders/OrderPickingAssistant';
+import MultiOrderPickingAssistant from '@/components/orders/MultiOrderPickingAssistant';
 
 export default function InventoryDashboard() {
     const { products, formatCurrency, orders, startLoading, completeLoading } = useCart();
@@ -44,8 +45,10 @@ export default function InventoryDashboard() {
     const [localProducts, setLocalProducts] = useState<Product[]>([]);
     const mutationInFlight = useRef(0);
 
-    // Picking / Deconstrucción IA para Almacén
+    // Picking / Deconstrucción IA para Almacén (Individual y Multipedido)
     const [pickingOrder, setPickingOrder] = useState<any | null>(null);
+    const [multiPickingOrders, setMultiPickingOrders] = useState<any[] | null>(null);
+    const [selectedOrderIdsForBatch, setSelectedOrderIdsForBatch] = useState<string[]>([]);
     const [deconstructingOrder, setDeconstructingOrder] = useState<any | null>(null);
     const [onlyMyOrders, setOnlyMyOrders] = useState(false);
 
@@ -1447,6 +1450,45 @@ export default function InventoryDashboard() {
                                         </div>
                                     )}
 
+                                    {/* Barra de acción para recolección multipedido seleccionada */}
+                                    {selectedOrderIdsForBatch.length > 0 && (
+                                        <div className="bg-gradient-to-r from-amber-500/20 via-amber-500/10 to-transparent border border-amber-500/40 rounded-xl p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg">
+                                            <div className="flex items-center gap-2.5">
+                                                <div className="p-2 bg-amber-500/20 text-amber-400 rounded-lg">
+                                                    <Layers size={18} />
+                                                </div>
+                                                <div>
+                                                    <div className="text-xs font-black uppercase text-white tracking-wide">
+                                                        {selectedOrderIdsForBatch.length} {selectedOrderIdsForBatch.length === 1 ? 'pedido seleccionado' : 'pedidos seleccionados'} para recolección conjunta
+                                                    </div>
+                                                    <div className="text-[11px] text-zinc-400">
+                                                        Se agruparán en una sola cesta de recolección con checklist y ruta de estantes.
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center gap-2 w-full sm:w-auto">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setSelectedOrderIdsForBatch([])}
+                                                    className="px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl text-xs font-bold transition-all"
+                                                >
+                                                    Deseleccionar
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const batch = pendingPrepOrders.filter(o => selectedOrderIdsForBatch.includes(o.id));
+                                                        setMultiPickingOrders(batch);
+                                                    }}
+                                                    className="flex-1 sm:flex-none px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl shadow-md transition-all active:scale-95 flex items-center justify-center gap-1.5"
+                                                >
+                                                    <span>📦</span> Iniciar Recolección Multipedido ({selectedOrderIdsForBatch.length})
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+
                                     {/* Grilla de Pedidos Pendientes de Surtido */}
                                     {pendingPrepOrders.length === 0 ? (
                                         <div className="border border-slate-800 bg-slate-900/40 rounded-2xl p-16 text-center">
@@ -1475,9 +1517,23 @@ export default function InventoryDashboard() {
                                                     >
                                                         <div>
                                                             <div className="flex justify-between items-start gap-2 mb-3">
-                                                                <span className="font-mono text-xs font-black text-white bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-700">
-                                                                    {order.id}
-                                                                </span>
+                                                                <div className="flex items-center gap-2">
+                                                                    <input 
+                                                                        type="checkbox"
+                                                                        checked={selectedOrderIdsForBatch.includes(order.id)}
+                                                                        onChange={(e) => {
+                                                                            e.stopPropagation();
+                                                                            setSelectedOrderIdsForBatch(prev =>
+                                                                                prev.includes(order.id) ? prev.filter(id => id !== order.id) : [...prev, order.id]
+                                                                            );
+                                                                        }}
+                                                                        className="w-4 h-4 rounded accent-amber-500 cursor-pointer"
+                                                                        title="Seleccionar para recolección multipedido"
+                                                                    />
+                                                                    <span className="font-mono text-xs font-black text-white bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-700">
+                                                                        {order.id}
+                                                                    </span>
+                                                                </div>
                                                                 <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full border ${
                                                                     order.status === 'paid' 
                                                                         ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' 
@@ -2482,6 +2538,19 @@ export default function InventoryDashboard() {
                             } catch (err: any) {
                                 toast.error(err.message || 'Error al delegar');
                             }
+                        }}
+                    />
+                )}
+
+                {/* Asistente de Recolección Multipedido en Cesta */}
+                {multiPickingOrders && (
+                    <MultiOrderPickingAssistant
+                        orders={multiPickingOrders}
+                        role="inventory"
+                        onClose={() => setMultiPickingOrders(null)}
+                        onCompleteOrder={async (orderId, target) => {
+                            await finalizeOrderAndNotify(orderId, target === 'carga' ? 'carga' : 'caja');
+                            setSelectedOrderIdsForBatch(prev => prev.filter(id => id !== orderId));
                         }}
                     />
                 )}
