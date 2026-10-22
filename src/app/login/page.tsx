@@ -31,6 +31,21 @@ export default function LoginPage() {
   const [staffLoading, setStaffLoading] = useState(false);
   const [staffError, setStaffError] = useState('');
   const [staffSuccess, setStaffSuccess] = useState('');
+  const [showStaffHint, setShowStaffHint] = useState(false);
+  const [staffHint, setStaffHint] = useState('');
+
+  const handleRevealHint = () => {
+    if (typeof window !== 'undefined') {
+      const hint = localStorage.getItem('bunkker_pin_hint');
+      if (hint) {
+        setStaffHint(hint);
+        setShowStaffHint(true);
+      } else {
+        setStaffHint('Sin indicio registrado. Si eres Dueño usa 0000 o contacta a soporte.');
+        setShowStaffHint(true);
+      }
+    }
+  };
 
   // ── Estados del Panel 2: Portal de Clientes (Email/Teléfono + Contraseña) ──
   const [isRegisterMode, setIsRegisterMode] = useState(false);
@@ -347,6 +362,20 @@ export default function LoginPage() {
                     className="w-full bg-slate-950 border-2 border-amber-500/40 rounded-2xl py-4 px-10 text-center text-3xl tracking-[0.4em] font-mono text-white placeholder-slate-700 focus:outline-none focus:border-amber-400 focus:ring-4 focus:ring-amber-500/20 transition-all shadow-inner"
                   />
                 </div>
+                <div className="flex items-center justify-between text-xs pt-2">
+                  <button
+                    type="button"
+                    onClick={handleRevealHint}
+                    className="text-amber-400 hover:text-amber-300 underline font-semibold transition cursor-pointer"
+                  >
+                    ¿Olvidaste tu PIN? Ver indicio
+                  </button>
+                </div>
+                {showStaffHint && (
+                  <div className="mt-2 p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-200 text-xs font-mono text-center">
+                    💡 Pista / Indicio: <b>{staffHint}</b>
+                  </div>
+                )}
               </div>
 
               <button

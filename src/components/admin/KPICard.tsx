@@ -29,18 +29,18 @@ export default function KPICard({
 }: KPICardProps) {
     return (
         <motion.div
-            initial={{ opacity: 0, y: 12 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: delayIndex * 0.06 }}
-            className="bunkker-translucent-card border border-cyan-500/20 p-5 rounded-2xl shadow-[0_10px_35px_rgba(0,0,0,0.6)] hover:border-cyan-400/50 hover:shadow-[0_0_25px_rgba(14,165,233,0.2)] transition-all"
-            style={{ borderLeft: `4px solid ${color}` }}
+            transition={{ delay: delayIndex * 0.05 }}
+            className="bunkker-translucent-card border border-cyan-500/20 p-3.5 rounded-xl shadow-[0_6px_20px_rgba(0,0,0,0.5)] hover:border-cyan-400/50 hover:shadow-[0_0_20px_rgba(14,165,233,0.15)] transition-all"
+            style={{ borderLeft: `3px solid ${color}` }}
         >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
                 <div>
-                    <p style={{ color: '#94a3b8', fontSize: '0.7rem', textTransform: 'uppercase', fontWeight: '800', margin: '0 0 6px', letterSpacing: '0.07em' }}>
+                    <p style={{ color: '#94a3b8', fontSize: '0.65rem', textTransform: 'uppercase', fontWeight: '800', margin: '0 0 3px', letterSpacing: '0.06em' }}>
                         {label}
                     </p>
-                    <h3 style={{ fontSize: '1.9rem', fontWeight: '900', color: color, margin: 0, letterSpacing: '-0.02em' }}>
+                    <h3 style={{ fontSize: '1.35rem', fontWeight: '900', color: color, margin: '0 0 4px', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
                         {value}
                     </h3>
                     <TrendBadge
@@ -50,7 +50,7 @@ export default function KPICard({
                         neutral={badge.neutral}
                     />
                 </div>
-                <div style={{ background: bg, padding: '10px', borderRadius: '12px', flexShrink: 0 }}>
+                <div style={{ background: bg, padding: '7px', borderRadius: '10px', flexShrink: 0 }}>
                     {icon}
                 </div>
             </div>

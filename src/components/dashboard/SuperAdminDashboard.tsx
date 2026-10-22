@@ -443,9 +443,8 @@ export default function SuperAdminDashboard({
                 </div>
             </div>
 
-            {/* ── KPI Cards ─────────────────────────────────────── */}
-            <div style={{
- display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem', marginBottom: '3rem' }}>
+            {/* ── KPI Cards (Compactos y Claros) ─────────────────────────────────────── */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem', marginBottom: '1.75rem' }}>
                 {kpis.map((kpi, i) => (
                     <KPICard
                         key={kpi.label}
@@ -466,20 +465,10 @@ export default function SuperAdminDashboard({
             </div>
 
             {/* ── Dashboard Widgets (Ranking & Restock) ──────────────────── */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-[8px] mb-10">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-[8px] mb-6">
                 <StaffRankingWidget tenantId={profile?.tenantId} />
                 <RestockAlertWidget products={products} formatCurrency={formatCurrency} />
             </div>
-
-            {/* ── Configuración de Respaldos Automáticos a Google Cloud ──── */}
-            <CloudBackupConfigWidget />
-
-            {/* ── Module Sections ────────────────────────────────── */}
-            {categoryAdminVentas.length > 0 && <ModuleSection title="Administración y Ventas"         accentColor="#0ea5e9" items={categoryAdminVentas} />}
-            {categoryOpLog.length > 0 && <ModuleSection title="Operaciones y Logística"          accentColor="#ef4444" items={categoryOpLog}       />}
-            {categoryMarketing.length > 0 && <ModuleSection title="Diseño y Marketing"               accentColor="#8b5cf6" items={categoryMarketing}   />}
-            {categoryAudit.length > 0 && <ModuleSection title="Auditoría, Finanzas y Soporte"    accentColor="#10b981" items={categoryAudit}       />}
-            {categoryCloud.length > 0 && <ModuleSection title="Mundo NUBE (PRO)"                 accentColor="#0284c7" items={categoryCloud}       />}
 
             {/* ── System Health ──────────────────────────────────── */}
             <div className="bg-[#1a1d2d] border border-white/5 shadow-[0_0_15px_rgba(14,165,233,0.05)] hover:shadow-[0_0_20px_rgba(14,165,233,0.15)] transition-shadow" style={{ padding: '1.25rem 1.5rem', display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap', borderRadius: '16px', marginTop: '1rem' }}>
