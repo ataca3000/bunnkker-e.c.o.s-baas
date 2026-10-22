@@ -129,7 +129,7 @@ export default function PricingPage() {
 
             <div className="text-center z-10 mb-12 relative">
                 <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-900/40 border border-cyan-500/30 text-cyan-400 text-xs font-bold uppercase tracking-widest mb-4">
-                    <Sparkles size={14} /> Elige tu arquitectura
+                    <Sparkles size={14} /> Membresía gestionada con Stripe
                 </motion.div>
                 <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="text-4xl md:text-5xl font-black text-white mb-4 tracking-tight">
                     Potencia tu Negocio
