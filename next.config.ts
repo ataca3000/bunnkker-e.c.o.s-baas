@@ -29,7 +29,18 @@ const nextConfig: NextConfig = {
     if (dev) {
       config.watchOptions = {
         poll: false,
-        ignored: ['**/node_modules/**', '**/.git/**', '**/.next/**', '**/prisma/*.db*']
+        ignored: [
+          '**/node_modules/**',
+          '**/.git/**',
+          '**/.next/**',
+          '**/prisma/*.db*',
+          '**/.agents/**',
+          '**/lfeds/**',
+          '**/unsupervised_topic_modeling-master/**',
+          '**/logs/**',
+          '**/build-resources/**',
+          '**/*.txt'
+        ]
       };
     }
     return config;
