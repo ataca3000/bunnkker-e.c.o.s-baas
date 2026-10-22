@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useMemo, useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { AreaChart, Area, BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Users, FileText, ShieldCheck, CheckCircle, Maximize2, Share2, Map, TrendingUp, Zap, Package, ShoppingCart, Truck, Settings, ReceiptText, BookOpen, Cloud, BarChart3, Headphones, Terminal, Store } from 'lucide-react';
+import { Users, FileText, ShieldCheck, CheckCircle, Maximize2, Share2, Map, TrendingUp, Zap, Package, ShoppingCart, Truck, Settings, ReceiptText, BookOpen, Cloud, BarChart3, Headphones, Terminal, Store, Boxes, Radio } from 'lucide-react';
 import Link from 'next/link';
 import StaffRankingWidget from '@/components/admin/StaffRankingWidget';
 import RestockAlertWidget from '@/components/admin/RestockAlertWidget';
@@ -112,7 +112,7 @@ export default function SuperAdminDashboard({
     const isModuleActive = (id: string) => {
         if (!siteConfig?.activeModules) return true; // show all if not configured
         // Core designated operational modules are always accessible to Super Admin
-        if (['team', 'purchases', 'reports', 'soporte', 'sales', 'inventory', 'patio', 'pickup', 'delivery'].includes(id)) return true;
+        if (['team', 'purchases', 'reports', 'soporte', 'sales', 'inventory', 'patio', 'pickup', 'delivery', 'simulator'].includes(id)) return true;
         return siteConfig.activeModules.includes(id);
     };
 
@@ -124,6 +124,7 @@ export default function SuperAdminDashboard({
     ].filter(m => isModuleActive(m.id));
 
     const categoryOpLog = [
+        { id: 'simulator',  title: 'Simulador 3D FerreFlujo', icon: <Boxes size={26} />, color: '#06b6d4', href: '/dashboard/simulator', desc: 'Gemelo digital interactivo: Almacén, racks, patio, montacargas y mostrador.' },
         { id: 'inventory',  title: 'Control de Inventario',  icon: <Package size={26} />,      color: '#ef4444', href: '/dashboard/inventory', desc: 'Catálogo, estantes, stock, importaciones y merma.' },
         { id: 'patio',      title: 'Patio Carga y Descarga', icon: <Truck size={26} />,        color: '#f59e0b', href: '/dashboard/patio',     desc: 'Surtido, verificación y despacho de material pesado.' },
         { id: 'pickup',     title: 'Mostrador y Pickup',     icon: <Store size={26} />,        color: '#8b5cf6', href: '/dashboard/pickup',    desc: 'Entrega rápida en mostrador y pedidos de tienda.' },
@@ -304,6 +305,53 @@ export default function SuperAdminDashboard({
 
             {/* ⚖️ Algoritmo Efecto Balanza: Rotación vs. Margen Puro (IA SuperAdmin) */}
             <BalanceEffectWidget />
+
+            {/* 🌐 Gemelo Digital 3D: FerreFlujo Logístico y Económico */}
+            <div className="bunkker-translucent-card p-6 mb-8 border border-cyan-500/30 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.7)] relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20"></div>
+                <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative z-10">
+                    <div className="flex items-start gap-4">
+                        <div className="p-3.5 rounded-2xl bg-cyan-500/15 border border-cyan-400/40 text-cyan-300 shadow-lg shadow-cyan-500/20">
+                            <Boxes size={32} className="animate-pulse text-cyan-400" />
+                        </div>
+                        <div>
+                            <div className="flex items-center gap-2">
+                                <h2 className="text-xl font-black text-white uppercase tracking-tight flex items-center gap-2">
+                                    FerreFlujo 3D <span className="text-cyan-400 font-mono text-sm">GEMELO DIGITAL</span>
+                                </h2>
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-cyan-500/20 border border-cyan-500/40 text-cyan-300">
+                                    SIMULADOR LOGÍSTICO Y ECONÓMICO
+                                </span>
+                            </div>
+                            <p className="text-xs text-slate-300 mt-1 max-w-2xl leading-relaxed">
+                                Visualiza en tiempo real el ciclo circulatorio de Bunkker: pedidos por terminal móvil, bloqueo atómico WAL en caja, surtido por estanterías en almacén, maniobra de montacargas en patio y despacho en ruta con firma PoD.
+                            </p>
+                            <div className="flex flex-wrap items-center gap-3 mt-3 text-[11px] font-semibold text-cyan-400">
+                                <span className="flex items-center gap-1">📦 Racks de Almacén</span>
+                                <span>•</span>
+                                <span className="flex items-center gap-1">🚜 Patio & Montacargas</span>
+                                <span>•</span>
+                                <span className="flex items-center gap-1">💳 POS & Mostrador</span>
+                                <span>•</span>
+                                <span className="flex items-center gap-1">🚛 Reparto a Domicilio</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 w-full lg:w-auto justify-start lg:justify-end">
+                        <Link href="/dashboard/simulator" className="w-full sm:w-auto">
+                            <motion.button
+                                whileHover={{ scale: 1.03 }}
+                                whileTap={{ scale: 0.97 }}
+                                className="w-full sm:w-auto px-5 py-3 rounded-xl text-xs font-black tracking-wider border border-cyan-400 bg-gradient-to-r from-cyan-500 via-sky-500 to-blue-600 text-white shadow-[0_4px_25px_rgba(14,165,233,0.4)] flex items-center justify-center gap-2 hover:brightness-110 transition cursor-pointer uppercase"
+                            >
+                                <Boxes size={18} />
+                                <span>Abrir Simulador 3D Completo</span>
+                            </motion.button>
+                        </Link>
+                    </div>
+                </div>
+            </div>
 
 
 

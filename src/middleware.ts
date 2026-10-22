@@ -29,6 +29,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
   '/dashboard/design':          ['superadmin', 'admin', 'marketing'],
   '/dashboard/reports':         ['superadmin', 'admin'],
   '/dashboard/qr':              ['superadmin', 'admin', 'marketing', 'sales', 'caja'],
+  '/dashboard/simulator':       ['superadmin', 'admin'],
   '/dashboard/demo':            ['superadmin'],
   '/dashboard/suscripcion':     ['superadmin'],
 };

@@ -35,7 +35,8 @@ import {
     Save,
     RefreshCw as Refresh,
     Activity,
-    Sparkles
+    Sparkles,
+    Boxes
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
@@ -58,7 +59,7 @@ const rolePaths: Record<string, string[]> = {
         '/dashboard/inventory', '/dashboard/delivery', '/dashboard/pickup', '/dashboard/patio', '/dashboard/design',
         '/dashboard/marketing', '/dashboard/omnipulse', '/dashboard/billing', '/dashboard/audit', '/dashboard/suscripcion',
         '/dashboard/qr', '/dashboard/demo', '/dashboard/payments', '/dashboard/verificador',
-        '/dashboard/migracion', '/dashboard/migration', '/dashboard/link', '/dashboard/node-view'
+        '/dashboard/migracion', '/dashboard/migration', '/dashboard/link', '/dashboard/node-view', '/dashboard/simulator'
     ],
     admin: [
         '/dashboard', '/dashboard/sales', '/dashboard/admin/sales', '/dashboard/admin/users', '/dashboard/users',
@@ -66,7 +67,7 @@ const rolePaths: Record<string, string[]> = {
         '/dashboard/soporte', '/dashboard/setup', '/dashboard/pro-sync', '/dashboard/profile', '/dashboard/guia',
         '/dashboard/inventory', '/dashboard/delivery', '/dashboard/pickup', '/dashboard/patio', '/dashboard/design',
         '/dashboard/marketing', '/dashboard/omnipulse', '/dashboard/billing', '/dashboard/audit', '/dashboard/suscripcion',
-        '/dashboard/qr'
+        '/dashboard/qr', '/dashboard/simulator'
     ],
     sales: ['/dashboard', '/dashboard/sales', '/dashboard/admin/sales', '/dashboard/admin/customers', '/dashboard/crm', '/dashboard/qr', '/dashboard/profile', '/dashboard/guia'],
     caja: ['/dashboard', '/dashboard/sales', '/dashboard/admin/sales', '/dashboard/admin/customers', '/dashboard/crm', '/dashboard/qr', '/dashboard/profile', '/dashboard/guia'],
@@ -99,6 +100,7 @@ const menuGroups = [
             { id: 'patio',     title: 'Patio de Carga',        icon: <Truck size={20} />,   href: '/dashboard/patio',     premium: false },
             { id: 'pickup',    title: 'Mostrador / Tienda',    icon: <Package size={20} />, href: '/dashboard/pickup',    premium: false },
             { id: 'delivery',  title: 'Logística y Reparto',   icon: <Truck size={20} />,   href: '/dashboard/delivery',  premium: false },
+            { id: 'simulator', title: 'Simulador 3D FerreFlujo', icon: <Boxes size={20} />, href: '/dashboard/simulator', premium: false },
         ],
     },
     {
