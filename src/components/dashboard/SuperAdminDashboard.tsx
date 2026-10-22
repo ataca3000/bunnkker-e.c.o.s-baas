@@ -214,12 +214,6 @@ export default function SuperAdminDashboard({
                                 ONLINE
                             </span>
                         </div>
-                        <p className="text-[11px] font-bold text-cyan-400/90 tracking-widest uppercase mt-0.5">
-                            Energía · Control · Optimización · Sostenibilidad
-                        </p>
-                        <p className="text-xs text-slate-400 mt-1">
-                            {greeting}, <b className="text-white font-semibold">{userName}</b> · {siteConfig?.businessName || 'Empresa'} · <span className="text-cyan-300">Tecnología que genera impacto real</span>
-                        </p>
                     </div>
                 </div>
 
@@ -234,7 +228,7 @@ export default function SuperAdminDashboard({
                                     const html = `<html><head><title>Catálogo BUNKKER</title><style>body{font-family:sans-serif;text-align:center;padding:50px;}h1{color:#0ea5e9;font-size:3rem;}p{font-size:1.5rem;color:#64748b;}img{margin:40px 0;width:400px;height:400px;}</style></head><body><h1>Catálogo Móvil</h1><p>Escanea este código para acceder al catálogo local sin fila.</p><img src="https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(rniUrl)}" /><p><strong>${rniUrl}</strong></p><script>window.onload = () => { window.print(); setTimeout(() => window.close(), 500); }</script></body></html>`;
                                     const win = window.open('', '_blank');
                                     if(win){ win.document.write(html); win.document.close(); }
-                                }}
+                                    }}
                             >
                                 <QRCodeSVG value={rniUrl} size={36} />
                             </div>
@@ -307,49 +301,30 @@ export default function SuperAdminDashboard({
             <BalanceEffectWidget />
 
             {/* 🌐 Gemelo Digital 3D: FerreFlujo Logístico y Económico */}
-            <div className="bunkker-translucent-card p-6 mb-8 border border-cyan-500/30 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.7)] relative overflow-hidden">
+            <div className="bunkker-translucent-card p-4 sm:p-5 mb-8 border border-cyan-500/30 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.7)] relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20"></div>
-                <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative z-10">
-                    <div className="flex items-start gap-4">
-                        <div className="p-3.5 rounded-2xl bg-cyan-500/15 border border-cyan-400/40 text-cyan-300 shadow-lg shadow-cyan-500/20">
-                            <Boxes size={32} className="animate-pulse text-cyan-400" />
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 relative z-10">
+                    <div className="flex items-center gap-3.5">
+                        <div className="p-2.5 rounded-xl bg-cyan-500/15 border border-cyan-400/40 text-cyan-300 shadow-lg shadow-cyan-500/20">
+                            <Boxes size={24} className="text-cyan-400" />
                         </div>
                         <div>
-                            <div className="flex items-center gap-2">
-                                <h2 className="text-xl font-black text-white uppercase tracking-tight flex items-center gap-2">
-                                    FerreFlujo 3D <span className="text-cyan-400 font-mono text-sm">GEMELO DIGITAL</span>
-                                </h2>
-                                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-cyan-500/20 border border-cyan-500/40 text-cyan-300">
-                                    SIMULADOR LOGÍSTICO Y ECONÓMICO
-                                </span>
-                            </div>
-                            <p className="text-xs text-slate-300 mt-1 max-w-2xl leading-relaxed">
-                                Visualiza en tiempo real el ciclo circulatorio de Bunkker: pedidos por terminal móvil, bloqueo atómico WAL en caja, surtido por estanterías en almacén, maniobra de montacargas en patio y despacho en ruta con firma PoD.
-                            </p>
-                            <div className="flex flex-wrap items-center gap-3 mt-3 text-[11px] font-semibold text-cyan-400">
-                                <span className="flex items-center gap-1">📦 Racks de Almacén</span>
-                                <span>•</span>
-                                <span className="flex items-center gap-1">🚜 Patio & Montacargas</span>
-                                <span>•</span>
-                                <span className="flex items-center gap-1">💳 POS & Mostrador</span>
-                                <span>•</span>
-                                <span className="flex items-center gap-1">🚛 Reparto a Domicilio</span>
-                            </div>
+                            <h2 className="text-lg font-black text-white uppercase tracking-tight flex items-center gap-2">
+                                FerreFlujo 3D <span className="text-cyan-400 font-mono text-xs">GEMELO DIGITAL</span>
+                            </h2>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-3 w-full lg:w-auto justify-start lg:justify-end">
-                        <Link href="/dashboard/simulator" className="w-full sm:w-auto">
-                            <motion.button
-                                whileHover={{ scale: 1.03 }}
-                                whileTap={{ scale: 0.97 }}
-                                className="w-full sm:w-auto px-5 py-3 rounded-xl text-xs font-black tracking-wider border border-cyan-400 bg-gradient-to-r from-cyan-500 via-sky-500 to-blue-600 text-white shadow-[0_4px_25px_rgba(14,165,233,0.4)] flex items-center justify-center gap-2 hover:brightness-110 transition cursor-pointer uppercase"
-                            >
-                                <Boxes size={18} />
-                                <span>Abrir Simulador 3D Completo</span>
-                            </motion.button>
-                        </Link>
-                    </div>
+                    <Link href="/dashboard/simulator" className="w-full sm:w-auto">
+                        <motion.button
+                            whileHover={{ scale: 1.03 }}
+                            whileTap={{ scale: 0.97 }}
+                            className="w-full sm:w-auto px-4 py-2.5 rounded-xl text-xs font-black tracking-wider border border-cyan-400 bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_4px_20px_rgba(14,165,233,0.3)] flex items-center justify-center gap-2 hover:brightness-110 transition cursor-pointer uppercase"
+                        >
+                            <Boxes size={16} />
+                            <span>Abrir Simulador 3D</span>
+                        </motion.button>
+                    </Link>
                 </div>
             </div>
 
