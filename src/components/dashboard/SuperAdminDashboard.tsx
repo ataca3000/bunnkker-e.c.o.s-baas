@@ -70,7 +70,7 @@ export default function SuperAdminDashboard({
         isValidSale(o) && new Date(o.date).toDateString() === new Date().toDateString()
     ).length;
 
-    const [chartMode, setChartMode] = useState<'bar' | 'area'>('bar');
+    const [chartMode, setChartMode] = useState<'bar' | 'area'>('area');
 
     const chartData = useMemo(() => {
         const data = [];
@@ -190,63 +190,68 @@ export default function SuperAdminDashboard({
     ];
 
     return (
-        <main className="bunkker-industrial" style={{ padding: '2.5rem' }}>
-            {/* ── Header ────────────────────────────────────────── */}
-            <header style={{ marginBottom: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
-                <div>
-                    <h1 className="tornasol-text" style={{ fontSize: '2.2rem', margin: 0, letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        CENTRO DE CONTROL BUNKKER ERP
-                    </h1>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '6px' }}>
-                        <p style={{ color: '#64748b', fontSize: '0.9rem', margin: 0 }}>
-                            {greeting}, <b style={{ color: '#1e293b' }}>{userName}</b> · {siteConfig.businessName}
+        <main className="bunkker-industrial relative z-10" style={{ padding: '2rem' }}>
+            {/* ── Header BUNKKER ERP (Capa 4: Contenedores translúcidos y textos azules) ── */}
+            <header className="bunkker-translucent-card p-6 mb-8 flex flex-col md:flex-row items-center justify-between gap-6 border border-cyan-500/20 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.7)]">
+                {/* Logo Hero & Título Maestro */}
+                <div className="flex items-center gap-4 text-center md:text-left">
+                    <div className="relative group">
+                        <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-2xl blur-md opacity-70 group-hover:opacity-100 transition duration-500"></div>
+                        <img 
+                            src="/bunkker-logo-hero.png" 
+                            alt="BUNKKER ERP" 
+                            className="relative w-16 h-16 md:w-20 md:h-20 object-contain rounded-2xl bg-black/60 border border-cyan-400/40 p-1 shadow-2xl" 
+                        />
+                    </div>
+                    <div>
+                        <div className="flex items-center justify-center md:justify-start gap-2.5">
+                            <h1 className="text-2xl md:text-3xl font-black tracking-tight text-white flex items-center gap-2 drop-shadow-[0_2px_10px_rgba(56,189,248,0.5)]">
+                                BUNKKER <span className="text-cyan-400 font-mono">ERP</span>
+                            </h1>
+                            <span className="bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-[0_0_10px_rgba(56,189,248,0.2)]">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                                ONLINE
+                            </span>
+                        </div>
+                        <p className="text-[11px] font-bold text-cyan-400/90 tracking-widest uppercase mt-0.5">
+                            Energía · Control · Optimización · Sostenibilidad
                         </p>
-                        <span className="flex items-center gap-1 bg-cyan-900/40 text-cyan-400 px-2 py-0.5 rounded-full text-[10px] font-bold border border-cyan-500/30">
-                            <Cloud size={12} /> RED NODO RNI
-                        </span>
+                        <p className="text-xs text-slate-400 mt-1">
+                            {greeting}, <b className="text-white font-semibold">{userName}</b> · {siteConfig?.businessName || 'Empresa'} · <span className="text-cyan-300">Tecnología que genera impacto real</span>
+                        </p>
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                {/* Acciones Rápidas */}
+                <div className="flex flex-wrap items-center justify-center md:justify-end gap-3">
                     {rniUrl && (
-                        <div className="bunkker-card flex items-center gap-[8px] px-4 py-2" style={{ padding: '8px 16px' }}>
-                            <div className="bg-white p-1 rounded-lg shadow-[0_0_15px_rgba(6,182,212,0.6)] cursor-pointer hover:scale-105 transition-transform" 
-                                 title="Imprimir Poster Cero Filas"
-                                 onClick={() => {
-                                     const html = `<html><head><title>Poster Cero Filas</title><style>body{font-family:sans-serif;text-align:center;padding:50px;}h1{color:#0ea5e9;font-size:3rem;}p{font-size:1.5rem;color:#64748b;}img{margin:40px 0;width:400px;height:400px;}</style></head><body><h1>Catálogo Cero Filas</h1><p>Escanea este código con tu celular para ordenar al instante sin hacer fila.</p><img src="https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(rniUrl)}" /><p><strong>${rniUrl}</strong></p><script>window.onload = () => { window.print(); setTimeout(() => window.close(), 500); }</script></body></html>`;
-                                     const win = window.open('', '_blank');
-                                     if(win){ win.document.write(html); win.document.close(); }
-                                 }}>
-                                <QRCodeSVG value={rniUrl} size={48} />
+                        <div className="flex items-center gap-2.5 bg-black/40 border border-cyan-500/30 px-3 py-1.5 rounded-xl shadow-lg">
+                            <div 
+                                className="bg-white p-1 rounded-lg cursor-pointer hover:scale-105 transition-transform"
+                                title="Imprimir QR de Acceso RNI"
+                                onClick={() => {
+                                    const html = `<html><head><title>Catálogo BUNKKER</title><style>body{font-family:sans-serif;text-align:center;padding:50px;}h1{color:#0ea5e9;font-size:3rem;}p{font-size:1.5rem;color:#64748b;}img{margin:40px 0;width:400px;height:400px;}</style></head><body><h1>Catálogo Móvil</h1><p>Escanea este código para acceder al catálogo local sin fila.</p><img src="https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(rniUrl)}" /><p><strong>${rniUrl}</strong></p><script>window.onload = () => { window.print(); setTimeout(() => window.close(), 500); }</script></body></html>`;
+                                    const win = window.open('', '_blank');
+                                    if(win){ win.document.write(html); win.document.close(); }
+                                }}
+                            >
+                                <QRCodeSVG value={rniUrl} size={36} />
                             </div>
-                            <div>
-                                <span className="text-[0.62rem] text-cyan-400 font-bold block uppercase tracking-widest">Escanea para acceder (Túnel P2P)</span>
-                                <a href={rniUrl} target="_blank" rel="noreferrer" className="text-white text-sm font-bold truncate block max-w-[200px] hover:text-cyan-300 transition-colors">
-                                    {rniUrl}
-                                </a>
-                                <button onClick={() => {
-                                     const html = `<html><head><title>Poster Cero Filas</title><style>body{font-family:sans-serif;text-align:center;padding:50px;}h1{color:#0ea5e9;font-size:3rem;}p{font-size:1.5rem;color:#64748b;}img{margin:40px 0;width:400px;height:400px;}</style></head><body><h1>Catálogo Cero Filas</h1><p>Escanea este código con tu celular para ordenar al instante sin hacer fila.</p><img src="https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(rniUrl)}" /><p><strong>${rniUrl}</strong></p><script>window.onload = () => { window.print(); setTimeout(() => window.close(), 500); }</script></body></html>`;
-                                     const win = window.open('', '_blank');
-                                     if(win){ win.document.write(html); win.document.close(); }
-                                 }} className="text-xs text-blue-400 underline mt-1 cursor-pointer bg-transparent border-none p-0">Imprimir Poster</button>
+                            <div className="text-left">
+                                <span className="text-[9px] text-cyan-400 font-bold uppercase tracking-wider block">Túnel RNI P2P</span>
+                                <span className="text-xs text-white font-mono font-bold truncate max-w-[130px] block">{rniUrl.replace('https://', '').replace('http://', '')}</span>
                             </div>
                         </div>
                     )}
+
+                    {/* Botón Restaurar Respaldo Local */}
                     <motion.label
                         whileHover={{ scale: 1.03 }}
                         whileTap={{ scale: 0.97 }}
-                        style={{
-                            ...premiumBtn,
-                            backgroundColor: 'rgba(6, 182, 212, 0.1)',
-                            color: '#06b6d4',
-                            border: '1px solid rgba(6, 182, 212, 0.3)',
-                            cursor: 'pointer',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                        }}
+                        className="px-3.5 py-2 rounded-xl text-xs font-bold tracking-wide border border-cyan-500/30 bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 cursor-pointer flex items-center gap-1.5 transition-all shadow-[0_0_15px_rgba(56,189,248,0.15)]"
                     >
-                        <ShieldCheck size={18} /> ¿YA NOS CONOCÍAMOS?
+                        <ShieldCheck size={16} className="text-cyan-400" />
+                        <span>RESTAURAR RESPALDO</span>
                         <input
                             type="file"
                             accept=".txt"
@@ -265,7 +270,7 @@ export default function SuperAdminDashboard({
                                             alert("Error: " + res.message);
                                         }
                                     } else {
-                                        alert("Funcionalidad solo disponible en la App de Escritorio.");
+                                        alert("Funcionalidad de respaldo físico disponible en el cliente local.");
                                     }
                                 };
                                 reader.readAsText(file);
@@ -273,31 +278,25 @@ export default function SuperAdminDashboard({
                         />
                     </motion.label>
 
+                    {/* Escanear Producto */}
                     <motion.button
                         whileHover={{ scale: 1.03 }}
                         whileTap={{ scale: 0.97 }}
                         onClick={() => setIsScannerOpen(true)}
-                        style={{
-                            ...premiumBtn,
-                            backgroundColor: '#0ea5e9',
-                            color: 'white',
-                            boxShadow: '0 4px 14px rgba(14,165,233,0.35)',
-                        }}
+                        className="px-3.5 py-2 rounded-xl text-xs font-bold tracking-wide border border-cyan-400 bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_4px_20px_rgba(14,165,233,0.4)] flex items-center gap-1.5 hover:brightness-110 transition-all cursor-pointer"
                     >
-                        <Maximize2 size={18} /> ESCANEAR PRODUCTO
+                        <Maximize2 size={16} />
+                        <span>ESCANEAR PRODUCTO</span>
                     </motion.button>
 
-                    {/* Saldo sistema */}
-                    <div className="bg-[#1a1d2d] border border-white/5 shadow-[0_0_15px_rgba(14,165,233,0.05)] hover:shadow-[0_0_20px_rgba(14,165,233,0.15)] transition-shadow" style={{
-                        borderLeft: `4px solid ${maintenanceBalance < 10 ? '#ef4444' : '#10b981'}`,
-                        padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '12px',
-                    }}>
-                        <div style={{ backgroundColor: maintenanceBalance < 10 ? '#FFE5E5' : '#E6F4EA', padding: '7px', borderRadius: '50%' }}>
-                            <Zap size={18} color={maintenanceBalance < 10 ? '#ef4444' : '#10b981'} />
+                    {/* Saldo Operativo */}
+                    <div className="bunkker-translucent-card px-3.5 py-2 border border-cyan-500/30 flex items-center gap-2.5 rounded-xl">
+                        <div className="p-1.5 rounded-lg bg-cyan-500/20 text-cyan-400">
+                            <Zap size={16} />
                         </div>
-                        <div>
-                            <span style={{ fontSize: '0.62rem', color: '#94a3b8', fontWeight: 'bold', display: 'block' }}>SALDO SISTEMA</span>
-                            <h4 style={{ margin: 0, color: '#1e293b', fontSize: '0.95rem', fontWeight: '800' }}>{formatCurrency(maintenanceBalance)}</h4>
+                        <div className="text-left">
+                            <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Saldo Sistema</span>
+                            <span className="text-sm font-black font-mono text-cyan-300">{formatCurrency(maintenanceBalance)}</span>
                         </div>
                     </div>
                 </div>

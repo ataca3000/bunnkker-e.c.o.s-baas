@@ -3,6 +3,7 @@
 import LocalRadio from "@/components/LocalRadio";
 import { BunkAssistantTour } from "@/components/LionAssistantTour";
 import { PinReminderModal } from "@/components/PinReminderModal";
+import BunkkerLayeredBackground from "@/components/ui/BunkkerLayeredBackground";
 
 export default function DashboardLayout({
   children,
@@ -10,8 +11,14 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="relative min-h-screen">
-      {children}
+    <div className="relative min-h-screen text-slate-100 bg-[#060913] selection:bg-cyan-500 selection:text-black">
+      {/* ─── SISTEMA POR CAPAS: Capa 1 (Logo), Capa 2 (Partículas), Capa 3 (Domo de red en pulsos) ─── */}
+      <BunkkerLayeredBackground />
+
+      {/* ─── CAPA 4: Contenido y contenedores translúcidos interactivos ─── */}
+      <div className="relative z-10">
+        {children}
+      </div>
       {/* Radio de Personal PTT (Walkie-Talkie) Exclusivo para el Dashboard de Trabajadores */}
       <LocalRadio />
       {/* Asistente Bunk — guía de configuración de BUNKKER ERP */}

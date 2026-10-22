@@ -38,8 +38,8 @@ export default function RestockAlertWidget({ products, formatCurrency }: { produ
     };
 
     return (
-        <div className="bg-[#1a1d2d] border border-red-500/20 rounded-[5px] p-[8px] shadow-[0_0_20px_rgba(239,68,68,0.05)] relative overflow-hidden transition-all hover:shadow-[0_0_30px_rgba(239,68,68,0.1)]">
-            <div className="absolute -left-6 -bottom-6 w-32 h-32 bg-red-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="bunkker-translucent-card border border-rose-500/30 rounded-2xl p-6 shadow-[0_12px_40px_rgba(0,0,0,0.7)] relative overflow-hidden transition-all hover:border-rose-500/50 hover:shadow-[0_0_30px_rgba(244,63,94,0.2)]">
+            <div className="absolute -left-6 -bottom-6 w-32 h-32 bg-rose-500/15 rounded-full blur-3xl pointer-events-none"></div>
 
             <div className="flex items-center justify-between mb-6 border-b border-white/10 pb-4">
                 <div className="flex items-center gap-3">

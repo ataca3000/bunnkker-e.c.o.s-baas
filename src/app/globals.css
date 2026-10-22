@@ -254,27 +254,39 @@ button:disabled {
 .bunkker-shell main, .bunkker-shell section { color: var(--bunkker-ink); }
 .bunkker-shell h1, .bunkker-shell h2, .bunkker-shell h3 { letter-spacing: -0.025em; }
 
-/* BUNKKER ERP industrial marketplace */
-.bunkker-industrial,
-.bunkker-shell main { background: var(--bunkker-surface); }
-.bunkker-industrial .bunkker-card,
-.bunkker-shell main .bunkker-card { background: var(--bunkker-paper); border: 1px solid var(--bunkker-line); box-shadow: 0 8px 24px rgba(17,17,17,.07); }
-.bunkker-industrial .text-cyan-400,
-.bunkker-shell main .text-cyan-400 { color: var(--bunkker-yellow) !important; }
-.bunkker-industrial .text-emerald-500 { color: #6d8700 !important; }
-.bunkker-industrial .text-rose-500 { color: var(--bunkker-red) !important; }
-.bunkker-industrial button:hover, .bunkker-industrial a:hover { box-shadow: 0 0 0 2px rgba(200,240,0,.28); }
-.bunkker-help { border-left: 3px solid var(--bunkker-yellow); background: #fffbe8; color: var(--bunkker-ink); }
-
-/* Admin Layout Viewport & Bottom Navigation Clearance */
-.bunkker-shell aside.admin-sidebar {
-  display: none !important;
+/* ─── SISTEMA VISUAL CAPA 4: CONTENEDORES TRANSLÚCIDOS NEGROS Y CIBER-AZUL ─── */
+@keyframes pulseSlow {
+  0%, 100% { opacity: 0.35; transform: scale(1); filter: drop-shadow(0 0 15px rgba(14, 165, 233, 0.3)); }
+  50% { opacity: 0.65; transform: scale(1.02); filter: drop-shadow(0 0 30px rgba(56, 189, 248, 0.7)); }
+}
+.animate-pulse-slow {
+  animation: pulseSlow 5s ease-in-out infinite;
 }
 
-.bunkker-shell > div.admin-main-viewport {
-  margin-left: 0 !important;
-  width: 100% !important;
-  padding-bottom: 120px !important;
+.bunkker-translucent-card,
+.bunkker-card {
+  background: rgba(8, 12, 22, 0.78) !important;
+  backdrop-filter: blur(20px) saturate(140%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(140%) !important;
+  border: 1px solid rgba(56, 189, 248, 0.18) !important;
+  border-radius: 18px !important;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+  color: #f8fafc !important;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.bunkker-translucent-card:hover,
+.bunkker-card:hover {
+  border-color: rgba(56, 189, 248, 0.4) !important;
+  box-shadow: 0 16px 50px rgba(0, 0, 0, 0.75), 0 0 25px rgba(14, 165, 233, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+}
+
+.bunkker-shell main {
+  background: transparent !important;
+}
+
+.bunkker-industrial {
+  background: transparent !important;
 }
 
 /* Responsive Utilities */

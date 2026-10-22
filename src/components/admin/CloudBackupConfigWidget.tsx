@@ -341,13 +341,19 @@ export default function CloudBackupConfigWidget({ compact = false }: { compact?:
             style={{
                 marginBottom: compact ? '1.5rem' : '2.5rem',
                 border: '1px solid rgba(14, 165, 233, 0.22)',
-                background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.92) 0%, rgba(10, 15, 29, 0.96) 100%)',
+                background: 'linear-gradient(180deg, rgba(8, 12, 22, 0.9) 0%, rgba(5, 8, 17, 0.95) 100%)',
                 position: 'relative',
                 overflow: 'hidden',
             }}
         >
+            {/* Telemetría Global de Fondo (Capa Visual Mundial) */}
+            <div 
+                className="absolute right-0 top-0 bottom-0 w-full md:w-2/3 opacity-20 pointer-events-none bg-contain bg-right bg-no-repeat mix-blend-screen" 
+                style={{ backgroundImage: 'url(/bunkker-world-map.png)' }} 
+            />
+
             {/* Header section */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px', marginBottom: '20px' }}>
+            <div style={{ position: 'relative', zIndex: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px', marginBottom: '20px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div
                         style={{

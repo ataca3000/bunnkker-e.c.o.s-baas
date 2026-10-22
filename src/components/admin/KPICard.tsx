@@ -32,8 +32,8 @@ export default function KPICard({
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: delayIndex * 0.06 }}
-            className="bg-[#1a1d2d] border border-white/5 shadow-[0_0_15px_rgba(14,165,233,0.05)] hover:shadow-[0_0_20px_rgba(14,165,233,0.15)] transition-shadow"
-            style={{ borderLeft: `4px solid ${color}`, padding: '1.4rem', borderRadius: '16px' }}
+            className="bunkker-translucent-card border border-cyan-500/20 p-5 rounded-2xl shadow-[0_10px_35px_rgba(0,0,0,0.6)] hover:border-cyan-400/50 hover:shadow-[0_0_25px_rgba(14,165,233,0.2)] transition-all"
+            style={{ borderLeft: `4px solid ${color}` }}
         >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>

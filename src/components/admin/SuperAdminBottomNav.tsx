@@ -49,10 +49,10 @@ const SUPER_ADMIN_NAV_ITEMS: BottomNavItem[] = [
     },
     {
         id: 'sales',
-        title: 'Control de Ventas',
-        shortLabel: 'Ventas',
+        title: 'Caja y Ventas',
+        shortLabel: 'Caja',
         icon: <ShoppingCart size={20} />,
-        href: '/dashboard/admin/sales',
+        href: '/dashboard/sales',
         color: '#0ea5e9'
     },
     {

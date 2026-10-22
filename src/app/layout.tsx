@@ -27,8 +27,8 @@ export async function generateMetadata(): Promise<Metadata> {
 
   if (tenantId === 'default' || tenantId === 'admin.com') {
     return {
-      title: "BUNKKER E.C.O.S. | Sistema ERP",
-      description: "BUNKKER E.C.O.S. — Ecosistema Comercial Offline Sincronizado. El mejor sistema de gestión empresarial, punto de venta y logística para PYMEs.",
+      title: "BUNKKER ERP | Tecnología que Genera Impacto Real",
+      description: "BUNKKER E.C.O.S. — Energía · Control · Optimización · Sostenibilidad. Plataforma de alta tecnología y control operativo autónomo.",
       keywords: ["BUNKKER", "BUNKKER ERP", "ERP", "punto de venta", "gestión empresarial", "facturación", "local-first"],
       manifest: '/manifest.json',
       icons: {
