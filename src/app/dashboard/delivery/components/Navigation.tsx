@@ -1,6 +1,6 @@
 import React from 'react';
 import type { ViewState } from './types';
-import { PackageSearch, Map, Clock, Navigation as NavIcon, LayoutGrid, Truck } from 'lucide-react';
+import { PackageSearch, Map, Clock, Navigation as NavIcon, LayoutGrid, Truck, Crosshair } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function Navigation({ 
@@ -10,6 +10,7 @@ export default function Navigation({
   routeCount,
   poolCount = 0,
   historyCount = 0,
+  isSuperAdmin = false,
 }: { 
   currentView: ViewState; 
   onViewChange: (v: ViewState) => void;
@@ -17,6 +18,7 @@ export default function Navigation({
   routeCount: number;
   poolCount?: number;
   historyCount?: number;
+  isSuperAdmin?: boolean;
 }) {
   return (
     <div className="w-full z-20 mb-3 pointer-events-auto">
@@ -116,6 +118,23 @@ export default function Navigation({
               </span>
             )}
           </button>
+
+          {/* Delimitar Cobertura (SuperAdmin Exclusivo) */}
+          {isSuperAdmin && (
+            <button 
+              onClick={() => onViewChange('zone')}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all shrink-0 border",
+                currentView === 'zone'
+                  ? "bg-rose-500 text-slate-950 font-black border-rose-400 shadow-md shadow-rose-500/30"
+                  : "text-rose-400/90 border-rose-500/30 bg-rose-500/10 hover:text-white hover:bg-rose-500/20"
+              )}
+              title="Delimitar y configurar el radio de alcance y cobertura de la tienda"
+            >
+              <Crosshair size={15} />
+              <span>Zona de Alcance</span>
+            </button>
+          )}
         </div>
 
         {/* Entrega en Curso (Acción Rápida) */}

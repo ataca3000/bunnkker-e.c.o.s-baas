@@ -26,14 +26,42 @@ import {
     ChevronUp, 
     ExternalLink, 
     Radar,
-    Plus
+    Plus,
+    Crosshair,
+    Download,
+    Save,
+    LocateFixed,
+    ShieldCheck
 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function DeliveryDashboard() {
     const { profile } = useAuth();
-    const { orders: allOrders } = useCart();
+    const { orders: allOrders, siteConfig, updateSiteConfig } = useCart();
+    const isSuperAdmin = profile?.role === 'superadmin' || profile?.role === 'admin' || !profile?.role;
+    
+    // Configuración inicial de Zona de Cobertura / Geofence
+    const initialZone = siteConfig?.deliveryZone || {
+        enabled: true,
+        center: [19.4326, -99.1332] as [number, number],
+        radiusKm: 15,
+        address: 'Matriz Principal Ferretera'
+    };
+
+    const [zoneCenter, setZoneCenter] = useState<[number, number]>(initialZone.center || [19.4326, -99.1332]);
+    const [zoneRadiusKm, setZoneRadiusKm] = useState<number>(initialZone.radiusKm || 15);
+    const [zoneAddress, setZoneAddress] = useState<string>(initialZone.address || 'Matriz Principal');
+    const [isSavingZone, setIsSavingZone] = useState<boolean>(false);
+
+    // Sincronizar estado cuando la configuración del negocio cambie
+    useEffect(() => {
+        if (siteConfig?.deliveryZone) {
+            if (siteConfig.deliveryZone.center) setZoneCenter(siteConfig.deliveryZone.center);
+            if (siteConfig.deliveryZone.radiusKm) setZoneRadiusKm(siteConfig.deliveryZone.radiusKm);
+            if (siteConfig.deliveryZone.address) setZoneAddress(siteConfig.deliveryZone.address);
+        }
+    }, [siteConfig?.deliveryZone]);
     
     // Convert ERP Orders to DeliveryOrders
     const orders: DeliveryOrder[] = allOrders

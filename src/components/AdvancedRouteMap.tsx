@@ -1,4 +1,4 @@
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvents, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, Circle, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { useEffect, useState } from 'react';
 import 'leaflet/dist/leaflet.css';
@@ -29,8 +29,15 @@ export interface RouteMarker {
   isDelivered?: boolean;
 }
 
+export interface DeliveryZoneMapConfig {
+  enabled?: boolean;
+  center: [number, number];
+  radiusKm: number;
+  address?: string;
+}
+
 interface AdvancedRouteMapProps {
-  mode: 'picker' | 'route';
+  mode: 'picker' | 'route' | 'zone';
   center?: [number, number];
   zoom?: number;
   // Picker Props
@@ -42,6 +49,9 @@ interface AdvancedRouteMapProps {
   warehouseLocation?: [number, number];
   onMarkerClick?: (marker: RouteMarker) => void;
   useOfflineTiles?: boolean;
+  // Delivery Zone / Geofence Props
+  deliveryZone?: DeliveryZoneMapConfig;
+  onZoneCenterChange?: (pos: [number, number]) => void;
 }
 
 function LocationPicker({ position, setPosition, onSelect }: any) {
@@ -85,6 +95,15 @@ function MapBoundsFitter({ markers, warehouseLocation }: { markers?: RouteMarker
     return null;
 }
 
+function ZoneClickPicker({ onSelect }: { onSelect?: (pos: [number, number]) => void }) {
+    useMapEvents({
+        click(e) {
+            if (onSelect) onSelect([e.latlng.lat, e.latlng.lng]);
+        }
+    });
+    return null;
+}
+
 export default function AdvancedRouteMap({ 
     mode, 
     center = [19.4326, -99.1332], 
@@ -95,7 +114,9 @@ export default function AdvancedRouteMap({
     routeIndices = [],
     warehouseLocation = [19.4326, -99.1332],
     onMarkerClick,
-    useOfflineTiles = false
+    useOfflineTiles = false,
+    deliveryZone,
+    onZoneCenterChange
 }: AdvancedRouteMapProps) {
     const [pickerPos, setPickerPos] = useState<L.LatLng | null>(initialPickerPosition ? new L.LatLng(initialPickerPosition[0], initialPickerPosition[1]) : null);
 
@@ -122,6 +143,9 @@ export default function AdvancedRouteMap({
         routeCoords.push(warehouseLocation); // Regreso a bodega
     }
 
+    const zoneCenter = deliveryZone?.center || warehouseLocation;
+    const zoneRadiusMeters = (deliveryZone?.radiusKm || 10) * 1000;
+
     return (
         <MapContainer center={center} zoom={zoom} style={{ height: '100%', width: '100%', borderRadius: '0.5rem', zIndex: 1 }}>
             <TileLayer
@@ -129,6 +153,22 @@ export default function AdvancedRouteMap({
                 url={tileUrl}
             />
             
+            {/* ── CÍRCULO DE COBERTURA / GEOFENCE COMPARTIDO (VISIBLE PARA TODOS) ── */}
+            {deliveryZone && deliveryZone.enabled !== false && (
+                <Circle 
+                    center={zoneCenter} 
+                    radius={zoneRadiusMeters} 
+                    pathOptions={{ 
+                        color: '#06b6d4', 
+                        fillColor: '#06b6d4', 
+                        fillOpacity: 0.14,
+                        weight: 2,
+                        dashArray: mode === 'zone' ? '6, 6' : undefined
+                    }} 
+                />
+            )}
+
+            {/* ── MODO 1: PICKER (Ubicación de Cliente) ── */}
             {mode === 'picker' && (
                 <LocationPicker 
                     position={pickerPos} 
@@ -137,11 +177,39 @@ export default function AdvancedRouteMap({
                 />
             )}
 
+            {/* ── MODO 2: ZONA / COBERTURA (Configuración SuperAdmin) ── */}
+            {mode === 'zone' && (
+                <>
+                    <ZoneClickPicker onSelect={onZoneCenterChange} />
+                    <Marker 
+                        position={zoneCenter}
+                        draggable={true}
+                        eventHandlers={{
+                            dragend: (e) => {
+                                const pos = e.target.getLatLng();
+                                if (onZoneCenterChange) onZoneCenterChange([pos.lat, pos.lng]);
+                            }
+                        }}
+                    >
+                        <Popup>
+                            <div className="font-black text-slate-900 text-xs">📍 Matriz / Almacén Central</div>
+                            <div className="text-[11px] text-slate-600 mt-0.5">
+                                Arrastra este pin o haz clic en el mapa para ubicar tu negocio.
+                            </div>
+                            <div className="text-[10px] text-cyan-600 font-bold mt-1">
+                                Cobertura activa: {deliveryZone?.radiusKm || 10} km
+                            </div>
+                        </Popup>
+                    </Marker>
+                </>
+            )}
+
+            {/* ── MODO 3: RUTA (Repartidor / Despacho) ── */}
             {mode === 'route' && (
                 <>
                     <MapBoundsFitter markers={markers} warehouseLocation={warehouseLocation} />
                     
-                    {/* Marcador de Bodega (se usa el mismo default pero con color/texto distinto en Popup) */}
+                    {/* Marcador de Bodega */}
                     <Marker position={warehouseLocation}>
                         <Popup>Bodega Principal (Inicio/Fin)</Popup>
                     </Marker>
