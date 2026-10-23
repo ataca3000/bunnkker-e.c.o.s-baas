@@ -1031,18 +1031,18 @@ export default function InventoryDashboard() {
                 <Link href="/dashboard" className="inline-flex items-center gap-2 text-cyan-400 hover:text-cyan-300 font-bold uppercase text-xs tracking-wider mb-4 transition-colors drop-shadow-[0_0_5px_rgba(0,242,255,0.5)]">
                     <ArrowLeft size={16} /> Volver al Tablero
                 </Link>
-                <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-[8px] bg-slate-900/60 backdrop-blur-md p-[8px] rounded-sm shadow-[0_0_20px_rgba(0,242,255,0.1)] border border-cyan-500/30">
-                    <div className="flex items-center gap-[8px]">
-                        <div className="bg-cyan-900/40 p-4 rounded-sm text-cyan-400 border border-cyan-500/50 shadow-[0_0_15px_rgba(0,242,255,0.3)]">
-                            <Package size={32} />
+                <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-5 gap-3 bg-slate-900/70 backdrop-blur-md px-4 py-3 rounded-xl shadow-lg border border-cyan-500/30">
+                    <div className="flex items-center gap-3">
+                        <div className="bg-cyan-900/40 p-2.5 rounded-lg text-cyan-400 border border-cyan-500/50 shadow-[0_0_12px_rgba(0,242,255,0.25)] shrink-0">
+                            <Package size={22} />
                         </div>
                         <div>
-                            <h1 className="text-3xl font-[900] text-white uppercase tracking-tighter drop-shadow-md">ALMACÉN DE ESTANTES</h1>
-                            <p className="text-cyan-400 font-bold uppercase text-xs tracking-widest mt-1">Gestión de Inventario por Carpetas y Pasillos</p>
+                            <h1 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight leading-none">ALMACÉN</h1>
+                            <p className="text-cyan-400 font-bold uppercase text-[10px] tracking-widest mt-1">Estantes y Existencias</p>
                         </div>
                     </div>
                     
-                    <div className="flex gap-3 w-full md:w-auto">
+                    <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
                         <button 
                             onClick={() => {
                                 const rows = localProducts.map(p => ({
@@ -1057,29 +1057,30 @@ export default function InventoryDashboard() {
                                 }));
                                 exportToExcel('Inventario_Almacen', rows);
                             }}
-                            className="bg-emerald-600/20 text-emerald-400 px-5 py-3 rounded-sm font-bold uppercase text-xs tracking-widest flex items-center gap-2 hover:bg-emerald-600/30 transition-all shadow-[0_0_15px_rgba(16,185,129,0.2)] border border-emerald-500/50 active:scale-95 flex-1 md:flex-none justify-center"
+                            className="bg-emerald-600/20 text-emerald-300 px-3.5 py-2 rounded-lg font-bold uppercase text-xs tracking-wider flex items-center gap-1.5 hover:bg-emerald-600/30 transition-all border border-emerald-500/40 active:scale-95"
+                            title="Exportar a Excel"
                         >
-                            <FileSpreadsheet size={16} /> Exportar Excel
+                            <FileSpreadsheet size={14} /> Excel
                         </button>
                         
                         <ImportCSVButton onSuccess={() => {
-                            // The products will be re-fetched or we can just reload the page since Next.js router.refresh doesn't exist here directly.
-                            // Actually, I can use window.location.reload() to easily refresh client-side products, or I can trigger a fetch.
                             window.location.reload();
                         }} />
+
                         <button 
                             onClick={() => setIsScannerOpen(true)}
-                            className="bg-cyan-600/20 text-cyan-400 px-5 py-3 rounded-sm font-bold uppercase text-xs tracking-widest flex items-center gap-2 hover:bg-cyan-600/30 transition-all shadow-[0_0_15px_rgba(0,242,255,0.2)] border border-cyan-500/50 active:scale-95 flex-1 md:flex-none justify-center"
+                            className="bg-cyan-600/20 text-cyan-300 px-3.5 py-2 rounded-lg font-bold uppercase text-xs tracking-wider flex items-center gap-1.5 hover:bg-cyan-600/30 transition-all border border-cyan-500/40 active:scale-95"
+                            title="Escanear con Cámara o Láser"
                         >
-                            <QrCode size={16} /> Escanear Estante
+                            <QrCode size={14} /> Escanear
                         </button>
                         
                         {!isCreating && (
                             <button 
                                 onClick={() => { setEditingProductId(null); setIsCreating(true); setStep(1); }}
-                                className="bg-emerald-500/20 text-emerald-400 px-5 py-3 rounded-sm font-bold uppercase text-xs tracking-widest flex items-center gap-2 hover:bg-emerald-500/30 transition-all shadow-[0_0_15px_rgba(16,185,129,0.2)] border border-emerald-500/50 active:scale-95 flex-1 md:flex-none justify-center"
+                                className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-4 py-2 rounded-lg font-black uppercase text-xs tracking-wider flex items-center gap-1.5 transition-all shadow-md active:scale-95"
                             >
-                                <Plus size={16} /> Nuevo Ingreso
+                                <Plus size={15} /> Nuevo
                             </button>
                         )}
                     </div>
@@ -1321,17 +1322,16 @@ export default function InventoryDashboard() {
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                         >
-                            {/* TAB NAVIGATION */}
-                            {/* TAB NAVIGATION */}
-                            <div className="flex flex-wrap gap-2 mb-8 bg-slate-900/50 p-2 rounded-xl border border-slate-700/50 w-fit">
+                            {/* TAB NAVIGATION: Compact Single-Row Toolbar */}
+                            <div className="flex items-center gap-1.5 mb-5 bg-slate-900/70 p-1.5 rounded-xl border border-slate-700/60 overflow-x-auto hide-scrollbar">
                                 <button
                                     type="button"
                                     onClick={() => setActiveTab('orders')}
-                                    className={`py-2 px-5 font-bold text-sm transition-all outline-none rounded-sm flex items-center gap-2 ${activeTab === 'orders' ? 'bg-amber-400 text-slate-950 font-black shadow-md shadow-amber-400/30 ring-2 ring-amber-300' : 'text-amber-400 hover:text-white hover:bg-slate-800'}`}
+                                    className={`py-1.5 px-3.5 font-bold text-xs rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap ${activeTab === 'orders' ? 'bg-amber-400 text-slate-950 font-black shadow-sm' : 'text-amber-300 hover:text-white hover:bg-white/5'}`}
                                 >
-                                    <Clock size={16} /> Pizarra de Surtido
+                                    <Clock size={14} /> Surtido
                                     {pendingPrepOrders.length > 0 && (
-                                        <span className="bg-red-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full animate-pulse">
+                                        <span className="bg-red-500 text-white text-[10px] font-black px-1.5 py-0.2 rounded-full animate-pulse">
                                             {pendingPrepOrders.length}
                                         </span>
                                     )}
@@ -1339,80 +1339,83 @@ export default function InventoryDashboard() {
                                 <button
                                     type="button"
                                     onClick={() => setActiveTab('catalog')}
-                                    className={`py-2 px-5 font-bold text-sm transition-all outline-none rounded-sm flex items-center gap-2 ${activeTab === 'catalog' ? 'bg-[#0ea5e9] text-white shadow-md shadow-blue-500/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+                                    className={`py-1.5 px-3.5 font-bold text-xs rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap ${activeTab === 'catalog' ? 'bg-[#0ea5e9] text-white shadow-sm' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
                                 >
-                                    <Package size={16} /> Productos
+                                    <Package size={14} /> Productos ({filteredProducts.length})
                                 </button>
                                 <button 
                                     type="button"
                                     onClick={() => setActiveTab('shelves')}
-                                    className={`py-2 px-5 font-bold text-sm transition-all outline-none rounded-sm flex items-center gap-2 ${activeTab === 'shelves' ? 'bg-[#0ea5e9] text-white shadow-md shadow-blue-500/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+                                    className={`py-1.5 px-3.5 font-bold text-xs rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap ${activeTab === 'shelves' ? 'bg-[#0ea5e9] text-white shadow-sm' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
                                 >
-                                    <Layers size={16} /> Estantes (Chunks)
+                                    <Layers size={14} /> Estantes ({allEstantes.length})
                                 </button>
                                 <button 
                                     type="button"
                                     onClick={() => setActiveTab('chunks_map')}
-                                    className={`py-2 px-5 font-bold text-sm transition-all outline-none rounded-sm flex items-center gap-2 ${activeTab === 'chunks_map' ? 'bg-[#0ea5e9] text-white shadow-md shadow-blue-500/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+                                    className={`py-1.5 px-3.5 font-bold text-xs rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap ${activeTab === 'chunks_map' ? 'bg-[#0ea5e9] text-white shadow-sm' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
                                 >
-                                    <Database size={16} /> Mapa de Flujo y Chunks
+                                    <Database size={14} /> Flujo Chunks
                                 </button>
                                 <button 
                                     type="button"
                                     onClick={() => setActiveTab('transfer')}
-                                    className={`py-2 px-5 font-bold text-sm transition-all outline-none rounded-sm flex items-center gap-2 ${activeTab === 'transfer' ? 'bg-[#0ea5e9] text-white shadow-md shadow-blue-500/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+                                    className={`py-1.5 px-3.5 font-bold text-xs rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap ${activeTab === 'transfer' ? 'bg-[#0ea5e9] text-white shadow-sm' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
                                 >
-                                    <Upload size={16} /> Importación/Exportación
+                                    <Upload size={14} /> Import/Export
                                 </button>
                                 <button 
                                     type="button"
                                     onClick={() => setActiveTab('backup')}
-                                    className={`py-2 px-5 font-bold text-sm transition-all outline-none rounded-sm flex items-center gap-2 ${activeTab === 'backup' ? 'bg-[#0ea5e9] text-white shadow-md shadow-blue-500/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+                                    className={`py-1.5 px-3.5 font-bold text-xs rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap ${activeTab === 'backup' ? 'bg-[#0ea5e9] text-white shadow-sm' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
                                 >
-                                    <Database size={16} /> Respaldo & Redundancia USB/GCP
+                                    <Database size={14} /> Respaldos USB
                                 </button>
                                 <button 
                                     type="button"
                                     onClick={() => setActiveTab('shrinkage')}
-                                    className={`py-2 px-5 font-bold text-sm transition-all outline-none rounded-sm flex items-center gap-2 ${activeTab === 'shrinkage' ? 'bg-red-500 text-white shadow-md shadow-red-500/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+                                    className={`py-1.5 px-3.5 font-bold text-xs rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap ${activeTab === 'shrinkage' ? 'bg-red-500 text-white shadow-sm' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
                                 >
-                                    <AlertTriangle size={16} /> Baúl de Robo Hormiga
+                                    <AlertTriangle size={14} /> Merma
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => setActiveTab('trash')}
-                                    className={`py-2 px-5 font-bold text-sm transition-all outline-none rounded-sm flex items-center gap-2 ${activeTab === 'trash' ? 'bg-red-600 text-white shadow-md shadow-red-500/20' : 'text-slate-400 hover:text-red-300 hover:bg-slate-800'}`}
+                                    className={`py-1.5 px-3.5 font-bold text-xs rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap ${activeTab === 'trash' ? 'bg-red-600 text-white shadow-sm' : 'text-slate-400 hover:text-red-300 hover:bg-white/5'}`}
                                 >
-                                    <Trash2 size={16} /> Papelera
-                                    {trashedProducts.length > 0 && <span className="text-[10px] font-mono tabular-nums text-red-200">({trashedProducts.length})</span>}
+                                    <Trash2 size={14} /> Papelera {trashedProducts.length > 0 && `(${trashedProducts.length})`}
                                 </button>
                             </div>
 
                             {activeTab === 'orders' && (
-                                <section className="space-y-6">
-                                    {/* Encabezado y Asistente LION de Almacén */}
-                                    <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border border-amber-500/30 rounded-2xl p-6 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-2xl shrink-0 shadow-inner">
+                                <section className="space-y-4">
+                                    {/* Encabezado Compacto de Pizarra de Surtido */}
+                                    <div className="bg-slate-900/80 border border-amber-500/30 rounded-xl px-4 py-3 shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-lg shrink-0">
                                                 🦁
                                             </div>
                                             <div>
-                                                <h3 className="text-base font-black uppercase text-amber-400 tracking-wider flex items-center gap-2">
-                                                    Pizarra Global de Surtido & Recolección en Almacén
+                                                <h3 className="text-xs sm:text-sm font-black uppercase text-amber-300 tracking-wide flex items-center gap-2 leading-none">
+                                                    Surtido en Almacén
+                                                    <span className="text-[10px] text-zinc-400 font-normal">
+                                                        ({pendingPrepOrders.length} {pendingPrepOrders.length === 1 ? 'pedido pendiente' : 'pedidos pendientes'})
+                                                    </span>
                                                 </h3>
-                                                <p className="text-xs text-slate-300 mt-1">
-                                                    {pendingPrepOrders.length === 0 
-                                                        ? '✨ Todo el inventario está al día. No hay pedidos pendientes de recolección.' 
-                                                        : `Tienes ${pendingPrepOrders.length} pedido(s) esperando recolección física en anaquel. Puedes tomarlos tú o usar el Asistente IA.`
-                                                    }
-                                                </p>
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-2 w-full md:w-auto">
-                                            <button
-                                                type="button"
-                                                onClick={() => setOnlyMyOrders(prev => !prev)}
-                                                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 border ${
+                                        <button
+                                            type="button"
+                                            onClick={() => setOnlyMyOrders(prev => !prev)}
+                                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 border ${
+                                                onlyMyOrders
+                                                    ? 'bg-amber-500 text-slate-950 font-black border-amber-400'
+                                                    : 'bg-white/5 text-slate-300 hover:text-white border-white/10'
+                                            }`}
+                                        >
+                                            <span>👤</span> {onlyMyOrders ? 'Mis Asignados' : 'Filtrar Mis Asignados'}
+                                        </button>
+                                    </div>
                                                     onlyMyOrders
                                                         ? 'bg-amber-500 text-slate-950 font-black border-amber-400 shadow-md'
                                                         : 'bg-slate-900 text-slate-400 hover:text-white border-slate-800'
@@ -1593,40 +1596,38 @@ export default function InventoryDashboard() {
                             )}
 
                             {activeTab === 'catalog' && (
-                                <>
-                                    <CloudBackupConfigWidget compact={true} />
-                                    <section className="overflow-hidden border border-slate-700/70 bg-slate-900/70 shadow-xl">
-                                    <div className="flex flex-col gap-[8px] border-b border-slate-700/70 p-[8px] md:flex-row md:items-center md:justify-between">
+                                <section className="overflow-hidden border border-slate-700/70 bg-slate-900/70 shadow-xl rounded-xl">
+                                    <div className="flex flex-col gap-2 border-b border-slate-700/70 p-3 md:flex-row md:items-center md:justify-between">
                                         <div>
-                                            <h2 className="text-lg font-black uppercase text-white">Inventario de productos</h2>
-                                            <p className="mt-1 text-xs text-slate-400">{filteredProducts.length} productos encontrados</p>
+                                            <h2 className="text-base font-black uppercase text-white tracking-wide">Inventario de Productos</h2>
+                                            <p className="text-[11px] text-slate-400">{filteredProducts.length} productos registrados</p>
                                         </div>
                                         <div className="flex w-full flex-wrap gap-2 md:w-auto md:flex-nowrap">
-                                            <div className="relative min-w-0 flex-1 md:w-96">
-                                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={17} />
+                                            <div className="relative min-w-0 flex-1 md:w-80">
+                                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
                                                 <input
                                                     type="search"
                                                     value={searchTerm}
                                                     onChange={event => setSearchTerm(event.target.value)}
-                                                    placeholder="Nombre, código, categoría o ubicación"
-                                                    className="w-full border border-slate-700 bg-slate-950 py-3 pl-10 pr-3 text-sm text-white outline-none focus:border-sky-500"
+                                                    placeholder="Buscar por nombre, código o ubicación..."
+                                                    className="w-full border border-slate-700 bg-slate-950 py-2 pl-9 pr-3 text-xs text-white rounded-lg outline-none focus:border-cyan-400"
                                                 />
                                             </div>
                                             <button
                                                 type="button"
                                                 onClick={() => setIsScannerOpen(true)}
-                                                className="flex h-11 w-11 shrink-0 items-center justify-center border border-sky-500/40 bg-sky-500/10 text-sky-300 hover:bg-sky-500/20"
+                                                className="flex h-9 w-9 shrink-0 items-center justify-center border border-cyan-500/40 bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 rounded-lg"
                                                 aria-label="Escanear código con la cámara"
                                                 title="Escanear código con la cámara"
                                             >
-                                                <Camera size={19} />
+                                                <Camera size={16} />
                                             </button>
                                             <button
                                                 type="button"
                                                 onClick={() => handleAddProductClick('BODEGA GENERAL', 'GENERAL')}
-                                                className="flex h-11 shrink-0 items-center justify-center gap-2 bg-sky-600 px-4 text-xs font-black uppercase text-white hover:bg-sky-500"
+                                                className="flex h-9 shrink-0 items-center justify-center gap-1.5 bg-cyan-600 hover:bg-cyan-500 px-3.5 text-xs font-black uppercase text-white rounded-lg shadow-sm"
                                             >
-                                                <Plus size={16} /> Nuevo producto
+                                                <Plus size={14} /> Nuevo
                                             </button>
                                         </div>
                                     </div>
@@ -1634,42 +1635,78 @@ export default function InventoryDashboard() {
                                         <table className="w-full min-w-[760px] text-left text-sm">
                                             <thead className="bg-slate-800/80 text-[10px] uppercase tracking-wider text-slate-400">
                                                 <tr>
-                                                    <th className="px-5 py-3">Producto</th>
-                                                    <th className="px-5 py-3">Código</th>
-                                                    <th className="px-5 py-3">Ubicación</th>
-                                                    <th className="px-5 py-3 text-right">Existencia</th>
-                                                    <th className="px-5 py-3 text-right">Precio</th>
-                                                    <th className="px-5 py-3 text-right">Acción</th>
+                                                    <th className="px-4 py-2.5 w-14 text-center">Foto</th>
+                                                    <th className="px-4 py-2.5">Producto</th>
+                                                    <th className="px-4 py-2.5">Barras / Código</th>
+                                                    <th className="px-4 py-2.5">Ubicación</th>
+                                                    <th className="px-4 py-2.5 text-right">Existencia</th>
+                                                    <th className="px-4 py-2.5 text-right">Precio</th>
+                                                    <th className="px-4 py-2.5 text-right">Acción</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-slate-800">
                                                 {filteredProducts.map(product => (
-                                                    <tr key={product.id} className="hover:bg-slate-800/50">
-                                                        <td className="px-5 py-3">
-                                                            <button type="button" onClick={() => handleEditProduct(product)} className="text-left font-semibold text-white hover:text-sky-300">
+                                                    <tr key={product.id} className="hover:bg-slate-800/40 transition-colors">
+                                                        {/* Columna Foto */}
+                                                        <td className="px-4 py-2.5 text-center">
+                                                            <div className="w-11 h-11 rounded-lg bg-zinc-800 border border-white/10 overflow-hidden flex items-center justify-center mx-auto shrink-0 shadow-sm">
+                                                                {product.image ? (
+                                                                    <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+                                                                ) : (
+                                                                    <Package size={18} className="text-zinc-500" />
+                                                                )}
+                                                            </div>
+                                                        </td>
+
+                                                        {/* Columna Producto */}
+                                                        <td className="px-4 py-2.5">
+                                                            <button type="button" onClick={() => handleEditProduct(product)} className="text-left font-bold text-white hover:text-cyan-300 text-xs sm:text-sm">
                                                                 {product.name}
                                                             </button>
-                                                            <div className="mt-0.5 text-xs text-slate-500">{product.category || 'General'}</div>
+                                                            <div className="text-[11px] text-slate-400">{product.category || 'General'}</div>
                                                         </td>
-                                                        <td className="px-5 py-3 font-mono text-xs text-slate-400">{product.barcode || product.id}</td>
-                                                        <td className="px-5 py-3 text-xs text-slate-300">
-                                                            {(product.location?.estante || product.estante || 'Sin asignar')} / {(product.location?.fila || product.fila || 'General')}
+
+                                                        {/* Columna Barras */}
+                                                        <td className="px-4 py-2.5">
+                                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/5 border border-white/10 font-mono text-xs text-cyan-300 font-bold shadow-sm">
+                                                                <Barcode size={14} className="text-cyan-400 shrink-0" />
+                                                                {product.barcode || product.id}
+                                                            </span>
                                                         </td>
-                                                        <td className="px-5 py-3 text-right font-bold text-sky-300">{product.stock} {product.unitType || 'PZA'}</td>
-                                                        <td className="px-5 py-3 text-right text-slate-200">{formatCurrency(product.price)}</td>
-                                                        <td className="px-5 py-3 text-right">
-                                                            <button type="button" onClick={() => handleEditProduct(product)} className="p-2 text-slate-400 hover:bg-sky-500/10 hover:text-sky-300" title="Editar producto">
-                                                                <Edit3 size={16} />
-                                                            </button>
-                                                            <button type="button" onClick={() => handleDeleteProduct(product.id, product.name)} className="p-2 text-slate-400 hover:bg-red-500/10 hover:text-red-300" title="Mover a papelera">
-                                                                <Trash2 size={16} />
-                                                            </button>
+
+                                                        {/* Columna Ubicación */}
+                                                        <td className="px-4 py-2.5 text-xs text-slate-300">
+                                                            <span className="px-2 py-0.5 rounded bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 font-medium">
+                                                                {(product.location?.estante || product.estante || 'Sin asignar')} / {(product.location?.fila || product.fila || 'General')}
+                                                            </span>
+                                                        </td>
+
+                                                        {/* Columna Existencia */}
+                                                        <td className="px-4 py-2.5 text-right font-bold text-cyan-300 font-mono text-xs sm:text-sm">
+                                                            {product.stock} {product.unitType || 'PZA'}
+                                                        </td>
+
+                                                        {/* Columna Precio */}
+                                                        <td className="px-4 py-2.5 text-right text-slate-200 font-semibold font-mono text-xs sm:text-sm">
+                                                            {formatCurrency(product.price)}
+                                                        </td>
+
+                                                        {/* Columna Acción */}
+                                                        <td className="px-4 py-2.5 text-right">
+                                                            <div className="flex items-center justify-end gap-1">
+                                                                <button type="button" onClick={() => handleEditProduct(product)} className="p-1.5 text-slate-400 hover:bg-cyan-500/10 hover:text-cyan-300 rounded-lg transition-colors" title="Editar producto">
+                                                                    <Edit3 size={15} />
+                                                                </button>
+                                                                <button type="button" onClick={() => handleDeleteProduct(product.id, product.name)} className="p-1.5 text-slate-400 hover:bg-red-500/10 hover:text-red-300 rounded-lg transition-colors" title="Mover a papelera">
+                                                                    <Trash2 size={15} />
+                                                                </button>
+                                                            </div>
                                                         </td>
                                                     </tr>
                                                 ))}
                                                 {filteredProducts.length === 0 && (
                                                     <tr>
-                                                        <td colSpan={6} className="px-5 py-14 text-center text-sm text-slate-500">
+                                                        <td colSpan={7} className="px-5 py-12 text-center text-xs text-slate-500">
                                                             {localProducts.length === 0 ? 'Todavía no hay productos. Registra el primero desde Estantes.' : 'No hay coincidencias para esa búsqueda.'}
                                                         </td>
                                                     </tr>
