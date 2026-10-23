@@ -119,6 +119,13 @@ export interface SiteConfig {
     enableWebPayments?: boolean;
     allowWebCheckout?: boolean;
     requireCashierInspection?: boolean;
+    deliveryZone?: {
+        enabled: boolean;
+        center: [number, number];
+        radiusKm: number;
+        address?: string;
+        updatedAt?: string;
+    };
 }
 
 export type FirebaseStatus = 'connecting' | 'online' | 'offline' | 'demo';

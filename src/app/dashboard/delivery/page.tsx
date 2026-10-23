@@ -313,6 +313,87 @@ export default function DeliveryDashboard() {
         setCurrentView('delivery');
     };
 
+    const handleSaveDeliveryZone = async () => {
+        setIsSavingZone(true);
+        try {
+            const newZone = {
+                enabled: true,
+                center: zoneCenter,
+                radiusKm: Number(zoneRadiusKm),
+                address: zoneAddress,
+                updatedAt: new Date().toISOString()
+            };
+            await updateSiteConfig({
+                deliveryZone: newZone
+            });
+            toast.success(`Radio de cobertura fijado en ${zoneRadiusKm} km con éxito.`, 'Área Delimitada');
+        } catch (err: any) {
+            toast.error('Error al guardar la zona de entrega en la tienda.', 'Error');
+        } finally {
+            setIsSavingZone(false);
+        }
+    };
+
+    const handleDownloadGeoJson = () => {
+        const coords = [];
+        for (let i = 0; i <= 64; i++) {
+            const angle = (i * 360) / 64;
+            const rad = (angle * Math.PI) / 180;
+            const dLat = (zoneRadiusKm / 111) * Math.sin(rad);
+            const dLng = (zoneRadiusKm / (111 * Math.cos((zoneCenter[0] * Math.PI) / 180))) * Math.cos(rad);
+            coords.push([Number((zoneCenter[1] + dLng).toFixed(6)), Number((zoneCenter[0] + dLat).toFixed(6))]);
+        }
+        const geojson = {
+            type: "FeatureCollection",
+            generator: "BUNKKER_ECOS_GEOFENCE_ENGINE",
+            features: [
+                {
+                    type: "Feature",
+                    properties: {
+                        businessName: siteConfig?.businessName || "Búnker E.C.O.S. Ferreterías",
+                        address: zoneAddress,
+                        centerLat: zoneCenter[0],
+                        centerLng: zoneCenter[1],
+                        radiusKm: zoneRadiusKm,
+                        areaKm2: Number((Math.PI * zoneRadiusKm * zoneRadiusKm).toFixed(2)),
+                        updatedAt: new Date().toISOString()
+                    },
+                    geometry: {
+                        type: "Polygon",
+                        coordinates: [coords]
+                    }
+                }
+            ]
+        };
+        const blob = new Blob([JSON.stringify(geojson, null, 2)], { type: "application/geo+json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `bunkker-zona-cobertura-${zoneRadiusKm}km.geojson`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        toast.info('Archivo GeoJSON descargado para respaldo offline y GIS', 'Zona Descargada');
+    };
+
+    const handleUseCurrentGpsAsCenter = () => {
+        if (!navigator.geolocation) {
+            toast.warning('Geolocalización no soportada por el navegador.');
+            return;
+        }
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                setZoneCenter([pos.coords.latitude, pos.coords.longitude]);
+                toast.success('Centro de la tienda fijado en tus coordenadas GPS actuales.', 'GPS Sincronizado');
+            },
+            (err) => {
+                toast.error('No se pudo obtener la posición GPS actual.', 'Error GPS');
+            },
+            { enableHighAccuracy: true }
+        );
+    };
+
     const mapCenter = driverLocation ? `${driverLocation.lat},${driverLocation.lng}` : 'Ciudad+de+Mexico';
 
     return (
@@ -425,6 +506,7 @@ export default function DeliveryDashboard() {
                     routeCount={currentRoute.length}
                     poolCount={availableOrders.length}
                     historyCount={history.length}
+                    isSuperAdmin={isSuperAdmin}
                 />
 
                 {/* ── COCKPIT VIEW: 3 COLUMNS (Bolsa | Listo | Historial) ───────── */}
@@ -679,12 +761,165 @@ export default function DeliveryDashboard() {
                                             zoom={13}
                                             markers={routeMarkers}
                                             warehouseLocation={centerPos}
+                                            deliveryZone={{
+                                                center: zoneCenter,
+                                                radiusKm: zoneRadiusKm,
+                                                enabled: true
+                                            }}
                                             onMarkerClick={(m: any) => startDelivery(m.id)}
                                         />
                                     );
                                 })()}
                             </React.Suspense>
                         )}
+                    </div>
+                )}
+
+                {/* ── SUPERADMIN GEOFENCE COCKPIT: DELIMITAR ZONA DE COBERTURA ─────────────── */}
+                {currentView === 'zone' && (
+                    <div className="space-y-4 w-full">
+                        {/* Header explicativo */}
+                        <div className="bg-slate-900/90 border border-rose-500/30 rounded-2xl p-4 shadow-xl backdrop-blur-md flex flex-col md:flex-row md:items-center justify-between gap-3">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-400">
+                                    <Crosshair size={22} />
+                                </div>
+                                <div>
+                                    <h2 className="text-base font-black text-white uppercase tracking-wider flex items-center gap-2">
+                                        Delimitación de Cobertura y Zona de Alcance
+                                    </h2>
+                                    <p className="text-xs text-slate-400">
+                                        Arrastra el pin de la tienda o haz clic en el mapa para ubicar tu sucursal. Ajusta el radio para fijar el límite de entrega.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 shrink-0">
+                                <button
+                                    onClick={handleUseCurrentGpsAsCenter}
+                                    className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-cyan-400 hover:text-white rounded-xl text-xs font-bold transition-colors border border-cyan-500/30"
+                                    title="Fijar centro con el GPS de este dispositivo"
+                                >
+                                    <LocateFixed size={14} />
+                                    <span>Usar mi GPS</span>
+                                </button>
+                                <button
+                                    onClick={handleDownloadGeoJson}
+                                    className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition-colors border border-slate-700"
+                                    title="Descargar archivo GeoJSON para uso offline"
+                                >
+                                    <Download size={14} />
+                                    <span>Descargar GeoJSON</span>
+                                </button>
+                                <button
+                                    onClick={handleSaveDeliveryZone}
+                                    disabled={isSavingZone}
+                                    className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-400 hover:to-pink-500 text-slate-950 font-black rounded-xl text-xs uppercase tracking-wider shadow-lg shadow-rose-500/30 transition-all disabled:opacity-50"
+                                >
+                                    <Save size={14} />
+                                    <span>{isSavingZone ? 'Guardando...' : 'Guardar Cobertura'}</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Mapa compartido en modo 'zone' + Controles flotantes */}
+                        <div className="relative w-full h-[600px] rounded-2xl overflow-hidden border border-rose-500/30 shadow-2xl bg-slate-900">
+                            {typeof window !== 'undefined' && (
+                                <React.Suspense fallback={<div className="p-8 text-center text-slate-400 font-mono text-sm">Cargando Mapa de Cobertura...</div>}>
+                                    {(() => {
+                                        const AdvancedRouteMap = require('@/components/AdvancedRouteMap').default;
+                                        return (
+                                            <AdvancedRouteMap 
+                                                mode="zone"
+                                                center={zoneCenter}
+                                                zoom={12}
+                                                warehouseLocation={zoneCenter}
+                                                deliveryZone={{
+                                                    center: zoneCenter,
+                                                    radiusKm: zoneRadiusKm,
+                                                    enabled: true,
+                                                    address: zoneAddress
+                                                }}
+                                                onZoneCenterChange={(newCenter: [number, number]) => setZoneCenter(newCenter)}
+                                            />
+                                        );
+                                    })()}
+                                </React.Suspense>
+                            )}
+
+                            {/* Panel Flotante Glassmorphism en esquina superior derecha */}
+                            <div className="absolute top-4 right-4 z-20 max-w-sm w-full bg-slate-950/90 border border-slate-800 rounded-2xl p-4 shadow-2xl backdrop-blur-xl space-y-3">
+                                <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                                    <span className="text-xs font-black uppercase text-rose-400 tracking-wider flex items-center gap-1.5">
+                                        <Radar size={14} /> Radio de Alcance
+                                    </span>
+                                    <span className="text-base font-black text-white font-mono bg-rose-500/20 text-rose-300 px-2.5 py-0.5 rounded-lg border border-rose-500/30">
+                                        {zoneRadiusKm} km
+                                    </span>
+                                </div>
+
+                                {/* Slider de Radio */}
+                                <div className="space-y-1">
+                                    <div className="flex justify-between text-[11px] text-slate-400 font-medium">
+                                        <span>1 km (Cercanía)</span>
+                                        <span>50 km (Metropolitano)</span>
+                                    </div>
+                                    <input 
+                                        type="range"
+                                        min="1"
+                                        max="50"
+                                        step="0.5"
+                                        value={zoneRadiusKm}
+                                        onChange={(e) => setZoneRadiusKm(parseFloat(e.target.value))}
+                                        className="w-full accent-rose-500 cursor-pointer h-2 bg-slate-800 rounded-lg appearance-none"
+                                    />
+                                </div>
+
+                                {/* Resumen Métricas */}
+                                <div className="grid grid-cols-2 gap-2 pt-1">
+                                    <div className="bg-slate-900/80 rounded-xl p-2 border border-slate-800/80">
+                                        <span className="text-[10px] text-slate-400 block font-semibold">Área Cubierta</span>
+                                        <span className="text-xs font-bold text-cyan-400 font-mono">
+                                            ~{(Math.PI * zoneRadiusKm * zoneRadiusKm).toFixed(1)} km²
+                                        </span>
+                                    </div>
+                                    <div className="bg-slate-900/80 rounded-xl p-2 border border-slate-800/80">
+                                        <span className="text-[10px] text-slate-400 block font-semibold">Tiempo Máx. Est.</span>
+                                        <span className="text-xs font-bold text-emerald-400 font-mono">
+                                            ~{Math.round(zoneRadiusKm * 2.2 + 10)} min
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Dirección / Etiqueta de la Matriz */}
+                                <div className="space-y-1">
+                                    <label className="text-[10px] uppercase font-bold text-slate-400">Nombre de la Sucursal / Matriz</label>
+                                    <input 
+                                        type="text"
+                                        value={zoneAddress}
+                                        onChange={(e) => setZoneAddress(e.target.value)}
+                                        placeholder="Ej. Matriz Central CDMX"
+                                        className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-rose-500 font-medium"
+                                    />
+                                </div>
+
+                                {/* Coordenadas */}
+                                <div className="text-[10px] font-mono text-slate-400 bg-slate-900/90 rounded-lg px-2.5 py-1.5 flex justify-between border border-slate-800/60">
+                                    <span>Lat: {zoneCenter[0].toFixed(5)}</span>
+                                    <span>Lng: {zoneCenter[1].toFixed(5)}</span>
+                                </div>
+
+                                {/* Botón Guardar en panel */}
+                                <button
+                                    onClick={handleSaveDeliveryZone}
+                                    disabled={isSavingZone}
+                                    className="w-full py-2.5 bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-400 hover:to-pink-500 text-slate-950 font-black rounded-xl text-xs uppercase tracking-wider shadow-lg shadow-rose-500/20 transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
+                                >
+                                    <Save size={14} />
+                                    <span>{isSavingZone ? 'Guardando...' : 'Confirmar y Guardar Cobertura'}</span>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 )}
 
