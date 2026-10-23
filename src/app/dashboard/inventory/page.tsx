@@ -1409,21 +1409,12 @@ export default function InventoryDashboard() {
                                             onClick={() => setOnlyMyOrders(prev => !prev)}
                                             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 border ${
                                                 onlyMyOrders
-                                                    ? 'bg-amber-500 text-slate-950 font-black border-amber-400'
-                                                    : 'bg-white/5 text-slate-300 hover:text-white border-white/10'
+                                                    ? 'bg-amber-500 text-slate-950 font-black border-amber-400 shadow-md'
+                                                    : 'bg-slate-900 text-slate-400 hover:text-white border-slate-800'
                                             }`}
                                         >
-                                            <span>👤</span> {onlyMyOrders ? 'Mis Asignados' : 'Filtrar Mis Asignados'}
+                                            <span>👤</span> {onlyMyOrders ? 'Viendo: Mis Asignados' : 'Ver solo mis asignados'}
                                         </button>
-                                    </div>
-                                                    onlyMyOrders
-                                                        ? 'bg-amber-500 text-slate-950 font-black border-amber-400 shadow-md'
-                                                        : 'bg-slate-900 text-slate-400 hover:text-white border-slate-800'
-                                                }`}
-                                            >
-                                                <span>👤</span> {onlyMyOrders ? 'Viendo: Mis Asignados' : 'Ver solo mis asignados'}
-                                            </button>
-                                        </div>
                                     </div>
 
                                     {/* Si hay cancelaciones pendientes de reacomodo */}
