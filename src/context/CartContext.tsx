@@ -126,6 +126,17 @@ export interface SiteConfig {
         address?: string;
         updatedAt?: string;
     };
+    servicesData?: {
+        title?: string;
+        subtitle?: string;
+        items: Array<{
+            id: string;
+            title: string;
+            desc: string;
+            icon?: string;
+            active?: boolean;
+        }>;
+    };
 }
 
 export type FirebaseStatus = 'connecting' | 'online' | 'offline' | 'demo';

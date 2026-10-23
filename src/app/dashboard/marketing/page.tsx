@@ -138,10 +138,40 @@ export default function MarketingPage() {
         <main className="p-12 max-w-[1200px] mx-auto">
 
             {/* Header */}
-            <header className="mb-10">
+            <header className="mb-8">
                 <h1 className="text-5xl font-[1000] text-[#0ea5e9] italic uppercase tracking-tighter">ESTACIÓN DE CONTROL VISUAL</h1>
-                <p className="text-gray-600 font-bold uppercase text-xs tracking-widest">Ajusta la imagen de tu empresa y genera herramientas de captación digital.</p>
+                <p className="text-gray-400 font-bold uppercase text-xs tracking-widest">Ajusta la imagen de tu empresa y genera herramientas de captación digital.</p>
             </header>
+
+            {/* ── BANNER ACCESO RÁPIDO: MODO ESTUDIO EN VIVO (IN-SITU) ── */}
+            <div className="mb-10 p-6 rounded-3xl bg-gradient-to-r from-purple-950/60 via-slate-900/90 to-cyan-950/60 border border-cyan-500/30 shadow-2xl backdrop-blur-xl flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="space-y-1.5 max-w-xl">
+                    <div className="flex items-center gap-2">
+                        <span className="px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
+                            ⭐ MODO EN VIVO IN-SITU
+                        </span>
+                        <span className="text-white font-black text-lg tracking-tight">Personalización Visual de Fachada</span>
+                    </div>
+                    <p className="text-xs text-slate-300 leading-relaxed">
+                        Navega y personaliza tu tienda en tiempo real: Hero multimedia con herramientas a la izquierda, y en <b>Servicios, Nosotros y Contacto</b> con barra superior y switch <b>❌ / ✔️</b> por tarjeta.
+                    </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+                    <a
+                        href="/?editMode=true"
+                        className="px-5 py-3 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-slate-950 font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-lg shadow-cyan-500/30 transition-all hover:scale-105"
+                    >
+                        <span>🎨 Abrir Editor (Inicio)</span>
+                    </a>
+                    <a
+                        href="/servicios?editMode=true"
+                        className="px-4 py-3 rounded-2xl bg-slate-900 hover:bg-slate-800 text-cyan-300 border border-cyan-500/30 font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition-colors"
+                    >
+                        <span>Servicios (❌ / ✔️)</span>
+                    </a>
+                </div>
+            </div>
 
             {/* Tabs */}
             <div className="flex gap-2 mb-10 p-1.5 bg-[#0f172a]/50 backdrop-blur-sm rounded-xl border border-gray-800/50 w-fit">
