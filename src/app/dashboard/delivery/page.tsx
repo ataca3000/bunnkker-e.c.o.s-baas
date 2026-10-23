@@ -12,8 +12,24 @@ import Navigation from './components/Navigation';
 import OrderPool from './components/OrderPool';
 import MyRoute from './components/MyRoute';
 import DeliveryView from './components/DeliveryView';
-import { AlertCircle } from 'lucide-react';
+import { 
+    AlertCircle, 
+    User, 
+    MapPin, 
+    Navigation as NavIcon, 
+    CheckCircle2, 
+    XCircle, 
+    Clock, 
+    Truck, 
+    PackageSearch, 
+    ChevronDown, 
+    ChevronUp, 
+    ExternalLink, 
+    Radar,
+    Plus
+} from 'lucide-react';
 import { useCart } from '@/context/CartContext';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function DeliveryDashboard() {
     const { profile } = useAuth();
@@ -41,10 +57,11 @@ export default function DeliveryDashboard() {
             items: o.items || []
         } as DeliveryOrder));
 
-    const [currentView, setCurrentView] = useState<ViewState>('pool');
+    const [currentView, setCurrentView] = useState<ViewState>('cockpit');
     const [activeDeliveryId, setActiveDeliveryId] = useState<string | null>(null);
     const [panicLoading, setPanicLoading] = useState(false);
     const [driverLocation, setDriverLocation] = useState<{lat: number, lng: number} | null>(null);
+    const [showMap, setShowMap] = useState<boolean>(true);
     
     const lastGpsUpdate = useRef<number>(0);
     const GPS_THROTTLE_MS = 15000;
@@ -76,8 +93,7 @@ export default function DeliveryDashboard() {
                         (window as any).__inventorySocket.emit('sync_db_event', { action: 'DELIVERY_ORDER_UPDATED', id: ord.id });
                     }
                 }
-            } catch (e) {
-                // Sigue offline o sin señal, no bloquear
+            } catch {
                 break;
             }
         }
@@ -205,7 +221,7 @@ export default function DeliveryDashboard() {
                 }
                 return;
             }
-        } catch (error) {
+        } catch {
             console.warn('[BUNKKER RUTA] Sin conexión a la PC Maestra. Operando en modo offline autónomo.');
         }
 
@@ -249,6 +265,7 @@ export default function DeliveryDashboard() {
             if (typeof window !== 'undefined' && (window as any).__inventorySocket) {
                 (window as any).__inventorySocket.emit('sync_db_event', { action: 'DELIVERY_ORDER_CLAIMED', id: orderId });
             }
+            toast.success('📦 Pedido asignado a tu ruta.');
         } catch (error) {
             toast.warning(error instanceof Error ? error.message : 'Tomado localmente en tu ruta.');
         }
@@ -268,114 +285,439 @@ export default function DeliveryDashboard() {
         setCurrentView('delivery');
     };
 
+    const mapCenter = driverLocation ? `${driverLocation.lat},${driverLocation.lng}` : 'Ciudad+de+Mexico';
+
     return (
-        <div className="flex flex-col h-[calc(100vh-64px)] bg-slate-950/80 text-white font-sans relative overflow-hidden backdrop-blur-md">
-            {/* Abstract Background for Glassmorphism */}
+        <div className="flex flex-col min-h-screen bg-slate-950 text-white font-sans relative overflow-x-hidden pb-32">
+            {/* Ambient Background Glows */}
             <div className="fixed inset-0 z-0 pointer-events-none">
-                <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-cyan-900/40 blur-[120px] rounded-full"></div>
-                <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-emerald-900/30 blur-[120px] rounded-full"></div>
+                <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-cyan-900/30 blur-[130px] rounded-full" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-[55%] h-[55%] bg-emerald-900/20 blur-[130px] rounded-full" />
             </div>
 
-            <header className="bg-slate-900/60 border-b border-cyan-500/20 shadow-[0_0_15px_rgba(0,242,255,0.1)] backdrop-blur-md p-4 sticky top-0 z-40 flex justify-between items-center">
-                <div>
-                    <h1 className="text-xl font-bold tracking-tight text-white flex items-center gap-2 drop-shadow-[0_0_8px_rgba(0,242,255,0.8)]">
-                        Centro de Comando Logístico
-                    </h1>
-                    <p className="text-xs text-cyan-400">Despacho en Tiempo Real</p>
+            {/* ── COCKPIT HEADER BAR ────────────────────────────────────────────── */}
+            <header className="bg-slate-900/80 border-b border-cyan-500/20 backdrop-blur-xl p-3 md:p-4 sticky top-0 z-30 flex justify-between items-center shadow-lg">
+                <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-xl bg-cyan-500/15 border border-cyan-400/30 text-cyan-400">
+                        <Truck size={20} />
+                    </div>
+                    <div>
+                        <h1 className="text-base md:text-lg font-black tracking-tight text-white flex items-center gap-2">
+                            Centro de Comando Logístico
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 hidden sm:inline-block">
+                                E.C.O.S. RUTA
+                            </span>
+                        </h1>
+                        <p className="text-[11px] text-cyan-400/90 font-medium">
+                            Despacho en Tiempo Real & GPS Offline Sincronizado
+                        </p>
+                    </div>
                 </div>
-                <div className="text-right">
-                    <p className="text-sm font-medium text-slate-200">{profile?.displayName || 'Repartidor'}</p>
-                    <div className="flex items-center justify-end gap-1 text-xs text-emerald-400 mt-1">
-                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse drop-shadow-[0_0_5px_rgba(16,185,129,0.8)]"></span>
-                        En Línea
+
+                <div className="flex items-center gap-3">
+                    {/* Panic Button in Header */}
+                    <button
+                        onClick={handlePanic}
+                        disabled={panicLoading}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-600/90 hover:bg-red-500 text-white font-black text-xs uppercase tracking-wider shadow-[0_0_15px_rgba(220,38,38,0.5)] border border-red-400 active:scale-95 transition-all"
+                        title="Activar Botón de Pánico de Emergencia"
+                    >
+                        <AlertCircle size={15} className={panicLoading ? 'animate-pulse' : ''} />
+                        <span className="hidden sm:inline">Pánico</span>
+                    </button>
+
+                    {/* Driver Status Badge */}
+                    <div className="text-right pl-2 border-l border-slate-800">
+                        <p className="text-xs font-bold text-white truncate max-w-[120px]">
+                            {profile?.displayName || 'Repartidor'}
+                        </p>
+                        <div className="flex items-center justify-end gap-1.5 text-[10px] text-emerald-400 font-semibold mt-0.5">
+                            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                            GPS En Línea
+                        </div>
                     </div>
                 </div>
             </header>
 
-            <main className="flex-1 w-full h-full mx-auto p-4 md:p-[8px] overflow-hidden relative z-10 flex">
-                <div className="flex-1 overflow-y-auto w-full h-full flex flex-col">
-                    {currentView === 'pool' && <OrderPool orders={availableOrders} onClaim={handleClaim} loading={false} driverLocation={driverLocation} />}
-                    {currentView === 'route' && <MyRoute orders={currentRoute} onStartDelivery={startDelivery} onBackToPool={() => setCurrentView('pool')} />}
-                    {currentView === 'map' && (
-                        <div className="w-full h-full min-h-[450px] rounded-[5px] overflow-hidden border border-cyan-500/20 shadow-2xl relative">
-                            {typeof window !== 'undefined' && (
-                                <React.Suspense fallback={<div className="p-8 text-center text-slate-400">Cargando Mapa GPS...</div>}>
-                                    {(() => {
-                                        const AdvancedRouteMap = require('@/components/AdvancedRouteMap').default;
-                                        const routeMarkers = currentRoute.map(o => ({
-                                            id: o.id,
-                                            lat: o.lat || 19.4326,
-                                            lng: o.lng || -99.1332,
-                                            title: `Orden ${o.id.slice(-6)} - ${o.customerName}`,
-                                            description: `${o.address} | Total: $${o.total}`,
-                                            isDelivered: o.status === 'completed'
-                                        }));
-                                        const centerPos: [number, number] = driverLocation 
-                                            ? [driverLocation.lat, driverLocation.lng] 
-                                            : [19.4326, -99.1332];
+            {/* ── MAIN CONTENT AREA ────────────────────────────────────────────── */}
+            <main className="flex-1 w-full max-w-7xl mx-auto p-3 md:p-6 z-10 flex flex-col space-y-4">
+                
+                {/* ── MAP CONTAINER (COLLAPSIBLE / EXPANDABLE) ───────────────────── */}
+                {currentView !== 'map' && (
+                    <div className="w-full bg-slate-900/90 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl backdrop-blur-md relative">
+                        <div className="flex items-center justify-between px-4 py-2.5 bg-slate-950/80 border-b border-slate-800">
+                            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-300">
+                                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                                <span>Radar GPS:</span>
+                                <span className="text-cyan-400 font-mono">
+                                    {driverLocation ? `${driverLocation.lat.toFixed(4)}, ${driverLocation.lng.toFixed(4)}` : 'Ciudad de México, CDMX'}
+                                </span>
+                            </div>
 
-                                        return (
-                                            <AdvancedRouteMap 
-                                                mode="route"
-                                                center={centerPos}
-                                                zoom={13}
-                                                markers={routeMarkers}
-                                                warehouseLocation={centerPos}
-                                                onMarkerClick={(m: any) => startDelivery(m.id)}
-                                            />
-                                        );
-                                    })()}
-                                </React.Suspense>
-                            )}
+                            <div className="flex items-center gap-2">
+                                <a
+                                    href={`https://maps.google.com/?q=${mapCenter}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-[10px] font-bold uppercase tracking-wider transition-colors border border-slate-700"
+                                >
+                                    <ExternalLink size={12} /> Open in Maps
+                                </a>
+                                <button
+                                    onClick={() => setShowMap(!showMap)}
+                                    className="p-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors border border-slate-700"
+                                    title={showMap ? 'Ocultar Mapa' : 'Mostrar Mapa'}
+                                >
+                                    {showMap ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                                </button>
+                            </div>
                         </div>
-                    )}
-                    {currentView === 'delivery' && activeDeliveryId && (
-                        <DeliveryView 
-                            order={orders.find(o => o.id === activeDeliveryId)!} 
-                            onUpdate={(updates) => handleUpdateOrder(activeDeliveryId, updates)}
-                            onFinish={() => {
-                                setActiveDeliveryId(null);
-                                setCurrentView('route');
-                            }}
-                        />
-                    )}
-                    {currentView === 'history' && (
-                        <div className="space-y-4 w-full h-full">
-                            <h2 className="text-lg font-bold text-white tracking-wide mb-6">Historial de Hoy</h2>
-                            {history.length === 0 ? (
-                                <p className="text-slate-400 text-center py-10">No has completado ninguna entrega aún.</p>
-                            ) : (
-                                history.map(order => (
-                                    <div key={order.id} className="bg-slate-900/40 backdrop-blur-md rounded-sm p-4 shadow-[0_0_15px_rgba(0,242,255,0.05)] border border-cyan-500/20">
-                                     <div className="flex justify-between">
-                                         <span className="text-xs font-bold text-sky-400 uppercase">{order.id.slice(-6)}</span>
-                                         <span className={`text-xs font-bold px-2 py-1 rounded-full ${order.status === 'completed' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
-                                            {order.status === 'completed' ? 'Entregado' : 'Fallida'}
-                                         </span>
-                                     </div>
-                                     <p className="font-bold text-white mt-2">{order.customerName}</p>
-                                     <p className="text-xs text-slate-300 mt-1">{order.address}</p>
-                                 </div>
-                             ))
+
+                        {showMap && (
+                            <div className="w-full h-48 md:h-64 relative">
+                                <iframe 
+                                    width="100%" 
+                                    height="100%" 
+                                    style={{ border: 0, filter: 'invert(90%) hue-rotate(180deg) contrast(100%)' }} 
+                                    loading="lazy" 
+                                    allowFullScreen 
+                                    src={`https://maps.google.com/maps?width=100%25&height=600&hl=es&q=${mapCenter}&t=&z=14&ie=UTF8&iwloc=B&output=embed`}
+                                    title="Radar de Entregas"
+                                />
+                            </div>
                         )}
                     </div>
                 )}
-                </div>
+
+                {/* ── TOP COCKPIT TOOLBAR (Moved up from bottom per user drawing!) ── */}
+                <Navigation 
+                    currentView={currentView} 
+                    onViewChange={setCurrentView} 
+                    activeDeliveryId={activeDeliveryId} 
+                    routeCount={currentRoute.length}
+                    poolCount={availableOrders.length}
+                    historyCount={history.length}
+                />
+
+                {/* ── COCKPIT VIEW: 3 COLUMNS (Bolsa | Listo | Historial) ───────── */}
+                {currentView === 'cockpit' && (
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 w-full">
+                        {/* ── COLUMNA 1: BOLSA DE PEDIDOS (Disponibles) ─────────── */}
+                        <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 shadow-xl backdrop-blur-md flex flex-col">
+                            <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-800">
+                                <div className="flex items-center gap-2">
+                                    <div className="p-1.5 rounded-lg bg-sky-950/60 border border-sky-500/30 text-sky-400">
+                                        <PackageSearch size={16} />
+                                    </div>
+                                    <h2 className="text-sm font-black text-white uppercase tracking-wider">
+                                        Bolsa de Pedidos
+                                    </h2>
+                                </div>
+                                <span className="text-xs bg-sky-500/20 text-sky-300 border border-sky-500/30 px-2 py-0.5 rounded-full font-bold">
+                                    {availableOrders.length} disponibles
+                                </span>
+                            </div>
+
+                            <div className="space-y-3 overflow-y-auto max-h-[500px] pr-1">
+                                {availableOrders.length === 0 ? (
+                                    <div className="text-center py-12 bg-slate-950/50 rounded-xl border border-slate-800/80 p-4">
+                                        <Radar size={36} className="mx-auto mb-2 text-sky-400 animate-pulse" />
+                                        <p className="text-sky-300 font-bold text-xs uppercase tracking-wider">
+                                            Radar Limpio
+                                        </p>
+                                        <p className="text-slate-500 text-[11px] mt-1">
+                                            No hay pedidos pendientes en la bolsa en este momento.
+                                        </p>
+                                    </div>
+                                ) : (
+                                    availableOrders.map((order) => (
+                                        <motion.div
+                                            key={order.id}
+                                            initial={{ opacity: 0, y: 8 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            className="bg-slate-950/90 border border-slate-800 rounded-xl p-3 hover:border-sky-500/40 transition-colors shadow-sm"
+                                        >
+                                            <div className="flex justify-between items-start mb-2">
+                                                <div>
+                                                    <span className="font-mono text-[11px] font-bold text-sky-400 uppercase">
+                                                        {order.id.slice(-6)}
+                                                    </span>
+                                                    <div className="text-xs font-bold text-white flex items-center gap-1.5 mt-0.5">
+                                                        <User size={13} className="text-slate-400" />
+                                                        <span>{order.customerName}</span>
+                                                    </div>
+                                                </div>
+                                                <span className="text-xs font-black text-emerald-400">
+                                                    ${order.total?.toLocaleString('es-MX') || 0}
+                                                </span>
+                                            </div>
+
+                                            <div className="text-[11px] text-slate-400 flex items-start gap-1.5 mb-3 leading-snug">
+                                                <MapPin size={13} className="text-slate-500 shrink-0 mt-0.5" />
+                                                <span className="line-clamp-2">{order.address}</span>
+                                            </div>
+
+                                            <button
+                                                onClick={() => handleClaim(order.id)}
+                                                className="w-full py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-md shadow-sky-950"
+                                            >
+                                                <Plus size={14} /> Tomar Pedido
+                                            </button>
+                                        </motion.div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+
+                        {/* ── COLUMNA 2: LISTO / MI RUTA (Asignados al chofer) ────── */}
+                        <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 shadow-xl backdrop-blur-md flex flex-col">
+                            <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-800">
+                                <div className="flex items-center gap-2">
+                                    <div className="p-1.5 rounded-lg bg-amber-950/60 border border-amber-500/30 text-amber-400">
+                                        <Truck size={16} />
+                                    </div>
+                                    <h2 className="text-sm font-black text-white uppercase tracking-wider">
+                                        Listo / Mi Ruta
+                                    </h2>
+                                </div>
+                                <span className="text-xs bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-full font-bold">
+                                    {currentRoute.length} en camino
+                                </span>
+                            </div>
+
+                            <div className="space-y-3 overflow-y-auto max-h-[500px] pr-1">
+                                {currentRoute.length === 0 ? (
+                                    <div className="text-center py-12 bg-slate-950/50 rounded-xl border border-slate-800/80 p-4">
+                                        <Truck size={36} className="mx-auto mb-2 text-amber-400/60" />
+                                        <p className="text-amber-300 font-bold text-xs uppercase tracking-wider">
+                                            Ruta Vacía
+                                        </p>
+                                        <p className="text-slate-500 text-[11px] mt-1">
+                                            Toma pedidos de la bolsa para comenzar tu recorrido de entrega.
+                                        </p>
+                                    </div>
+                                ) : (
+                                    currentRoute.map((order) => (
+                                        <motion.div
+                                            key={order.id}
+                                            initial={{ opacity: 0, y: 8 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            className="bg-slate-950/90 border border-amber-500/40 rounded-xl p-3 shadow-md shadow-amber-950/20"
+                                        >
+                                            <div className="flex justify-between items-start mb-2">
+                                                <div>
+                                                    <span className="font-mono text-[11px] font-bold text-amber-400 uppercase">
+                                                        {order.id.slice(-6)}
+                                                    </span>
+                                                    <div className="text-xs font-bold text-white flex items-center gap-1.5 mt-0.5">
+                                                        <User size={13} className="text-slate-400" />
+                                                        <span>{order.customerName}</span>
+                                                    </div>
+                                                </div>
+                                                <span className="text-xs font-black text-emerald-400">
+                                                    ${order.total?.toLocaleString('es-MX') || 0}
+                                                </span>
+                                            </div>
+
+                                            <div className="text-[11px] text-slate-400 flex items-start gap-1.5 mb-2 leading-snug">
+                                                <MapPin size={13} className="text-slate-500 shrink-0 mt-0.5" />
+                                                <span className="line-clamp-2">{order.address}</span>
+                                            </div>
+
+                                            <div className="flex items-center gap-2">
+                                                <button
+                                                    onClick={() => startDelivery(order.id)}
+                                                    className="flex-1 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 rounded-lg text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-md"
+                                                >
+                                                    <NavIcon size={13} /> Iniciar Entrega
+                                                </button>
+                                                <a
+                                                    href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(order.address || '')}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg border border-slate-700 transition-colors"
+                                                    title="Navegar en Google Maps"
+                                                >
+                                                    <ExternalLink size={14} />
+                                                </a>
+                                            </div>
+                                        </motion.div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+
+                        {/* ── COLUMNA 3: HISTORIAL (Entregas Completadas de Hoy) ─── */}
+                        <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 shadow-xl backdrop-blur-md flex flex-col">
+                            <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-800">
+                                <div className="flex items-center gap-2">
+                                    <div className="p-1.5 rounded-lg bg-purple-950/60 border border-purple-500/30 text-purple-400">
+                                        <Clock size={16} />
+                                    </div>
+                                    <h2 className="text-sm font-black text-white uppercase tracking-wider">
+                                        Historial
+                                    </h2>
+                                </div>
+                                <span className="text-xs bg-purple-500/20 text-purple-300 border border-purple-500/30 px-2 py-0.5 rounded-full font-bold">
+                                    {history.length} entregados
+                                </span>
+                            </div>
+
+                            <div className="space-y-3 overflow-y-auto max-h-[500px] pr-1">
+                                {history.length === 0 ? (
+                                    <div className="text-center py-12 bg-slate-950/50 rounded-xl border border-slate-800/80 p-4">
+                                        <Clock size={36} className="mx-auto mb-2 text-purple-400/60" />
+                                        <p className="text-purple-300 font-bold text-xs uppercase tracking-wider">
+                                            Sin Historial
+                                        </p>
+                                        <p className="text-slate-500 text-[11px] mt-1">
+                                            Aún no has completado entregas durante el turno actual.
+                                        </p>
+                                    </div>
+                                ) : (
+                                    history.map((order) => (
+                                        <div
+                                            key={order.id}
+                                            className="bg-slate-950/90 border border-slate-800 rounded-xl p-3 shadow-sm"
+                                        >
+                                            <div className="flex justify-between items-center mb-1.5">
+                                                <span className="font-mono text-[11px] font-bold text-sky-400 uppercase">
+                                                    {order.id.slice(-6)}
+                                                </span>
+                                                <span className={`text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1 ${
+                                                    order.status === 'completed'
+                                                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                                                        : 'bg-red-500/20 text-red-400 border border-red-500/30'
+                                                }`}>
+                                                    {order.status === 'completed' ? <CheckCircle2 size={11} /> : <XCircle size={11} />}
+                                                    {order.status === 'completed' ? 'Entregado' : 'Fallida'}
+                                                </span>
+                                            </div>
+
+                                            <div className="text-xs font-bold text-white mb-1">
+                                                {order.customerName}
+                                            </div>
+                                            <div className="text-[11px] text-slate-400 line-clamp-1">
+                                                {order.address}
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* ── SINGLE TAB VIEWS ────────────────────────────────────────────── */}
+                {currentView === 'pool' && (
+                    <OrderPool 
+                        orders={availableOrders} 
+                        onClaim={handleClaim} 
+                        loading={false} 
+                        driverLocation={driverLocation} 
+                    />
+                )}
+
+                {currentView === 'route' && (
+                    <MyRoute 
+                        orders={currentRoute} 
+                        onStartDelivery={startDelivery} 
+                        onBackToPool={() => setCurrentView('cockpit')} 
+                    />
+                )}
+
+                {currentView === 'map' && (
+                    <div className="w-full h-[600px] rounded-2xl overflow-hidden border border-cyan-500/30 shadow-2xl relative bg-slate-900">
+                        {typeof window !== 'undefined' && (
+                            <React.Suspense fallback={<div className="p-8 text-center text-slate-400">Cargando Mapa GPS...</div>}>
+                                {(() => {
+                                    const AdvancedRouteMap = require('@/components/AdvancedRouteMap').default;
+                                    const routeMarkers = currentRoute.map(o => ({
+                                        id: o.id,
+                                        lat: o.lat || 19.4326,
+                                        lng: o.lng || -99.1332,
+                                        title: `Orden ${o.id.slice(-6)} - ${o.customerName}`,
+                                        description: `${o.address} | Total: $${o.total}`,
+                                        isDelivered: o.status === 'completed'
+                                    }));
+                                    const centerPos: [number, number] = driverLocation 
+                                        ? [driverLocation.lat, driverLocation.lng] 
+                                        : [19.4326, -99.1332];
+
+                                    return (
+                                        <AdvancedRouteMap 
+                                            mode="route"
+                                            center={centerPos}
+                                            zoom={13}
+                                            markers={routeMarkers}
+                                            warehouseLocation={centerPos}
+                                            onMarkerClick={(m: any) => startDelivery(m.id)}
+                                        />
+                                    );
+                                })()}
+                            </React.Suspense>
+                        )}
+                    </div>
+                )}
+
+                {currentView === 'history' && (
+                    <div className="space-y-4 w-full bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl backdrop-blur-md">
+                        <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                            <h2 className="text-base font-black text-white uppercase tracking-wider flex items-center gap-2">
+                                <Clock size={18} className="text-purple-400" /> Historial de Entregas del Turno
+                            </h2>
+                            <span className="text-xs bg-purple-500/20 text-purple-300 border border-purple-500/30 px-3 py-1 rounded-full font-bold">
+                                {history.length} completadas
+                            </span>
+                        </div>
+
+                        {history.length === 0 ? (
+                            <p className="text-slate-400 text-center py-12 text-sm">
+                                No has completado ninguna entrega aún en este turno.
+                            </p>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                {history.map((order) => (
+                                    <div 
+                                        key={order.id} 
+                                        className="bg-slate-950/90 rounded-xl p-4 border border-slate-800 shadow-sm space-y-2"
+                                    >
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-xs font-bold text-sky-400 uppercase font-mono">
+                                                {order.id.slice(-6)}
+                                            </span>
+                                            <span className={`text-xs font-black px-2.5 py-0.5 rounded-full ${
+                                                order.status === 'completed' 
+                                                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
+                                                    : 'bg-red-500/20 text-red-400 border border-red-500/30'
+                                            }`}>
+                                                {order.status === 'completed' ? 'Entregado' : 'Fallida'}
+                                            </span>
+                                        </div>
+                                        <p className="font-bold text-white text-sm">{order.customerName}</p>
+                                        <p className="text-xs text-slate-400 line-clamp-2">{order.address}</p>
+                                        <div className="text-xs font-black text-emerald-400 pt-1 border-t border-slate-800/80">
+                                            Total: ${order.total?.toLocaleString('es-MX') || 0}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* ── WORKFLOW: ENTREGA EN CURSO (Firma + PoD + PIN) ─────────────── */}
+                {currentView === 'delivery' && activeDeliveryId && (
+                    <DeliveryView 
+                        order={orders.find(o => o.id === activeDeliveryId)!} 
+                        onUpdate={(updates) => handleUpdateOrder(activeDeliveryId, updates)}
+                        onFinish={() => {
+                            setActiveDeliveryId(null);
+                            setCurrentView('cockpit');
+                        }}
+                    />
+                )}
             </main>
-
-            {/* Panic Button */}
-            <div className="fixed bottom-24 right-4 flex flex-col gap-3 z-50">
-                <button 
-                  onClick={handlePanic}
-                  disabled={panicLoading}
-                  className="w-14 h-14 bg-red-600 rounded-full flex items-center justify-center text-white shadow-[0_0_20px_rgba(220,38,38,0.6)] hover:bg-red-500 hover:scale-105 active:scale-95 transition-all border-2 border-red-400"
-                >
-                  <AlertCircle size={28} className={panicLoading ? 'animate-pulse' : ''} />
-                </button>
-            </div>
-
-            <Navigation currentView={currentView} onViewChange={setCurrentView} activeDeliveryId={activeDeliveryId} routeCount={currentRoute.length} />
         </div>
     );
 }
-

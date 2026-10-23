@@ -119,7 +119,7 @@ export interface Driver {
   [key: string]: any;
 }
 
-export type ViewState = 'pool' | 'map' | 'routes' | 'history' | 'route' | 'delivery';
+export type ViewState = 'pool' | 'map' | 'routes' | 'history' | 'route' | 'delivery' | 'cockpit';
 
 export interface BillingInfo {
   name: string;
