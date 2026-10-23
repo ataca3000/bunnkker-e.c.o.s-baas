@@ -20,7 +20,7 @@ import {
   MapPin,
   PenTool,
 } from 'lucide-react';
-import {
+import type {
   UserRole,
   Product,
   DeliveryType,

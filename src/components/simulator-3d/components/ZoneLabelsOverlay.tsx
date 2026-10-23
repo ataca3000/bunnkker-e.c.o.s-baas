@@ -1,5 +1,5 @@
 import React from 'react';
-import { CameraPreset } from '../types/logistics';
+import type { CameraPreset } from '../types/logistics';
 
 interface ScreenLabel {
   name: string;

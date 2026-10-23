@@ -25,7 +25,7 @@ import {
   Smartphone,
   CheckCircle2,
 } from 'lucide-react';
-import {
+import type {
   Product,
   DeliveryType,
   CameraPreset,

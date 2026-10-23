@@ -1,6 +1,6 @@
 import React from 'react';
 import { Eye, User, ShoppingBag, HardHat, Truck, Box } from 'lucide-react';
-import { PerspectiveType, ScenarioMode, SimulationStep, UserRole } from '../types/logistics';
+import type { PerspectiveType, ScenarioMode, SimulationStep, UserRole } from '../types/logistics';
 
 interface RolePerspectiveBannerProps {
   scenario: ScenarioMode;

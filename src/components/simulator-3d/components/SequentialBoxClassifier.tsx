@@ -17,7 +17,7 @@ import {
   Tag,
   Clock,
 } from 'lucide-react';
-import {
+import type {
   BoxDestination,
   BoxClassificationCategory,
   Product,

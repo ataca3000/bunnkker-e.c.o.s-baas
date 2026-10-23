@@ -1,6 +1,6 @@
 import React from 'react';
 import { Store, Truck, ArrowDownToLine, Sparkles, Trash2, Layers } from 'lucide-react';
-import { BoxDestination } from '../types/logistics';
+import type { BoxDestination } from '../types/logistics';
 
 interface SimpleBoxLauncherBarProps {
   activeBoxCount: number;

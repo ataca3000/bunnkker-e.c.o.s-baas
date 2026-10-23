@@ -1,6 +1,6 @@
 import React from 'react';
 import { ShoppingCart, CreditCard, Layers, PackageCheck, Truck, CheckCircle2 } from 'lucide-react';
-import { DeliveryType, SimulationStep } from '../types/logistics';
+import type { DeliveryType, SimulationStep } from '../types/logistics';
 
 interface MilestoneTimelineProps {
   currentStep: SimulationStep;

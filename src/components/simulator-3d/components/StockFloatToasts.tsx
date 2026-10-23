@@ -1,5 +1,5 @@
 import React from 'react';
-import { StockFloatEvent } from '../types/logistics';
+import type { StockFloatEvent } from '../types/logistics';
 import { Store, Truck, Layers, CheckCircle2 } from 'lucide-react';
 
 interface StockFloatToastsProps {
