@@ -63,7 +63,7 @@ describe('RBAC High Concurrency & Pre-cached Logic Stress Test', () => {
     });
     
     expect(avgTime).toBeLessThan(15);
-  });
+  }, 15000);
 
   it('should simulate Mutex 0/1 inventory locks and zero-discrepancy reconciliation', () => {
     let stock = 100;

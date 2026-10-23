@@ -7,6 +7,7 @@ import AdminAsistente from "@/components/AdminAsistente";
 import AdminLayout from "@/components/admin/AdminLayout";
 import UpdateNotification from "@/components/UpdateNotification";
 import ConnectionStatus from "@/components/ConnectionStatus";
+import StationHardwareHUD from "@/components/hardware/StationHardwareHUD";
 import SchemaMarkup from "@/components/SchemaMarkup";
 import UsbLockScreen from "@/components/UsbLockScreen";
 
@@ -138,6 +139,7 @@ export default async function RootLayout({
                 <DeviceLockScreen>
                   <CartProvider>
                     <ConnectionStatus />
+                    <StationHardwareHUD />
                     <Navbar />
                     <AdminLayout>
                       <ClientBootGuard>

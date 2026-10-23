@@ -301,10 +301,100 @@ export const printReceiptViaBluetooth = async (data: PrintData): Promise<PrintRe
     }
 };
 
+const OFFLINE_PRINTS_KEY = '_bunkker_pending_print_jobs';
+
+export interface PendingPrintJob {
+    id: string;
+    data: PrintData;
+    createdAt: number;
+    attempts: number;
+}
+
+/** Encola un ticket para impresión diferida cuando la red Wi-Fi o impresora vuelva a estar disponible */
+export const enqueueOfflinePrint = (data: PrintData): void => {
+    if (typeof window === 'undefined') return;
+    try {
+        const raw = localStorage.getItem(OFFLINE_PRINTS_KEY);
+        const queue: PendingPrintJob[] = raw ? JSON.parse(raw) : [];
+        // Evitar duplicados por orderId
+        if (!queue.some(j => j.data.orderId === data.orderId)) {
+            queue.push({
+                id: `job_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+                data,
+                createdAt: Date.now(),
+                attempts: 0
+            });
+            localStorage.setItem(OFFLINE_PRINTS_KEY, JSON.stringify(queue));
+        }
+    } catch (e) {
+        console.warn('Fallo al encolar ticket offline:', e);
+    }
+};
+
+/** Devuelve la cantidad de tickets pendientes por imprimir */
+export const getPendingPrintJobsCount = (): number => {
+    if (typeof window === 'undefined') return 0;
+    try {
+        const raw = localStorage.getItem(OFFLINE_PRINTS_KEY);
+        return raw ? JSON.parse(raw).length : 0;
+    } catch {
+        return 0;
+    }
+};
+
+/** Reintenta e imprime todos los tickets pendientes en cola offline */
+export const flushPendingPrintJobs = async (): Promise<{ printed: number; failed: number }> => {
+    if (typeof window === 'undefined') return { printed: 0, failed: 0 };
+    let printed = 0;
+    let failed = 0;
+
+    try {
+        const raw = localStorage.getItem(OFFLINE_PRINTS_KEY);
+        if (!raw) return { printed: 0, failed: 0 };
+        const queue: PendingPrintJob[] = JSON.parse(raw);
+        if (queue.length === 0) return { printed: 0, failed: 0 };
+
+        const remaining: PendingPrintJob[] = [];
+
+        for (const job of queue) {
+            job.attempts += 1;
+            const res = await printReceipt(job.data);
+            if (res.ok) {
+                printed += 1;
+            } else {
+                failed += 1;
+                // Si ha fallado menos de 5 veces, conservarlo
+                if (job.attempts < 5) {
+                    remaining.push(job);
+                }
+            }
+        }
+
+        localStorage.setItem(OFFLINE_PRINTS_KEY, JSON.stringify(remaining));
+    } catch (e) {
+        console.error('Error al despachar cola offline de impresión:', e);
+    }
+
+    return { printed, failed };
+};
+
+/**
+ * Auto-listener: Al reconectar a Internet/Wi-Fi en el navegador,
+ * despachar automáticamente tickets pendientes.
+ */
+if (typeof window !== 'undefined') {
+    window.addEventListener('online', () => {
+        setTimeout(() => {
+            flushPendingPrintJobs();
+        }, 2000);
+    });
+}
+
 /**
  * Orquestador Global:
  * Revisa si el usuario configuró un modo preferido en hardware settings (LAN / Bluetooth / Serial),
  * y si falla de forma recuperable cae limpiamente a los métodos alternativos o al navegador.
+ * Si todo falla, encola en el Spooler Offline local.
  */
 export const printReceipt = async (data: PrintData): Promise<PrintResult> => {
     let prefMode: string = 'serial';
@@ -345,6 +435,10 @@ export const printReceipt = async (data: PrintData): Promise<PrintResult> => {
     const browser = await printReceiptViaBrowser(data);
     if (browser.ok) return browser;
 
+    // Si falló y no se pudo imprimir, guardar en la cola de respaldo offline
+    enqueueOfflinePrint(data);
+
     return serial;
 };
+
 
