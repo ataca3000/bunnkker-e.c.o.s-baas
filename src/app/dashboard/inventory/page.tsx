@@ -1706,7 +1706,6 @@ export default function InventoryDashboard() {
                                         </table>
                                     </div>
                                 </section>
-                            </>
                             )}
 
                             {activeTab === 'shelves' && (
