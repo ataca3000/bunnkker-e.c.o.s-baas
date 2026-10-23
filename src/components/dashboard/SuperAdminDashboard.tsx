@@ -70,9 +70,11 @@ export default function SuperAdminDashboard({
         isValidSale(o) && new Date(o.date).toDateString() === new Date().toDateString()
     ).length;
 
+    const [selectedKpi, setSelectedKpi] = useState<'sales' | 'profit' | 'inventory' | 'orders'>('sales');
     const [chartMode, setChartMode] = useState<'bar' | 'area'>('area');
 
-    const chartData = useMemo(() => {
+    // 7D Sales data
+    const chartSalesData = useMemo(() => {
         const data = [];
         for (let i = 6; i >= 0; i--) {
             const d = new Date();
@@ -94,19 +96,96 @@ export default function SuperAdminDashboard({
         return data;
     }, [orders]);
 
+    // 7D Profit data (calculated from order items margin or realistic gross margin)
+    const chartProfitData = useMemo(() => {
+        const data = [];
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            const dateStr = d.toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric' });
+            const dayOrders = orders.filter((o: any) =>
+                isValidSale(o) &&
+                new Date(o.date).toDateString() === d.toDateString()
+            );
+            const profitOnDate = dayOrders.reduce((sum: number, o: any) => {
+                if (Array.isArray(o.items) && o.items.length > 0) {
+                    const itemProfit = o.items.reduce((acc: number, it: any) => {
+                        const itPrice = Number(it.price) || 0;
+                        const itCost = Number(it.cost) || (itPrice * 0.72);
+                        const itQty = Number(it.quantity) || 1;
+                        return acc + Math.max(0, (itPrice - itCost) * itQty);
+                    }, 0);
+                    return sum + itemProfit;
+                }
+                return sum + (Number(o.ownerCut || o.profit || (Number(o.total || 0) * 0.28)) || 0);
+            }, 0);
+            
+            data.push({
+                name: dateStr,
+                ganancia: Math.round(profitOnDate),
+                pedidos: dayOrders.length,
+                isToday: i === 0,
+            });
+        }
+        return data;
+    }, [orders]);
+
+    // Inventory category distribution
+    const chartInventoryData = useMemo(() => {
+        const map: Record<string, { name: string; piezas: number; valor: number }> = {};
+        products.forEach((p: any) => {
+            const rawCat = p.category ? String(p.category).trim() : 'General';
+            const cat = rawCat.charAt(0).toUpperCase() + rawCat.slice(1).toLowerCase();
+            if (!map[cat]) {
+                map[cat] = { name: cat, piezas: 0, valor: 0 };
+            }
+            const st = Number(p.stock) || 0;
+            const pr = Number(p.price) || 0;
+            map[cat].piezas += st;
+            map[cat].valor += st * pr;
+        });
+        const list = Object.values(map).sort((a, b) => b.piezas - a.piezas).slice(0, 7);
+        return list.length > 0 ? list : [{ name: 'General', piezas: 0, valor: 0 }];
+    }, [products]);
+
+    // 7D Orders count
+    const chartOrdersData = useMemo(() => {
+        const data = [];
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            const dateStr = d.toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric' });
+            const dayOrders = orders.filter((o: any) =>
+                isValidSale(o) &&
+                new Date(o.date).toDateString() === d.toDateString()
+            );
+            data.push({
+                name: dateStr,
+                pedidos: dayOrders.length,
+                isToday: i === 0,
+            });
+        }
+        return data;
+    }, [orders]);
+
     const weeklyTotalSales = useMemo(
-        () => chartData.reduce((acc, item) => acc + item.ventas, 0),
-        [chartData]
+        () => chartSalesData.reduce((acc, item) => acc + item.ventas, 0),
+        [chartSalesData]
+    );
+    const weeklyTotalProfit = useMemo(
+        () => chartProfitData.reduce((acc, item) => acc + item.ganancia, 0),
+        [chartProfitData]
     );
     const weeklyTotalOrders = useMemo(
-        () => chartData.reduce((acc, item) => acc + item.pedidos, 0),
-        [chartData]
+        () => chartSalesData.reduce((acc, item) => acc + item.pedidos, 0),
+        [chartSalesData]
     );
 
-    const avgTicket = todayOrders > 0 ? todaySales / todayOrders : 0;
-    const lowStockCount = products.filter((p: any) => p.stock < 10).length;
+    const avgTicket = todayOrders > 0 ? todaySales / todayOrders : (weeklyTotalOrders > 0 ? weeklyTotalSales / weeklyTotalOrders : 0);
+    const lowStockCount = products.filter((p: any) => (p.stock || 0) < 10).length;
     const totalPieces = products.reduce((acc: number, p: any) => acc + (Number(p.stock) || 0), 0);
     const totalInvestment = products.reduce((acc: number, p: any) => acc + ((Number(p.price) || 0) * (Number(p.stock) || 0)), 0);
+    const estMargin = weeklyTotalSales > 0 ? ((weeklyTotalProfit / weeklyTotalSales) * 100).toFixed(1) : '28.0';
 
     /* ── Module categories ── */
     const isModuleActive = (id: string) => {
@@ -148,45 +227,59 @@ export default function SuperAdminDashboard({
         { id: 'b2b',       title: 'Red B2B BUNKKER',      icon: <Globe size={26} />,         color: '#0284c7', href: '/b2b-market',              desc: 'Catálogo público y red de abastecimiento.' },
     ] : [];
 
-    /* ── KPI cards config ── */
+    /* ── KPI cards config (Filtros interactivos de la gráfica) ── */
     const kpis = [
         {
+            id: 'sales' as const,
             label: 'VENTAS DE HOY',
             value: formatCurrency(todaySales),
             color: '#0ea5e9',
-            bg: '#E3F2FD',
+            bg: 'rgba(14, 165, 233, 0.15)',
             icon: <TrendingUp color="#0ea5e9" size={22} />,
             badge: { 
-                value: salesDiff > 0 ? `+${salesDiff.toFixed(1)}%` : `${salesDiff.toFixed(1)}%`, 
-                label: 'vs ayer', 
-                positive: salesDiff >= 0 
+                value: `${todayOrders} tickets`, 
+                label: `Ticket Prom: ${formatCurrency(avgTicket)}`, 
+                positive: todayOrders > 0 
             },
         },
         {
+            id: 'profit' as const,
             label: 'GANANCIA ACUMULADA',
             value: formatCurrency(ownerBalance),
             color: '#10b981',
-            bg: '#E8F5E9',
+            bg: 'rgba(16, 185, 129, 0.15)',
             icon: <ShieldCheck color="#10b981" size={22} />,
-            badge: { value: '+5.8%', label: 'vs mes anterior', positive: true },
+            badge: { 
+                value: `Margen ~${estMargin}%`, 
+                label: `7D: ${formatCurrency(weeklyTotalProfit)}`, 
+                positive: true 
+            },
         },
         {
+            id: 'inventory' as const,
             label: 'PRODUCTOS ACTIVOS',
-            value: String(products.length),
+            value: `${products.length} catálogo`,
             color: '#f59e0b',
-            bg: '#FFF8E1',
+            bg: 'rgba(245, 158, 11, 0.15)',
             icon: <Package color="#f59e0b" size={22} />,
-            badge: { value: `${totalPieces} px`, label: `Inv: ${formatCurrency(totalInvestment)}`, neutral: true },
+            badge: { 
+                value: `${totalPieces.toLocaleString()} pzas`, 
+                label: `Inv: ${formatCurrency(totalInvestment)}`, 
+                neutral: true 
+            },
         },
         {
+            id: 'orders' as const,
             label: 'PEDIDOS HOY',
-            value: String(todayOrders),
+            value: `${todayOrders} órdenes`,
             color: '#8b5cf6',
-            bg: '#ede9fe',
+            bg: 'rgba(139, 92, 246, 0.15)',
             icon: <ReceiptText color="#8b5cf6" size={22} />,
-            badge: todayOrders >= 10
-                ? { value: 'Meta Alcanzada', label: '≥ 10 pedidos', positive: true }
-                : { value: `${10 - todayOrders} para meta`, label: 'objetivo: 10 pedidos/día', positive: false },
+            badge: { 
+                value: `${weeklyTotalOrders} esta sem`, 
+                label: `Total: ${orders.length} pedidos`, 
+                positive: true 
+            },
         },
     ];
 
@@ -330,124 +423,11 @@ export default function SuperAdminDashboard({
 
 
 
-            {/* ── Gráfico de Ventas (7 Días - Recharts BarChart) ─────────────────────────────────────── */}
-            <div className="bunkker-card" style={{ marginBottom: '2.5rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '20px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <div style={{ background: 'rgba(6, 182, 212, 0.12)', padding: '8px', borderRadius: '10px', border: '1px solid rgba(6, 182, 212, 0.25)' }}>
-                            <BarChart3 size={20} color="#06B6D4" />
-                        </div>
-                        <div>
-                            <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '800', color: '#fff' }}>
-                                Ventas de los Últimos 7 Días
-                            </h3>
-                            <span style={{ fontSize: '0.76rem', color: '#94a3b8' }}>
-                                Acumulado 7 días: <b style={{ color: '#22D3EE' }}>{formatCurrency(weeklyTotalSales)}</b> ({weeklyTotalOrders} órdenes procesadas)
-                            </span>
-                        </div>
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(15, 23, 42, 0.6)', padding: '4px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)' }}>
-                        <button
-                            type="button"
-                            onClick={() => setChartMode('bar')}
-                            style={{
-                                padding: '6px 12px',
-                                borderRadius: '7px',
-                                fontSize: '0.75rem',
-                                fontWeight: '800',
-                                border: 'none',
-                                cursor: 'pointer',
-                                backgroundColor: chartMode === 'bar' ? '#06B6D4' : 'transparent',
-                                color: chartMode === 'bar' ? '#0f172a' : '#94a3b8',
-                                transition: 'all 0.15s ease'
-                            }}
-                        >
-                            BARRAS (7D)
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setChartMode('area')}
-                            style={{
-                                padding: '6px 12px',
-                                borderRadius: '7px',
-                                fontSize: '0.75rem',
-                                fontWeight: '800',
-                                border: 'none',
-                                cursor: 'pointer',
-                                backgroundColor: chartMode === 'area' ? '#06B6D4' : 'transparent',
-                                color: chartMode === 'area' ? '#0f172a' : '#94a3b8',
-                                transition: 'all 0.15s ease'
-                            }}
-                        >
-                            CURVA TENDENCIA
-                        </button>
-                    </div>
-                </div>
-
-                <div style={{ width: '100%', height: '300px' }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                        {chartMode === 'bar' ? (
-                            <BarChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-                                <defs>
-                                    <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="0%" stopColor="#22D3EE" stopOpacity={0.95} />
-                                        <stop offset="100%" stopColor="#0284C7" stopOpacity={0.65} />
-                                    </linearGradient>
-                                    <linearGradient id="barTodayGradient" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="0%" stopColor="#10B981" stopOpacity={1} />
-                                        <stop offset="100%" stopColor="#059669" stopOpacity={0.75} />
-                                    </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(6, 182, 212, 0.1)" />
-                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8', fontWeight: 600 }} dy={10} />
-                                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} tickFormatter={(val) => `$${val}`} />
-                                <Tooltip
-                                    cursor={{ fill: 'rgba(6, 182, 212, 0.08)' }}
-                                    contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.92)', backdropFilter: 'blur(12px)', borderRadius: '12px', border: '1px solid rgba(6, 182, 212, 0.35)', boxShadow: '0 4px 20px rgba(0,0,0,0.5)', color: '#fff' }}
-                                    itemStyle={{ color: '#22D3EE', fontWeight: 'bold' }}
-                                    formatter={(value: any, _name: any, props: any) => [
-                                        `${formatCurrency(Number(value))} (${props?.payload?.pedidos || 0} pedidos)`,
-                                        'Ventas del Día'
-                                    ]}
-                                />
-                                <Bar dataKey="ventas" radius={[8, 8, 2, 2]} maxBarSize={54}>
-                                    {chartData.map((entry, index) => (
-                                        <Cell
-                                            key={`cell-${index}`}
-                                            fill={entry.isToday ? 'url(#barTodayGradient)' : 'url(#barGradient)'}
-                                        />
-                                    ))}
-                                </Bar>
-                            </BarChart>
-                        ) : (
-                            <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                                <defs>
-                                    <linearGradient id="colorVentas" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#06B6D4" stopOpacity={0.5}/>
-                                        <stop offset="95%" stopColor="#06B6D4" stopOpacity={0}/>
-                                    </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(6, 182, 212, 0.1)" />
-                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} dy={10} />
-                                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} tickFormatter={(val) => `$${val}`} />
-                                <Tooltip 
-                                    contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(12px)', borderRadius: '12px', border: '1px solid rgba(6, 182, 212, 0.3)', boxShadow: '0 4px 20px rgba(0,0,0,0.5)', color: '#fff' }}
-                                    itemStyle={{ color: '#22D3EE', fontWeight: 'bold' }}
-                                    formatter={(value: any) => [formatCurrency(Number(value)), 'Ventas']}
-                                />
-                                <Area type="monotone" dataKey="ventas" stroke="#22D3EE" strokeWidth={4} fillOpacity={1} fill="url(#colorVentas)" activeDot={{ r: 6, fill: '#06B6D4', stroke: '#fff', strokeWidth: 2, style: { filter: 'drop-shadow(0px 0px 8px rgba(34,211,238,0.8))' } }} />
-                            </AreaChart>
-                        )}
-                    </ResponsiveContainer>
-                </div>
-            </div>
-
-            {/* ── KPI Cards (Compactos y Claros) ─────────────────────────────────────── */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem', marginBottom: '1.75rem' }}>
+            {/* ── KPI Cards (Filtros Interactivos de Analítica BUNKKER) ─────────────────────────────────────── */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.85rem', marginBottom: '1.25rem' }}>
                 {kpis.map((kpi, i) => (
                     <KPICard
-                        key={kpi.label}
+                        key={kpi.id}
                         label={kpi.label}
                         value={kpi.value}
                         color={kpi.color}
@@ -460,8 +440,277 @@ export default function SuperAdminDashboard({
                             neutral: (kpi.badge as any).neutral
                         }}
                         delayIndex={i}
+                        isSelected={selectedKpi === kpi.id}
+                        onClick={() => setSelectedKpi(kpi.id)}
                     />
                 ))}
+            </div>
+
+            {/* ── Gráfica Dinámica Multimétrica (Filtro según KPI Seleccionado) ────────────────────────── */}
+            <div className="bunkker-card" style={{ marginBottom: '2.5rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '20px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div style={{
+                            background: selectedKpi === 'sales' ? 'rgba(6, 182, 212, 0.12)'
+                                : selectedKpi === 'profit' ? 'rgba(16, 185, 129, 0.12)'
+                                : selectedKpi === 'inventory' ? 'rgba(245, 158, 11, 0.12)'
+                                : 'rgba(139, 92, 246, 0.12)',
+                            padding: '8px',
+                            borderRadius: '10px',
+                            border: `1px solid ${
+                                selectedKpi === 'sales' ? 'rgba(6, 182, 212, 0.3)'
+                                : selectedKpi === 'profit' ? 'rgba(16, 185, 129, 0.3)'
+                                : selectedKpi === 'inventory' ? 'rgba(245, 158, 11, 0.3)'
+                                : 'rgba(139, 92, 246, 0.3)'
+                            }`
+                        }}>
+                            {selectedKpi === 'sales' && <BarChart3 size={20} color="#06B6D4" />}
+                            {selectedKpi === 'profit' && <ShieldCheck size={20} color="#10B981" />}
+                            {selectedKpi === 'inventory' && <Package size={20} color="#F59E0B" />}
+                            {selectedKpi === 'orders' && <ReceiptText size={20} color="#8B5CF6" />}
+                        </div>
+                        <div>
+                            <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '800', color: '#fff' }}>
+                                {selectedKpi === 'sales' && 'Ventas de los Últimos 7 Días'}
+                                {selectedKpi === 'profit' && 'Ganancias y Utilidad Operativa (7 Días)'}
+                                {selectedKpi === 'inventory' && 'Distribución de Stock por Categoría'}
+                                {selectedKpi === 'orders' && 'Volumen de Pedidos Diarios (7 Días)'}
+                            </h3>
+                            <span style={{ fontSize: '0.76rem', color: '#94a3b8' }}>
+                                {selectedKpi === 'sales' && (
+                                    <>Acumulado 7 días: <b style={{ color: '#22D3EE' }}>{formatCurrency(weeklyTotalSales)}</b> ({weeklyTotalOrders} órdenes procesadas)</>
+                                )}
+                                {selectedKpi === 'profit' && (
+                                    <>Utilidad 7 días: <b style={{ color: '#10B981' }}>{formatCurrency(weeklyTotalProfit)}</b> | Saldo disponible: <b style={{ color: '#34D399' }}>{formatCurrency(ownerBalance)}</b></>
+                                )}
+                                {selectedKpi === 'inventory' && (
+                                    <>Total inventario: <b style={{ color: '#F59E0B' }}>{totalPieces.toLocaleString()} piezas</b> | Inversión: <b style={{ color: '#FBBF24' }}>{formatCurrency(totalInvestment)}</b></>
+                                )}
+                                {selectedKpi === 'orders' && (
+                                    <>Total semana: <b style={{ color: '#A78BFA' }}>{weeklyTotalOrders} órdenes</b> | Hoy procesadas: <b style={{ color: '#C4B5FD' }}>{todayOrders} pedidos</b></>
+                                )}
+                            </span>
+                        </div>
+                    </div>
+
+                    {selectedKpi !== 'inventory' ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(15, 23, 42, 0.6)', padding: '4px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                            <button
+                                type="button"
+                                onClick={() => setChartMode('bar')}
+                                style={{
+                                    padding: '6px 12px',
+                                    borderRadius: '7px',
+                                    fontSize: '0.75rem',
+                                    fontWeight: '800',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    backgroundColor: chartMode === 'bar' ? (selectedKpi === 'profit' ? '#10B981' : selectedKpi === 'orders' ? '#8B5CF6' : '#06B6D4') : 'transparent',
+                                    color: chartMode === 'bar' ? '#0f172a' : '#94a3b8',
+                                    transition: 'all 0.15s ease'
+                                }}
+                            >
+                                BARRAS (7D)
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setChartMode('area')}
+                                style={{
+                                    padding: '6px 12px',
+                                    borderRadius: '7px',
+                                    fontSize: '0.75rem',
+                                    fontWeight: '800',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    backgroundColor: chartMode === 'area' ? (selectedKpi === 'profit' ? '#10B981' : selectedKpi === 'orders' ? '#8B5CF6' : '#06B6D4') : 'transparent',
+                                    color: chartMode === 'area' ? '#0f172a' : '#94a3b8',
+                                    transition: 'all 0.15s ease'
+                                }}
+                            >
+                                CURVA TENDENCIA
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="px-3 py-1 rounded-lg text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/30">
+                            TOP 7 CATEGORÍAS
+                        </div>
+                    )}
+                </div>
+
+                <div style={{ width: '100%', height: '300px' }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                        {/* 1. VENTAS */}
+                        {selectedKpi === 'sales' && (
+                            chartMode === 'bar' ? (
+                                <BarChart data={chartSalesData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+                                    <defs>
+                                        <linearGradient id="barGradientSales" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="0%" stopColor="#22D3EE" stopOpacity={0.95} />
+                                            <stop offset="100%" stopColor="#0284C7" stopOpacity={0.65} />
+                                        </linearGradient>
+                                        <linearGradient id="barTodayGradientSales" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="0%" stopColor="#10B981" stopOpacity={1} />
+                                            <stop offset="100%" stopColor="#059669" stopOpacity={0.75} />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(6, 182, 212, 0.1)" />
+                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8', fontWeight: 600 }} dy={10} />
+                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} tickFormatter={(val) => `$${val}`} />
+                                    <Tooltip
+                                        cursor={{ fill: 'rgba(6, 182, 212, 0.08)' }}
+                                        contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.92)', backdropFilter: 'blur(12px)', borderRadius: '12px', border: '1px solid rgba(6, 182, 212, 0.35)', boxShadow: '0 4px 20px rgba(0,0,0,0.5)', color: '#fff' }}
+                                        itemStyle={{ color: '#22D3EE', fontWeight: 'bold' }}
+                                        formatter={(value: any, _name: any, props: any) => [
+                                            `${formatCurrency(Number(value))} (${props?.payload?.pedidos || 0} pedidos)`,
+                                            'Ventas del Día'
+                                        ]}
+                                    />
+                                    <Bar dataKey="ventas" radius={[8, 8, 2, 2]} maxBarSize={54}>
+                                        {chartSalesData.map((entry, index) => (
+                                            <Cell
+                                                key={`cell-sales-${index}`}
+                                                fill={entry.isToday ? 'url(#barTodayGradientSales)' : 'url(#barGradientSales)'}
+                                            />
+                                        ))}
+                                    </Bar>
+                                </BarChart>
+                            ) : (
+                                <AreaChart data={chartSalesData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                                    <defs>
+                                        <linearGradient id="colorVentas" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#06B6D4" stopOpacity={0.5}/>
+                                            <stop offset="95%" stopColor="#06B6D4" stopOpacity={0}/>
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(6, 182, 212, 0.1)" />
+                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} dy={10} />
+                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} tickFormatter={(val) => `$${val}`} />
+                                    <Tooltip 
+                                        contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(12px)', borderRadius: '12px', border: '1px solid rgba(6, 182, 212, 0.3)', boxShadow: '0 4px 20px rgba(0,0,0,0.5)', color: '#fff' }}
+                                        itemStyle={{ color: '#22D3EE', fontWeight: 'bold' }}
+                                        formatter={(value: any) => [formatCurrency(Number(value)), 'Ventas']}
+                                    />
+                                    <Area type="monotone" dataKey="ventas" stroke="#22D3EE" strokeWidth={4} fillOpacity={1} fill="url(#colorVentas)" activeDot={{ r: 6, fill: '#06B6D4', stroke: '#fff', strokeWidth: 2, style: { filter: 'drop-shadow(0px 0px 8px rgba(34,211,238,0.8))' } }} />
+                                </AreaChart>
+                            )
+                        )}
+
+                        {/* 2. GANANCIAS */}
+                        {selectedKpi === 'profit' && (
+                            chartMode === 'bar' ? (
+                                <BarChart data={chartProfitData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+                                    <defs>
+                                        <linearGradient id="barGradientProfit" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="0%" stopColor="#34D399" stopOpacity={0.95} />
+                                            <stop offset="100%" stopColor="#059669" stopOpacity={0.65} />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(16, 185, 129, 0.1)" />
+                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8', fontWeight: 600 }} dy={10} />
+                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} tickFormatter={(val) => `$${val}`} />
+                                    <Tooltip
+                                        cursor={{ fill: 'rgba(16, 185, 129, 0.08)' }}
+                                        contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.92)', backdropFilter: 'blur(12px)', borderRadius: '12px', border: '1px solid rgba(16, 185, 129, 0.35)', boxShadow: '0 4px 20px rgba(0,0,0,0.5)', color: '#fff' }}
+                                        itemStyle={{ color: '#34D399', fontWeight: 'bold' }}
+                                        formatter={(value: any, _name: any, props: any) => [
+                                            `${formatCurrency(Number(value))} (${props?.payload?.pedidos || 0} pedidos)`,
+                                            'Utilidad Estimada'
+                                        ]}
+                                    />
+                                    <Bar dataKey="ganancia" radius={[8, 8, 2, 2]} maxBarSize={54} fill="url(#barGradientProfit)" />
+                                </BarChart>
+                            ) : (
+                                <AreaChart data={chartProfitData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                                    <defs>
+                                        <linearGradient id="colorProfit" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#10B981" stopOpacity={0.5}/>
+                                            <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(16, 185, 129, 0.1)" />
+                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} dy={10} />
+                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} tickFormatter={(val) => `$${val}`} />
+                                    <Tooltip 
+                                        contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(12px)', borderRadius: '12px', border: '1px solid rgba(16, 185, 129, 0.3)', boxShadow: '0 4px 20px rgba(0,0,0,0.5)', color: '#fff' }}
+                                        itemStyle={{ color: '#34D399', fontWeight: 'bold' }}
+                                        formatter={(value: any) => [formatCurrency(Number(value)), 'Utilidad']}
+                                    />
+                                    <Area type="monotone" dataKey="ganancia" stroke="#10B981" strokeWidth={4} fillOpacity={1} fill="url(#colorProfit)" activeDot={{ r: 6, fill: '#059669', stroke: '#fff', strokeWidth: 2, style: { filter: 'drop-shadow(0px 0px 8px rgba(16,185,129,0.8))' } }} />
+                                </AreaChart>
+                            )
+                        )}
+
+                        {/* 3. INVENTARIO */}
+                        {selectedKpi === 'inventory' && (
+                            <BarChart data={chartInventoryData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+                                <defs>
+                                    <linearGradient id="barGradientInventory" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="0%" stopColor="#FBBF24" stopOpacity={0.95} />
+                                        <stop offset="100%" stopColor="#D97706" stopOpacity={0.65} />
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(245, 158, 11, 0.1)" />
+                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8', fontWeight: 600 }} dy={10} />
+                                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} tickFormatter={(val) => `${val} pz`} />
+                                <Tooltip
+                                    cursor={{ fill: 'rgba(245, 158, 11, 0.08)' }}
+                                    contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.92)', backdropFilter: 'blur(12px)', borderRadius: '12px', border: '1px solid rgba(245, 158, 11, 0.35)', boxShadow: '0 4px 20px rgba(0,0,0,0.5)', color: '#fff' }}
+                                    itemStyle={{ color: '#FBBF24', fontWeight: 'bold' }}
+                                    formatter={(value: any, _name: any, props: any) => [
+                                        `${Number(value).toLocaleString()} piezas (Valor: ${formatCurrency(props?.payload?.valor || 0)})`,
+                                        'Stock Físico'
+                                    ]}
+                                />
+                                <Bar dataKey="piezas" radius={[8, 8, 2, 2]} maxBarSize={54} fill="url(#barGradientInventory)" />
+                            </BarChart>
+                        )}
+
+                        {/* 4. PEDIDOS */}
+                        {selectedKpi === 'orders' && (
+                            chartMode === 'bar' ? (
+                                <BarChart data={chartOrdersData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+                                    <defs>
+                                        <linearGradient id="barGradientOrders" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="0%" stopColor="#A78BFA" stopOpacity={0.95} />
+                                            <stop offset="100%" stopColor="#7C3AED" stopOpacity={0.65} />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(139, 92, 246, 0.1)" />
+                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8', fontWeight: 600 }} dy={10} />
+                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} />
+                                    <Tooltip
+                                        cursor={{ fill: 'rgba(139, 92, 246, 0.08)' }}
+                                        contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.92)', backdropFilter: 'blur(12px)', borderRadius: '12px', border: '1px solid rgba(139, 92, 246, 0.35)', boxShadow: '0 4px 20px rgba(0,0,0,0.5)', color: '#fff' }}
+                                        itemStyle={{ color: '#A78BFA', fontWeight: 'bold' }}
+                                        formatter={(value: any) => [
+                                            `${value} pedidos completados`,
+                                            'Órdenes del Día'
+                                        ]}
+                                    />
+                                    <Bar dataKey="pedidos" radius={[8, 8, 2, 2]} maxBarSize={54} fill="url(#barGradientOrders)" />
+                                </BarChart>
+                            ) : (
+                                <AreaChart data={chartOrdersData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                                    <defs>
+                                        <linearGradient id="colorOrders" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.5}/>
+                                            <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0}/>
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(139, 92, 246, 0.1)" />
+                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} dy={10} />
+                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} />
+                                    <Tooltip 
+                                        contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(12px)', borderRadius: '12px', border: '1px solid rgba(139, 92, 246, 0.3)', boxShadow: '0 4px 20px rgba(0,0,0,0.5)', color: '#fff' }}
+                                        itemStyle={{ color: '#A78BFA', fontWeight: 'bold' }}
+                                        formatter={(value: any) => [`${value} pedidos`, 'Volumen']}
+                                    />
+                                    <Area type="monotone" dataKey="pedidos" stroke="#8B5CF6" strokeWidth={4} fillOpacity={1} fill="url(#colorOrders)" activeDot={{ r: 6, fill: '#7C3AED', stroke: '#fff', strokeWidth: 2, style: { filter: 'drop-shadow(0px 0px 8px rgba(139,92,246,0.8))' } }} />
+                                </AreaChart>
+                            )
+                        )}
+                    </ResponsiveContainer>
+                </div>
             </div>
 
             {/* ── Dashboard Widgets (Ranking & Restock) ──────────────────── */}
