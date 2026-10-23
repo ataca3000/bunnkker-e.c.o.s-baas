@@ -373,6 +373,24 @@
       "email": "user_ok_1792790819004@test.com",
       "phone": "5590819004",
       "pin": "CORRECT_PASS"
+    },
+    {
+      "id": "c55eb3ce-2979-472d-a643-9a56606366cf",
+      "tenantId": "default",
+      "createdAt": "2026-10-23T22:10:14.926Z",
+      "name": "Victima Legítima",
+      "email": "victim_1792793414912@test.com",
+      "phone": "5593414912",
+      "pin": "1234"
+    },
+    {
+      "id": "c83a57c4-3c27-46c4-a449-84e8042a17de",
+      "tenantId": "default",
+      "createdAt": "2026-10-23T22:10:14.990Z",
+      "name": "Usuario Valido",
+      "email": "user_ok_1792793414990@test.com",
+      "phone": "5593414990",
+      "pin": "CORRECT_PASS"
     }
   ],
   "order": [

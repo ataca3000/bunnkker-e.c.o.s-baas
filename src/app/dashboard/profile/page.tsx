@@ -1,16 +1,18 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Camera, Save, User, MapPin, Mail, Phone, Lock } from 'lucide-react';
+import { Camera, Save, User, MapPin, Mail, Phone, Lock, Sliders } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/context/AuthContext';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { toast } from '@/lib/toast';
+import HardwareSettingsModal from '@/components/hardware/HardwareSettingsModal';
 
 export default function UserProfile() {
     const { profile, isReadOnly } = useAuth();
     const [isEditing, setIsEditing] = useState(false);
+    const [hardwareModalOpen, setHardwareModalOpen] = useState(false);
     const [newPin, setNewPin] = useState('');
     const [confirmPin, setConfirmPin] = useState('');
     const [isSaving, setIsSaving] = useState(false);
@@ -263,9 +265,36 @@ export default function UserProfile() {
                                 Cambiar Contraseña Principal
                             </button>
                         </div>
+
+                        {/* ── SECCIÓN DE PERIFÉRICOS & HARDWARE (Impresoras, Escáneres, Wi-Fi / Bluetooth) ── */}
+                        <div className="mt-8 pt-6 border-t border-cyan-500/20">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl bg-slate-950/70 border border-cyan-500/30 shadow-lg">
+                                <div>
+                                    <h4 className="text-base font-black text-white flex items-center gap-2">
+                                        <span>🖨️ Dispositivos & Periféricos de Estación</span>
+                                    </h4>
+                                    <p className="text-xs text-slate-400 mt-1">
+                                        Vincula tu impresora de tickets (USB, Bluetooth o Wi-Fi hacia la PC), pistola de escáner y báscula digital asignada a tu rol.
+                                    </p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setHardwareModalOpen(true)}
+                                    className="px-5 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-md shadow-cyan-500/20 shrink-0"
+                                >
+                                    Configurar Hardware
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
+
+            {/* Modal de Dispositivos & Hardware */}
+            <HardwareSettingsModal 
+                isOpen={hardwareModalOpen} 
+                onClose={() => setHardwareModalOpen(false)} 
+            />
         </div>
     );
 }

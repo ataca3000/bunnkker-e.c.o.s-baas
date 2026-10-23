@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { db } from '@/lib/firebase';
 import { collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp } from 'firebase/firestore';
-import { Radio, Send, Volume2, VolumeX, X } from 'lucide-react';
+import { Radio, Send, Volume2, VolumeX, X, Mic, MicOff, Headphones, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from '@/lib/toast';
 
 export default function WalkieTalkieRadio() {
     const { profile } = useAuth();
@@ -15,8 +16,13 @@ export default function WalkieTalkieRadio() {
     const [isMuted, setIsMuted] = useState(false);
     const [status, setStatus] = useState<'standby' | 'transmitting' | 'receiving'>('standby');
     const [unread, setUnread] = useState(0);
+    const [handsFreeVox, setHandsFreeVox] = useState(false);
+    const [hardwareButtonsActive, setHardwareButtonsActive] = useState(true);
+    const [isListeningVoice, setIsListeningVoice] = useState(false);
     const processedMsgIds = useRef<Set<string>>(new Set());
     const lastMsgCount = useRef(0);
+    const recognitionRef = useRef<any>(null);
+    const pressedKeysRef = useRef<Set<string>>(new Set());
 
     const isStaff = profile?.role && ['superadmin', 'sales', 'inventory', 'billing', 'driver', 'carga_descarga'].includes(profile.role);
 
@@ -125,14 +131,9 @@ export default function WalkieTalkieRadio() {
         return () => unsubscribe();
     }, [db, profile, isMuted, isOpen]);
 
-    const handleTransmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!inputText.trim()) return;
-
-        const textToSend = inputText.trim();
-        setInputText('');
+    const transmitMessage = useCallback(async (textToSend: string) => {
+        if (!textToSend.trim()) return;
         setStatus('transmitting');
-
         playRadioStatic(0.3, 1200, 1.0);
 
         try {
@@ -140,19 +141,128 @@ export default function WalkieTalkieRadio() {
                 senderName: profile?.displayName || 'Operativo',
                 senderRole: profile?.role || 'staff',
                 senderUid: profile?.uid || 'anonymous',
-                text: textToSend,
+                text: textToSend.trim(),
                 timestamp: serverTimestamp()
             });
 
             setTimeout(() => {
                 playRadioStatic(0.25, 1000, 1.5);
                 setStatus('standby');
-            }, 500);
+            }, 600);
         } catch (err) {
             console.error("Fallo transmisión de radio:", err);
             setStatus('standby');
         }
+    }, [db, profile]);
+
+    const handleTransmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!inputText.trim()) return;
+        const msg = inputText.trim();
+        setInputText('');
+        await transmitMessage(msg);
     };
+
+    // ── MODO MANOS LIBRES (VOX): RECONOCIMIENTO CONTINUO DE VOZ ──
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+        if (!SpeechRecognition) return;
+
+        if (handsFreeVox) {
+            try {
+                const recognizer = new SpeechRecognition();
+                recognizer.lang = 'es-MX';
+                recognizer.continuous = true;
+                recognizer.interimResults = false;
+
+                recognizer.onstart = () => setIsListeningVoice(true);
+                recognizer.onend = () => {
+                    setIsListeningVoice(false);
+                    if (handsFreeVox) {
+                        try { recognizer.start(); } catch {}
+                    }
+                };
+                recognizer.onresult = (event: any) => {
+                    const lastIndex = event.results.length - 1;
+                    const transcript = event.results[lastIndex][0].transcript;
+                    if (transcript && transcript.trim().length > 1) {
+                        transmitMessage(transcript.trim());
+                    }
+                };
+                recognizer.onerror = () => setIsListeningVoice(false);
+
+                recognizer.start();
+                recognitionRef.current = recognizer;
+                toast.success('🎙️ Manos Libres (VOX) activado. Habla para transmitir.');
+            } catch (e) {
+                console.warn("Speech recognition error:", e);
+            }
+        } else {
+            if (recognitionRef.current) {
+                try { recognitionRef.current.stop(); } catch {}
+                recognitionRef.current = null;
+                setIsListeningVoice(false);
+            }
+        }
+
+        return () => {
+            if (recognitionRef.current) {
+                try { recognitionRef.current.stop(); } catch {}
+            }
+        };
+    }, [handsFreeVox, transmitMessage]);
+
+    // ── MODO BOTONES FÍSICOS DE HARDWARE (VOLUMEN / AURICULARES / TECLADO) ──
+    useEffect(() => {
+        if (typeof window === 'undefined' || !hardwareButtonsActive) return;
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) return;
+
+            pressedKeysRef.current.add(e.code || e.key);
+
+            const hasVolUp = pressedKeysRef.current.has('AudioVolumeUp') || pressedKeysRef.current.has('VolumeUp');
+            const hasVolDown = pressedKeysRef.current.has('AudioVolumeDown') || pressedKeysRef.current.has('VolumeDown');
+
+            // Presionar ambos botones de volumen o la tecla T
+            if ((hasVolUp && hasVolDown) || e.code === 'KeyT') {
+                e.preventDefault();
+                setHandsFreeVox(prev => {
+                    const next = !prev;
+                    toast.info(next ? '🎙️ PTT rápido activado por botones físicos' : 'PTT desactivado');
+                    return next;
+                });
+            }
+        };
+
+        const handleKeyUp = (e: KeyboardEvent) => {
+            pressedKeysRef.current.delete(e.code || e.key);
+        };
+
+        // MediaSession para botones físicos de audífonos / manos libres Bluetooth
+        if ('mediaSession' in navigator) {
+            try {
+                navigator.mediaSession.setActionHandler('play', () => {
+                    setHandsFreeVox(prev => !prev);
+                });
+                navigator.mediaSession.setActionHandler('pause', () => {
+                    setHandsFreeVox(false);
+                });
+                navigator.mediaSession.setActionHandler('nexttrack', () => {
+                    setHandsFreeVox(prev => !prev);
+                });
+            } catch {}
+        }
+
+        window.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('keyup', handleKeyUp);
+
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('keyup', handleKeyUp);
+        };
+    }, [hardwareButtonsActive]);
 
     const handleToggleOpen = () => {
         setIsOpen(!isOpen);
@@ -200,22 +310,57 @@ export default function WalkieTalkieRadio() {
                             </div>
                         </div>
 
-                        <div className="w-full bg-[#9ccc65] border-2 border-slate-950 rounded-xl p-3 text-slate-900 font-mono text-center shadow-inner mb-4 relative overflow-hidden select-none">
+                        {/* Pantalla LCD Verde Militar de Radio */}
+                        <div className="w-full bg-[#9ccc65] border-2 border-slate-950 rounded-xl p-3 text-slate-900 font-mono text-center shadow-inner mb-3 relative overflow-hidden select-none">
                             <div className="absolute inset-0 bg-gradient-to-b from-black/10 to-transparent pointer-events-none"></div>
                             <div className="text-[10px] font-black uppercase opacity-60 flex justify-between">
                                 <span>CH-01</span>
-                                <span>146.520 MHz</span>
+                                <span className="font-mono">{handsFreeVox ? '🎙️ VOX ON' : '146.520 MHz'}</span>
                             </div>
                             <div className="text-base font-black my-1 tracking-wider">
-                                {status === 'transmitting' ? 'TRANSMITIENDO...' : status === 'receiving' ? 'RX: ENTRANTE' : 'RADIO GRUPAL'}
+                                {status === 'transmitting' ? 'TRANSMITIENDO...' : status === 'receiving' ? 'RX: ENTRANTE' : handsFreeVox ? 'VOX: ESCUCHANDO...' : 'RADIO GRUPAL'}
                             </div>
                             <div className="text-[9px] opacity-75 truncate">
                                 {profile?.displayName || 'Operativo'} · {profile?.role}
                             </div>
                         </div>
 
-                        <div className="w-full h-12 bg-slate-900/40 rounded-2xl p-2.5 flex flex-col gap-1 mb-4 border border-slate-700/30 overflow-hidden">
-                            {[1, 2, 3].map(row => (
+                        {/* ── BARRA DE MODOS: MANOS LIBRES (VOX) & BOTONES FÍSICOS (VOL +/-) ── */}
+                        <div className="w-full flex items-center justify-between gap-1.5 mb-3">
+                            <button
+                                type="button"
+                                onClick={() => setHandsFreeVox(!handsFreeVox)}
+                                className={`flex-1 py-1.5 px-2 rounded-xl text-[10px] font-black flex items-center justify-center gap-1 transition-all border ${
+                                    handsFreeVox 
+                                        ? 'bg-rose-500/20 text-rose-300 border-rose-500/50 shadow-md animate-pulse' 
+                                        : 'bg-slate-900/80 text-slate-400 border-slate-800 hover:text-white'
+                                }`}
+                                title="Activar transmisión por voz sin tocar la pantalla"
+                            >
+                                {handsFreeVox ? <Mic size={12} className="text-rose-400" /> : <MicOff size={12} />}
+                                <span>{handsFreeVox ? 'VOX ACTIVO' : 'MANOS LIBRES'}</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setHardwareButtonsActive(!hardwareButtonsActive);
+                                    toast.info(hardwareButtonsActive ? 'Botones físicos desactivados' : 'Presiona Vol +/- para transmitir');
+                                }}
+                                className={`flex-1 py-1.5 px-2 rounded-xl text-[10px] font-black flex items-center justify-center gap-1 transition-all border ${
+                                    hardwareButtonsActive 
+                                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50 shadow-md' 
+                                        : 'bg-slate-900/80 text-slate-400 border-slate-800 hover:text-white'
+                                }`}
+                                title="Presiona ambos botones de volumen o auricular para transmitir"
+                            >
+                                <Headphones size={12} className={hardwareButtonsActive ? 'text-emerald-400' : ''} />
+                                <span>BOTONES VOL +/-</span>
+                            </button>
+                        </div>
+
+                        <div className="w-full h-10 bg-slate-900/40 rounded-2xl p-2 flex flex-col gap-1 mb-3 border border-slate-700/30 overflow-hidden">
+                            {[1, 2].map(row => (
                                 <div key={row} className="flex justify-between opacity-30 gap-1.5">
                                     {Array.from({ length: 14 }).map((_, i) => (
                                         <div key={i} className="w-1.5 h-1.5 rounded-full bg-slate-400"></div>
@@ -224,7 +369,7 @@ export default function WalkieTalkieRadio() {
                             ))}
                         </div>
 
-                        <div className="w-full flex-1 bg-slate-950 rounded-2xl p-3 h-[180px] overflow-y-auto mb-4 scrollbar-thin border border-slate-700/50 flex flex-col gap-2">
+                        <div className="w-full flex-1 bg-slate-950 rounded-2xl p-3 h-[170px] overflow-y-auto mb-3 scrollbar-thin border border-slate-700/50 flex flex-col gap-2">
                             {messages.map((msg) => (
                                 <div key={msg.id} className="text-[10px] text-slate-300 border-b border-slate-900/50 pb-1.5 last:border-0 leading-tight">
                                     <span className="font-black text-rose-400 uppercase">[{msg.senderRole}] {msg.senderName}:</span>{' '}
@@ -232,34 +377,34 @@ export default function WalkieTalkieRadio() {
                                 </div>
                             ))}
                             {messages.length === 0 && (
-                                <div className="text-slate-600 text-center py-12 text-[10px] font-bold uppercase tracking-widest">
+                                <div className="text-slate-600 text-center py-10 text-[10px] font-bold uppercase tracking-widest">
                                     Canal de radio vacío
                                 </div>
                             )}
                         </div>
 
-                        <form onSubmit={handleTransmit} className="w-full flex flex-col gap-3 mt-2">
+                        <form onSubmit={handleTransmit} className="w-full flex flex-col gap-2.5 mt-1">
                             <input 
                                 type="text"
                                 value={inputText}
                                 onChange={e => setInputText(e.target.value)}
-                                placeholder="Escribe tu mensaje..."
+                                placeholder="Escribe o habla con VOX..."
                                 className="w-full px-3 py-2 bg-[#0a0a0a] border-2 border-[#333] rounded-md text-xs font-semibold text-emerald-400 focus:border-emerald-500 outline-none transition-all placeholder:text-slate-600 font-mono shadow-inner"
                             />
                             
                             <button 
                                 type="submit"
-                                className="w-full bg-gradient-to-b from-[#ffcc00] to-[#b38f00] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_8px_0_#806600,0_15px_20px_rgba(0,0,0,0.6)] active:shadow-[0_2px_0_#806600,0_5px_10px_rgba(0,0,0,0.6)] active:translate-y-2 transition-all flex items-center justify-center gap-2"
+                                className="w-full bg-gradient-to-b from-[#ffcc00] to-[#b38f00] text-black font-black uppercase tracking-widest py-3.5 rounded-xl shadow-[0_6px_0_#806600,0_12px_18px_rgba(0,0,0,0.6)] active:shadow-[0_2px_0_#806600,0_4px_8px_rgba(0,0,0,0.6)] active:translate-y-1.5 transition-all flex items-center justify-center gap-2"
                                 title="Transmitir (PTT)"
                             >
                                 <Send size={18} /> PTT (ENVIAR)
                             </button>
                         </form>
 
-                        <div className="mt-6 w-full p-3 bg-black/40 border border-slate-700/30 rounded-xl flex items-start gap-2">
-                            <span className="text-[14px]">📡</span>
+                        <div className="mt-4 w-full p-2.5 bg-black/40 border border-slate-700/30 rounded-xl flex items-start gap-2">
+                            <span className="text-[13px]">📡</span>
                             <p className="text-[9px] text-slate-400 leading-tight">
-                                <strong className="text-white">Consejo Operativo:</strong> Para un flujo sin interrupciones, asegúrate de instalar repetidores WiFi de grado industrial en todo tu rango de operación (ej. patio de maniobras o bodega profunda).
+                                <strong className="text-white">Tip Operativo:</strong> Presiona ambos botones de volumen del celular o el botón de tus audífonos para hablar sin mirar la pantalla.
                             </p>
                         </div>
                     </motion.div>

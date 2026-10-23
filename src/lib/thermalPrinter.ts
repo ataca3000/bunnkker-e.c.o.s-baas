@@ -200,15 +200,151 @@ ${data.customerName ? `<br>CLIENTE: ${escapeHtml(data.customerName)}` : ''}</div
     }
 };
 
+export type PrintMethod = 'serial' | 'bluetooth' | 'network' | 'browser';
+
+export type PrintResult =
+    | { ok: true; method: PrintMethod; details?: string }
+    | { ok: false; code: PrintErrorCode; message: string; canFallback: boolean };
+
+/** Imprime a través de la Red LAN / Wi-Fi enviando el trabajo al servidor PC o a la IP de la impresora. */
+export const printReceiptViaNetwork = async (
+    data: PrintData, 
+    options?: { targetIp?: string; targetPort?: number; mode?: 'network_ip' | 'spool'; serverUrl?: string }
+): Promise<PrintResult> => {
+    try {
+        const endpoint = options?.serverUrl ? `${options.serverUrl}/api/printer/print` : '/api/printer/print';
+        const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                ...data,
+                targetIp: options?.targetIp,
+                targetPort: options?.targetPort || 9100,
+                mode: options?.mode || (options?.targetIp ? 'network_ip' : 'spool')
+            })
+        });
+
+        const json = await res.json();
+        if (!res.ok || !json.success) {
+            return fail('io_error', json.error || 'Fallo de impresión en red Wi-Fi');
+        }
+
+        return { ok: true, method: 'network', details: json.message };
+    } catch (err: any) {
+        console.error('Error al imprimir por red LAN:', err);
+        return fail('io_error', `No se pudo alcanzar el servicio de impresión LAN: ${err.message}`);
+    }
+};
+
+/** Imprime vía Web Bluetooth (BLE) a mini-impresoras térmicas portátiles. */
+export const printReceiptViaBluetooth = async (data: PrintData): Promise<PrintResult> => {
+    if (typeof navigator === 'undefined' || !('bluetooth' in navigator)) {
+        return fail('unsupported', 'Tu navegador o dispositivo no soporta Web Bluetooth. Usa Chrome o Edge.');
+    }
+
+    try {
+        // Servicio común de impresoras ESC/POS Bluetooth BLE (18f0 o genérico)
+        const device = await (navigator as any).bluetooth.requestDevice({
+            acceptAllDevices: true,
+            optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb', '49535343-fe7d-4ae5-8fa9-9fafd205e455', 'e7810a71-73ae-499d-8c15-faa9aef0c3f2']
+        });
+
+        if (!device || !device.gatt) {
+            return fail('cancelled', 'No se seleccionó dispositivo Bluetooth.');
+        }
+
+        const server = await device.gatt.connect();
+        const services = await server.getPrimaryServices();
+        if (!services || services.length === 0) {
+            return fail('no_writable', 'No se encontraron servicios de impresión en la impresora Bluetooth.');
+        }
+
+        // Buscar una característica de escritura
+        let writeChar: any = null;
+        for (const s of services) {
+            const chars = await s.getCharacteristics();
+            for (const c of chars) {
+                if (c.properties.write || c.properties.writeWithoutResponse) {
+                    writeChar = c;
+                    break;
+                }
+            }
+            if (writeChar) break;
+        }
+
+        if (!writeChar) {
+            return fail('no_writable', 'La impresora Bluetooth no cuenta con canal de datos ESC/POS.');
+        }
+
+        // Enviar chunks en paquetes BLE de max 512 bytes
+        for (const chunk of buildReceiptBytes(data)) {
+            const CHUNK_SIZE = 120;
+            for (let i = 0; i < chunk.length; i += CHUNK_SIZE) {
+                const slice = chunk.slice(i, i + CHUNK_SIZE);
+                if (writeChar.writeValueWithoutResponse) {
+                    await writeChar.writeValueWithoutResponse(slice);
+                } else {
+                    await writeChar.writeValue(slice);
+                }
+                await new Promise(r => setTimeout(r, 20)); // micro pausa para buffer térmico
+            }
+        }
+
+        try { device.gatt.disconnect(); } catch {}
+        return { ok: true, method: 'bluetooth', details: device.name };
+    } catch (err: any) {
+        console.error('Error al imprimir por Bluetooth:', err);
+        if (err.name === 'NotFoundError') {
+            return fail('cancelled', 'Conexión Bluetooth cancelada por el usuario.', false);
+        }
+        return fail('io_error', `Error Bluetooth: ${err.message}`);
+    }
+};
+
 /**
- * Orquestador: intenta serial y, si falla de forma recuperable, cae al diálogo del navegador.
- * Si el usuario canceló el selector, respeta su decisión y no abre nada más.
+ * Orquestador Global:
+ * Revisa si el usuario configuró un modo preferido en hardware settings (LAN / Bluetooth / Serial),
+ * y si falla de forma recuperable cae limpiamente a los métodos alternativos o al navegador.
  */
 export const printReceipt = async (data: PrintData): Promise<PrintResult> => {
+    let prefMode: string = 'serial';
+    let targetIp: string | undefined;
+    let serverUrl: string | undefined;
+
+    if (typeof window !== 'undefined') {
+        try {
+            const raw = localStorage.getItem('_bunkker_hardware_config');
+            if (raw) {
+                const cfg = JSON.parse(raw);
+                prefMode = cfg.printerMode || 'serial';
+                targetIp = cfg.printerIp;
+                serverUrl = cfg.lanServerUrl;
+            }
+        } catch {}
+    }
+
+    // 1. Si está configurado modo Red LAN / Wi-Fi
+    if (prefMode === 'network' || prefMode === 'wifi') {
+        const netRes = await printReceiptViaNetwork(data, { targetIp, serverUrl });
+        if (netRes.ok) return netRes;
+        if (!netRes.canFallback) return netRes;
+    }
+
+    // 2. Si está configurado modo Bluetooth
+    if (prefMode === 'bluetooth') {
+        const btRes = await printReceiptViaBluetooth(data);
+        if (btRes.ok) return btRes;
+        if (!btRes.canFallback) return btRes;
+    }
+
+    // 3. Intento Serial (Cable USB)
     const serial = await printReceiptWithWebSerial(data);
     if (serial.ok || !serial.canFallback) return serial;
 
+    // 4. Caída final: diálogo del navegador
     const browser = await printReceiptViaBrowser(data);
     if (browser.ok) return browser;
-    return serial; // Reporta el fallo original, que es el más informativo
+
+    return serial;
 };
+
