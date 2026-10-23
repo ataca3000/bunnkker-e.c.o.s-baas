@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { HardwareDioramaScene } from './three/HardwareDioramaScene';
 import { sounds } from './audio/soundEffects';
 import { BunkkerErpHud } from './components/BunkkerErpHud';
-import { ErpOrder, PerspectiveType, SimulationStep } from './types/logistics';
+import type { ErpOrder, PerspectiveType, SimulationStep } from './types/logistics';
 import { useCart } from '@/context/CartContext';
 import { 
   Compass, 
@@ -85,9 +85,9 @@ export default function FerreflujoSimulator3D({ embedded = false, className = ''
         };
         setActiveStepText(stepLabels[step] || 'Operando...');
       },
-      onOrderComplete: (order) => {
+      onOrderComplete: () => {
         setSimOrders((prev) =>
-          prev.map((o) => (o.orderNumber === order.orderNumber ? { ...o, status: 'completado_ok' } : o))
+          prev.map((o, idx) => (idx === 0 ? { ...o, status: 'completado_ok' } : o))
         );
       },
       onSoundTrigger: (sound) => {

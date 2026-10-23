@@ -1,6 +1,6 @@
 import React from 'react';
 import { Volume2, VolumeX, RotateCcw, Box, Store, Sparkles, EyeOff, Radio } from 'lucide-react';
-import { LogisticsOrder, SimulationStep } from '../types/logistics';
+import type { LogisticsOrder, SimulationStep } from '../types/logistics';
 
 interface HeaderBarProps {
   currentOrder: LogisticsOrder | null;

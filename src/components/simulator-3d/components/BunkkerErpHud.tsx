@@ -15,7 +15,7 @@ import {
   Sparkles,
   Zap,
 } from 'lucide-react';
-import { ErpOrder, ErpOrderStatus } from '../types/logistics';
+import type { ErpOrder, ErpOrderStatus } from '../types/logistics';
 
 interface BunkkerErpHudProps {
   orders: ErpOrder[];
@@ -274,11 +274,11 @@ export const BunkkerErpHud: React.FC<BunkkerErpHudProps> = ({
                       <div className="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
                         <div
                           className="h-full bg-gradient-to-r from-cyan-400 via-sky-400 to-emerald-400 transition-all duration-300"
-                          style={{ width: `${Math.round(ord.progress * 100)}%` }}
+                          style={{ width: `${Math.round((ord.progress ?? 0) * 100)}%` }}
                         />
                       </div>
                       <div className="flex items-center justify-between text-[9px] text-slate-400">
-                        <span>Paso {Math.round(ord.progress * 100)}%</span>
+                        <span>Paso {Math.round((ord.progress ?? 0) * 100)}%</span>
                         {ord.ticketNumber && (
                           <span className="font-mono text-cyan-300">Ticket: {ord.ticketNumber}</span>
                         )}

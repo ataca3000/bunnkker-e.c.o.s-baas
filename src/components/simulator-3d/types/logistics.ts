@@ -177,12 +177,14 @@ export type ErpOrderStatus =
 export interface ErpOrder {
   id: string;
   orderNumber: string; // e.g. 'PED-01'
-  flowType: 1 | 2 | 3;
-  channelName: 'Carga / Patio' | 'Domicilio' | 'Caja Mostrador';
+  flowType?: 1 | 2 | 3;
+  channelName?: 'Carga / Patio' | 'Domicilio' | 'Caja Mostrador' | string;
+  clientName?: string;
+  destinationType?: string;
   productName: string;
   status: ErpOrderStatus;
-  stepDescription: string;
-  progress: number; // 0 to 1
+  stepDescription?: string;
+  progress?: number; // 0 to 1
   timestamp: number;
   ticketNumber?: string;
   signatureCaptured?: boolean;

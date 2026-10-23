@@ -1,6 +1,6 @@
 import React from 'react';
 import { ZoomIn, ZoomOut, RotateCcw, Compass, Gauge, Eye, EyeOff } from 'lucide-react';
-import { PerspectiveType } from '../types/logistics';
+import type { PerspectiveType } from '../types/logistics';
 
 interface CameraControlsOverlayProps {
   onZoomIn: () => void;

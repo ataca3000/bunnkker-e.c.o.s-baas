@@ -37,7 +37,7 @@ import {
   createNeonDataArcBeam,
   createCargoBoxTruck,
   createWoodenPallet,
-  DioramaMaterials,
+  type DioramaMaterials,
 } from './models/dioramaModels';
 import {
   createWarehouseFloorTexture,
@@ -45,7 +45,7 @@ import {
   createCircuitGridFloorTexture,
   createModularPodiumTexture,
 } from './proceduralTextures';
-import {
+import type {
   BoxDestination,
   CameraPreset,
   DeliveryType,
