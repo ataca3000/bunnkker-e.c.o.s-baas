@@ -24,6 +24,36 @@ interface FerreflujoSimulator3DProps {
   className?: string;
 }
 
+const DEFAULT_SIM_ORDERS: ErpOrder[] = [
+  {
+    id: 'ORD-101',
+    orderNumber: '#BUNKKER-701',
+    clientName: 'Arq. Roberto Méndez',
+    productName: 'Cemento Gris Tolteca 50kg (10 bultos)',
+    destinationType: 'patio_carga',
+    status: 'en_carga',
+    timestamp: 0,
+  },
+  {
+    id: 'ORD-102',
+    orderNumber: '#BUNKKER-702',
+    clientName: 'Constructora del Valle',
+    productName: 'Pintura Vinílica + Brochas Pro',
+    destinationType: 'domicilio_residencial',
+    status: 'en_ruta',
+    timestamp: 0,
+  },
+  {
+    id: 'ORD-103',
+    orderNumber: '#BUNKKER-703',
+    clientName: 'Taller San José',
+    productName: 'Disco Corte 4 1/2" + Llave Stillson',
+    destinationType: 'caja_mostrador',
+    status: 'completado_ok',
+    timestamp: 0,
+  },
+];
+
 export default function FerreflujoSimulator3D({ embedded = false, className = '' }: FerreflujoSimulator3DProps) {
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<HardwareDioramaScene | null>(null);
@@ -35,39 +65,17 @@ export default function FerreflujoSimulator3D({ embedded = false, className = ''
   const [hudVisible, setHudVisible] = useState<boolean>(true);
   const [activeStepText, setActiveStepText] = useState<string>('Sistema Bunkker E.C.O.S. en reposo');
 
-  // Pedidos activos del simulador sincronizados con el flujo Bunkker
-  const [simOrders, setSimOrders] = useState<ErpOrder[]>([
-    {
-      id: 'ORD-101',
-      orderNumber: '#BUNKKER-701',
-      clientName: 'Arq. Roberto Méndez',
-      productName: 'Cemento Gris Tolteca 50kg (10 bultos)',
-      destinationType: 'patio_carga',
-      status: 'en_carga',
-      timestamp: Date.now() - 120000,
-    },
-    {
-      id: 'ORD-102',
-      orderNumber: '#BUNKKER-702',
-      clientName: 'Constructora del Valle',
-      productName: 'Pintura Vinílica + Brochas Pro',
-      destinationType: 'domicilio_residencial',
-      status: 'en_ruta',
-      timestamp: Date.now() - 60000,
-    },
-    {
-      id: 'ORD-103',
-      orderNumber: '#BUNKKER-703',
-      clientName: 'Taller San José',
-      productName: 'Disco Corte 4 1/2" + Llave Stillson',
-      destinationType: 'caja_mostrador',
-      status: 'completado_ok',
-      timestamp: Date.now() - 30000,
-    },
-  ]);
+  // Pedidos activos del simulador sincronizados con el flujo Bunkker (puro, sin Date.now en render)
+  const [simOrders, setSimOrders] = useState<ErpOrder[]>(DEFAULT_SIM_ORDERS);
 
-  // Inicialización de la Escena 3D
+  // Inicialización de la Escena 3D y timestamps
   useEffect(() => {
+    // Sincronizar timestamps reales en el cliente dentro del efecto (función impura permitida en useEffect)
+    const now = Date.now();
+    setSimOrders((prev) =>
+      prev.map((o, idx) => (o.timestamp === 0 ? { ...o, timestamp: now - (idx + 1) * 30000 } : o))
+    );
+
     if (!mountRef.current) return;
 
     sounds.enabled = soundEnabled;

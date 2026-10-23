@@ -226,7 +226,6 @@ export const BunkkerErpHud: React.FC<BunkkerErpHudProps> = ({
             <div className="space-y-2">
               <div className="text-[11px] font-bold text-slate-300 uppercase tracking-wider flex items-center justify-between">
                 <span>Pizarra de Estados en Tiempo Real</span>
-                <span>Pizarra de Estados en Tiempo Real</span>
                 <span className="text-[10px] text-slate-400">{orders.length} pedidos</span>
               </div>
 
