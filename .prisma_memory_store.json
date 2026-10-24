@@ -97,7 +97,9 @@
       "role": "admin",
       "pin": "0ffe1abd1a08215353c233d6e009613e95eec4253832a761af28ff37ac5a150c",
       "active": true,
-      "createdAt": "2026-10-14T17:17:08.419Z"
+      "createdAt": "2026-10-14T17:17:08.419Z",
+      "pinHash": "$2b$10$pMFS7s0sUKnBnWjO.ZEZE.ujnrd.a.y5kFIeM7uctwmwIQWJ8s79e",
+      "deviceId": "DEV-3d3813de-mvlyv8o4"
     },
     {
       "id": "demo-sales",
