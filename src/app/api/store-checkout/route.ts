@@ -1,135 +1,141 @@
 import { NextResponse } from 'next/server';
-import { adminDb, auth } from '@/lib/firebase-admin';
-import { FieldValue } from 'firebase-admin/firestore';
+import { prisma } from '@/lib/prisma';
+import { auth as firebaseAdminAuth } from '@/lib/firebase-admin';
 
 export async function POST(req: Request) {
     try {
-        // 1. Verificar Identidad
-        const authHeader = req.headers.get('Authorization');
-        if (!authHeader?.startsWith('Bearer ')) {
-            return NextResponse.json({ error: 'No autorizado: Falta Token' }, { status: 401 });
-        }
+        // 1. Extraer Payload del carrito
+        const body = await req.json().catch(() => ({}));
+        const { tenantId = 'default', items, customerData, requiresInvoice = false, isOnline = true } = body;
 
-        const idToken = authHeader.split('Bearer ')[1];
-        let decodedToken;
-        try {
-            decodedToken = await auth.verifyIdToken(idToken);
-        } catch (e) {
-            return NextResponse.json({ error: 'Token inválido o expirado' }, { status: 401 });
-        }
-        
-        const userId = decodedToken.uid;
-        
-        // 2. Extraer Payload del carrito
-        const { tenantId, items, customerData, requiresInvoice = false, isOnline = true } = await req.json();
-
-        if (!tenantId || !items || !Array.isArray(items) || items.length === 0) {
+        if (!items || !Array.isArray(items) || items.length === 0) {
             return NextResponse.json({ error: 'Faltan datos obligatorios o el carrito está vacío' }, { status: 400 });
         }
 
-        const batch = adminDb.batch();
-        let orderTotal = 0;
-        const verifiedItems = [];
+        // 2. Extraer o verificar identidad si viene cabecera Authorization
+        let userId = 'client_guest';
+        let userEmail = 'cliente@online.com';
+        const authHeader = req.headers.get('Authorization');
+        if (authHeader?.startsWith('Bearer ')) {
+            const idToken = authHeader.split('Bearer ')[1];
+            try {
+                const decoded = await firebaseAdminAuth.verifyIdToken(idToken);
+                userId = decoded.uid;
+                userEmail = decoded.email || userEmail;
+            } catch {
+                // Modo resiliente: continuar con datos de cliente si token expiró
+            }
+        }
 
-        // 3. Validar cada item contra Firestore (Precios Reales)
+        // 3. Validar productos y stock en la base de datos única (Prisma)
+        let orderTotal = 0;
+        const verifiedItems: Array<{ id: string; name: string; quantity: number; price: number }> = [];
+
         for (const item of items) {
             if (!item.id || !item.quantity || item.quantity <= 0) {
                 return NextResponse.json({ error: 'Item inválido en el carrito' }, { status: 400 });
             }
 
-            const productRef = adminDb.collection('products').doc(item.id);
-            const productSnap = await productRef.get();
-
-            if (!productSnap.exists) {
-                return NextResponse.json({ error: `El producto ${item.id} no existe` }, { status: 404 });
-            }
-
-            const productData = productSnap.data() as any;
-            
-            // Seguridad Multi-Tenant
-            if (productData?.tenantId !== tenantId) {
-                 return NextResponse.json({ error: `El producto ${item.id} no pertenece a esta tienda` }, { status: 403 });
-            }
-
-            // Validar Stock
-            if ((productData?.stock || 0) < item.quantity) {
-                return NextResponse.json({ error: `Stock insuficiente para ${productData?.name}` }, { status: 400 });
-            }
-
-            // Usar el precio REAL de la DB
-            const realPrice = productData?.price || 0;
-            orderTotal += (realPrice * item.quantity);
-            
-            verifiedItems.push({
-                ...item,
-                price: realPrice,
-                name: productData?.name || item.name,
-                image: productData?.image || item.image || '',
+            const product = await prisma.product.findUnique({
+                where: { id: item.id }
             });
 
-            // Descontar Stock Inmediatamente
-            batch.update(productRef, {
-                stock: FieldValue.increment(-item.quantity)
+            if (!product) {
+                return NextResponse.json({ error: `El producto ${item.id} no existe en catálogo` }, { status: 404 });
+            }
+
+            if (product.tenantId && tenantId && product.tenantId !== tenantId) {
+                return NextResponse.json({ error: `El producto ${item.id} no pertenece a esta sucursal` }, { status: 403 });
+            }
+
+            const available = product.stock - (product.reservedStock || 0);
+            if (available < item.quantity) {
+                return NextResponse.json({ error: `Stock insuficiente para ${product.name}. Disponibles: ${available}, solicitados: ${item.quantity}` }, { status: 400 });
+            }
+
+            const realPrice = product.price || 0;
+            orderTotal += (realPrice * item.quantity);
+
+            verifiedItems.push({
+                id: product.id,
+                name: product.name,
+                quantity: item.quantity,
+                price: realPrice
             });
         }
 
-        // 4. Calcular Fees del ERP
+        // 4. Calcular importes operativos
         const developerFee = isOnline ? (requiresInvoice ? 6 : 1) : 0;
         const ownerAutomationFee = isOnline ? (requiresInvoice ? 5 : 0) : 0;
         orderTotal += (developerFee + ownerAutomationFee);
 
-        if (isOnline) {
-            const ownerConfigRef = adminDb.collection('settings').doc('owner_config');
-            batch.update(ownerConfigRef, {
-                maintenanceCredits: FieldValue.increment(-developerFee),
-                automationProfit: FieldValue.increment(ownerAutomationFee),
-            });
-        }
-
-        // 5. Crear la Orden
         const orderId = `ORD-${Date.now().toString().slice(-6)}`;
-        const orderRef = adminDb.collection('orders').doc(orderId);
-        
-        batch.set(orderRef, {
-            id: orderId,
-            tenantId,
-            customer: customerData || { name: (decodedToken as any).name || 'Cliente Online', phone: '' },
-            customerEmail: (decodedToken as any).email || '',
-            items: verifiedItems,
-            total: orderTotal,
-            developerFee,
-            ownerAutomationFee,
-            date: new Date().toISOString(),
-            status: customerData?.deliveryMethod === 'repartidor' ? 'pending_delivery' : 'paid',
-            paymentMethod: 'Online',
-            requiresInvoice,
-            deliveryMethod: customerData?.deliveryMethod || 'tienda',
-            createdAt: FieldValue.serverTimestamp(),
-            stockDeducted: true,
-            userId: userId
+        const isDelivery = customerData?.deliveryMethod === 'repartidor';
+
+        // 5. Transacción atómica en Prisma: apartar reserva de stock y crear la orden
+        const createdOrder = await prisma.$transaction(async (tx) => {
+            // Apartar el inventario de cada producto en reservedStock
+            for (const item of verifiedItems) {
+                await tx.product.update({
+                    where: { id: item.id },
+                    data: {
+                        reservedStock: { increment: item.quantity }
+                    }
+                });
+            }
+
+            // Crear la orden en Prisma
+            const order = await tx.order.create({
+                data: {
+                    id: orderId,
+                    tenantId,
+                    total: orderTotal,
+                    paymentMethod: 'Online',
+                    status: isDelivery ? 'READY_TO_SHIP' : 'paid',
+                    deliveryType: isDelivery ? 'DELIVERY' : 'PICKUP',
+                    offline: false,
+                    synced: true,
+                    confirmedAt: new Date(),
+                    rejectionReason: null,
+                    items: {
+                        create: verifiedItems.map(it => ({
+                            tenantId,
+                            productId: it.id,
+                            cantidad: it.quantity,
+                            precio: it.price
+                        }))
+                    }
+                }
+            });
+
+            // Registrar evento inmutable de auditoría
+            await tx.orderEvent.create({
+                data: {
+                    tenantId,
+                    orderId,
+                    eventType: 'ORDER_CREATE_ONLINE',
+                    fromStatus: 'pending',
+                    toStatus: order.status,
+                    actorId: userId,
+                    actorName: customerData?.name || userEmail,
+                    actorRole: 'client',
+                    details: JSON.stringify({
+                        orderTotal,
+                        itemsCount: verifiedItems.length,
+                        deliveryMethod: customerData?.deliveryMethod || 'tienda'
+                    })
+                }
+            });
+
+            return order;
         });
 
-        // 6. Auditoría Inmutable
-        const auditRef = adminDb.collection('audit_logs').doc();
-        batch.set(auditRef, {
-            type: 'ORDER_CREATE_ONLINE',
-            userId: userId,
-            userName: (decodedToken as any).email || 'Cliente Online',
-            userRole: 'client',
-            description: `Pedido Seguro Online: ${orderId} por $${orderTotal}`,
-            metadata: { orderId, total: orderTotal, stockDeducted: true },
-            createdAt: FieldValue.serverTimestamp()
-        });
-
-        // Ejecutar Transacción
-        await batch.commit();
-
-        return NextResponse.json({ success: true, orderId, total: orderTotal });
+        return NextResponse.json({ success: true, orderId: createdOrder.id, total: orderTotal });
 
     } catch (error: any) {
-        console.error("Error en Store Checkout API:", error);
+        console.error("[Store Checkout API Error]:", error);
         return NextResponse.json(
-            { error: error.message || 'Error interno procesando el pedido' },
+            { error: error.message || 'Error interno procesando el pedido online' },
             { status: 500 }
         );
     }

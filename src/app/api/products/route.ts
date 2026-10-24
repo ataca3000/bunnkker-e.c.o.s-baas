@@ -30,11 +30,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
     let auth = requireRole(request, WRITE_ROLES);
     if (!auth.ok) {
-        const headerRole = request.headers.get('x-user-role');
-        const headerUid = request.headers.get('x-user-id') || 'local_owner';
-        if (headerRole && (WRITE_ROLES.includes(headerRole) || headerRole === 'superadmin' || headerRole === 'almacen')) {
-            auth = { ok: true, uid: headerUid, role: headerRole };
-        } else if (process.env.NODE_ENV !== 'production' || process.env.NEXT_PUBLIC_APP_ENV === 'local') {
+        if (process.env.NODE_ENV !== 'production' && process.env.NEXT_PUBLIC_APP_ENV === 'local') {
             auth = { ok: true, uid: 'local_owner', role: 'superadmin' };
         } else {
             return auth.response;
@@ -103,11 +99,7 @@ export async function POST(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
     let auth = requireRole(request, WRITE_ROLES);
     if (!auth.ok) {
-        const headerRole = request.headers.get('x-user-role');
-        const headerUid = request.headers.get('x-user-id') || 'local_owner';
-        if (headerRole && (WRITE_ROLES.includes(headerRole) || headerRole === 'superadmin' || headerRole === 'almacen')) {
-            auth = { ok: true, uid: headerUid, role: headerRole };
-        } else if (process.env.NODE_ENV !== 'production' || process.env.NEXT_PUBLIC_APP_ENV === 'local') {
+        if (process.env.NODE_ENV !== 'production' && process.env.NEXT_PUBLIC_APP_ENV === 'local') {
             auth = { ok: true, uid: 'local_owner', role: 'superadmin' };
         } else {
             return auth.response;
@@ -183,11 +175,7 @@ export async function PATCH(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
     let auth = requireRole(request, ['superadmin', 'inventory', 'almacen']);
     if (!auth.ok) {
-        const headerRole = request.headers.get('x-user-role');
-        const headerUid = request.headers.get('x-user-id') || 'local_owner';
-        if (headerRole && (['superadmin', 'inventory', 'almacen'].includes(headerRole))) {
-            auth = { ok: true, uid: headerUid, role: headerRole };
-        } else if (process.env.NODE_ENV !== 'production' || process.env.NEXT_PUBLIC_APP_ENV === 'local') {
+        if (process.env.NODE_ENV !== 'production' && process.env.NEXT_PUBLIC_APP_ENV === 'local') {
             auth = { ok: true, uid: 'local_owner', role: 'superadmin' };
         } else {
             return auth.response;
