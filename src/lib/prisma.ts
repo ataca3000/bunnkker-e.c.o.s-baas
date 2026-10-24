@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import crypto from 'crypto';
+import { atomicWriteFileSync } from './atomicFs';
 import fs from 'fs';
 import path from 'path';
 
@@ -126,9 +127,7 @@ export function flushPersistedStore() {
     const store = g._bunkker_memory_store;
     if (store) {
       if (saveTimer) clearTimeout(saveTimer);
-      const tempPath = `${PERSISTENCE_FILE}.tmp`;
-      fs.writeFileSync(tempPath, JSON.stringify(store, null, 2), 'utf-8');
-      fs.renameSync(tempPath, PERSISTENCE_FILE);
+      atomicWriteFileSync(PERSISTENCE_FILE, JSON.stringify(store, null, 2), true);
     }
   } catch (err) {
     console.warn('[Prisma Store] Error flushing store to disk:', err);
@@ -139,9 +138,7 @@ function triggerStoreSave(store: Record<string, any[]>) {
   if (saveTimer) clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
     try {
-      const tempPath = `${PERSISTENCE_FILE}.tmp`;
-      fs.writeFileSync(tempPath, JSON.stringify(store, null, 2), 'utf-8');
-      fs.renameSync(tempPath, PERSISTENCE_FILE);
+      atomicWriteFileSync(PERSISTENCE_FILE, JSON.stringify(store, null, 2), true);
     } catch (err) {
       console.warn('[Prisma Store] Error saving store to disk:', err);
     }
@@ -492,6 +489,13 @@ function createResilientPrismaClient(): PrismaClient {
   let realPrisma: any = null;
   try {
     realPrisma = new PrismaClient();
+    // 🛡️ PRAGMA WAL & synchronous=FULL: Máxima resiliencia contra apagones
+    const dbUrl = process.env.DATABASE_URL || '';
+    if (dbUrl.includes('file:') || dbUrl.includes('.db') || dbUrl.includes('sqlite')) {
+      realPrisma.$executeRawUnsafe('PRAGMA journal_mode = WAL;').catch(() => {});
+      realPrisma.$executeRawUnsafe('PRAGMA synchronous = FULL;').catch(() => {});
+      realPrisma.$executeRawUnsafe('PRAGMA busy_timeout = 5000;').catch(() => {});
+    }
   } catch (e: any) {
     console.warn('[AI Studio Backend] Error al instanciar PrismaClient, usando backend compatible en memoria:', e?.message);
     return fallback;

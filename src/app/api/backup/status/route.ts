@@ -4,6 +4,7 @@ import { requireRole } from '@/lib/apiAuth';
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
+import { atomicWriteFileSync } from '@/lib/atomicFs';
 
 const BACKUP_CONFIG_PATH = path.resolve(process.cwd(), 'bunkker.backup.json');
 
