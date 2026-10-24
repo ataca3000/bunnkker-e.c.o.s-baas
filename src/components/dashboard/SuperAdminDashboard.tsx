@@ -30,6 +30,75 @@ const premiumBtn: React.CSSProperties = {
 };
 
 /* ─── 1. SUPER ADMIN / ADMIN DASHBOARD ─────────────────────────────────────── */
+const CustomDashboardTooltip = ({ active, payload, label, selectedKpi, formatCurrency }: any) => {
+    if (!active || !payload || !payload.length) return null;
+    const data = payload[0];
+    const isSales = selectedKpi === 'sales';
+    const isProfit = selectedKpi === 'profit';
+    const isInventory = selectedKpi === 'inventory';
+    const isOrders = selectedKpi === 'orders';
+
+    const accentColor = isSales ? '#22D3EE' : isProfit ? '#34D399' : isInventory ? '#FBBF24' : '#A78BFA';
+    const badgeText = isSales ? 'Ventas' : isProfit ? 'Utilidad' : isInventory ? 'Stock Físico' : 'Pedidos';
+
+    let displayValue = '';
+    let subDetail = '';
+
+    if (isSales) {
+        displayValue = formatCurrency(Number(data.value || 0));
+        subDetail = `${data.payload?.pedidos || 0} pedido(s) procesados`;
+    } else if (isProfit) {
+        displayValue = formatCurrency(Number(data.value || 0));
+        subDetail = `Margen en ${data.payload?.pedidos || 0} orden(es)`;
+    } else if (isInventory) {
+        displayValue = `${Number(data.value || 0).toLocaleString()} pzs`;
+        subDetail = `Inversión: ${formatCurrency(Number(data.payload?.valor || 0))}`;
+    } else {
+        displayValue = `${data.value || 0} pedidos`;
+        subDetail = 'Registrados en sistema';
+    }
+
+    return (
+        <div style={{
+            background: 'rgba(15, 23, 42, 0.95)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            border: `1.5px solid ${accentColor}66`,
+            borderRadius: '16px',
+            padding: '12px 16px',
+            boxShadow: `0 10px 25px -5px rgba(0, 0, 0, 0.7), 0 0 20px ${accentColor}33`,
+            color: '#fff',
+            minWidth: '200px'
+        }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginBottom: '6px' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    {label || data.payload?.name}
+                </span>
+                <span style={{
+                    fontSize: '0.65rem',
+                    fontWeight: '800',
+                    color: accentColor,
+                    backgroundColor: `${accentColor}1A`,
+                    padding: '2px 8px',
+                    borderRadius: '9999px',
+                    border: `1px solid ${accentColor}40`
+                }}>
+                    {badgeText}
+                </span>
+            </div>
+            <div style={{ fontSize: '1.35rem', fontWeight: '900', color: '#fff', letterSpacing: '-0.02em', marginBottom: '4px' }}>
+                {displayValue}
+            </div>
+            {subDetail && (
+                <div style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: accentColor, boxShadow: `0 0 6px ${accentColor}` }}></span>
+                    {subDetail}
+                </div>
+            )}
+        </div>
+    );
+};
+
 export default function SuperAdminDashboard({
     profile, userName, greeting, products = [], orders = [],
     maintenanceBalance, ownerBalance, siteConfig,
@@ -447,125 +516,143 @@ export default function SuperAdminDashboard({
             </div>
 
             {/* ── Gráfica Dinámica Multimétrica (Filtro según KPI Seleccionado) ────────────────────────── */}
-            <div className="bunkker-card" style={{ marginBottom: '2.5rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '20px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div className="relative overflow-hidden backdrop-blur-2xl bg-gradient-to-br from-slate-900/90 via-slate-900/70 to-slate-950/90 border border-white/10 shadow-[0_12px_40px_rgba(0,0,0,0.55)] rounded-3xl p-5 sm:p-6" style={{ marginBottom: '2.5rem' }}>
+                {/* Luces ambientales decorativas reactivas al KPI */}
+                <div 
+                    className="absolute -top-24 -left-24 w-72 h-72 rounded-full blur-[100px] pointer-events-none transition-all duration-700 opacity-40 mix-blend-screen"
+                    style={{
+                        backgroundColor: selectedKpi === 'sales' ? '#06b6d4' : selectedKpi === 'profit' ? '#10b981' : selectedKpi === 'inventory' ? '#f59e0b' : '#8b5cf6'
+                    }}
+                />
+                <div 
+                    className="absolute -bottom-24 -right-24 w-72 h-72 rounded-full blur-[100px] pointer-events-none transition-all duration-700 opacity-25 mix-blend-screen"
+                    style={{
+                        backgroundColor: selectedKpi === 'sales' ? '#3b82f6' : selectedKpi === 'profit' ? '#059669' : selectedKpi === 'inventory' ? '#d97706' : '#ec4899'
+                    }}
+                />
+
+                <div className="relative z-10 flex justify-between items-center flex-wrap gap-4 mb-6">
+                    <div className="flex items-center gap-3.5">
                         <div style={{
-                            background: selectedKpi === 'sales' ? 'rgba(6, 182, 212, 0.12)'
-                                : selectedKpi === 'profit' ? 'rgba(16, 185, 129, 0.12)'
-                                : selectedKpi === 'inventory' ? 'rgba(245, 158, 11, 0.12)'
-                                : 'rgba(139, 92, 246, 0.12)',
-                            padding: '8px',
-                            borderRadius: '10px',
+                            background: selectedKpi === 'sales' ? 'linear-gradient(135deg, rgba(6, 182, 212, 0.25), rgba(59, 130, 246, 0.15))'
+                                : selectedKpi === 'profit' ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(5, 150, 105, 0.15))'
+                                : selectedKpi === 'inventory' ? 'linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(217, 119, 6, 0.15))'
+                                : 'linear-gradient(135deg, rgba(139, 92, 246, 0.25), rgba(236, 72, 153, 0.15))',
+                            padding: '10px',
+                            borderRadius: '14px',
                             border: `1px solid ${
-                                selectedKpi === 'sales' ? 'rgba(6, 182, 212, 0.3)'
-                                : selectedKpi === 'profit' ? 'rgba(16, 185, 129, 0.3)'
-                                : selectedKpi === 'inventory' ? 'rgba(245, 158, 11, 0.3)'
-                                : 'rgba(139, 92, 246, 0.3)'
+                                selectedKpi === 'sales' ? 'rgba(6, 182, 212, 0.4)'
+                                : selectedKpi === 'profit' ? 'rgba(16, 185, 129, 0.4)'
+                                : selectedKpi === 'inventory' ? 'rgba(245, 158, 11, 0.4)'
+                                : 'rgba(139, 92, 246, 0.4)'
+                            }`,
+                            boxShadow: `0 4px 15px ${
+                                selectedKpi === 'sales' ? 'rgba(6, 182, 212, 0.25)'
+                                : selectedKpi === 'profit' ? 'rgba(16, 185, 129, 0.25)'
+                                : selectedKpi === 'inventory' ? 'rgba(245, 158, 11, 0.25)'
+                                : 'rgba(139, 92, 246, 0.25)'
                             }`
                         }}>
-                            {selectedKpi === 'sales' && <BarChart3 size={20} color="#06B6D4" />}
-                            {selectedKpi === 'profit' && <ShieldCheck size={20} color="#10B981" />}
-                            {selectedKpi === 'inventory' && <Package size={20} color="#F59E0B" />}
-                            {selectedKpi === 'orders' && <ReceiptText size={20} color="#8B5CF6" />}
+                            {selectedKpi === 'sales' && <BarChart3 size={22} color="#22D3EE" />}
+                            {selectedKpi === 'profit' && <ShieldCheck size={22} color="#34D399" />}
+                            {selectedKpi === 'inventory' && <Package size={22} color="#FBBF24" />}
+                            {selectedKpi === 'orders' && <ReceiptText size={22} color="#C084FC" />}
                         </div>
                         <div>
-                            <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '800', color: '#fff' }}>
-                                {selectedKpi === 'sales' && 'Ventas de los Últimos 7 Días'}
-                                {selectedKpi === 'profit' && 'Ganancias y Utilidad Operativa (7 Días)'}
-                                {selectedKpi === 'inventory' && 'Distribución de Stock por Categoría'}
-                                {selectedKpi === 'orders' && 'Volumen de Pedidos Diarios (7 Días)'}
-                            </h3>
-                            <span style={{ fontSize: '0.76rem', color: '#94a3b8' }}>
+                            <div className="flex items-center gap-2">
+                                <h3 className="m-0 text-base sm:text-lg font-black text-white tracking-tight">
+                                    {selectedKpi === 'sales' && 'Ventas de los Últimos 7 Días'}
+                                    {selectedKpi === 'profit' && 'Ganancias y Utilidad Operativa (7 Días)'}
+                                    {selectedKpi === 'inventory' && 'Distribución de Stock por Categoría'}
+                                    {selectedKpi === 'orders' && 'Volumen de Pedidos Diarios (7 Días)'}
+                                </h3>
+                                <span className="hidden sm:inline-flex px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-white/10 text-slate-300 border border-white/10">
+                                    EN VIVO
+                                </span>
+                            </div>
+                            <p className="m-0 text-xs text-slate-400 mt-0.5">
                                 {selectedKpi === 'sales' && (
-                                    <>Acumulado 7 días: <b style={{ color: '#22D3EE' }}>{formatCurrency(weeklyTotalSales)}</b> ({weeklyTotalOrders} órdenes procesadas)</>
+                                    <>Acumulado 7 días: <b className="text-cyan-400 font-bold">{formatCurrency(weeklyTotalSales)}</b> • <span className="text-slate-300 font-medium">{weeklyTotalOrders} órdenes</span></>
                                 )}
                                 {selectedKpi === 'profit' && (
-                                    <>Utilidad 7 días: <b style={{ color: '#10B981' }}>{formatCurrency(weeklyTotalProfit)}</b> | Saldo disponible: <b style={{ color: '#34D399' }}>{formatCurrency(ownerBalance)}</b></>
+                                    <>Utilidad 7 días: <b className="text-emerald-400 font-bold">{formatCurrency(weeklyTotalProfit)}</b> • Margen: <span className="text-emerald-300 font-medium">{estMargin}%</span></>
                                 )}
                                 {selectedKpi === 'inventory' && (
-                                    <>Total inventario: <b style={{ color: '#F59E0B' }}>{totalPieces.toLocaleString()} piezas</b> | Inversión: <b style={{ color: '#FBBF24' }}>{formatCurrency(totalInvestment)}</b></>
+                                    <>Total inventario: <b className="text-amber-400 font-bold">{totalPieces.toLocaleString()} piezas</b> • Valor: <span className="text-amber-300 font-medium">{formatCurrency(totalInvestment)}</span></>
                                 )}
                                 {selectedKpi === 'orders' && (
-                                    <>Total semana: <b style={{ color: '#A78BFA' }}>{weeklyTotalOrders} órdenes</b> | Hoy procesadas: <b style={{ color: '#C4B5FD' }}>{todayOrders} pedidos</b></>
+                                    <>Total semana: <b className="text-purple-400 font-bold">{weeklyTotalOrders} órdenes</b> • Hoy: <span className="text-purple-300 font-medium">{todayOrders} pedidos</span></>
                                 )}
-                            </span>
+                            </p>
                         </div>
                     </div>
 
                     {selectedKpi !== 'inventory' ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(15, 23, 42, 0.6)', padding: '4px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                        <div className="flex items-center gap-1.5 bg-slate-950/60 p-1.5 rounded-2xl border border-white/10 shadow-inner">
                             <button
                                 type="button"
                                 onClick={() => setChartMode('bar')}
-                                style={{
-                                    padding: '6px 12px',
-                                    borderRadius: '7px',
-                                    fontSize: '0.75rem',
-                                    fontWeight: '800',
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    backgroundColor: chartMode === 'bar' ? (selectedKpi === 'profit' ? '#10B981' : selectedKpi === 'orders' ? '#8B5CF6' : '#06B6D4') : 'transparent',
-                                    color: chartMode === 'bar' ? '#0f172a' : '#94a3b8',
-                                    transition: 'all 0.15s ease'
-                                }}
+                                className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all active:scale-95 flex items-center gap-1.5 ${
+                                    chartMode === 'bar'
+                                        ? selectedKpi === 'profit'
+                                            ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/25'
+                                            : selectedKpi === 'orders'
+                                                ? 'bg-purple-500 text-slate-950 shadow-md shadow-purple-500/25'
+                                                : 'bg-cyan-400 text-slate-950 shadow-md shadow-cyan-400/25'
+                                        : 'text-slate-400 hover:text-white hover:bg-white/5'
+                                }`}
                             >
-                                BARRAS (7D)
+                                <BarChart3 size={14} /> BARRAS
                             </button>
                             <button
                                 type="button"
                                 onClick={() => setChartMode('area')}
-                                style={{
-                                    padding: '6px 12px',
-                                    borderRadius: '7px',
-                                    fontSize: '0.75rem',
-                                    fontWeight: '800',
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    backgroundColor: chartMode === 'area' ? (selectedKpi === 'profit' ? '#10B981' : selectedKpi === 'orders' ? '#8B5CF6' : '#06B6D4') : 'transparent',
-                                    color: chartMode === 'area' ? '#0f172a' : '#94a3b8',
-                                    transition: 'all 0.15s ease'
-                                }}
+                                className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all active:scale-95 flex items-center gap-1.5 ${
+                                    chartMode === 'area'
+                                        ? selectedKpi === 'profit'
+                                            ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/25'
+                                            : selectedKpi === 'orders'
+                                                ? 'bg-purple-500 text-slate-950 shadow-md shadow-purple-500/25'
+                                                : 'bg-cyan-400 text-slate-950 shadow-md shadow-cyan-400/25'
+                                        : 'text-slate-400 hover:text-white hover:bg-white/5'
+                                }`}
                             >
-                                CURVA TENDENCIA
+                                <TrendingUp size={14} /> CURVA TENDENCIA
                             </button>
                         </div>
                     ) : (
-                        <div className="px-3 py-1 rounded-lg text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/30">
-                            TOP 7 CATEGORÍAS
+                        <div className="px-3.5 py-1.5 rounded-xl text-xs font-black text-amber-300 bg-amber-500/15 border border-amber-500/30 shadow-sm flex items-center gap-1.5">
+                            <Package size={14} /> TOP 7 CATEGORÍAS
                         </div>
                     )}
                 </div>
 
-                <div style={{ width: '100%', height: '300px' }}>
+                <div className="relative z-10 w-full h-[320px]">
                     <ResponsiveContainer width="100%" height="100%">
                         {/* 1. VENTAS */}
                         {selectedKpi === 'sales' && (
                             chartMode === 'bar' ? (
-                                <BarChart data={chartSalesData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+                                <BarChart data={chartSalesData} margin={{ top: 15, right: 20, left: 0, bottom: 5 }}>
                                     <defs>
                                         <linearGradient id="barGradientSales" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="0%" stopColor="#22D3EE" stopOpacity={0.95} />
-                                            <stop offset="100%" stopColor="#0284C7" stopOpacity={0.65} />
+                                            <stop offset="0%" stopColor="#38BDF8" stopOpacity={1} />
+                                            <stop offset="60%" stopColor="#0284C7" stopOpacity={0.85} />
+                                            <stop offset="100%" stopColor="#0369A1" stopOpacity={0.45} />
                                         </linearGradient>
                                         <linearGradient id="barTodayGradientSales" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="0%" stopColor="#10B981" stopOpacity={1} />
-                                            <stop offset="100%" stopColor="#059669" stopOpacity={0.75} />
+                                            <stop offset="0%" stopColor="#34D399" stopOpacity={1} />
+                                            <stop offset="60%" stopColor="#10B981" stopOpacity={0.9} />
+                                            <stop offset="100%" stopColor="#047857" stopOpacity={0.5} />
                                         </linearGradient>
                                     </defs>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(6, 182, 212, 0.1)" />
-                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8', fontWeight: 600 }} dy={10} />
-                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} tickFormatter={(val) => `$${val}`} />
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255, 255, 255, 0.06)" />
+                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8', fontWeight: 700 }} dy={10} />
+                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} tickFormatter={(val) => `$${val >= 1000 ? (val/1000).toFixed(0) + 'k' : val}`} />
                                     <Tooltip
-                                        cursor={{ fill: 'rgba(6, 182, 212, 0.08)' }}
-                                        contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.92)', backdropFilter: 'blur(12px)', borderRadius: '12px', border: '1px solid rgba(6, 182, 212, 0.35)', boxShadow: '0 4px 20px rgba(0,0,0,0.5)', color: '#fff' }}
-                                        itemStyle={{ color: '#22D3EE', fontWeight: 'bold' }}
-                                        formatter={(value: any, _name: any, props: any) => [
-                                            `${formatCurrency(Number(value))} (${props?.payload?.pedidos || 0} pedidos)`,
-                                            'Ventas del Día'
-                                        ]}
+                                        cursor={{ fill: 'rgba(56, 189, 248, 0.08)' }}
+                                        content={<CustomDashboardTooltip selectedKpi={selectedKpi} formatCurrency={formatCurrency} />}
                                     />
-                                    <Bar dataKey="ventas" radius={[8, 8, 2, 2]} maxBarSize={54}>
+                                    <Bar dataKey="ventas" radius={[10, 10, 3, 3]} maxBarSize={56}>
                                         {chartSalesData.map((entry, index) => (
                                             <Cell
                                                 key={`cell-sales-${index}`}
@@ -575,22 +662,29 @@ export default function SuperAdminDashboard({
                                     </Bar>
                                 </BarChart>
                             ) : (
-                                <AreaChart data={chartSalesData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                                <AreaChart data={chartSalesData} margin={{ top: 15, right: 25, left: 0, bottom: 5 }}>
                                     <defs>
                                         <linearGradient id="colorVentas" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#06B6D4" stopOpacity={0.5}/>
-                                            <stop offset="95%" stopColor="#06B6D4" stopOpacity={0}/>
+                                            <stop offset="0%" stopColor="#38BDF8" stopOpacity={0.55}/>
+                                            <stop offset="50%" stopColor="#0284C7" stopOpacity={0.2}/>
+                                            <stop offset="100%" stopColor="#0284C7" stopOpacity={0}/>
                                         </linearGradient>
                                     </defs>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(6, 182, 212, 0.1)" />
-                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} dy={10} />
-                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} tickFormatter={(val) => `$${val}`} />
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255, 255, 255, 0.06)" />
+                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8', fontWeight: 700 }} dy={10} />
+                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} tickFormatter={(val) => `$${val >= 1000 ? (val/1000).toFixed(0) + 'k' : val}`} />
                                     <Tooltip 
-                                        contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(12px)', borderRadius: '12px', border: '1px solid rgba(6, 182, 212, 0.3)', boxShadow: '0 4px 20px rgba(0,0,0,0.5)', color: '#fff' }}
-                                        itemStyle={{ color: '#22D3EE', fontWeight: 'bold' }}
-                                        formatter={(value: any) => [formatCurrency(Number(value)), 'Ventas']}
+                                        content={<CustomDashboardTooltip selectedKpi={selectedKpi} formatCurrency={formatCurrency} />}
                                     />
-                                    <Area type="monotone" dataKey="ventas" stroke="#22D3EE" strokeWidth={4} fillOpacity={1} fill="url(#colorVentas)" activeDot={{ r: 6, fill: '#06B6D4', stroke: '#fff', strokeWidth: 2, style: { filter: 'drop-shadow(0px 0px 8px rgba(34,211,238,0.8))' } }} />
+                                    <Area 
+                                        type="monotone" 
+                                        dataKey="ventas" 
+                                        stroke="#38BDF8" 
+                                        strokeWidth={3.5} 
+                                        fillOpacity={1} 
+                                        fill="url(#colorVentas)" 
+                                        activeDot={{ r: 7, fill: '#0284C7', stroke: '#fff', strokeWidth: 2.5, style: { filter: 'drop-shadow(0px 0px 10px rgba(56,189,248,0.9))' } }} 
+                                    />
                                 </AreaChart>
                             )
                         )}
@@ -598,114 +692,116 @@ export default function SuperAdminDashboard({
                         {/* 2. GANANCIAS */}
                         {selectedKpi === 'profit' && (
                             chartMode === 'bar' ? (
-                                <BarChart data={chartProfitData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+                                <BarChart data={chartProfitData} margin={{ top: 15, right: 20, left: 0, bottom: 5 }}>
                                     <defs>
                                         <linearGradient id="barGradientProfit" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="0%" stopColor="#34D399" stopOpacity={0.95} />
-                                            <stop offset="100%" stopColor="#059669" stopOpacity={0.65} />
+                                            <stop offset="0%" stopColor="#34D399" stopOpacity={1} />
+                                            <stop offset="60%" stopColor="#10B981" stopOpacity={0.85} />
+                                            <stop offset="100%" stopColor="#059669" stopOpacity={0.45} />
                                         </linearGradient>
                                     </defs>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(16, 185, 129, 0.1)" />
-                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8', fontWeight: 600 }} dy={10} />
-                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} tickFormatter={(val) => `$${val}`} />
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255, 255, 255, 0.06)" />
+                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8', fontWeight: 700 }} dy={10} />
+                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} tickFormatter={(val) => `$${val >= 1000 ? (val/1000).toFixed(0) + 'k' : val}`} />
                                     <Tooltip
-                                        cursor={{ fill: 'rgba(16, 185, 129, 0.08)' }}
-                                        contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.92)', backdropFilter: 'blur(12px)', borderRadius: '12px', border: '1px solid rgba(16, 185, 129, 0.35)', boxShadow: '0 4px 20px rgba(0,0,0,0.5)', color: '#fff' }}
-                                        itemStyle={{ color: '#34D399', fontWeight: 'bold' }}
-                                        formatter={(value: any, _name: any, props: any) => [
-                                            `${formatCurrency(Number(value))} (${props?.payload?.pedidos || 0} pedidos)`,
-                                            'Utilidad Estimada'
-                                        ]}
+                                        cursor={{ fill: 'rgba(52, 211, 153, 0.08)' }}
+                                        content={<CustomDashboardTooltip selectedKpi={selectedKpi} formatCurrency={formatCurrency} />}
                                     />
-                                    <Bar dataKey="ganancia" radius={[8, 8, 2, 2]} maxBarSize={54} fill="url(#barGradientProfit)" />
+                                    <Bar dataKey="ganancia" radius={[10, 10, 3, 3]} maxBarSize={56} fill="url(#barGradientProfit)" />
                                 </BarChart>
                             ) : (
-                                <AreaChart data={chartProfitData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                                <AreaChart data={chartProfitData} margin={{ top: 15, right: 25, left: 0, bottom: 5 }}>
                                     <defs>
                                         <linearGradient id="colorProfit" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#10B981" stopOpacity={0.5}/>
-                                            <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
+                                            <stop offset="0%" stopColor="#34D399" stopOpacity={0.55}/>
+                                            <stop offset="50%" stopColor="#059669" stopOpacity={0.2}/>
+                                            <stop offset="100%" stopColor="#059669" stopOpacity={0}/>
                                         </linearGradient>
                                     </defs>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(16, 185, 129, 0.1)" />
-                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} dy={10} />
-                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} tickFormatter={(val) => `$${val}`} />
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255, 255, 255, 0.06)" />
+                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8', fontWeight: 700 }} dy={10} />
+                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} tickFormatter={(val) => `$${val >= 1000 ? (val/1000).toFixed(0) + 'k' : val}`} />
                                     <Tooltip 
-                                        contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(12px)', borderRadius: '12px', border: '1px solid rgba(16, 185, 129, 0.3)', boxShadow: '0 4px 20px rgba(0,0,0,0.5)', color: '#fff' }}
-                                        itemStyle={{ color: '#34D399', fontWeight: 'bold' }}
-                                        formatter={(value: any) => [formatCurrency(Number(value)), 'Utilidad']}
+                                        content={<CustomDashboardTooltip selectedKpi={selectedKpi} formatCurrency={formatCurrency} />}
                                     />
-                                    <Area type="monotone" dataKey="ganancia" stroke="#10B981" strokeWidth={4} fillOpacity={1} fill="url(#colorProfit)" activeDot={{ r: 6, fill: '#059669', stroke: '#fff', strokeWidth: 2, style: { filter: 'drop-shadow(0px 0px 8px rgba(16,185,129,0.8))' } }} />
+                                    <Area 
+                                        type="monotone" 
+                                        dataKey="ganancia" 
+                                        stroke="#34D399" 
+                                        strokeWidth={3.5} 
+                                        fillOpacity={1} 
+                                        fill="url(#colorProfit)" 
+                                        activeDot={{ r: 7, fill: '#059669', stroke: '#fff', strokeWidth: 2.5, style: { filter: 'drop-shadow(0px 0px 10px rgba(52,211,153,0.9))' } }} 
+                                    />
                                 </AreaChart>
                             )
                         )}
 
                         {/* 3. INVENTARIO */}
                         {selectedKpi === 'inventory' && (
-                            <BarChart data={chartInventoryData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+                            <BarChart data={chartInventoryData} margin={{ top: 15, right: 20, left: 0, bottom: 5 }}>
                                 <defs>
                                     <linearGradient id="barGradientInventory" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="0%" stopColor="#FBBF24" stopOpacity={0.95} />
-                                        <stop offset="100%" stopColor="#D97706" stopOpacity={0.65} />
+                                        <stop offset="0%" stopColor="#FBBF24" stopOpacity={1} />
+                                        <stop offset="60%" stopColor="#F59E0B" stopOpacity={0.85} />
+                                        <stop offset="100%" stopColor="#D97706" stopOpacity={0.45} />
                                     </linearGradient>
                                 </defs>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(245, 158, 11, 0.1)" />
-                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8', fontWeight: 600 }} dy={10} />
-                                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} tickFormatter={(val) => `${val} pz`} />
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255, 255, 255, 0.06)" />
+                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8', fontWeight: 700 }} dy={10} />
+                                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} tickFormatter={(val) => `${val} pz`} />
                                 <Tooltip
-                                    cursor={{ fill: 'rgba(245, 158, 11, 0.08)' }}
-                                    contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.92)', backdropFilter: 'blur(12px)', borderRadius: '12px', border: '1px solid rgba(245, 158, 11, 0.35)', boxShadow: '0 4px 20px rgba(0,0,0,0.5)', color: '#fff' }}
-                                    itemStyle={{ color: '#FBBF24', fontWeight: 'bold' }}
-                                    formatter={(value: any, _name: any, props: any) => [
-                                        `${Number(value).toLocaleString()} piezas (Valor: ${formatCurrency(props?.payload?.valor || 0)})`,
-                                        'Stock Físico'
-                                    ]}
+                                    cursor={{ fill: 'rgba(251, 191, 36, 0.08)' }}
+                                    content={<CustomDashboardTooltip selectedKpi={selectedKpi} formatCurrency={formatCurrency} />}
                                 />
-                                <Bar dataKey="piezas" radius={[8, 8, 2, 2]} maxBarSize={54} fill="url(#barGradientInventory)" />
+                                <Bar dataKey="piezas" radius={[10, 10, 3, 3]} maxBarSize={56} fill="url(#barGradientInventory)" />
                             </BarChart>
                         )}
 
                         {/* 4. PEDIDOS */}
                         {selectedKpi === 'orders' && (
                             chartMode === 'bar' ? (
-                                <BarChart data={chartOrdersData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+                                <BarChart data={chartOrdersData} margin={{ top: 15, right: 20, left: 0, bottom: 5 }}>
                                     <defs>
                                         <linearGradient id="barGradientOrders" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="0%" stopColor="#A78BFA" stopOpacity={0.95} />
-                                            <stop offset="100%" stopColor="#7C3AED" stopOpacity={0.65} />
+                                            <stop offset="0%" stopColor="#C084FC" stopOpacity={1} />
+                                            <stop offset="60%" stopColor="#A855F7" stopOpacity={0.85} />
+                                            <stop offset="100%" stopColor="#7E22CE" stopOpacity={0.45} />
                                         </linearGradient>
                                     </defs>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(139, 92, 246, 0.1)" />
-                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8', fontWeight: 600 }} dy={10} />
-                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} />
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255, 255, 255, 0.06)" />
+                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8', fontWeight: 700 }} dy={10} />
+                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
                                     <Tooltip
-                                        cursor={{ fill: 'rgba(139, 92, 246, 0.08)' }}
-                                        contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.92)', backdropFilter: 'blur(12px)', borderRadius: '12px', border: '1px solid rgba(139, 92, 246, 0.35)', boxShadow: '0 4px 20px rgba(0,0,0,0.5)', color: '#fff' }}
-                                        itemStyle={{ color: '#A78BFA', fontWeight: 'bold' }}
-                                        formatter={(value: any) => [
-                                            `${value} pedidos completados`,
-                                            'Órdenes del Día'
-                                        ]}
+                                        cursor={{ fill: 'rgba(192, 132, 252, 0.08)' }}
+                                        content={<CustomDashboardTooltip selectedKpi={selectedKpi} formatCurrency={formatCurrency} />}
                                     />
-                                    <Bar dataKey="pedidos" radius={[8, 8, 2, 2]} maxBarSize={54} fill="url(#barGradientOrders)" />
+                                    <Bar dataKey="pedidos" radius={[10, 10, 3, 3]} maxBarSize={56} fill="url(#barGradientOrders)" />
                                 </BarChart>
                             ) : (
-                                <AreaChart data={chartOrdersData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                                <AreaChart data={chartOrdersData} margin={{ top: 15, right: 25, left: 0, bottom: 5 }}>
                                     <defs>
                                         <linearGradient id="colorOrders" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.5}/>
-                                            <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0}/>
+                                            <stop offset="0%" stopColor="#C084FC" stopOpacity={0.55}/>
+                                            <stop offset="50%" stopColor="#7E22CE" stopOpacity={0.2}/>
+                                            <stop offset="100%" stopColor="#7E22CE" stopOpacity={0}/>
                                         </linearGradient>
                                     </defs>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(139, 92, 246, 0.1)" />
-                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} dy={10} />
-                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} />
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255, 255, 255, 0.06)" />
+                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8', fontWeight: 700 }} dy={10} />
+                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
                                     <Tooltip 
-                                        contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(12px)', borderRadius: '12px', border: '1px solid rgba(139, 92, 246, 0.3)', boxShadow: '0 4px 20px rgba(0,0,0,0.5)', color: '#fff' }}
-                                        itemStyle={{ color: '#A78BFA', fontWeight: 'bold' }}
-                                        formatter={(value: any) => [`${value} pedidos`, 'Volumen']}
+                                        content={<CustomDashboardTooltip selectedKpi={selectedKpi} formatCurrency={formatCurrency} />}
                                     />
-                                    <Area type="monotone" dataKey="pedidos" stroke="#8B5CF6" strokeWidth={4} fillOpacity={1} fill="url(#colorOrders)" activeDot={{ r: 6, fill: '#7C3AED', stroke: '#fff', strokeWidth: 2, style: { filter: 'drop-shadow(0px 0px 8px rgba(139,92,246,0.8))' } }} />
+                                    <Area 
+                                        type="monotone" 
+                                        dataKey="pedidos" 
+                                        stroke="#C084FC" 
+                                        strokeWidth={3.5} 
+                                        fillOpacity={1} 
+                                        fill="url(#colorOrders)" 
+                                        activeDot={{ r: 7, fill: '#7E22CE', stroke: '#fff', strokeWidth: 2.5, style: { filter: 'drop-shadow(0px 0px 10px rgba(192,132,252,0.9))' } }} 
+                                    />
                                 </AreaChart>
                             )
                         )}

@@ -120,15 +120,38 @@ function loadPersistedStore(): Record<string, any[]> {
 }
 
 let saveTimer: any = null;
+export function flushPersistedStore() {
+  try {
+    const g = globalThis as any;
+    const store = g._bunkker_memory_store;
+    if (store) {
+      if (saveTimer) clearTimeout(saveTimer);
+      const tempPath = `${PERSISTENCE_FILE}.tmp`;
+      fs.writeFileSync(tempPath, JSON.stringify(store, null, 2), 'utf-8');
+      fs.renameSync(tempPath, PERSISTENCE_FILE);
+    }
+  } catch (err) {
+    console.warn('[Prisma Store] Error flushing store to disk:', err);
+  }
+}
+
 function triggerStoreSave(store: Record<string, any[]>) {
   if (saveTimer) clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
     try {
-      fs.writeFileSync(PERSISTENCE_FILE, JSON.stringify(store, null, 2), 'utf-8');
+      const tempPath = `${PERSISTENCE_FILE}.tmp`;
+      fs.writeFileSync(tempPath, JSON.stringify(store, null, 2), 'utf-8');
+      fs.renameSync(tempPath, PERSISTENCE_FILE);
     } catch (err) {
       console.warn('[Prisma Store] Error saving store to disk:', err);
     }
-  }, 100);
+  }, 80);
+}
+
+if (typeof process !== 'undefined' && typeof process.on === 'function') {
+  process.on('beforeExit', () => {
+    flushPersistedStore();
+  });
 }
 
 function createInMemoryPrisma() {
