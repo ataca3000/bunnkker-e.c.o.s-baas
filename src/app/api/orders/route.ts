@@ -148,7 +148,7 @@ export async function POST(request: NextRequest) {
             ? 'DELIVERY'
             : deliveryMethod === 'patio' || deliveryMethod === 'PATIO'
                 ? 'PATIO'
-                : ['pickup', 'PICKUP', 'tienda'].includes(deliveryMethod)
+                : ['pickup', 'PICKUP', 'tienda', 'piso', 'PISO'].includes(deliveryMethod)
                     ? 'PICKUP'
                     : 'LOCAL');
         const paymentMethod = body.paymentMethod;
@@ -455,7 +455,7 @@ export async function POST(request: NextRequest) {
                             id: orderId,
                             tenantId,
                             total: finalTotal,
-                            deliveryType: deliveryType || (deliveryMethod === 'repartidor' ? 'DELIVERY' : (deliveryMethod === 'pickup' ? 'PICKUP' : 'LOCAL')),
+                            deliveryType: deliveryType || (deliveryMethod === 'repartidor' ? 'DELIVERY' : (['pickup', 'piso', 'tienda'].includes(deliveryMethod) ? 'PICKUP' : 'LOCAL')),
                             paymentMethod: isCashierRequest ? 'pago_caja' : paymentMethod || 'CASH',
                             status: initialStatus,
                             vendedorId: isCashierRequest ? null : body.vendedorId || null,
@@ -493,7 +493,9 @@ export async function POST(request: NextRequest) {
         });
 
         // Registrar venta de forma monotónica e irreversible en disco (Anti-Tampering)
-        const counterInfo = recordPersistentSale(tenantId);
+        // SOLO cuando la orden nace efectivamente cobrada (evita que carritos en espera consuman el límite de 120 ventas)
+        const isPaidOnCreate = orderResult.status === 'paid' || orderResult.status === 'COMPLETED' || Boolean(orderResult.confirmedAt);
+        const counterInfo = isPaidOnCreate ? recordPersistentSale(tenantId) : trialStatus;
 
         return NextResponse.json({ success: true, data: orderResult, trialStatus: counterInfo });
 
@@ -607,6 +609,19 @@ export async function PATCH(request: NextRequest) {
         if (action === 'cashier_payment') {
             if (!cashierRoles.includes(actorRole)) return NextResponse.json({ success: false, error: 'Rol sin permiso para confirmar cobros.' }, { status: 403 });
             try {
+                const appConfig = await prisma.appConfig.findUnique({ where: { id: 'global' } }).catch(() => null);
+                const sovereignTenantId = appConfig?.tenantId || 'default';
+                const isSubscribed = Boolean(appConfig && (appConfig as any).subscriptionStatus === 'active');
+                const trialStatus = getSalesTrialStatus(sovereignTenantId, isSubscribed);
+                if (trialStatus.isLocked) {
+                    return NextResponse.json({
+                        success: false,
+                        error: 'Has completado tus 100 ventas de prueba + 20 ventas de cortesía (120 ventas). Activa tu suscripción mensual para continuar cobrando.',
+                        code: 'SUBSCRIPTION_REQUIRED',
+                        trialStatus
+                    }, { status: 402 });
+                }
+
                 const order = await prisma.$transaction(async (tx) => {
                     const current = await tx.order.findUnique({ where: { id }, include: { items: true } });
                     if (!current || !cashierReadyStatuses.includes(current.status) || current.confirmedAt) {
@@ -629,24 +644,42 @@ export async function PATCH(request: NextRequest) {
                         effectiveIsLoaded = true;
                     }
 
-                    // FLOTACIÓN ESTRICTA: En caja se asegura la existencia y se aparta en reservedStock.
-                    // El 'stock' físico en anaquel NO se decrementa definitivamente hasta que se valida la entrega con comprobante/firma.
-                    for (const item of current.items) {
-                        const product = await tx.product.findUnique({ where: { id: item.productId }, select: { stock: true, reservedStock: true } });
-                        if (!product || (product.stock - product.reservedStock) < item.cantidad) {
-                            throw new Error(`ORDER_CONFLICT:Inventario insuficiente para ${item.productId}.`);
-                        }
-                        await tx.product.update({ 
-                            where: { id: item.productId }, 
-                            data: { reservedStock: { increment: item.cantidad } } 
-                        });
-                    }
-
                     const isPickup = ['PICKUP', 'PATIO'].includes(current.deliveryType);
                     const isDelivery = current.deliveryType === 'DELIVERY';
                     const nextStatus = effectiveIsLoaded
                         ? isDelivery ? 'OUT_FOR_DELIVERY' : isPickup ? 'READY_FOR_PICKUP_PAID' : 'COMPLETED'
                         : 'paid';
+
+                    // FLOTACIÓN ESTRICTA VS CIERRE INMEDIATO LOCAL:
+                    // - Si nextStatus === 'COMPLETED' (venta directa LOCAL entregada en este mismo acto en mostrador),
+                    //   se descuenta directamente el stock físico para no dejar reservedStock bloqueado en un estado terminal.
+                    // - En todos los demás casos ('paid', 'READY_FOR_PICKUP_PAID', 'OUT_FOR_DELIVERY'), se aparta en reservedStock
+                    //   con OCC y el stock físico se descuenta al validar la entrega con comprobante/firma (PoD).
+                    for (const item of current.items) {
+                        const product = await tx.product.findUnique({ where: { id: item.productId }, select: { stock: true, reservedStock: true } });
+                        const initialReserved = product?.reservedStock || 0;
+                        if (!product || (product.stock - initialReserved) < item.cantidad) {
+                            throw new Error(`ORDER_CONFLICT:Inventario insuficiente para ${item.productId}.`);
+                        }
+                        if (nextStatus === 'COMPLETED') {
+                            const occ = await tx.product.updateMany({
+                                where: { id: item.productId, stock: product.stock, reservedStock: initialReserved },
+                                data: { stock: { decrement: item.cantidad } }
+                            });
+                            if (occ.count !== 1) {
+                                throw new Error(`ORDER_CONFLICT:Inventario modificado concurrentemente para ${item.productId}.`);
+                            }
+                        } else {
+                            const occ = await tx.product.updateMany({
+                                where: { id: item.productId, reservedStock: initialReserved },
+                                data: { reservedStock: { increment: item.cantidad } }
+                            });
+                            if (occ.count !== 1) {
+                                throw new Error(`ORDER_CONFLICT:Inventario apartado concurrentemente para ${item.productId}.`);
+                            }
+                        }
+                    }
+
                     const updated = await tx.order.updateMany({
                         where: {
                             id,
@@ -683,7 +716,9 @@ export async function PATCH(request: NextRequest) {
                     });
                     return tx.order.findUnique({ where: { id }, include: { customer: true, items: true } });
                 });
-                return NextResponse.json({ success: true, data: order });
+
+                const counterInfo = recordPersistentSale(sovereignTenantId);
+                return NextResponse.json({ success: true, data: order, trialStatus: counterInfo });
             } catch (error: any) {
                 if (String(error.message).startsWith('ORDER_CONFLICT:')) {
                     return NextResponse.json({ success: false, error: String(error.message).replace('ORDER_CONFLICT:', '') }, { status: 409 });
@@ -1121,14 +1156,26 @@ export async function PATCH(request: NextRequest) {
             updates.assignedDriverId = updates.driverId;
         }
 
-        const allowedFields = [
-            'tenantId', 'total', 'paymentMethod', 'status', 'deliveryType', 
-            'date', 'offline', 'synced', 'ventanilla', 'cajon', 
-            'vendedorId', 'vendedorName', 'confirmedAt', 'customerId',
+        // SEGURIDAD RBAC CONTRA MASS-ASSIGNMENT:
+        // Ningún rol sin permisos de caja puede marcar pagado ni alterar importes por el fallback genérico.
+        if (updates.status === 'paid' && !cashierRoles.includes(actorRole)) {
+            return NextResponse.json({ success: false, error: 'Rol sin permiso para marcar pedidos como pagados.' }, { status: 403 });
+        }
+        if (updates.total !== undefined && !['superadmin', 'admin'].includes(actorRole)) {
+            return NextResponse.json({ success: false, error: 'Solo un administrador puede modificar el importe total de una orden.' }, { status: 403 });
+        }
+
+        const baseAllowedFields = [
+            'status', 'deliveryType', 'offline', 'synced', 'ventanilla', 'cajon',
             'deliveryPin', 'deliveryLat', 'deliveryLng', 'deliveryAddress',
             'loadedBy', 'loadedByUid', 'loadingStartedAt', 'loadingFinishedAt',
             'isLoaded', 'assignedDriverId', 'signatureData', 'photoData',
             'completedAt', 'rejectionReason', 'expiresAt'
+        ];
+        const allowedFields = [
+            ...baseAllowedFields,
+            ...(cashierRoles.includes(actorRole) ? ['paymentMethod', 'vendedorId', 'vendedorName', 'confirmedAt', 'customerId'] : []),
+            ...(['superadmin', 'admin'].includes(actorRole) ? ['total', 'date'] : [])
         ];
         const prismaUpdates: any = {};
         for (const key of allowedFields) {
@@ -1175,7 +1222,11 @@ export async function PATCH(request: NextRequest) {
                 // CANCELACIÓN EN VIVO:
                 // Si la orden tenía stock apartado en 'reservedStock' (pedido pagado/confirmado),
                 // se libera la reserva limpiando el apartado sin tocar stock físico.
-                if (current.confirmedAt || current.status === 'paid') {
+                const hadReservedStock = Boolean(
+                    current.confirmedAt ||
+                    ['paid', 'READY_FOR_PICKUP_PAID', 'READY_TO_SHIP', 'OUT_FOR_DELIVERY'].includes(current.status)
+                );
+                if (hadReservedStock) {
                     for (const item of current.items) {
                         const prod = await tx.product.findUnique({ where: { id: item.productId }, select: { reservedStock: true } });
                         const newReserved = Math.max(0, (prod?.reservedStock || 0) - item.cantidad);
@@ -1196,7 +1247,7 @@ export async function PATCH(request: NextRequest) {
                     actorName,
                     actorRole,
                     details: { 
-                        stockReservedReleased: Boolean(current.confirmedAt || current.status === 'paid'),
+                        stockReservedReleased: hadReservedStock,
                         pendingReacomodo: Boolean(current.isLoaded)
                     }
                 });
@@ -1291,26 +1342,34 @@ export async function DELETE(request: NextRequest) {
             return NextResponse.json({ success: false, error: 'Pedido no encontrado.' }, { status: 404 });
         }
 
-        // Si tenía stock descontado o apartado y no estaba cancelado, restaurar:
-        if (current.confirmedAt && current.status !== 'cancelled') {
-            const wasPhysicalStockDeducted = current.status === 'DELIVERED' || current.status === 'COMPLETED' || current.deliveryType === 'LOCAL';
-            for (const item of current.items) {
-                if (wasPhysicalStockDeducted) {
-                    await prisma.product.update({
-                        where: { id: item.productId },
-                        data: { stock: { increment: item.cantidad } }
-                    }).catch(() => {});
-                } else {
-                    await prisma.product.update({
-                        where: { id: item.productId },
-                        data: { reservedStock: { decrement: item.cantidad } }
-                    }).catch(() => {});
+        await prisma.$transaction(async (tx) => {
+            // Si tenía stock descontado o apartado y no estaba cancelado ni reembolsado, restaurar atómicamente:
+            if ((current.confirmedAt || current.status === 'paid') && !['cancelled', 'refunded'].includes(current.status)) {
+                const wasPhysicalStockDeducted = current.status === 'DELIVERED' || current.status === 'COMPLETED';
+                for (const item of current.items) {
+                    if (wasPhysicalStockDeducted) {
+                        await tx.product.update({
+                            where: { id: item.productId },
+                            data: { stock: { increment: item.cantidad } }
+                        });
+                    } else {
+                        const prod = await tx.product.findUnique({
+                            where: { id: item.productId },
+                            select: { reservedStock: true }
+                        });
+                        if (prod && prod.reservedStock > 0) {
+                            await tx.product.update({
+                                where: { id: item.productId },
+                                data: { reservedStock: Math.max(0, prod.reservedStock - item.cantidad) }
+                            });
+                        }
+                    }
                 }
             }
-        }
 
-        await prisma.order.delete({
-            where: { id }
+            await tx.order.delete({
+                where: { id }
+            });
         });
 
         return NextResponse.json({ success: true, message: 'Pedido eliminado correctamente.' });

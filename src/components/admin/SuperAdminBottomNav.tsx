@@ -23,10 +23,11 @@ import {
     Lock,
     ChevronLeft,
     ChevronRight,
-    Sparkles
+    Sparkles,
+    Layers
 } from 'lucide-react';
-import { toast } from '@/lib/toast';
 import { useTranslation } from '@/context/LanguageContext';
+import { toast } from '@/lib/toast';
 
 export interface BottomNavItem {
     id: string;
@@ -167,6 +168,14 @@ const SUPER_ADMIN_NAV_ITEMS: BottomNavItem[] = [
         icon: <Activity size={20} />,
         href: '/dashboard/demo',
         color: '#06b6d4'
+    },
+    {
+        id: 'esquema-poligono',
+        title: 'Esquema Poligonal 3D',
+        shortLabel: 'Capas 3D',
+        icon: <Layers size={20} />,
+        href: '/dashboard/esquema-poligono',
+        color: '#38bdf8'
     },
     {
         id: 'subscription',

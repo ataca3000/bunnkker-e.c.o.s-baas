@@ -3,7 +3,7 @@ import { validateApiSession, getTenantId } from '@/lib/apiAuth';
 import { prisma } from '@/lib/prisma';
 import { db as firestoreAdmin } from '@/lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
-import { calculateExpectedAmount, calculateDiscrepancy, ALLOWED_CLOSE_STATUSES, roundMoney } from '@/lib/financial';
+import { calculateExpectedAmount, calculateDiscrepancy, ALLOWED_CLOSE_STATUSES, EXCLUDED_CLOSE_STATUSES, CASH_PAYMENT_METHODS, roundMoney } from '@/lib/financial';
 
 export async function POST(request: NextRequest) {
     const auth = validateApiSession(request);
@@ -25,27 +25,29 @@ export async function POST(request: NextRequest) {
             orderBy: { createdAt: 'desc' }
         });
 
-        // 2. Sumar todas las ventas en efectivo (cash) completadas/enviadas desde ese momento
-        const whereClause: any = {
-            tenantId,
-            paymentMethod: { in: ['cash', 'CASH', 'efectivo', 'EFECTIVO'] },
-            OR: [
-                { status: { in: ALLOWED_CLOSE_STATUSES } },
-                { confirmedAt: { not: null } }
-            ]
-        };
-
-        if (lastLog) {
-            whereClause.date = { gt: lastLog.createdAt };
-        } else {
-            // Si no hay corte previo, calculamos del día de hoy
+        // 2. Sumar todas las ventas en efectivo completadas/enviadas desde el último corte
+        // excluyendo órdenes canceladas o reembolsadas aunque hayan tenido confirmedAt previo.
+        const cutoffDate = lastLog ? new Date(lastLog.createdAt) : (() => {
             const startOfDay = new Date();
             startOfDay.setHours(0, 0, 0, 0);
-            whereClause.date = { gte: startOfDay };
-        }
+            return startOfDay;
+        })();
 
-        const ordersToCount = await prisma.order.findMany({
-            where: whereClause
+        const candidateOrders = await prisma.order.findMany({
+            where: {
+                tenantId,
+                paymentMethod: { in: CASH_PAYMENT_METHODS },
+                status: { notIn: EXCLUDED_CLOSE_STATUSES },
+                OR: [
+                    { status: { in: ALLOWED_CLOSE_STATUSES } },
+                    { confirmedAt: { not: null } }
+                ]
+            }
+        });
+
+        const ordersToCount = candidateOrders.filter((ord) => {
+            const effectivePaidAt = ord.confirmedAt ? new Date(ord.confirmedAt) : new Date(ord.date);
+            return lastLog ? effectivePaidAt > cutoffDate : effectivePaidAt >= cutoffDate;
         });
 
         const expectedAmount = calculateExpectedAmount(ordersToCount);

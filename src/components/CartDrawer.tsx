@@ -30,7 +30,7 @@ const DEFAULT_FORM: CheckoutFormData = {
     lng: 0,
     pickupTime: '',
     tip: 0,
-    deliveryMethod: 'tienda',
+    deliveryMethod: 'piso',
     paymentMethod: 'pago_caja',
     rfc: '',
     regimenFiscal: '',

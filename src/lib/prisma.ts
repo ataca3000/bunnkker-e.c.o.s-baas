@@ -5,6 +5,10 @@ import path from 'path';
 
 // Prisma Client inicializado de forma segura y compatible con SQLite local, PostgreSQL cloud y modo en memoria (AI Studio)
 
+if (process.env.DATABASE_URL && !process.env.DIRECT_URL) {
+  process.env.DIRECT_URL = process.env.DATABASE_URL;
+}
+
 function hashPin(pin: string): string {
   return crypto.createHash('sha256').update(pin).digest('hex');
 }
@@ -245,7 +249,7 @@ function createInMemoryPrisma() {
     return copy;
   };
 
-  const makeModel = (prop: string) => ({
+  const makeModel = (prop: string, undoLog?: Array<() => void>) => ({
     findMany: async (args?: any) => {
       let rows = getTable(prop).filter((r) => matchesWhere(r, args?.where));
       if (args?.orderBy) {
@@ -287,12 +291,17 @@ function createInMemoryPrisma() {
         ...(prop === 'order' ? { date: new Date(), status: 'paid', deliveryType: 'LOCAL', offline: true, synced: false, isLoaded: false } : {}),
         ...data,
       };
-      getTable(prop).push(newRecord);
+      const tbl = getTable(prop);
+      tbl.push(newRecord);
 
+      const createdOrderItemIds: string[] = [];
       if (nestedItems && Array.isArray(nestedItems)) {
+        const oiTable = getTable('orderItem');
         for (const it of nestedItems) {
-          getTable('orderItem').push({
-            id: crypto.randomUUID(),
+          const oiId = crypto.randomUUID();
+          createdOrderItemIds.push(oiId);
+          oiTable.push({
+            id: oiId,
             tenantId: newRecord.tenantId,
             orderId: newRecord.id,
             productId: it.productId,
@@ -300,6 +309,15 @@ function createInMemoryPrisma() {
             precio: it.precio,
           });
         }
+      }
+      if (undoLog) {
+        undoLog.push(() => {
+          const idx = tbl.indexOf(newRecord);
+          if (idx !== -1) tbl.splice(idx, 1);
+          if (createdOrderItemIds.length > 0) {
+            store['orderItem'] = getTable('orderItem').filter((oi) => !createdOrderItemIds.includes(oi.id));
+          }
+        });
       }
       triggerStoreSave(store);
       return attachRelations(prop, newRecord, args?.include);
@@ -310,30 +328,73 @@ function createInMemoryPrisma() {
       if (idx === -1) {
         const fallback = { id: args?.where?.id || crypto.randomUUID(), ...(args?.data ?? {}) };
         tbl.push(fallback);
+        if (undoLog) {
+          undoLog.push(() => {
+            const fIdx = tbl.indexOf(fallback);
+            if (fIdx !== -1) tbl.splice(fIdx, 1);
+          });
+        }
         triggerStoreSave(store);
         return attachRelations(prop, fallback, args?.include);
       }
+      const prevRecord = { ...tbl[idx] };
       tbl[idx] = applyUpdateData(tbl[idx], args?.data);
+      const updatedRef = tbl[idx];
+      if (undoLog) {
+        undoLog.push(() => {
+          const curIdx = tbl.indexOf(updatedRef);
+          if (curIdx !== -1) tbl[curIdx] = prevRecord;
+          else {
+            const byIdIdx = tbl.findIndex((r) => r.id === prevRecord.id);
+            if (byIdIdx !== -1) tbl[byIdIdx] = prevRecord;
+          }
+        });
+      }
       triggerStoreSave(store);
       return attachRelations(prop, tbl[idx], args?.include);
     },
     updateMany: async (args?: any) => {
       const tbl = getTable(prop);
       let count = 0;
+      const previousStates: Array<{ updatedRef: any; prevRecord: any }> = [];
       for (let i = 0; i < tbl.length; i++) {
         if (matchesWhere(tbl[i], args?.where)) {
+          const prevRecord = { ...tbl[i] };
           tbl[i] = applyUpdateData(tbl[i], args?.data);
+          previousStates.push({ updatedRef: tbl[i], prevRecord });
           count++;
         }
       }
-      if (count > 0) triggerStoreSave(store);
+      if (count > 0) {
+        if (undoLog) {
+          undoLog.push(() => {
+            for (const { updatedRef, prevRecord } of previousStates) {
+              const curIdx = tbl.indexOf(updatedRef);
+              if (curIdx !== -1) tbl[curIdx] = prevRecord;
+              else {
+                const byIdIdx = tbl.findIndex((r) => r.id === prevRecord.id);
+                if (byIdIdx !== -1) tbl[byIdIdx] = prevRecord;
+              }
+            }
+          });
+        }
+        triggerStoreSave(store);
+      }
       return { count };
     },
     upsert: async (args?: any) => {
       const tbl = getTable(prop);
       const idx = tbl.findIndex((r) => matchesWhere(r, args?.where));
       if (idx !== -1) {
+        const prevRecord = { ...tbl[idx] };
         tbl[idx] = applyUpdateData(tbl[idx], args?.update);
+        const updatedRef = tbl[idx];
+        if (undoLog) {
+          undoLog.push(() => {
+            const curIdx = tbl.indexOf(updatedRef);
+            if (curIdx !== -1) tbl[curIdx] = prevRecord;
+          });
+        }
         triggerStoreSave(store);
         return attachRelations(prop, tbl[idx], args?.include);
       }
@@ -344,6 +405,12 @@ function createInMemoryPrisma() {
         ...(args?.create ?? {}),
       };
       tbl.push(created);
+      if (undoLog) {
+        undoLog.push(() => {
+          const cIdx = tbl.indexOf(created);
+          if (cIdx !== -1) tbl.splice(cIdx, 1);
+        });
+      }
       triggerStoreSave(store);
       return attachRelations(prop, created, args?.include);
     },
@@ -352,6 +419,11 @@ function createInMemoryPrisma() {
       const idx = tbl.findIndex((r) => matchesWhere(r, args?.where));
       if (idx !== -1) {
         const [removed] = tbl.splice(idx, 1);
+        if (undoLog) {
+          undoLog.push(() => {
+            tbl.splice(Math.min(idx, tbl.length), 0, removed);
+          });
+        }
         triggerStoreSave(store);
         return removed;
       }
@@ -360,11 +432,38 @@ function createInMemoryPrisma() {
     deleteMany: async (args?: any) => {
       const tbl = getTable(prop);
       const before = tbl.length;
-      store[prop] = tbl.filter((r) => !matchesWhere(r, args?.where));
+      const removedItems: Array<{ index: number; item: any }> = [];
+      store[prop] = tbl.filter((r, idx) => {
+        if (matchesWhere(r, args?.where)) {
+          removedItems.push({ index: idx, item: r });
+          return false;
+        }
+        return true;
+      });
+      if (removedItems.length > 0 && undoLog) {
+        undoLog.push(() => {
+          const curTbl = getTable(prop);
+          for (const { index, item } of removedItems) {
+            curTbl.splice(Math.min(index, curTbl.length), 0, item);
+          }
+        });
+      }
       triggerStoreSave(store);
       return { count: before - store[prop].length };
     },
   });
+
+  const createTxProxy = (undoLog: Array<() => void>): any =>
+    new Proxy(
+      {},
+      {
+        get(_, prop: string) {
+          if (prop === '$executeRawUnsafe' || prop === '$executeRaw') return async () => 0;
+          if (prop === '$queryRawUnsafe' || prop === '$queryRaw') return async () => [];
+          return makeModel(prop, undoLog);
+        },
+      }
+    );
 
   const proxy: any = new Proxy(
     {},
@@ -372,7 +471,21 @@ function createInMemoryPrisma() {
       get(_, prop: string) {
         if (prop === '$transaction') {
           return async (arg: any) => {
-            if (typeof arg === 'function') return arg(proxy);
+            if (typeof arg === 'function') {
+              const undoLog: Array<() => void> = [];
+              const txProxy = createTxProxy(undoLog);
+              try {
+                return await arg(txProxy);
+              } catch (txErr) {
+                for (let i = undoLog.length - 1; i >= 0; i--) {
+                  try {
+                    undoLog[i]();
+                  } catch {}
+                }
+                if (undoLog.length > 0) triggerStoreSave(store);
+                throw txErr;
+              }
+            }
             if (Array.isArray(arg)) return Promise.all(arg);
             return arg;
           };
@@ -386,6 +499,39 @@ function createInMemoryPrisma() {
   );
 
   return proxy as PrismaClient;
+}
+
+export function isDatabaseConnectivityFailure(err: any): boolean {
+  if (!err) return false;
+  const code = String(err.code || '');
+  const name = String(err.name || '');
+  const msg = String(err.message || '');
+
+  // Errores de reglas de negocio o colisiones de concurrencia NUNCA son caídas de base de datos
+  if (
+    msg.startsWith('INSUFFICIENT_STOCK:') ||
+    msg.startsWith('ORDER_CONFLICT:') ||
+    msg.startsWith('ORDER_NOT_FOUND:') ||
+    msg.startsWith('VENTA_CERRADA') ||
+    code === 'P2002' ||
+    code === 'P2003' ||
+    code === 'P2025' ||
+    code === 'P2034'
+  ) {
+    return false;
+  }
+
+  return (
+    name.includes('PrismaClientInitializationError') ||
+    name.includes('PrismaClientRustPanicError') ||
+    /^P10\d\d$/.test(code) ||
+    msg.includes("Can't reach database server") ||
+    msg.includes('Environment variable not found') ||
+    msg.includes('Unable to open the database file') ||
+    msg.includes('ECONNREFUSED') ||
+    msg.includes('ENOTFOUND') ||
+    (msg.includes('Invalid `prisma.') && msg.includes('invocation') && msg.includes('datasource'))
+  );
 }
 
 function createResilientPrismaClient(): PrismaClient {
@@ -418,9 +564,12 @@ function createResilientPrismaClient(): PrismaClient {
           try {
             return await target.$transaction(arg);
           } catch (err: any) {
-            console.warn('[AI Studio Backend] $transaction falló, cambiando a backend compatible:', err?.message);
-            hasFailed = true;
-            return (fallback as any).$transaction(arg);
+            if (isDatabaseConnectivityFailure(err)) {
+              console.warn('[AI Studio Backend] $transaction detectó caída de BD, cambiando a backend compatible:', err?.message);
+              hasFailed = true;
+              return (fallback as any).$transaction(arg);
+            }
+            throw err;
           }
         };
       }
@@ -433,16 +582,22 @@ function createResilientPrismaClient(): PrismaClient {
             const res = originalVal.apply(target, args);
             if (res && typeof res.catch === 'function') {
               return res.catch((err: any) => {
-                console.warn(`[AI Studio Backend] ${prop} falló, cambiando a backend compatible:`, err?.message);
-                hasFailed = true;
-                return (fallback as any)[prop](...args);
+                if (isDatabaseConnectivityFailure(err)) {
+                  console.warn(`[AI Studio Backend] ${prop} detectó caída de BD, cambiando a backend compatible:`, err?.message);
+                  hasFailed = true;
+                  return (fallback as any)[prop](...args);
+                }
+                throw err;
               });
             }
             return res;
           } catch (err: any) {
-            console.warn(`[AI Studio Backend] ${prop} falló sincrónicamente, cambiando a backend compatible:`, err?.message);
-            hasFailed = true;
-            return (fallback as any)[prop](...args);
+            if (isDatabaseConnectivityFailure(err)) {
+              console.warn(`[AI Studio Backend] ${prop} falló sincrónicamente por BD, cambiando a backend compatible:`, err?.message);
+              hasFailed = true;
+              return (fallback as any)[prop](...args);
+            }
+            throw err;
           }
         };
       }
@@ -465,11 +620,13 @@ function createResilientPrismaClient(): PrismaClient {
                 try {
                   return await modelMethod.apply(modelTarget, args);
                 } catch (err: any) {
-                  console.warn(`[AI Studio Backend] prisma.${prop}.${modelProp} falló (${err?.message}), ejecutando en backend compatible:`);
-                  hasFailed = true;
-                  const fallbackModel = (fallback as any)[prop];
-                  if (fallbackModel && typeof fallbackModel[modelProp] === 'function') {
-                    return await fallbackModel[modelProp](...args);
+                  if (isDatabaseConnectivityFailure(err)) {
+                    console.warn(`[AI Studio Backend] prisma.${prop}.${modelProp} detectó caída de BD (${err?.message}), ejecutando en backend compatible:`);
+                    hasFailed = true;
+                    const fallbackModel = (fallback as any)[prop];
+                    if (fallbackModel && typeof fallbackModel[modelProp] === 'function') {
+                      return await fallbackModel[modelProp](...args);
+                    }
                   }
                   throw err;
                 }

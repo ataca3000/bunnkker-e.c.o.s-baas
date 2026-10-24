@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { prisma, isDatabaseConnectivityFailure } from '@/lib/prisma';
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════
@@ -550,6 +550,50 @@ describe('Stock Concurrency Race & Idempotency Forensics', () => {
     const lateAttempt = await checkoutCashier('Caja 4 Tarde', `ORD-PRISMA-4-${Date.now()}`);
     expect(lateAttempt.success).toBe(false);
     expect((lateAttempt as any).error).toContain('INSUFFICIENT_STOCK');
+  });
+
+  it('Rollback Atómico Multi-Producto en Prisma: Fallo en el 2do artículo revierte la reserva del 1er artículo (Cero Stock Fantasma)', async () => {
+    const prodAId = `prod-atomic-a-${Date.now()}`;
+    const prodBId = `prod-atomic-b-${Date.now()}`;
+
+    await prisma.product.create({
+      data: { id: prodAId, tenantId: 'default', name: 'Cemento Disponible', price: 200, stock: 10, reservedStock: 0 }
+    });
+    await prisma.product.create({
+      data: { id: prodBId, tenantId: 'default', name: 'Varilla Agotada', price: 150, stock: 1, reservedStock: 1 }
+    });
+
+    await expect(
+      prisma.$transaction(async (tx) => {
+        // Paso 1: Apartar 3 unidades del Producto A (exitoso)
+        await tx.product.updateMany({
+          where: { id: prodAId, reservedStock: 0 },
+          data: { reservedStock: { increment: 3 } }
+        });
+
+        // Paso 2: Validar Producto B (agotado -> lanza error de negocio)
+        const prodB = await tx.product.findUnique({ where: { id: prodBId } });
+        const availableB = (prodB?.stock || 0) - (prodB?.reservedStock || 0);
+        if (availableB < 1) {
+          throw new Error('INSUFFICIENT_STOCK: Varilla Agotada');
+        }
+      })
+    ).rejects.toThrow('INSUFFICIENT_STOCK');
+
+    // Verificación forense: La reserva de 3 unidades en Producto A debe haberse revertido a 0
+    const checkProdA = await prisma.product.findUnique({ where: { id: prodAId } });
+    expect(checkProdA?.stock).toBe(10);
+    expect(checkProdA?.reservedStock).toBe(0);
+  });
+
+  it('Prevención de Split-Brain: isDatabaseConnectivityFailure distingue errores de negocio vs caídas de motor BD', () => {
+    expect(isDatabaseConnectivityFailure(new Error('INSUFFICIENT_STOCK: Sin inventario'))).toBe(false);
+    expect(isDatabaseConnectivityFailure(new Error('ORDER_CONFLICT: Ya fue cobrado'))).toBe(false);
+    expect(isDatabaseConnectivityFailure({ code: 'P2002', message: 'Unique constraint failed' })).toBe(false);
+    expect(isDatabaseConnectivityFailure({ code: 'P2034', message: 'Transaction write conflict' })).toBe(false);
+
+    expect(isDatabaseConnectivityFailure({ name: 'PrismaClientInitializationError', message: "Can't reach database server" })).toBe(true);
+    expect(isDatabaseConnectivityFailure({ code: 'P1001', message: 'Connection refused' })).toBe(true);
   });
 
 });

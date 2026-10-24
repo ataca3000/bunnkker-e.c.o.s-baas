@@ -39,15 +39,18 @@ describe('Financial Cash Close Calculations', () => {
       expect(expected).toBe(100);
     });
 
-    it('should ignore orders with disallowed statuses', () => {
+    it('should ignore orders with disallowed statuses even if confirmedAt is present (cancelled/refunded immunity)', () => {
       const mockOrders = [
-        { total: 100, paymentMethod: 'cash', status: 'COMPLETED' },
+        { total: 100, paymentMethod: 'cash', status: 'COMPLETED', confirmedAt: new Date() },
         { total: 500, paymentMethod: 'cash', status: 'PENDING_PAYMENT' },
-        { total: 200, paymentMethod: 'cash', status: 'CANCELLED' },
+        { total: 200, paymentMethod: 'cash', status: 'CANCELLED', confirmedAt: new Date() },
+        { total: 350, paymentMethod: 'cash', status: 'cancelled', confirmedAt: new Date() },
+        { total: 450, paymentMethod: 'cash', status: 'refunded', confirmedAt: new Date() },
+        { total: 150, paymentMethod: 'Venta Directa POS', status: 'paid', confirmedAt: new Date() },
       ];
 
       const expected = calculateExpectedAmount(mockOrders);
-      expect(expected).toBe(100);
+      expect(expected).toBe(250);
     });
 
     it('should return 0 for an empty orders list', () => {

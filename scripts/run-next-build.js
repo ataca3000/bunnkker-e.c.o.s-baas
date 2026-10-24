@@ -35,6 +35,16 @@ if (isLocalDesktop) {
     console.error('[Build Desktop] prisma generate (SQLite) falló. Schema restaurado.');
     process.exit(gen.status || 1);
   }
+} else {
+  // En compilación para la web / nube (ej. Vercel), sincronizar y preparar base de datos si está configurada
+  const prep = spawnSync(process.execPath, [path.join(__dirname, 'prepare-db.js')], {
+    cwd: projectRoot,
+    stdio: 'inherit',
+    env: process.env,
+  });
+  if (prep.status !== 0) {
+    process.exit(prep.status || 1);
+  }
 }
 
 let buildStatus = 0;

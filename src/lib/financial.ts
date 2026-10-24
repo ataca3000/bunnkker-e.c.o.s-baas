@@ -14,6 +14,30 @@ export const ALLOWED_CLOSE_STATUSES = [
   'COMPLETED'
 ];
 
+export const EXCLUDED_CLOSE_STATUSES = [
+  'cancelled',
+  'CANCELLED',
+  'refunded',
+  'REFUNDED',
+  'rejected',
+  'REJECTED',
+  'pending_payment',
+  'PENDING_PAYMENT',
+  'pending',
+  'PENDING',
+  'pending_confirmation',
+  'NIGHT_QUEUE'
+];
+
+export const CASH_PAYMENT_METHODS = [
+  'cash',
+  'CASH',
+  'efectivo',
+  'EFECTIVO',
+  'Venta Directa',
+  'Venta Directa POS'
+];
+
 /**
  * Converts a floating point currency amount to integer cents.
  * Avoids IEEE-754 precision drift by using epsilon rounding.
@@ -67,7 +91,8 @@ export function safeMulMoney(amount: number, qty: number): number {
 export function calculateExpectedAmount(orders: { total: number; paymentMethod: string; status: string; confirmedAt?: Date | string | null }[]): number {
   const totalCents = orders
     .filter(order => 
-      ['cash', 'CASH', 'efectivo', 'EFECTIVO'].includes(order.paymentMethod) && 
+      CASH_PAYMENT_METHODS.includes(order.paymentMethod) &&
+      !EXCLUDED_CLOSE_STATUSES.includes(order.status) &&
       (ALLOWED_CLOSE_STATUSES.includes(order.status) || Boolean(order.confirmedAt))
     )
     .reduce((sumCents, order) => sumCents + toCents(order.total || 0), 0);
