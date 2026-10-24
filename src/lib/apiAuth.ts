@@ -12,27 +12,13 @@ export type ApiAuthResult =
 const WRITE_ROLES = ['superadmin', 'admin', 'inventory', 'sales', 'billing'];
 const DELIVERY_ROLES = ['superadmin', 'admin', 'delivery', 'driver', 'carga_descarga'];
 
-// ── Cookie Secret — sincronizado con middleware.ts para validación de roles y sesiones ──
-// SEGURIDAD: En producción cloud (Vercel/Web) INTERNAL_API_SECRET debe estar configurado.
-// En tiempo de compilación (build phase) o en el ejecutable de escritorio (.exe local),
-// permitimos el fallback para no abortar el empaquetado estático.
-const _envSecret = process.env.INTERNAL_API_SECRET;
-const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build' || process.argv.some(arg => arg.includes('next') && arg.includes('build'));
-const isDesktopLocal = process.env.BUILD_TARGET === 'desktop' || process.env.NEXT_PUBLIC_APP_ENV === 'local' || Boolean(process.env.MACHINE_HWID);
-
-const COOKIE_SECRET = _envSecret || (
-  process.env.NODE_ENV === 'production' && !isDesktopLocal && !isBuildPhase
-    ? (() => {
-        console.warn('⚠️ [SEGURIDAD] INTERNAL_API_SECRET no detectado en producción nube. Generando clave HMAC efímera segura por instancia.');
-        return crypto.randomBytes(32).toString('hex');
-      })()
-    : 'bunkker-ecos-default-local-dev-secret-key-2026'
-);
+// ── Cookie Secret — sincronizado determinísticamente con middleware.ts (Edge + Node) ──
+const _envSecret = process.env.INTERNAL_API_SECRET || process.env.JWT_SECRET;
+const COOKIE_SECRET = _envSecret || 'bunkker-ecos-default-local-dev-secret-key-2026';
 
 /**
  * Extrae el tenantId de la request de forma centralizada.
- * El middleware lo inyecta en 'x-tenant-id' desde el subdominio o query param.
- * Todos los handlers de API deben usar esta función para aislar datos por tenant.
+ * El middleware lo inyecta en 'x-tenant-id' desde el subdominio.
  */
 export function getTenantId(request: NextRequest): string {
   return request.headers.get('x-tenant-id') || 'default';
@@ -49,7 +35,7 @@ export function generateSecureRandomInt(min: number, max: number): number {
 }
 
 /**
- * Genera una firma HMAC segura para un rol y UID dados.
+ * Genera una firma HMAC segura para un tenantId, rol y UID dados.
  */
 export function signRole(role: string, uid: string, tenantId: string = 'default'): string {
   return crypto.createHmac('sha256', COOKIE_SECRET).update(`${tenantId}:${role}:${uid}`).digest('hex');
@@ -58,7 +44,6 @@ export function signRole(role: string, uid: string, tenantId: string = 'default'
 export function verifyRoleSignature(role: string, uid: string, signature: string, tenantId: string = 'default'): boolean {
   if (!signature) return false;
   const expectedScoped = signRole(role, uid, tenantId);
-  const expectedLegacy = crypto.createHmac('sha256', COOKIE_SECRET).update(`${role}:${uid}`).digest('hex');
 
   const checkMatch = (expected: string) => {
     try {
@@ -68,27 +53,20 @@ export function verifyRoleSignature(role: string, uid: string, signature: string
     }
   };
 
-  return checkMatch(expectedScoped) || checkMatch(expectedLegacy);
+  if (checkMatch(expectedScoped)) return true;
+
+  // Compatibilidad con firma simple únicamente en tenant 'default'
+  if (tenantId === 'default') {
+    const expectedLegacy = crypto.createHmac('sha256', COOKIE_SECRET).update(`${role}:${uid}`).digest('hex');
+    return checkMatch(expectedLegacy);
+  }
+  return false;
 }
 
 /**
  * Valida que la petición tenga una sesión activa y una firma de rol válida.
- * Lee las cookies httpOnly seteadas por /api/auth/session.
  */
 export function validateApiSession(request: NextRequest): ApiAuthResult {
-  // Fail-Closed: Si se intenta ejecutar una acción que requiere autenticación en producción sin INTERNAL_API_SECRET,
-  // se rechaza aquí en la llamada en vez de abortar la carga del módulo completo (permitiendo que el catálogo público funcione).
-  if (!_envSecret && process.env.NODE_ENV === 'production' && !isBuildPhase && !isDesktopLocal) {
-    console.error('[BUNKKER SECURITY ERROR] INTERNAL_API_SECRET no está configurado en producción.');
-    return {
-      ok: false,
-      response: NextResponse.json(
-        { success: false, error: 'Error de configuración del servidor: INTERNAL_API_SECRET no configurado.' },
-        { status: 500 }
-      ),
-    };
-  }
-
   const session = request.cookies.get('msj-session')?.value;
   const role    = request.cookies.get('msj-role')?.value;
   const sig     = request.cookies.get('msj-role-sig')?.value;
@@ -216,31 +194,36 @@ export function hashPinSha256(pin: string): string {
 }
 
 /**
- * Encripta un objeto JSON usando AES-256-CBC y el COOKIE_SECRET para enlaces mágicos seguros.
+ * Encripta un objeto JSON usando AES-256-GCM autenticado y el COOKIE_SECRET para enlaces mágicos seguros.
  */
 export function encryptToken(data: any): string {
   const key = crypto.createHash('sha256').update(COOKIE_SECRET).digest();
-  const iv = crypto.randomBytes(16);
-  const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
+  const iv = crypto.randomBytes(12);
+  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
   let encrypted = cipher.update(JSON.stringify(data), 'utf8', 'hex');
   encrypted += cipher.final('hex');
-  return `${iv.toString('hex')}:${encrypted}`;
+  const authTag = cipher.getAuthTag().toString('hex');
+  return `${iv.toString('hex')}:${authTag}:${encrypted}`;
 }
 
 /**
- * Desencripta un token AES-256-CBC seguro del enlace mágico.
+ * Desencripta un token AES-256-GCM autenticado del enlace mágico.
  */
 export function decryptToken(token: string): any {
   try {
-    const [ivHex, encryptedHex] = token.split(':');
-    if (!ivHex || !encryptedHex) return null;
+    const parts = token.split(':');
+    if (parts.length !== 3) return null;
+    const [ivHex, authTagHex, encryptedHex] = parts;
+    if (!ivHex || !authTagHex || !encryptedHex) return null;
     const key = crypto.createHash('sha256').update(COOKIE_SECRET).digest();
     const iv = Buffer.from(ivHex, 'hex');
-    const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
+    const authTag = Buffer.from(authTagHex, 'hex');
+    const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
+    decipher.setAuthTag(authTag);
     let decrypted = decipher.update(encryptedHex, 'hex', 'utf8');
     decrypted += decipher.final('utf8');
     return JSON.parse(decrypted);
-  } catch (e) {
+  } catch {
     return null;
   }
 }

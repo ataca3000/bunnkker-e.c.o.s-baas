@@ -64,7 +64,7 @@ async function verifyHmac(session: string, role: string, sig: string, tenantId: 
     console.warn('[MIDDLEWARE] Missing INTERNAL_API_SECRET in production — using fallback');
   }
   const activeSecret = secret || 'bunkker-ecos-default-local-dev-secret-key-2026';
-  
+
   const encoder = new TextEncoder();
   try {
     const key = await crypto.subtle.importKey(
@@ -75,10 +75,13 @@ async function verifyHmac(session: string, role: string, sig: string, tenantId: 
     const expectedHexScoped = Array.from(new Uint8Array(expectedBufferScoped)).map(b => b.toString(16).padStart(2, '0')).join('');
     if (timingSafeEqualHex(expectedHexScoped, sig)) return true;
 
-    // 2. Fallback legacy (role:session)
-    const expectedBufferLegacy = await crypto.subtle.sign('HMAC', key, encoder.encode(`${role}:${session}`));
-    const expectedHexLegacy = Array.from(new Uint8Array(expectedBufferLegacy)).map(b => b.toString(16).padStart(2, '0')).join('');
-    return timingSafeEqualHex(expectedHexLegacy, sig);
+    // 2. Fallback legacy solo para el tenant default (compatibilidad interna)
+    if (tenantId === 'default') {
+      const expectedBufferLegacy = await crypto.subtle.sign('HMAC', key, encoder.encode(`${role}:${session}`));
+      const expectedHexLegacy = Array.from(new Uint8Array(expectedBufferLegacy)).map(b => b.toString(16).padStart(2, '0')).join('');
+      return timingSafeEqualHex(expectedHexLegacy, sig);
+    }
+    return false;
   } catch {
     return false;
   }
@@ -92,7 +95,7 @@ export default async function middleware(request: NextRequest) {
   let tenantId = 'default';
   if (hostname.endsWith('.admin.com') && !PUBLIC_DOMAINS.includes(hostname)) {
     tenantId = hostname.split('.')[0];
-  } else if (searchParams.has('tenant')) {
+  } else if (searchParams.has('tenant') && !pathname.startsWith('/dashboard') && !pathname.startsWith('/api')) {
     tenantId = searchParams.get('tenant')!;
   }
 
@@ -116,18 +119,17 @@ export default async function middleware(request: NextRequest) {
       return NextResponse.redirect(loginUrl);
     }
 
-    // ✨ Verificación HMAC de firma de rol ✨
-    if (role && sig) {
-      try {
-        const signatureValid = await verifyHmac(session, role, sig, tenantId);
-        if (!signatureValid) {
-          if (process.env.NODE_ENV !== 'production') console.warn(`[RBAC] Firma HMAC inválida para rol '${role}'.`);
-          return NextResponse.redirect(new URL('/login?error=tampered', request.url));
-        }
-      } catch (e: any) {
-        return new NextResponse(e.message, { status: 500 });
+    // ✨ Verificación HMAC obligatoria de firma de rol (Fail-Closed) ✨
+    if (!role || !sig) {
+      return NextResponse.redirect(new URL('/login?error=unauthorized', request.url));
+    }
+    try {
+      const signatureValid = await verifyHmac(session, role, sig, tenantId);
+      if (!signatureValid) {
+        if (process.env.NODE_ENV !== 'production') console.warn(`[RBAC] Firma HMAC inválida para rol '${role}'.`);
+        return NextResponse.redirect(new URL('/login?error=tampered', request.url));
       }
-    } else if (!sig) {
+    } catch {
       return NextResponse.redirect(new URL('/login?error=unauthorized', request.url));
     }
 
@@ -159,11 +161,19 @@ export default async function middleware(request: NextRequest) {
 
   // --- 3. API Protection ---
   if (pathname.startsWith('/api')) {
-    const publicApiRoutes = ['/api/auth', '/api/customer', '/api/public', '/api/omnipulse', '/api/settings'];
-    // Permitir acceso a productos para que la validación RBAC granular se ejecute en el route handler (compatible con headers y sesiones locales)
+    const publicApiRoutes = [
+      '/api/auth',
+      '/api/customer',
+      '/api/public',
+      '/api/settings',
+      '/api/mercadopago/webhook',
+      '/api/stripe/webhook',
+      '/api/health',
+    ];
+    // Permitir acceso a productos para que la validación RBAC granular se ejecute en el route handler
     const isProductsApi = pathname === '/api/products' || pathname.startsWith('/api/products/');
-    // Permitir creación de pedidos (la seguridad, RBAC y validación de roles/invitados se gestiona de forma segura en /api/orders)
-    const isPublicOrderCreate = request.method === 'POST' && pathname === '/api/orders';
+    // Permitir creación de pedidos (la seguridad, RBAC y validación de roles/invitados se gestiona de forma segura en /api/orders y /api/store-checkout)
+    const isPublicOrderCreate = request.method === 'POST' && (pathname === '/api/orders' || pathname === '/api/store-checkout');
     const isPublicApi = isProductsApi || isPublicOrderCreate || publicApiRoutes.some(r => pathname.startsWith(r));
 
     if (!isPublicApi) {
@@ -171,29 +181,27 @@ export default async function middleware(request: NextRequest) {
       const role    = request.cookies.get('msj-role')?.value;
       const sig     = request.cookies.get('msj-role-sig')?.value;
 
-      if (!session) {
-        return new NextResponse(JSON.stringify({ error: 'Unauthorized', message: 'Acceso denegado (No session)' }), {
+      if (!session || !role || !sig) {
+        return new NextResponse(JSON.stringify({ error: 'Unauthorized', message: 'Acceso denegado (Sesión o firma incompleta)' }), {
           status: 401,
           headers: { 'Content-Type': 'application/json', 'x-tenant-id': tenantId }
         });
       }
 
-      // ✨ Verificación HMAC en API ✨
-      if (role && sig) {
-        try {
-          const signatureValid = await verifyHmac(session, role, sig, tenantId);
-          if (!signatureValid) {
-            return new NextResponse(JSON.stringify({ error: 'Unauthorized', message: 'Firma manipulada' }), { 
-              status: 401, 
-              headers: { 'Content-Type': 'application/json', 'x-tenant-id': tenantId } 
-            });
-          }
-        } catch (e: any) {
-          return new NextResponse(JSON.stringify({ error: 'Internal Error', message: e.message }), { 
-            status: 500, 
+      // ✨ Verificación HMAC obligatoria en API (sin rama ausente) ✨
+      try {
+        const signatureValid = await verifyHmac(session, role, sig, tenantId);
+        if (!signatureValid) {
+          return new NextResponse(JSON.stringify({ error: 'Unauthorized', message: 'Firma manipulada' }), { 
+            status: 401, 
             headers: { 'Content-Type': 'application/json', 'x-tenant-id': tenantId } 
           });
         }
+      } catch {
+        return new NextResponse(JSON.stringify({ error: 'Internal Error', message: 'Error verificando sesión' }), { 
+          status: 500, 
+          headers: { 'Content-Type': 'application/json', 'x-tenant-id': tenantId } 
+        });
       }
     }
   }
