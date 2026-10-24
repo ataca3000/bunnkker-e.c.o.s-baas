@@ -20,11 +20,6 @@ const _envSecret = process.env.INTERNAL_API_SECRET;
 const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build' || process.argv.some(arg => arg.includes('next') && arg.includes('build'));
 const isDesktopLocal = process.env.BUILD_TARGET === 'desktop' || process.env.NEXT_PUBLIC_APP_ENV === 'local' || Boolean(process.env.MACHINE_HWID);
 
-if (!_envSecret && process.env.NODE_ENV === 'production' && !isBuildPhase && !isDesktopLocal) {
-  throw new Error(
-    '[BUNKKER SECURITY FATAL] INTERNAL_API_SECRET no está configurado en producción. La aplicación se rehúsa a iniciar en modo inseguro (Fail-Closed).'
-  );
-}
 const COOKIE_SECRET = _envSecret || 'bunkker-ecos-default-local-dev-secret-key-2026';
 
 /**
@@ -70,6 +65,19 @@ export function verifyRoleSignature(role: string, uid: string, signature: string
  * Lee las cookies httpOnly seteadas por /api/auth/session.
  */
 export function validateApiSession(request: NextRequest): ApiAuthResult {
+  // Fail-Closed: Si se intenta ejecutar una acción que requiere autenticación en producción sin INTERNAL_API_SECRET,
+  // se rechaza aquí en la llamada en vez de abortar la carga del módulo completo (permitiendo que el catálogo público funcione).
+  if (!_envSecret && process.env.NODE_ENV === 'production' && !isBuildPhase && !isDesktopLocal) {
+    console.error('[BUNKKER SECURITY ERROR] INTERNAL_API_SECRET no está configurado en producción.');
+    return {
+      ok: false,
+      response: NextResponse.json(
+        { success: false, error: 'Error de configuración del servidor: INTERNAL_API_SECRET no configurado.' },
+        { status: 500 }
+      ),
+    };
+  }
+
   const session = request.cookies.get('msj-session')?.value;
   const role    = request.cookies.get('msj-role')?.value;
   const sig     = request.cookies.get('msj-role-sig')?.value;
