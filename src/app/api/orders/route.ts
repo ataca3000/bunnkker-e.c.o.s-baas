@@ -800,22 +800,39 @@ export async function PATCH(request: NextRequest) {
                     throw new Error('VENTA_CERRADA: El pedido ya fue entregado al cliente. No procede restitución a anaquel sin movimiento de recepción nuevo.');
                 }
 
-                // PREVENCIÓN DE INFLACIÓN DE INVENTARIO:
-                // El stock físico en anaquel solo se descuenta cuando la orden fue entregada al cliente (DELIVERED/COMPLETED).
-                // Si la orden fue cancelada antes de la entrega (en status pending, paid, PREPARANDO o READY_FOR_PICKUP_PAID),
-                // el stock físico NUNCA salió ni se restó de la base de datos (solo estuvo apartado en reservedStock).
-                // Por lo tanto, reacomodar a estante NO debe sumar al stock físico.
+                // EXCLUSIÓN MUTUA ATÓMICA:
+                // Previene condiciones de carrera si llegan dos peticiones de restitución simultáneas
+                const lockUpdate = await tx.order.updateMany({
+                    where: {
+                        id,
+                        rejectionReason: { not: 'CANCELADA_STOCK_RESTITUIDO' },
+                        status: { notIn: ['DELIVERED', 'COMPLETED'] }
+                    },
+                    data: {
+                        isLoaded: false,
+                        status: 'cancelled',
+                        rejectionReason: 'CANCELADA_STOCK_RESTITUIDO'
+                    }
+                });
+                if (lockUpdate.count !== 1) {
+                    return current;
+                }
+
+                // PREVENCIÓN DE INFLACIÓN Y PROTECCIÓN DE RESERVAS:
+                // 1. Si la orden fue devuelta de una entrega real (status === 'refunded'), se restituye físicamente a 'stock'.
+                // 2. Si la orden ya estaba cancelada (status === 'cancelled'), la cancelación YA liberó su 'reservedStock'.
+                //    NO se debe volver a restar de reservedStock para no liberar reservas de OTROS pedidos activos.
+                // 3. Si la orden aún NO estaba cancelada (ej. paid o READY_FOR_PICKUP_PAID), se libera su reserva legítima una sola vez.
                 const wasPhysicalStockDeducted = current.status === 'refunded';
+                const wasAlreadyCancelled = current.status === 'cancelled';
 
                 for (const item of current.items) {
                     if (wasPhysicalStockDeducted) {
-                        // Solo se restituye físicamente si la orden fue devuelta de una entrega real
                         await tx.product.update({
                             where: { id: item.productId },
                             data: { stock: { increment: item.cantidad } }
                         });
-                    } else {
-                        // Si nunca se descontó físicamente, liberamos cualquier reserva remanente en reservedStock
+                    } else if (!wasAlreadyCancelled && (current.status === 'paid' || current.status === 'READY_FOR_PICKUP_PAID')) {
                         const prod = await tx.product.findUnique({
                             where: { id: item.productId },
                             select: { reservedStock: true }
@@ -828,15 +845,6 @@ export async function PATCH(request: NextRequest) {
                         }
                     }
                 }
-
-                await tx.order.update({
-                    where: { id },
-                    data: {
-                        isLoaded: false,
-                        status: 'cancelled',
-                        rejectionReason: 'CANCELADA_STOCK_RESTITUIDO'
-                    }
-                });
 
                 await writeOrderEvent(tx, {
                     orderId: id,
@@ -924,6 +932,14 @@ export async function PATCH(request: NextRequest) {
             const order = await prisma.$transaction(async (tx) => {
                 const current = await tx.order.findUnique({ where: { id }, include: { items: true } });
                 if (!current) throw new Error('ORDER_CONFLICT:Pedido no encontrado.');
+
+                // RECHAZO EXPLÍCITO: Si el pedido ya fue entregado o está cancelado
+                if (['DELIVERED', 'COMPLETED'].includes(current.status)) {
+                    throw new Error('ORDER_CONFLICT:El pedido ya fue entregado al cliente.');
+                }
+                if (current.status === 'cancelled') {
+                    throw new Error('ORDER_CONFLICT:El pedido está cancelado.');
+                }
                 if (!current.confirmedAt && current.status !== 'paid' && current.status !== 'READY_FOR_PICKUP_PAID') {
                     throw new Error('ORDER_CONFLICT:El cliente debe pagar primero en Caja antes de recibir la mercancía.');
                 }
@@ -933,6 +949,25 @@ export async function PATCH(request: NextRequest) {
 
                 const signatureData = updates.signatureData || body.signatureData || null;
                 const photoData = updates.photoData || body.photoData || null;
+
+                // TRANSICIÓN CONDICIONAL ATÓMICA ANTES DE DEDUCIR STOCK:
+                // Si otra petición concurrente ya entregó el pedido, updated.count será 0 y la transacción abortará.
+                const updated = await tx.order.updateMany({
+                    where: { 
+                        id, 
+                        status: { notIn: ['DELIVERED', 'COMPLETED', 'cancelled'] }
+                    },
+                    data: { 
+                        status: 'DELIVERED', 
+                        completedAt: new Date(),
+                        confirmedAt: current.confirmedAt || new Date(),
+                        ...(signatureData ? { signatureData } : {}),
+                        ...(photoData ? { photoData } : {})
+                    }
+                });
+                if (updated.count !== 1) {
+                    throw new Error('ORDER_CONFLICT:El pedido ya fue cerrado o entregado por otro operador.');
+                }
 
                 // DEDUCCIÓN FINAL AL VALIDAR ENTREGA EN TIENDA / PATIO:
                 // Se descuenta físicamente de 'stock' y se limpia la reserva 'reservedStock'.
@@ -947,18 +982,6 @@ export async function PATCH(request: NextRequest) {
                         }
                     });
                 }
-
-                const updated = await tx.order.updateMany({
-                    where: { id, status: current.status },
-                    data: { 
-                        status: 'DELIVERED', 
-                        completedAt: new Date(),
-                        confirmedAt: current.confirmedAt || new Date(),
-                        ...(signatureData ? { signatureData } : {}),
-                        ...(photoData ? { photoData } : {})
-                    }
-                });
-                if (updated.count !== 1) throw new Error('ORDER_CONFLICT:El pedido ya fue cerrado por otro operador.');
 
                 await writeOrderEvent(tx, { 
                     orderId: id, 

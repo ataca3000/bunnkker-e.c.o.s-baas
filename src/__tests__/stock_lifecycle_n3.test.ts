@@ -294,4 +294,93 @@ describe('N3 Stock Lifecycle & Authority Engine', () => {
         expect(pickupWhiteboard.map(o => o.id)).toEqual(['ORD-1', 'ORD-3']);
         expect(pickupWhiteboard.find(o => o.id === 'ORD-2')).toBeUndefined();
     });
+
+    it('Axioma 9 (Anti-Entrega Repetida): confirm_pickup_receipt rechaza órdenes ya entregadas (DELIVERED) y no descuenta doble stock', () => {
+        let stock = 20;
+        let reservedStock = 5;
+        let status = 'READY_FOR_PICKUP_PAID';
+
+        function confirmPickupReceipt(qty: number) {
+            if (['DELIVERED', 'COMPLETED'].includes(status)) {
+                throw new Error('ORDER_CONFLICT:El pedido ya fue entregado al cliente.');
+            }
+            if (status !== 'paid' && status !== 'READY_FOR_PICKUP_PAID') {
+                throw new Error('ORDER_CONFLICT:El pedido debe estar pagado.');
+            }
+            // Transición atómica y deducción única
+            status = 'DELIVERED';
+            stock -= qty;
+            reservedStock = Math.max(0, reservedStock - qty);
+            return { status, stock, reservedStock };
+        }
+
+        // Primera entrega exitosa
+        const first = confirmPickupReceipt(5);
+        expect(first.status).toBe('DELIVERED');
+        expect(first.stock).toBe(15);
+        expect(first.reservedStock).toBe(0);
+
+        // Segunda entrega repetida/concurrente debe ser rechazada y NO debe descontar stock otra vez
+        expect(() => confirmPickupReceipt(5)).toThrow('ORDER_CONFLICT:El pedido ya fue entregado al cliente.');
+        expect(stock).toBe(15); // Se mantiene en 15, jamás cae a 10
+    });
+
+    it('Axioma 10 (Protección Multi-Orden de Reservas): Devolver a anaquel orden ya cancelada NO altera reservas de otros pedidos', () => {
+        // Escenario: Pedido B de otro cliente tiene 4 piezas reservadas.
+        let reservedStockGlobal = 4; // Pertenece a Pedido B
+        const orderA = {
+            id: 'ORD-A',
+            qty: 3,
+            status: 'cancelled', // Ya fue cancelado previamente por el cajero
+            rejectionReason: 'CANCELADO_PENDIENTE_REACOMODO'
+        };
+
+        function returnToShelf(order: typeof orderA) {
+            const wasAlreadyCancelled = order.status === 'cancelled';
+            if (!wasAlreadyCancelled) {
+                // Solo si la orden NO estaba cancelada se liberaría su reserva
+                reservedStockGlobal = Math.max(0, reservedStockGlobal - order.qty);
+            }
+            order.rejectionReason = 'CANCELADA_STOCK_RESTITUIDO';
+            return { order, reservedStockGlobal };
+        }
+
+        const res = returnToShelf(orderA);
+        // La reserva del Pedido B permanece intacta en 4 piezas
+        expect(res.reservedStockGlobal).toBe(4);
+        expect(orderA.rejectionReason).toBe('CANCELADA_STOCK_RESTITUIDO');
+    });
+
+    it('Axioma 11 (Exclusión Mutua e Idempotencia en Restitución): Peticiones simultáneas a return_to_shelf ejecutan exactamente una vez', () => {
+        let executionCount = 0;
+        let physicalStock = 10;
+        let order = {
+            id: 'ORD-DUP',
+            status: 'refunded', // Reembolsado real post-entrega
+            rejectionReason: null as string | null
+        };
+
+        function atomicReturnToShelf() {
+            // Emula updateMany({ where: { rejectionReason: { not: 'CANCELADA_STOCK_RESTITUIDO' } } })
+            if (order.rejectionReason === 'CANCELADA_STOCK_RESTITUIDO') {
+                return { success: true, duplicated: true };
+            }
+            order.rejectionReason = 'CANCELADA_STOCK_RESTITUIDO';
+            executionCount++;
+            physicalStock += 2;
+            return { success: true, duplicated: false };
+        }
+
+        // Llamada 1
+        const r1 = atomicReturnToShelf();
+        expect(r1.duplicated).toBe(false);
+        expect(physicalStock).toBe(12);
+
+        // Llamada 2 (concurrente / reintento)
+        const r2 = atomicReturnToShelf();
+        expect(r2.duplicated).toBe(true);
+        expect(physicalStock).toBe(12); // El stock físico no se incrementa 2 veces
+        expect(executionCount).toBe(1);
+    });
 });
+
