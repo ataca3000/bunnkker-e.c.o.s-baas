@@ -13,10 +13,10 @@
  */
 
 import fs from 'fs';
-import path from 'path';
 import os from 'os';
-import { atomicWriteFileSync } from './atomicFs';
+import path from 'path';
 import crypto from 'crypto';
+import { atomicWriteFileSync } from './atomicFs';
 
 export const TRIAL_TARGET_SALES = 100;
 export const GRACE_BUFFER_SALES = 20;
@@ -32,30 +32,23 @@ interface CounterData {
 const COUNTER_SALT = process.env.SALES_COUNTER_SALT || 'bunkker-ecos-tamper-resistant-watermark-salt-2026';
 
 function getStorageDir(): string {
-  let baseDir: string;
-  if (process.env.APPDATA) {
-    baseDir = path.join(process.env.APPDATA, 'bunnkker-ecos', 'security');
-  } else {
-    baseDir = path.join(process.cwd(), 'data', 'security');
-  }
+  const candidates = [
+    process.env.APPDATA ? path.join(process.env.APPDATA, 'bunnkker-ecos', 'security') : null,
+    path.join(process.cwd(), 'data', 'security'),
+    path.join(os.tmpdir(), 'bunnkker-ecos', 'security'),
+  ].filter(Boolean) as string[];
 
-  try {
-    if (!fs.existsSync(baseDir)) {
-      fs.mkdirSync(baseDir, { recursive: true });
-    }
-    return baseDir;
-  } catch {
-    // Fallback seguro contra EROFS en Vercel Serverless
+  for (const dir of candidates) {
     try {
-      const tmpDir = path.join(os.tmpdir(), 'bunnkker-ecos', 'security');
-      if (!fs.existsSync(tmpDir)) {
-        fs.mkdirSync(tmpDir, { recursive: true });
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
       }
-      return tmpDir;
+      return dir;
     } catch {
-      return os.tmpdir();
+      // Continuar al siguiente candidato (ej. /tmp en Vercel Serverless cuando /var/task es Read-Only)
     }
   }
+  return os.tmpdir();
 }
 
 function computeSignature(tenantId: string, count: number): string {
@@ -101,7 +94,7 @@ export function getPersistentSalesCount(tenantId: string = 'default'): number {
 
 /**
  * Registra una nueva venta de forma monotónica e irreversible.
- * Garantiza atomicidad escribiendo primero a un archivo temporal.
+ * Garantiza atomicidad escribiendo primero a un archivo temporal con fsync.
  */
 export function recordPersistentSale(tenantId: string = 'default', dbTotalSales: number = 0): {
   lifetimeSales: number;
@@ -121,11 +114,9 @@ export function recordPersistentSale(tenantId: string = 'default', dbTotalSales:
   };
 
   const filePath = getCounterFilePath(tenantId);
-  const tempPath = `${filePath}.tmp.${Date.now()}`;
 
   try {
-    fs.writeFileSync(tempPath, JSON.stringify(payload, null, 2), 'utf-8');
-    fs.renameSync(tempPath, filePath);
+    atomicWriteFileSync(filePath, JSON.stringify(payload, null, 2), true);
   } catch (err) {
     console.error(`[ANTI-TAMPERING] Error guardando contador atómico en ${filePath}:`, err);
   }

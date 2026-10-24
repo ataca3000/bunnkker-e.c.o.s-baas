@@ -1,6 +1,6 @@
 import fs from 'fs';
-import path from 'path';
 import os from 'os';
+import path from 'path';
 
 /**
  * atomicWriteFileSync — Escritura Atómica Resistente a Apagones (Kernel Atomic Rename + Fsync)
@@ -9,31 +9,33 @@ import os from 'os';
  * 2. Ejecuta fs.fsyncSync(fd) obligando al disco SSD/HDD a vaciar el búfer de caché físico.
  * 3. Ejecuta fs.renameSync(temp, dest) que en sistemas NTFS y POSIX es una operación
  *    atómica del kernel: jamás produce archivos de 0 bytes o truncados a la mitad.
- * 4. Blindado contra entornos de solo lectura (Vercel Serverless / EROFS) con fallback a os.tmpdir().
+ * 4. Si el directorio es de solo lectura (ej. /var/task en Vercel Serverless),
+ *    redirige de forma transparente a os.tmpdir() (/tmp) sin romper la ejecución.
  */
-export function atomicWriteFileSync(filePath: string, data: string | Buffer, createBackup = false): string {
-    let targetPath = filePath;
-    let dir = path.dirname(targetPath);
-
+export function resolveWritablePath(targetPath: string): string {
+    const dir = path.dirname(targetPath);
     try {
         if (!fs.existsSync(dir)) {
             fs.mkdirSync(dir, { recursive: true });
         }
+        return targetPath;
     } catch {
-        // Fallback para entornos Serverless de solo lectura (Vercel EROFS)
-        const baseName = path.basename(filePath);
-        dir = path.join(os.tmpdir(), 'bunnkker-ecos');
+        // Fallback para entornos Serverless de solo lectura (Vercel / AWS Lambda)
+        const fallbackDir = path.join(os.tmpdir(), 'bunnkker-ecos');
         try {
-            if (!fs.existsSync(dir)) {
-                fs.mkdirSync(dir, { recursive: true });
+            if (!fs.existsSync(fallbackDir)) {
+                fs.mkdirSync(fallbackDir, { recursive: true });
             }
         } catch {
-            dir = os.tmpdir();
+            // Ignorar si /tmp ya existe
         }
-        targetPath = path.join(dir, baseName);
+        return path.join(fallbackDir, path.basename(targetPath));
     }
+}
 
-    const tempPath = `${targetPath}.${Date.now()}.${Math.random().toString(36).substring(2, 7)}.tmp`;
+export function atomicWriteFileSync(filePath: string, data: string | Buffer, createBackup = false): void {
+    const safeFilePath = resolveWritablePath(filePath);
+    const tempPath = `${safeFilePath}.${Date.now()}.${Math.random().toString(36).substring(2, 7)}.tmp`;
 
     // 1. Escribir y forzar vaciado a disco físico (fsync)
     const fd = fs.openSync(tempPath, 'w');
@@ -44,25 +46,24 @@ export function atomicWriteFileSync(filePath: string, data: string | Buffer, cre
             fs.writeSync(fd, data, 0, data.length);
         }
         try {
-            fs.fsyncSync(fd);
+            fs.fsyncSync(fd); // Garantiza que los bytes se graben en la memoria flash física
         } catch {
-            // Algunos sistemas de archivos virtuales o en memoria no soportan fsync
+            // Algunos sistemas de archivos virtuales en contenedores no soportan fsync en /tmp
         }
     } finally {
         fs.closeSync(fd);
     }
 
     // 2. Rotación previa si existe archivo previo y se solicita backup
-    if (createBackup && fs.existsSync(targetPath)) {
+    if (createBackup && fs.existsSync(safeFilePath)) {
         try {
-            const bakPath = `${targetPath}.bak`;
-            fs.copyFileSync(targetPath, bakPath);
+            const bakPath = `${safeFilePath}.bak`;
+            fs.copyFileSync(safeFilePath, bakPath);
         } catch {
             // Ignorar error no crítico de rotación secundaria
         }
     }
 
     // 3. Renombramiento atómico
-    fs.renameSync(tempPath, targetPath);
-    return targetPath;
+    fs.renameSync(tempPath, safeFilePath);
 }
