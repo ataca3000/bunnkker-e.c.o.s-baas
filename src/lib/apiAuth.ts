@@ -20,7 +20,14 @@ const _envSecret = process.env.INTERNAL_API_SECRET;
 const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build' || process.argv.some(arg => arg.includes('next') && arg.includes('build'));
 const isDesktopLocal = process.env.BUILD_TARGET === 'desktop' || process.env.NEXT_PUBLIC_APP_ENV === 'local' || Boolean(process.env.MACHINE_HWID);
 
-const COOKIE_SECRET = _envSecret || 'bunkker-ecos-default-local-dev-secret-key-2026';
+const COOKIE_SECRET = _envSecret || (
+  process.env.NODE_ENV === 'production' && !isDesktopLocal && !isBuildPhase
+    ? (() => {
+        console.warn('⚠️ [SEGURIDAD] INTERNAL_API_SECRET no detectado en producción nube. Generando clave HMAC efímera segura por instancia.');
+        return crypto.randomBytes(32).toString('hex');
+      })()
+    : 'bunkker-ecos-default-local-dev-secret-key-2026'
+);
 
 /**
  * Extrae el tenantId de la request de forma centralizada.

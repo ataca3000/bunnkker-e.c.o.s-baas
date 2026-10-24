@@ -6,6 +6,7 @@ import SignatureCanvas from 'react-signature-canvas';
 import { Camera, CheckCircle2, RefreshCw, X, ShieldCheck, PenTool, Image as ImageIcon, Upload, FileText } from 'lucide-react';
 import { toast } from '@/lib/toast';
 import { saveDigitalTicket } from '@/lib/digitalTicket';
+import { compressImageToWebP } from '@/lib/imageCompression';
 
 interface DeliveryProofModalProps {
     isOpen: boolean;
