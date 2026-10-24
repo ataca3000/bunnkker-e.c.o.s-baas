@@ -19,8 +19,6 @@ export default [
       "**/*.js",
       "src/__tests__/**",
       "tests/**",
-      "lfeds/**",
-      "ecos-core/**",
     ],
   },
 
@@ -81,7 +79,6 @@ export default [
   {
     files: [
       "src/app/api/**/*.ts",
-      "src/worker/**/*.ts",
       "src/lib/**/*.ts",
       "scripts/**/*.{js,ts}",
       "electron-main.js",
