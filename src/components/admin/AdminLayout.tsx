@@ -617,13 +617,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
             {/* ── Main content (Layer 4) ────────────────────────────────────── */}
             <div
-                className="admin-main-viewport flex-1 flex flex-col min-h-screen relative z-10 transition-all duration-300 pb-28 w-full"
+                className={`admin-main-viewport flex-1 flex flex-col min-h-screen relative z-10 transition-all duration-300 ${isPOSFullscreen ? 'pb-0' : 'pb-28'} w-full`}
                 style={{
                     marginLeft: showAdminSidebar ? sidebarWidth : '0px',
                     transition: 'margin-left 0.3s cubic-bezier(0.4,0,0.2,1)',
                 }}
             >
                 {/* ── Top header bar (Layer 4 Translucent Container) ─────────────────────────────── */}
+                {!isPOSFullscreen && (
                 <div style={{
                     background: 'rgba(8, 12, 22, 0.75)',
                     backdropFilter: 'blur(20px) saturate(140%)',
@@ -788,6 +789,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         </button>
                     </div>
                 </div>
+                )}
 
                 {/* ── Read-only banner ──────────────────────────── */}
                 {isReadOnly && (
@@ -810,11 +812,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </div>
 
             {/* ── Super Admin Bottom Carousel Nav (Devices / Mobile) ──────── */}
-            <SuperAdminBottomNav
-                isPremium={isPremium}
-                userRole={profile?.role || 'superadmin'}
-                allowedRoutes={rolePaths[profile?.role || 'superadmin']}
-            />
+            {!isPOSFullscreen && (
+                <SuperAdminBottomNav
+                    isPremium={isPremium}
+                    userRole={profile?.role || 'superadmin'}
+                    allowedRoutes={rolePaths[profile?.role || 'superadmin']}
+                />
+            )}
         </div>
     );
 }

@@ -26,8 +26,8 @@ export default function LocalRadio() {
     // Ocultar botón de micrófono fuera del dashboard (/dashboard/*)
     const isDashboardRoute = pathname ? pathname.startsWith('/dashboard') : false;
 
-    // Solo habilitar para staff y dentro del dashboard
-    const isStaff = profile?.role && profile.role !== 'client' && isDashboardRoute;
+    // Solo habilitar para staff y dentro del dashboard (ocultar en POS para no tapar artículos)
+    const isStaff = profile?.role && profile.role !== 'client' && isDashboardRoute && pathname !== '/dashboard/sales';
 
     useEffect(() => {
         if (!isStaff || typeof window === 'undefined') return;
