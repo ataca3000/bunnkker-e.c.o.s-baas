@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth as firebaseAdminAuth } from '@/lib/firebase-admin';
@@ -70,7 +71,7 @@ export async function POST(req: Request) {
         const ownerAutomationFee = isOnline ? (requiresInvoice ? 5 : 0) : 0;
         orderTotal += (developerFee + ownerAutomationFee);
 
-        const orderId = `ORD-${Date.now().toString().slice(-6)}`;
+        const orderId = `ORD-${Date.now()}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
         const isDelivery = customerData?.deliveryMethod === 'repartidor';
 
         // 5. Transacción atómica en Prisma: apartar reserva de stock con OCC y crear la orden
@@ -97,12 +98,13 @@ export async function POST(req: Request) {
                     id: orderId,
                     tenantId,
                     total: orderTotal,
-                    paymentMethod: 'Online',
-                    status: isDelivery ? 'READY_TO_SHIP' : 'paid',
+                    paymentMethod: 'pago_caja',
+                    // SEGURIDAD: En checkout público online sin pasarela verificada, la orden nace como pendiente de cobro en mostrador/reparto
+                    status: 'pending_payment',
                     deliveryType: isDelivery ? 'DELIVERY' : 'PICKUP',
                     offline: false,
                     synced: true,
-                    confirmedAt: new Date(),
+                    confirmedAt: null,
                     rejectionReason: null,
                     items: {
                         create: verifiedItems.map(it => ({

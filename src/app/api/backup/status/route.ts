@@ -60,7 +60,7 @@ function writeLocalBackupSettings(settings: Partial<PersistedBackupSettings>): P
     const current = readLocalBackupSettings();
     const merged: PersistedBackupSettings = { ...current, ...settings };
     try {
-        fs.writeFileSync(BACKUP_CONFIG_PATH, JSON.stringify(merged, null, 2), 'utf-8');
+        atomicWriteFileSync(BACKUP_CONFIG_PATH, JSON.stringify(merged, null, 2));
     } catch (e) {
         console.warn('[backup/status] Could not write bunkker.backup.json:', e);
     }
@@ -220,13 +220,13 @@ export async function POST(request: NextRequest) {
 
                     if (format === 'all' || format === 'text') {
                         const jsonFile = path.join(dir, `bunkker_respaldo_texto_${fileStamp}.json`);
-                        fs.writeFileSync(jsonFile, jsonBackup, 'utf-8');
+                        atomicWriteFileSync(jsonFile, jsonBackup);
                         savedFiles.push(jsonFile);
                     }
 
                     if (format === 'all' || format === 'excel') {
                         const excelFile = path.join(dir, `bunkker_inventario_excel_${fileStamp}.csv`);
-                        fs.writeFileSync(excelFile, csvContent, 'utf-8');
+                        atomicWriteFileSync(excelFile, csvContent);
                         savedFiles.push(excelFile);
                     }
                 } catch (writeErr) {

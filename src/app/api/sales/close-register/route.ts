@@ -1,21 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { validateApiSession, getTenantId } from '@/lib/apiAuth';
+import { requireRole, getTenantId } from '@/lib/apiAuth';
 import { prisma } from '@/lib/prisma';
 import { db as firestoreAdmin } from '@/lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { calculateExpectedAmount, calculateDiscrepancy, ALLOWED_CLOSE_STATUSES, EXCLUDED_CLOSE_STATUSES, CASH_PAYMENT_METHODS, roundMoney } from '@/lib/financial';
 
 export async function POST(request: NextRequest) {
-    const auth = validateApiSession(request);
+    const auth = requireRole(request, ['superadmin', 'admin', 'sales']);
     if (!auth.ok) return auth.response;
     try {
         const tenantId = getTenantId(request);
         const body = await request.json();
-        const { declaredAmount, cashierId, cashierName } = body;
-
-        if (declaredAmount === undefined || !cashierId) {
-            return NextResponse.json({ error: 'Faltan datos requeridos (declaredAmount, cashierId)' }, { status: 400 });
+        const { declaredAmount } = body;
+        if (declaredAmount === undefined) {
+            return NextResponse.json({ error: 'Faltan datos requeridos: declaredAmount' }, { status: 400 });
         }
+
+        // ANTI-SUPLANTACIÓN: El cajero que cierra se extrae de la sesión autenticada y verificada
+        // Solo un administrador o superadministrador puede especificar un cashierId alterno de un empleado a su cargo
+        const effectiveCashierId = (['superadmin', 'admin'].includes(auth.role) && body.cashierId) ? body.cashierId : auth.uid;
+        const effectiveCashierName = body.cashierName || (auth as any).name || 'Cajero';
 
         const cleanDeclared = roundMoney(Number(declaredAmount));
 
@@ -38,6 +42,7 @@ export async function POST(request: NextRequest) {
                 tenantId,
                 paymentMethod: { in: CASH_PAYMENT_METHODS },
                 status: { notIn: EXCLUDED_CLOSE_STATUSES },
+                date: { gte: cutoffDate },
                 OR: [
                     { status: { in: ALLOWED_CLOSE_STATUSES } },
                     { confirmedAt: { not: null } }
@@ -57,7 +62,7 @@ export async function POST(request: NextRequest) {
         const log = await prisma.cashRegisterLog.create({
             data: {
                 tenantId,
-                cashierId,
+                cashierId: effectiveCashierId,
                 cashierName: cashierName || 'Cajero',
                 declaredAmount: cleanDeclared,
                 expectedAmount,
@@ -73,13 +78,13 @@ export async function POST(request: NextRequest) {
                     tenantId,
                     action: 'CASH_MISMATCH_DETECTED',
                     details: JSON.stringify({
-                        cashierId,
+                        cashierId: effectiveCashierId,
                         cashierName: cashierName || 'Cajero',
                         expectedAmount,
                         declaredAmount: cleanDeclared,
                         discrepancy
                     }),
-                    userId: cashierId,
+                    userId: cashierId: effectiveCashierId,
                     synced: true
                 }
             }).catch(() => {});
@@ -88,7 +93,7 @@ export async function POST(request: NextRequest) {
                 await firestoreAdmin.collection('alerts').add({
                     type: 'CASH_MISMATCH',
                     tenantId,
-                    cashierId,
+                    cashierId: effectiveCashierId,
                     cashierName: cashierName || 'Cajero',
                     expectedAmount,
                     declaredAmount,

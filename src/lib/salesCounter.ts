@@ -14,6 +14,8 @@
 
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
+import { atomicWriteFileSync } from './atomicFs';
 import crypto from 'crypto';
 
 export const TRIAL_TARGET_SALES = 100;
@@ -41,13 +43,19 @@ function getStorageDir(): string {
     if (!fs.existsSync(baseDir)) {
       fs.mkdirSync(baseDir, { recursive: true });
     }
+    return baseDir;
   } catch {
-    baseDir = path.join(process.cwd(), 'data', 'security');
-    if (!fs.existsSync(baseDir)) {
-      fs.mkdirSync(baseDir, { recursive: true });
+    // Fallback seguro contra EROFS en Vercel Serverless
+    try {
+      const tmpDir = path.join(os.tmpdir(), 'bunnkker-ecos', 'security');
+      if (!fs.existsSync(tmpDir)) {
+        fs.mkdirSync(tmpDir, { recursive: true });
+      }
+      return tmpDir;
+    } catch {
+      return os.tmpdir();
     }
   }
-  return baseDir;
 }
 
 function computeSignature(tenantId: string, count: number): string {

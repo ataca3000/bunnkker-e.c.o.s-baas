@@ -7,6 +7,8 @@
  */
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
+import { atomicWriteFileSync } from './atomicFs';
 
 function getStorageDir(): string {
   let baseDir: string;
@@ -20,15 +22,19 @@ function getStorageDir(): string {
     if (!fs.existsSync(baseDir)) {
       fs.mkdirSync(baseDir, { recursive: true });
     }
-  } catch (err: any) {
-    // Si falla el acceso a APPDATA, fallback al directorio de trabajo local
-    baseDir = path.join(process.cwd(), 'data', 'settings');
-    if (!fs.existsSync(baseDir)) {
-      fs.mkdirSync(baseDir, { recursive: true });
+    return baseDir;
+  } catch {
+    // Fallback seguro para Vercel Serverless (Read-Only)
+    try {
+      const tmpDir = path.join(os.tmpdir(), 'bunnkker-ecos', 'settings');
+      if (!fs.existsSync(tmpDir)) {
+        fs.mkdirSync(tmpDir, { recursive: true });
+      }
+      return tmpDir;
+    } catch {
+      return os.tmpdir();
     }
   }
-
-  return baseDir;
 }
 
 const memoryCache = new Map<string, Record<string, any>>();

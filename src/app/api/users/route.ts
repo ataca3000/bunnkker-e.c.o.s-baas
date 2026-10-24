@@ -47,6 +47,14 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ success: false, error: 'Name, PIN and role are required.' }, { status: 400 });
         }
 
+        // SEGURIDAD: Control estricto de escalada de privilegios. Solo un Superadmin puede crear un Superadmin.
+        if (role === 'superadmin' && auth.role !== 'superadmin') {
+            return NextResponse.json({ 
+                success: false, 
+                error: 'Acceso denegado: Solo un Superadmin (Dueño) puede asignar o crear usuarios con rol Superadmin.' 
+            }, { status: 403 });
+        }
+
         if (typeof pin !== 'string' || pin.trim().length < 4) {
             return NextResponse.json({ success: false, error: 'El PIN debe tener al menos 4 dígitos.' }, { status: 400 });
         }
