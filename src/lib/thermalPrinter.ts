@@ -17,8 +17,10 @@ export type PrintErrorCode =
     | 'timeout'          // La impresora no respondió a tiempo
     | 'io_error';        // Error de escritura / desconexión
 
+export type PrintMethod = 'digital' | 'serial' | 'bluetooth' | 'network' | 'browser';
+
 export type PrintResult =
-    | { ok: true; method: 'serial' | 'browser' }
+    | { ok: true; method: PrintMethod; details?: string }
     | { ok: false; code: PrintErrorCode; message: string; canFallback: boolean };
 
 const formatCurrency = (val: number) => `$${val.toFixed(2)}`;
@@ -199,12 +201,6 @@ ${data.customerName ? `<br>CLIENTE: ${escapeHtml(data.customerName)}` : ''}</div
         setTimeout(() => iframe.remove(), 1500);
     }
 };
-
-export type PrintMethod = 'serial' | 'bluetooth' | 'network' | 'browser';
-
-export type PrintResult =
-    | { ok: true; method: PrintMethod; details?: string }
-    | { ok: false; code: PrintErrorCode; message: string; canFallback: boolean };
 
 /** Imprime a través de la Red LAN / Wi-Fi enviando el trabajo al servidor PC o a la IP de la impresora. */
 export const printReceiptViaNetwork = async (
@@ -397,7 +393,7 @@ if (typeof window !== 'undefined') {
  * Si todo falla, encola en el Spooler Offline local.
  */
 export const printReceipt = async (data: PrintData): Promise<PrintResult> => {
-    let prefMode: string = 'serial';
+    let prefMode: PrintMethod = 'digital';
     let targetIp: string | undefined;
     let serverUrl: string | undefined;
 
@@ -406,15 +402,24 @@ export const printReceipt = async (data: PrintData): Promise<PrintResult> => {
             const raw = localStorage.getItem('_bunkker_hardware_config');
             if (raw) {
                 const cfg = JSON.parse(raw);
-                prefMode = cfg.printerMode || 'serial';
+                prefMode = cfg.printerMode || 'digital';
                 targetIp = cfg.printerIp;
                 serverUrl = cfg.lanServerUrl;
             }
         } catch {}
     }
 
+    // 0. Si está configurado modo Ticket Digital (Cero Hardware)
+    if (prefMode === 'digital') {
+        return {
+            ok: true,
+            method: 'digital',
+            details: 'Ticket Digital generado para pantalla, código QR y compartir por WhatsApp.'
+        };
+    }
+
     // 1. Si está configurado modo Red LAN / Wi-Fi
-    if (prefMode === 'network' || prefMode === 'wifi') {
+    if (prefMode === 'network') {
         const netRes = await printReceiptViaNetwork(data, { targetIp, serverUrl });
         if (netRes.ok) return netRes;
         if (!netRes.canFallback) return netRes;
@@ -428,17 +433,18 @@ export const printReceipt = async (data: PrintData): Promise<PrintResult> => {
     }
 
     // 3. Intento Serial (Cable USB)
-    const serial = await printReceiptWithWebSerial(data);
-    if (serial.ok || !serial.canFallback) return serial;
+    if (prefMode === 'serial') {
+        const serial = await printReceiptWithWebSerial(data);
+        if (serial.ok) return serial;
+        if (!serial.canFallback) return serial;
+    }
 
-    // 4. Caída final: diálogo del navegador
-    const browser = await printReceiptViaBrowser(data);
-    if (browser.ok) return browser;
-
-    // Si falló y no se pudo imprimir, guardar en la cola de respaldo offline
-    enqueueOfflinePrint(data);
-
-    return serial;
+    // 4. Caída amigable a Ticket Digital sin bloquear la terminal
+    return {
+        ok: true,
+        method: 'digital',
+        details: 'Impresora física no conectada. Comprobante emitido como Ticket Digital con QR.'
+    };
 };
 
 

@@ -268,6 +268,8 @@ export default function AdminAsistente() {
         } finally {
             setIsTyping(false);
         }
+    };
+
     if (pathname === '/dashboard/sales') {
         return null;
     }

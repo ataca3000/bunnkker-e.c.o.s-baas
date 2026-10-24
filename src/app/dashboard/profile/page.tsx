@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Camera, Save, User, MapPin, Mail, Phone, Lock, Sliders } from 'lucide-react';
+import { Camera, Save, User, MapPin, Mail, Phone, Lock, Sliders, Printer, Smartphone, ScanLine } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/context/AuthContext';
 import { doc, updateDoc } from 'firebase/firestore';
@@ -13,6 +13,11 @@ export default function UserProfile() {
     const { profile, isReadOnly } = useAuth();
     const [isEditing, setIsEditing] = useState(false);
     const [hardwareModalOpen, setHardwareModalOpen] = useState(false);
+    const [hardwareConfig, setHardwareConfig] = useState({
+        printerMode: 'digital',
+        scannerMode: 'camera',
+        scaleUnit: 'kg'
+    });
     const [newPin, setNewPin] = useState('');
     const [confirmPin, setConfirmPin] = useState('');
     const [isSaving, setIsSaving] = useState(false);
@@ -24,6 +29,33 @@ export default function UserProfile() {
         address: 'No registrada',
         photo: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=200'
     });
+
+    const loadHardwareConfig = () => {
+        if (typeof window === 'undefined') return;
+        try {
+            const raw = localStorage.getItem('_bunkker_hardware_config');
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                setHardwareConfig({
+                    printerMode: parsed.printerMode || 'digital',
+                    scannerMode: parsed.scannerMode || 'camera',
+                    scaleUnit: parsed.scaleUnit || 'kg'
+                });
+            } else {
+                setHardwareConfig({
+                    printerMode: 'digital',
+                    scannerMode: 'camera',
+                    scaleUnit: 'kg'
+                });
+            }
+        } catch {
+            // fallback
+        }
+    };
+
+    useEffect(() => {
+        loadHardwareConfig();
+    }, [hardwareModalOpen]);
 
     useEffect(() => {
         if (profile) {
@@ -268,22 +300,98 @@ export default function UserProfile() {
 
                         {/* ── SECCIÓN DE PERIFÉRICOS & HARDWARE (Impresoras, Escáneres, Wi-Fi / Bluetooth) ── */}
                         <div className="mt-8 pt-6 border-t border-cyan-500/20">
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl bg-slate-950/70 border border-cyan-500/30 shadow-lg">
-                                <div>
-                                    <h4 className="text-base font-black text-white flex items-center gap-2">
-                                        <span>🖨️ Dispositivos & Periféricos de Estación</span>
-                                    </h4>
-                                    <p className="text-xs text-slate-400 mt-1">
-                                        Vincula tu impresora de tickets (USB, Bluetooth o Wi-Fi hacia la PC), pistola de escáner y báscula digital asignada a tu rol.
-                                    </p>
+                            <div className="flex flex-col gap-4 p-5 rounded-2xl bg-slate-950/80 border border-cyan-500/30 shadow-xl backdrop-blur-md">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                    <div>
+                                        <h4 className="text-base font-black text-white flex items-center gap-2">
+                                            <Sliders className="text-cyan-400 w-5 h-5" />
+                                            <span>Dispositivos & Hardware de Estación</span>
+                                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 uppercase">
+                                                {userData.role}
+                                            </span>
+                                        </h4>
+                                        <p className="text-xs text-slate-400 mt-1 max-w-xl">
+                                            Ajustes de periféricos para este dispositivo y rol. Por defecto opera con <strong className="text-cyan-300">Ticket Digital</strong> y <strong className="text-cyan-300">Escáner con Cámara</strong> para que cualquier usuario pueda operar sin requerir impresoras ni pistolas físicas.
+                                        </p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setHardwareModalOpen(true)}
+                                        className="px-4 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-md shadow-cyan-500/20 shrink-0 flex items-center gap-2"
+                                    >
+                                        <Sliders size={15} />
+                                        <span>Configurar Hardware</span>
+                                    </button>
                                 </div>
-                                <button
-                                    type="button"
-                                    onClick={() => setHardwareModalOpen(true)}
-                                    className="px-5 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-md shadow-cyan-500/20 shrink-0"
-                                >
-                                    Configurar Hardware
-                                </button>
+
+                                {/* Tarjetas informativas de estado activo */}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                                    {/* Impresión / Ticket */}
+                                    <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 flex items-start gap-3">
+                                        <div className="p-2.5 rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 shrink-0">
+                                            {hardwareConfig.printerMode === 'digital' ? (
+                                                <Smartphone size={18} />
+                                            ) : (
+                                                <Printer size={18} />
+                                            )}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center justify-between gap-1">
+                                                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Emisión de Tickets</span>
+                                                <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
+                                                    hardwareConfig.printerMode === 'digital' 
+                                                        ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' 
+                                                        : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                                }`}>
+                                                    {hardwareConfig.printerMode === 'digital' ? 'DEFAULT: DIGITAL' : hardwareConfig.printerMode.toUpperCase()}
+                                                </span>
+                                            </div>
+                                            <div className="text-sm font-black text-white mt-0.5 truncate">
+                                                {hardwareConfig.printerMode === 'digital' && '📱 Ticket Digital (Pantalla, QR y WhatsApp)'}
+                                                {hardwareConfig.printerMode === 'usb' && '🔌 Impresora USB / Serial (Cable)'}
+                                                {hardwareConfig.printerMode === 'bluetooth' && '📶 Impresora Bluetooth (BLE)'}
+                                                {hardwareConfig.printerMode === 'network' && '🌐 Impresora Wi-Fi / Red Local'}
+                                            </div>
+                                            <p className="text-[11px] text-slate-400 mt-1 line-clamp-2">
+                                                {hardwareConfig.printerMode === 'digital' 
+                                                    ? 'No requiere impresora física. El cliente recibe o escanea su comprobante vía QR o enlace directo.' 
+                                                    : 'Envía comandos ESC/POS directamente a la impresora térmica configurada.'}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* Escáner de Códigos */}
+                                    <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 flex items-start gap-3">
+                                        <div className="p-2.5 rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 shrink-0">
+                                            {hardwareConfig.scannerMode === 'camera' ? (
+                                                <Camera size={18} />
+                                            ) : (
+                                                <ScanLine size={18} />
+                                            )}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center justify-between gap-1">
+                                                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Escáner de Códigos</span>
+                                                <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
+                                                    hardwareConfig.scannerMode === 'camera' 
+                                                        ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' 
+                                                        : 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                                                }`}>
+                                                    {hardwareConfig.scannerMode === 'camera' ? 'DEFAULT: CÁMARA' : 'LÁSER HID'}
+                                                </span>
+                                            </div>
+                                            <div className="text-sm font-black text-white mt-0.5 truncate">
+                                                {hardwareConfig.scannerMode === 'camera' && '📷 Cámara del Dispositivo (Móvil / PC)'}
+                                                {hardwareConfig.scannerMode === 'laser' && '🔫 Pistola Láser HID (USB / BT)'}
+                                            </div>
+                                            <p className="text-[11px] text-slate-400 mt-1 line-clamp-2">
+                                                {hardwareConfig.scannerMode === 'camera' 
+                                                    ? 'Usa el lente y autofocus de tu smartphone, tablet o cámara web sin hardware adicional.' 
+                                                    : 'Recibe ráfagas directas de teclado mediante pistola lectora láser conectada.'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

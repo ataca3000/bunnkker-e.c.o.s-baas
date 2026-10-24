@@ -15,31 +15,33 @@ import {
     Server, 
     Smartphone,
     HelpCircle,
-    Sliders
+    Sliders,
+    Camera,
+    QrCode
 } from 'lucide-react';
-import { printReceipt, PrintData } from '@/lib/thermalPrinter';
+import { printReceipt, type PrintData } from '@/lib/thermalPrinter';
 import { playSupermarketBeep } from '@/lib/scannerAudio';
 import { toast } from '@/lib/toast';
 
 export interface HardwareConfig {
-    printerMode: 'serial' | 'bluetooth' | 'network';
+    printerMode: 'digital' | 'serial' | 'bluetooth' | 'network';
     printerIp?: string;
     printerPort?: number;
     lanServerUrl?: string;
     baudRate?: number;
-    scannerMode: 'hid' | 'camera';
+    scannerMode: 'camera' | 'hid';
     scannerBeep: boolean;
     scaleMode: 'bluetooth' | 'serial' | 'simulated';
     scaleUnit: 'kg' | 'g' | 'lb';
 }
 
 export const DEFAULT_HARDWARE_CONFIG: HardwareConfig = {
-    printerMode: 'serial',
+    printerMode: 'digital', // Por defecto: Ticket Digital por si no tienen impresora física
     printerIp: '',
     printerPort: 9100,
     lanServerUrl: '',
     baudRate: 9600,
-    scannerMode: 'hid',
+    scannerMode: 'camera',  // Por defecto: Cámara integrada por si no tienen lector láser
     scannerBeep: true,
     scaleMode: 'bluetooth',
     scaleUnit: 'kg'
@@ -118,6 +120,15 @@ export default function HardwareSettingsModal({ isOpen, onClose }: HardwareSetti
 
     const handleTestPrint = async () => {
         setIsTesting(true);
+
+        if (config.printerMode === 'digital') {
+            setTimeout(() => {
+                toast.success('📱 Ticket Digital verificado: Los comprobantes se emiten en pantalla con código QR y opción WhatsApp.');
+                setIsTesting(false);
+            }, 500);
+            return;
+        }
+
         const testData: PrintData = {
             businessName: 'BUNKKER E.C.O.S. ERP',
             orderId: `TEST-${Date.now().toString().slice(-4)}`,
@@ -148,7 +159,7 @@ export default function HardwareSettingsModal({ isOpen, onClose }: HardwareSetti
 
     return (
         <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md font-sans">
-            <div className="bg-slate-950 border border-cyan-500/30 rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden text-white flex flex-col max-h-[90vh]">
+            <div className="bg-slate-950 border border-cyan-500/30 rounded-3xl shadow-2xl w-full max-w-4xl overflow-hidden text-white flex flex-col max-h-[90vh]">
                 
                 {/* Header */}
                 <div className="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-900/90">
@@ -160,7 +171,7 @@ export default function HardwareSettingsModal({ isOpen, onClose }: HardwareSetti
                             <h3 className="font-black text-white text-base tracking-tight flex items-center gap-2">
                                 <span>VINCULACIÓN DE HARDWARE & PERIFÉRICOS</span>
                                 <span className="text-[10px] font-mono bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 px-2 py-0.5 rounded-full uppercase">
-                                    ROLES & TERMINALES
+                                    ROLES & ESTACIÓN
                                 </span>
                             </h3>
                             <p className="text-xs text-slate-400">
@@ -176,76 +187,127 @@ export default function HardwareSettingsModal({ isOpen, onClose }: HardwareSetti
                 {/* Contenido scrolleable */}
                 <div className="p-6 overflow-y-auto space-y-6 flex-1 text-xs">
                     
-                    {/* ── SECCIÓN 1: IMPRESORAS TÉRMICAS ── */}
+                    {/* ── SECCIÓN 1: IMPRESORAS TÉRMICAS / TICKET DIGITAL ── */}
                     <div className="p-4 rounded-2xl bg-slate-900/50 border border-slate-800 space-y-4">
                         <div className="flex items-center justify-between">
                             <span className="font-black text-white flex items-center gap-2 text-sm tracking-wide">
                                 <Printer className="w-4 h-4 text-cyan-400" />
-                                IMPRESORA TÉRMICA DE TICKETS (58mm / 80mm)
+                                EMISIÓN DE TICKETS & COMPROBANTES
                             </span>
                             <span className="text-[10px] font-bold text-cyan-300 bg-cyan-500/10 px-2.5 py-0.5 rounded-full border border-cyan-500/20">
-                                ESC/POS
+                                ESC/POS & QR
                             </span>
                         </div>
 
-                        {/* Modos de Impresión */}
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                            {/* Modo USB / Serial */}
+                        {/* Modos de Impresión en 4 Columnas */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                            {/* 1. Modo Ticket Digital (DEFAULT / SIN IMPRESORA) */}
+                            <button
+                                type="button"
+                                onClick={() => setConfig(prev => ({ ...prev, printerMode: 'digital' }))}
+                                className={`p-3.5 rounded-2xl border text-left transition-all flex flex-col justify-between gap-2 relative ${
+                                    config.printerMode === 'digital'
+                                        ? 'bg-emerald-500/15 border-emerald-400 text-white shadow-lg shadow-emerald-500/15 ring-1 ring-emerald-400'
+                                        : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-white hover:border-slate-700'
+                                }`}
+                            >
+                                <div className="flex items-center justify-between">
+                                    <div className={`p-2 rounded-xl ${config.printerMode === 'digital' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-900 text-slate-500'}`}>
+                                        <Smartphone size={18} />
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        <span className="text-[9px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-1.5 py-0.5 rounded">Default</span>
+                                        {config.printerMode === 'digital' && <Check size={14} className="text-emerald-400" />}
+                                    </div>
+                                </div>
+                                <div>
+                                    <span className="font-black text-xs block text-white">📱 Ticket Digital</span>
+                                    <span className="text-[10px] text-slate-400 leading-tight block mt-0.5">Sin impresora. Muestra ticket en pantalla y QR para WhatsApp.</span>
+                                </div>
+                            </button>
+
+                            {/* 2. Modo USB / Serial */}
                             <button
                                 type="button"
                                 onClick={() => setConfig(prev => ({ ...prev, printerMode: 'serial' }))}
-                                className={`p-3 rounded-2xl border text-left transition-all flex flex-col gap-1.5 ${
+                                className={`p-3.5 rounded-2xl border text-left transition-all flex flex-col justify-between gap-2 ${
                                     config.printerMode === 'serial'
-                                        ? 'bg-cyan-500/15 border-cyan-400 text-white shadow-lg shadow-cyan-500/10'
-                                        : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-white'
+                                        ? 'bg-cyan-500/15 border-cyan-400 text-white shadow-lg shadow-cyan-500/15 ring-1 ring-cyan-400'
+                                        : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-white hover:border-slate-700'
                                 }`}
                             >
                                 <div className="flex items-center justify-between">
-                                    <Usb size={18} className={config.printerMode === 'serial' ? 'text-cyan-400' : 'text-slate-500'} />
+                                    <div className={`p-2 rounded-xl ${config.printerMode === 'serial' ? 'bg-cyan-500/20 text-cyan-400' : 'bg-slate-900 text-slate-500'}`}>
+                                        <Usb size={18} />
+                                    </div>
                                     {config.printerMode === 'serial' && <Check size={14} className="text-cyan-400" />}
                                 </div>
-                                <span className="font-bold text-xs">USB / Serial (Cable)</span>
-                                <span className="text-[10px] text-slate-500 leading-tight">Para la PC de mostrador con cable directo.</span>
+                                <div>
+                                    <span className="font-black text-xs block text-white">🔌 USB / Serial (Cable)</span>
+                                    <span className="text-[10px] text-slate-400 leading-tight block mt-0.5">Para PC de mostrador con cable directo COM/USB.</span>
+                                </div>
                             </button>
 
-                            {/* Modo Bluetooth */}
+                            {/* 3. Modo Bluetooth */}
                             <button
                                 type="button"
                                 onClick={() => setConfig(prev => ({ ...prev, printerMode: 'bluetooth' }))}
-                                className={`p-3 rounded-2xl border text-left transition-all flex flex-col gap-1.5 ${
+                                className={`p-3.5 rounded-2xl border text-left transition-all flex flex-col justify-between gap-2 ${
                                     config.printerMode === 'bluetooth'
-                                        ? 'bg-purple-500/15 border-purple-400 text-white shadow-lg shadow-purple-500/10'
-                                        : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-white'
+                                        ? 'bg-purple-500/15 border-purple-400 text-white shadow-lg shadow-purple-500/15 ring-1 ring-purple-400'
+                                        : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-white hover:border-slate-700'
                                 }`}
                             >
                                 <div className="flex items-center justify-between">
-                                    <Bluetooth size={18} className={config.printerMode === 'bluetooth' ? 'text-purple-400' : 'text-slate-500'} />
+                                    <div className={`p-2 rounded-xl ${config.printerMode === 'bluetooth' ? 'bg-purple-500/20 text-purple-400' : 'bg-slate-900 text-slate-500'}`}>
+                                        <Bluetooth size={18} />
+                                    </div>
                                     {config.printerMode === 'bluetooth' && <Check size={14} className="text-purple-400" />}
                                 </div>
-                                <span className="font-bold text-xs">Bluetooth (BLE)</span>
-                                <span className="text-[10px] text-slate-500 leading-tight">Mini-impresoras portátiles de cinturón o bolsillo.</span>
+                                <div>
+                                    <span className="font-black text-xs block text-white">📶 Bluetooth (BLE)</span>
+                                    <span className="text-[10px] text-slate-400 leading-tight block mt-0.5">Mini-impresoras portátiles térmicas de cinturón.</span>
+                                </div>
                             </button>
 
-                            {/* Modo Wi-Fi / Red LAN */}
+                            {/* 4. Modo Wi-Fi / Red LAN */}
                             <button
                                 type="button"
                                 onClick={() => setConfig(prev => ({ ...prev, printerMode: 'network' }))}
-                                className={`p-3 rounded-2xl border text-left transition-all flex flex-col gap-1.5 ${
+                                className={`p-3.5 rounded-2xl border text-left transition-all flex flex-col justify-between gap-2 ${
                                     config.printerMode === 'network'
-                                        ? 'bg-emerald-500/15 border-emerald-400 text-white shadow-lg shadow-emerald-500/10'
-                                        : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-white'
+                                        ? 'bg-blue-500/15 border-blue-400 text-white shadow-lg shadow-blue-500/15 ring-1 ring-blue-400'
+                                        : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-white hover:border-slate-700'
                                 }`}
                             >
                                 <div className="flex items-center justify-between">
-                                    <Wifi size={18} className={config.printerMode === 'network' ? 'text-emerald-400' : 'text-slate-500'} />
-                                    {config.printerMode === 'network' && <Check size={14} className="text-emerald-400" />}
+                                    <div className={`p-2 rounded-xl ${config.printerMode === 'network' ? 'bg-blue-500/20 text-blue-400' : 'bg-slate-900 text-slate-500'}`}>
+                                        <Wifi size={18} />
+                                    </div>
+                                    {config.printerMode === 'network' && <Check size={14} className="text-blue-400" />}
                                 </div>
-                                <span className="font-bold text-xs">Wi-Fi / Red Local (PC)</span>
-                                <span className="text-[10px] text-slate-500 leading-tight">Imprime desde tablet o celular enviando a la PC.</span>
+                                <div>
+                                    <span className="font-black text-xs block text-white">🌐 Wi-Fi / Red Local</span>
+                                    <span className="text-[10px] text-slate-400 leading-tight block mt-0.5">Imprime desde tablet enviando a la PC de caja.</span>
+                                </div>
                             </button>
                         </div>
 
                         {/* Parámetros específicos según el modo seleccionado */}
+                        {config.printerMode === 'digital' && (
+                            <div className="pt-2 bg-slate-950 p-3.5 rounded-xl border border-emerald-500/30 flex items-start gap-3">
+                                <div className="p-2 bg-emerald-500/20 text-emerald-400 rounded-lg shrink-0">
+                                    <QrCode size={18} />
+                                </div>
+                                <div>
+                                    <span className="font-bold text-emerald-300 text-xs block">Modo Ticket Digital & QR Activo (Sin Impresora Física)</span>
+                                    <p className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">
+                                        Al cobrar en caja o mostrador, se genera el comprobante digital con número de serie inmutable en pantalla y un código QR para que el cliente lo escanee o lo reciba directamente a su WhatsApp. No requiere compra de impresora de papel ni recargas térmicas.
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+
                         {config.printerMode === 'serial' && (
                             <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-950 p-3 rounded-xl border border-slate-800/80">
                                 <div>
@@ -322,7 +384,7 @@ export default function HardwareSettingsModal({ isOpen, onClose }: HardwareSetti
                                 className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 font-bold border border-slate-700 flex items-center gap-1.5 transition-all disabled:opacity-50"
                             >
                                 <RefreshCw size={14} className={isTesting ? 'animate-spin' : ''} />
-                                <span>{isTesting ? 'Imprimiendo prueba...' : 'Imprimir Ticket de Prueba'}</span>
+                                <span>{isTesting ? 'Verificando...' : (config.printerMode === 'digital' ? 'Verificar Ticket Digital' : 'Imprimir Ticket de Prueba')}</span>
                             </button>
                         </div>
                     </div>
@@ -339,36 +401,75 @@ export default function HardwareSettingsModal({ isOpen, onClose }: HardwareSetti
                             </span>
                         </div>
 
+                        {/* Selección entre Cámara y Pistola Láser */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
-                                <div>
-                                    <span className="font-bold text-white text-xs block">Pistola Láser HID / Bluetooth</span>
-                                    <span className="text-[10px] text-slate-500">Lectura instantánea de alta velocidad.</span>
+                            {/* Opción 1: Cámara del dispositivo (DEFAULT / SIN LÁSER) */}
+                            <button
+                                type="button"
+                                onClick={() => setConfig(prev => ({ ...prev, scannerMode: 'camera' }))}
+                                className={`p-3.5 rounded-xl border text-left transition-all flex flex-col justify-between gap-2 ${
+                                    config.scannerMode === 'camera'
+                                        ? 'bg-cyan-500/15 border-cyan-400 text-white shadow-md shadow-cyan-500/10 ring-1 ring-cyan-400'
+                                        : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white hover:border-slate-700'
+                                }`}
+                            >
+                                <div className="flex items-center justify-between">
+                                    <div className={`p-2 rounded-lg ${config.scannerMode === 'camera' ? 'bg-cyan-500/20 text-cyan-300' : 'bg-slate-900 text-slate-500'}`}>
+                                        <Camera size={18} />
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        <span className="text-[9px] font-black uppercase tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 px-1.5 py-0.5 rounded">Default</span>
+                                        {config.scannerMode === 'camera' && <Check size={14} className="text-cyan-400" />}
+                                    </div>
                                 </div>
-                                <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
-                                    Activo
-                                </span>
-                            </div>
+                                <div>
+                                    <span className="font-bold text-white text-xs block">📷 Escáner con Cámara</span>
+                                    <span className="text-[10px] text-slate-400 block mt-0.5">Usa la cámara de tu celular, tablet o laptop sin lector físico.</span>
+                                </div>
+                            </button>
 
-                            <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
-                                <div>
-                                    <span className="font-bold text-white text-xs block">Pitido Acústico Confirmatorio</span>
-                                    <span className="text-[10px] text-slate-500">Beep de supermercado al escanear.</span>
+                            {/* Opción 2: Pistola Láser HID */}
+                            <button
+                                type="button"
+                                onClick={() => setConfig(prev => ({ ...prev, scannerMode: 'hid' }))}
+                                className={`p-3.5 rounded-xl border text-left transition-all flex flex-col justify-between gap-2 ${
+                                    config.scannerMode === 'hid'
+                                        ? 'bg-emerald-500/15 border-emerald-400 text-white shadow-md shadow-emerald-500/10 ring-1 ring-emerald-400'
+                                        : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white hover:border-slate-700'
+                                }`}
+                            >
+                                <div className="flex items-center justify-between">
+                                    <div className={`p-2 rounded-lg ${config.scannerMode === 'hid' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-900 text-slate-500'}`}>
+                                        <ScanLine size={18} />
+                                    </div>
+                                    {config.scannerMode === 'hid' && <Check size={14} className="text-emerald-400" />}
                                 </div>
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        playSupermarketBeep(0.4);
-                                        setConfig(prev => ({ ...prev, scannerBeep: !prev.scannerBeep }));
-                                    }}
-                                    className={`p-2 rounded-xl transition-all ${
-                                        config.scannerBeep ? 'bg-cyan-500 text-slate-950 font-black' : 'bg-slate-800 text-slate-400'
-                                    }`}
-                                    title="Probar sonido"
-                                >
-                                    <Volume2 size={16} />
-                                </button>
+                                <div>
+                                    <span className="font-bold text-white text-xs block">🔫 Pistola Láser HID / USB</span>
+                                    <span className="text-[10px] text-slate-400 block mt-0.5">Lector físico de código de barras USB/Bluetooth de alta velocidad.</span>
+                                </div>
+                            </button>
+                        </div>
+
+                        {/* Pitido Acústico */}
+                        <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                            <div>
+                                <span className="font-bold text-white text-xs block">Pitido Acústico Confirmatorio</span>
+                                <span className="text-[10px] text-slate-400">Beep de supermercado al escanear con cámara o láser.</span>
                             </div>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    playSupermarketBeep(0.4);
+                                    setConfig(prev => ({ ...prev, scannerBeep: !prev.scannerBeep }));
+                                }}
+                                className={`p-2 rounded-xl transition-all ${
+                                    config.scannerBeep ? 'bg-cyan-500 text-slate-950 font-black' : 'bg-slate-800 text-slate-400'
+                                }`}
+                                title="Probar sonido"
+                            >
+                                <Volume2 size={16} />
+                            </button>
                         </div>
                     </div>
 

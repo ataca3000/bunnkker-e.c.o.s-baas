@@ -14,7 +14,7 @@ export default function StationHardwareHUD() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [pendingPrints, setPendingPrints] = useState(0);
     const [isFlushing, setIsFlushing] = useState(false);
-    const [printerMode, setPrinterMode] = useState<string>('serial');
+    const [printerMode, setPrinterMode] = useState<string>('digital');
 
     // Solo para roles del sistema y EXCLUSIVAMENTE dentro del dashboard administrativo (nunca en el catálogo virtual)
     const isStaff = profile?.role && [
@@ -34,7 +34,9 @@ export default function StationHardwareHUD() {
                 const raw = localStorage.getItem('_bunkker_hardware_config');
                 if (raw) {
                     const cfg = JSON.parse(raw);
-                    setPrinterMode(cfg.printerMode || 'serial');
+                    setPrinterMode(cfg.printerMode || 'digital');
+                } else {
+                    setPrinterMode('digital');
                 }
             } catch {}
         };
@@ -77,7 +79,7 @@ export default function StationHardwareHUD() {
                 <div className="flex items-center gap-1.5 text-slate-300">
                     <Printer size={13} className="text-cyan-400" />
                     <span className="font-bold text-[10px] uppercase text-cyan-300 font-mono">
-                        {printerMode === 'network' ? 'WI-FI PC' : printerMode === 'bluetooth' ? 'BT' : 'USB'}
+                        {printerMode === 'digital' ? 'DIGITAL' : printerMode === 'network' ? 'WI-FI PC' : printerMode === 'bluetooth' ? 'BT' : 'USB'}
                     </span>
                 </div>
 
