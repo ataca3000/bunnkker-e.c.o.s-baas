@@ -58,7 +58,7 @@ const PUBLIC_DOMAINS = [
 ];
 
 // --- Helper HMAC Verification ---
-async function verifyHmac(session: string, role: string, sig: string): Promise<boolean> {
+async function verifyHmac(session: string, role: string, sig: string, tenantId: string = 'default'): Promise<boolean> {
   const secret = process.env.INTERNAL_API_SECRET;
   if (process.env.NODE_ENV === 'production' && !secret) {
     console.warn('[MIDDLEWARE] Missing INTERNAL_API_SECRET in production — using fallback');
@@ -70,9 +70,15 @@ async function verifyHmac(session: string, role: string, sig: string): Promise<b
     const key = await crypto.subtle.importKey(
       'raw', encoder.encode(activeSecret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
     );
-    const expectedBuffer = await crypto.subtle.sign('HMAC', key, encoder.encode(`${role}:${session}`));
-    const expectedHex = Array.from(new Uint8Array(expectedBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
-    return timingSafeEqualHex(expectedHex, sig);
+    // 1. Firma Triple amarrada a tenantId (tenantId:role:session)
+    const expectedBufferScoped = await crypto.subtle.sign('HMAC', key, encoder.encode(`${tenantId}:${role}:${session}`));
+    const expectedHexScoped = Array.from(new Uint8Array(expectedBufferScoped)).map(b => b.toString(16).padStart(2, '0')).join('');
+    if (timingSafeEqualHex(expectedHexScoped, sig)) return true;
+
+    // 2. Fallback legacy (role:session)
+    const expectedBufferLegacy = await crypto.subtle.sign('HMAC', key, encoder.encode(`${role}:${session}`));
+    const expectedHexLegacy = Array.from(new Uint8Array(expectedBufferLegacy)).map(b => b.toString(16).padStart(2, '0')).join('');
+    return timingSafeEqualHex(expectedHexLegacy, sig);
   } catch {
     return false;
   }
@@ -113,7 +119,7 @@ export default async function middleware(request: NextRequest) {
     // ✨ Verificación HMAC de firma de rol ✨
     if (role && sig) {
       try {
-        const signatureValid = await verifyHmac(session, role, sig);
+        const signatureValid = await verifyHmac(session, role, sig, tenantId);
         if (!signatureValid) {
           if (process.env.NODE_ENV !== 'production') console.warn(`[RBAC] Firma HMAC inválida para rol '${role}'.`);
           return NextResponse.redirect(new URL('/login?error=tampered', request.url));
@@ -175,7 +181,7 @@ export default async function middleware(request: NextRequest) {
       // ✨ Verificación HMAC en API ✨
       if (role && sig) {
         try {
-          const signatureValid = await verifyHmac(session, role, sig);
+          const signatureValid = await verifyHmac(session, role, sig, tenantId);
           if (!signatureValid) {
             return new NextResponse(JSON.stringify({ error: 'Unauthorized', message: 'Firma manipulada' }), { 
               status: 401, 

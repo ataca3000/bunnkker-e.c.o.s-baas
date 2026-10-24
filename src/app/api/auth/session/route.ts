@@ -121,6 +121,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Cuerpo de petición inválido o vacío' }, { status: 400 });
     }
     const { idToken, uid, pin, deviceId } = body;
+    const tenantId = request.headers.get('x-tenant-id') || body.tenantId || 'default';
 
     let finalUid = uid || '';
     let finalRole = 'client';
@@ -192,6 +193,7 @@ export async function POST(request: NextRequest) {
       try {
         user = await prisma.user.findFirst({ 
           where: { 
+            tenantId,
             pin: { in: [pinSha, rawPinSha, cleanPin, rawPin, strippedPinSha, strippedPin, prefixedPinSha, prefixedPin] },
             active: true 
           } 
@@ -200,7 +202,7 @@ export async function POST(request: NextRequest) {
         // Si no se encontró por coincidencia exacta en 'pin', buscar usuarios con pinHash usando bcrypt
         if (!user) {
           const candidateUsers = await prisma.user.findMany({
-            where: { active: true, pinHash: { not: null } },
+            where: { tenantId, active: true, pinHash: { not: null } },
             select: { id: true, name: true, role: true, active: true, pin: true, pinHash: true, tenantId: true, deviceId: true }
           });
           for (const u of candidateUsers) {
@@ -317,12 +319,26 @@ export async function POST(request: NextRequest) {
 
       const matchedUser = user;
       
-      // MACHINE FINGERPRINTING — Solo registra, no bloquea (ERP local multi-dispositivo)
+      // CANDADO ESTRICTO DE DISPOSITIVO (Device Binding)
+      const OPERATIONAL_ROLES = ['inventory', 'carga_descarga', 'driver', 'sales'];
+      if (OPERATIONAL_ROLES.includes(matchedUser.role)) {
+        if (matchedUser.deviceId && deviceId && matchedUser.deviceId !== deviceId) {
+          return NextResponse.json(
+            { 
+              success: false, 
+              error: 'Dispositivo no autorizado. Tu usuario está vinculado a otra terminal. Solicita desbloqueo al Administrador.',
+              code: 'DEVICE_MISMATCH'
+            }, 
+            { status: 403 }
+          );
+        }
+      }
+
       if (deviceId && !matchedUser.deviceId) {
         try {
           await prisma.user.update({ where: { id: matchedUser.id }, data: { deviceId } });
         } catch (e) {
-          console.warn("[AUTH SESSION] No se pudo guardar deviceId en BD:", e);
+          console.warn("[AUTH SESSION] Error guardando deviceId:", e);
         }
       }
 
@@ -363,14 +379,14 @@ export async function POST(request: NextRequest) {
       }
 
       if (!customer.pin) {
-        try {
-          await prisma.customer.update({
-            where: { id: customer.id },
-            data: { pin: rawPassword }
-          });
-        } catch {
-          // ignore
-        }
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: 'Tu cuenta aún no tiene contraseña configurada. Solicita tu enlace de activación en mostrador o con el Administrador.',
+            code: 'PASSWORD_NOT_CONFIGURED'
+          },
+          { status: 403 }
+        );
       }
 
       finalUid = customer.id;
@@ -396,7 +412,7 @@ export async function POST(request: NextRequest) {
     // Usamos httpOnly: false para que también puedan sincronizarse en el cliente si el iFrame bloquea Set-Cookie de terceros
     const cookieOpts = getCookieOpts(request, false);
     const isInitialPin = Boolean(pin && INITIAL_STAFF_PIN_VALUES.includes(pin));
-    const sig = signRole(finalRole, finalUid);
+    const sig = signRole(finalRole, finalUid, tenantId);
 
     let clientToken: string | undefined = undefined;
     if (finalRole === 'client' && matchedCustomer) {
@@ -437,6 +453,7 @@ export async function POST(request: NextRequest) {
     response.cookies.set('msj-role-sig', sig, cookieOpts);
     if (clientToken) {
       response.cookies.set('admincom_session', clientToken, cookieOpts);
+      response.cookies.set('customer_token', clientToken, cookieOpts);
     }
 
     // Generar una IP privada virtual aleatoria para trabajadores para el bypass de firewall en túnel

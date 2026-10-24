@@ -503,21 +503,27 @@ function createResilientPrismaClient(): PrismaClient {
 
   let hasFailed = false;
   let lastFailTime = 0;
-  const RECONNECT_INTERVAL_MS = 20000; // Reintentar reconexión a la BD real cada 20 segundos
+  const RECONNECT_INTERVAL_MS = 20000;
+
+  function shouldUseFallback(): boolean {
+    if (!hasFailed) return false;
+    if (Date.now() - lastFailTime > RECONNECT_INTERVAL_MS) {
+      hasFailed = false;
+      console.log('🔄 [Prisma Resilience] Reintentando conexión con la base de datos física...');
+      return false;
+    }
+    return true;
+  }
 
   return new Proxy(realPrisma, {
     get(target, prop: string) {
-      if (hasFailed) {
-        if (Date.now() - lastFailTime > RECONNECT_INTERVAL_MS) {
-          hasFailed = false; // Intentar reconectar
-        } else {
-          return (fallback as any)[prop];
-        }
+      if (shouldUseFallback()) {
+        return (fallback as any)[prop];
       }
 
       if (prop === '$transaction') {
         return async (arg: any) => {
-          if (hasFailed) return (fallback as any).$transaction(arg);
+          if (shouldUseFallback()) return (fallback as any).$transaction(arg);
           try {
             return await target.$transaction(arg);
           } catch (err: any) {
@@ -534,7 +540,7 @@ function createResilientPrismaClient(): PrismaClient {
       const originalVal = target[prop];
       if (typeof originalVal === 'function') {
         return (...args: any[]) => {
-          if (hasFailed) return (fallback as any)[prop](...args);
+          if (shouldUseFallback()) return (fallback as any)[prop](...args);
           try {
             const res = originalVal.apply(target, args);
             if (res && typeof res.catch === 'function') {
@@ -562,7 +568,7 @@ function createResilientPrismaClient(): PrismaClient {
       if (typeof originalVal === 'object' && originalVal !== null) {
         return new Proxy(originalVal, {
           get(modelTarget, modelProp: string) {
-            if (hasFailed) {
+            if (shouldUseFallback()) {
               const fallbackModel = (fallback as any)[prop];
               return fallbackModel ? fallbackModel[modelProp] : undefined;
             }
@@ -570,7 +576,7 @@ function createResilientPrismaClient(): PrismaClient {
             const modelMethod = modelTarget[modelProp];
             if (typeof modelMethod === 'function') {
               return async (...args: any[]) => {
-                if (hasFailed) {
+                if (shouldUseFallback()) {
                   const fallbackModel = (fallback as any)[prop];
                   return fallbackModel ? fallbackModel[modelProp](...args) : undefined;
                 }

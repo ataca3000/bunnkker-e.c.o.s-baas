@@ -57,11 +57,13 @@ export async function GET(request: NextRequest) {
         // Si no es staff con sesión activa, verificar si es un cliente autenticado
         let customerId: string | null = null;
         if (!staffSession.ok) {
-            const customerToken = request.cookies.get('customer_token')?.value || request.headers.get('authorization')?.replace('Bearer ', '');
+            const customerToken = request.cookies.get('customer_token')?.value || 
+                                request.cookies.get('admincom_session')?.value || 
+                                request.headers.get('authorization')?.replace('Bearer ', '');
             if (customerToken) {
                 try {
                     const { payload } = await jwtVerify(customerToken, CUSTOMER_JWT_SECRET);
-                    customerId = (payload.customerId || payload.id || payload.sub) as string;
+                    customerId = (payload.customerId || payload.uid || payload.id || payload.sub) as string;
                 } catch {}
             }
         }
@@ -113,24 +115,9 @@ export async function GET(request: NextRequest) {
     }
 }
 
-let isDbSchemaSynced = false;
+// Sincronización delegada a scripts/prepare-db.js durante build/startup
 async function ensureDbColumns() {
-    if (isDbSchemaSynced) return;
-    const tables = ['Order', 'OrderItem', 'OrderEvent', 'Customer', 'Product'];
-    for (const tbl of tables) {
-        // 1. Probar sintaxis estándar PostgreSQL ("ADD COLUMN IF NOT EXISTS")
-        try {
-            await prisma.$executeRawUnsafe(`ALTER TABLE "${tbl}" ADD COLUMN IF NOT EXISTS "tenantId" TEXT DEFAULT 'default'`);
-        } catch {
-            // 2. Si falla (en SQLite "IF NOT EXISTS" no es válido), intentar sintaxis SQLite ("ADD COLUMN")
-            try {
-                await prisma.$executeRawUnsafe(`ALTER TABLE "${tbl}" ADD COLUMN "tenantId" TEXT DEFAULT 'default'`);
-            } catch {
-                // Columna ya existe o dialecto/tabla no aplicable
-            }
-        }
-    }
-    isDbSchemaSynced = true;
+    return;
 }
 
 export async function POST(request: NextRequest) {

@@ -51,20 +51,24 @@ export function generateSecureRandomInt(min: number, max: number): number {
 /**
  * Genera una firma HMAC segura para un rol y UID dados.
  */
-export function signRole(role: string, uid: string): string {
-  return crypto.createHmac('sha256', COOKIE_SECRET).update(`${role}:${uid}`).digest('hex');
+export function signRole(role: string, uid: string, tenantId: string = 'default'): string {
+  return crypto.createHmac('sha256', COOKIE_SECRET).update(`${tenantId}:${role}:${uid}`).digest('hex');
 }
 
-/**
- * Verifica la autenticidad de una firma de rol recibida.
- */
-export function verifyRoleSignature(role: string, uid: string, signature: string): boolean {
-  const expected = signRole(role, uid);
-  try {
-    return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature));
-  } catch {
-    return expected === signature;
-  }
+export function verifyRoleSignature(role: string, uid: string, signature: string, tenantId: string = 'default'): boolean {
+  if (!signature) return false;
+  const expectedScoped = signRole(role, uid, tenantId);
+  const expectedLegacy = crypto.createHmac('sha256', COOKIE_SECRET).update(`${role}:${uid}`).digest('hex');
+
+  const checkMatch = (expected: string) => {
+    try {
+      return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature));
+    } catch {
+      return expected === signature;
+    }
+  };
+
+  return checkMatch(expectedScoped) || checkMatch(expectedLegacy);
 }
 
 /**
@@ -88,8 +92,9 @@ export function validateApiSession(request: NextRequest): ApiAuthResult {
   const session = request.cookies.get('msj-session')?.value;
   const role    = request.cookies.get('msj-role')?.value;
   const sig     = request.cookies.get('msj-role-sig')?.value;
+  const tenantId = getTenantId(request);
 
-  if (!session || !role || !sig || session === '' || !verifyRoleSignature(role, session, sig)) {
+  if (!session || !role || !sig || session === '' || !verifyRoleSignature(role, session, sig, tenantId)) {
     return {
       ok: false,
       response: NextResponse.json(
@@ -99,7 +104,7 @@ export function validateApiSession(request: NextRequest): ApiAuthResult {
     };
   }
 
-  return { ok: true, uid: session, role };
+  return { ok: true, uid: session, role, tenantId };
 }
 
 /**
