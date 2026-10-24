@@ -28,14 +28,39 @@ async function writeOrderEvent(tx: any, event: {
 export const dynamic = 'force-dynamic';
 
 
-export async function GET() {
+export async function GET(request: NextRequest) {
     try {
         await ensureDbColumns();
-        const now = new Date();
-        // Auto-cancellation loop removed to prevent legitimate store, patio, and delivery orders from disappearing.
-        // Orders remain active until explicitly tendered, fulfilled, or cancelled by cashier/admin.
+        const tenantId = request.headers.get('x-tenant-id') || 'default';
+        const staffSession = validateApiSession(request);
+        
+        // Si no es staff con sesión activa, verificar si es un cliente autenticado
+        let customerId: string | null = null;
+        if (!staffSession.ok) {
+            const customerToken = request.cookies.get('customer_token')?.value || request.headers.get('authorization')?.replace('Bearer ', '');
+            if (customerToken) {
+                try {
+                    const { payload } = await jwtVerify(customerToken, CUSTOMER_JWT_SECRET);
+                    customerId = (payload.customerId || payload.id || payload.sub) as string;
+                } catch {}
+            }
+        }
+
+        // AISLAMIENTO POR EMPRESA Y PROTECCIÓN DE DATOS PERSONALES:
+        // - Staff autorizado consulta únicamente las órdenes de su tenantId.
+        // - Clientes autenticados solo ven sus propios pedidos (evita exponer direcciones y teléfonos ajenos).
+        // - Peticiones anónimas sin sesión son bloqueadas en producción.
+        const whereClause: any = { tenantId };
+        if (!staffSession.ok) {
+            if (customerId) {
+                whereClause.customerId = customerId;
+            } else if (process.env.NODE_ENV === 'production' && process.env.NEXT_PUBLIC_DEMO_MODE !== 'true') {
+                return NextResponse.json({ success: false, error: 'Acceso no autorizado. Inicie sesión para consultar pedidos.' }, { status: 401 });
+            }
+        }
 
         const orders = await prisma.order.findMany({
+            where: whereClause,
             include: { 
                 items: { include: { product: true } }, 
                 customer: true, 
@@ -293,17 +318,17 @@ export async function POST(request: NextRequest) {
                 }
                 const qty = Math.max(1, Math.round(Number(item.quantity ?? item.cantidad ?? 1)));
 
-                // Paso A: Verificar existencia de producto en la base de datos
+                // Paso A: Verificar existencia de producto en la base de datos y extraer precio oficial
                 let current = await tx.product.findUnique({
                     where: { id: prodId },
-                    select: { stock: true, reservedStock: true, id: true, name: true }
+                    select: { stock: true, reservedStock: true, id: true, name: true, price: true }
                 });
 
                 // Si no existe por ID, buscar por nombre
                 if (!current && item.name) {
                     current = await tx.product.findFirst({
                         where: { name: item.name },
-                        select: { stock: true, reservedStock: true, id: true, name: true }
+                        select: { stock: true, reservedStock: true, id: true, name: true, price: true }
                     });
                 }
 
@@ -324,7 +349,8 @@ export async function POST(request: NextRequest) {
                         id: createdProd.id,
                         stock: createdProd.stock,
                         reservedStock: createdProd.reservedStock,
-                        name: createdProd.name
+                        name: createdProd.name,
+                        price: createdProd.price
                     };
                 }
 
@@ -333,12 +359,21 @@ export async function POST(request: NextRequest) {
                     throw new Error(`INSUFFICIENT_STOCK: Inventario insuficiente para el producto "${current.name || prodId}". Disponible: ${availableStock}, solicitado: ${qty}.`);
                 }
 
+                // SEGURIDAD DE PRECIOS EN EL SERVIDOR (ANTI-TAMPERING):
+                // Para órdenes de mostrador/catálogo de cliente, se impone el precio oficial de la base de datos.
+                // Solo personal con rol de ventas/caja/admin puede aplicar descuentos o precios acordados.
+                const isStaffWithDiscountPermission = staffSession.ok && ['superadmin', 'admin', 'sales', 'caja'].includes(staffSession.role);
+                const officialPrice = roundMoney(Number(current.price ?? 0));
+                const resolvedPrice = (isStaffWithDiscountPermission && (item.price !== undefined || item.precio !== undefined))
+                    ? roundMoney(Number(item.price ?? item.precio ?? officialPrice))
+                    : officialPrice;
+
                 // El stock físico NO se descuenta aquí en la creación.
                 // Se apartará en reservedStock al confirmar pago, y se descontará físicamente al validar entrega (PoD).
                 resolvedOrderItems.push({
                     productId: current.id,
                     cantidad: qty,
-                    precio: roundMoney(Number(item.price ?? item.precio ?? 0))
+                    precio: resolvedPrice
                 });
             }
 
@@ -346,6 +381,18 @@ export async function POST(request: NextRequest) {
             const initialStatus = isClientOrder
                 ? 'pending_payment'
                 : (body.status || 'paid');
+
+            // RECALCULO DE TOTAL OBLIGATORIO EN EL SERVIDOR:
+            const calculatedItemsTotal = resolvedOrderItems.reduce((acc, it) => acc + roundMoney(it.cantidad * it.precio), 0);
+            const shippingCost = roundMoney(Number(body.shippingCost || body.costoEnvio || 0));
+            const expectedTotal = roundMoney(calculatedItemsTotal + shippingCost);
+
+            // Si es pedido de cliente o mostrador, se impone el total recalculado por el servidor
+            const isStaffWithDiscountPermission = staffSession.ok && ['superadmin', 'admin', 'sales', 'caja'].includes(staffSession.role);
+            let finalTotal = expectedTotal;
+            if (!isClientOrder && isStaffWithDiscountPermission && !Number.isNaN(numTotal) && numTotal > 0) {
+                finalTotal = numTotal;
+            }
 
             // Si la orden nace pagada de inmediato, apartar en reservedStock de forma segura
             if (initialStatus === 'paid') {
@@ -364,7 +411,7 @@ export async function POST(request: NextRequest) {
                         data: {
                             id: orderId,
                             tenantId,
-                            total: numTotal,
+                            total: finalTotal,
                             deliveryType: deliveryType || (deliveryMethod === 'repartidor' ? 'DELIVERY' : (deliveryMethod === 'pickup' ? 'PICKUP' : 'LOCAL')),
                             paymentMethod: isCashierRequest ? 'pago_caja' : paymentMethod || 'CASH',
                             status: initialStatus,
@@ -392,7 +439,7 @@ export async function POST(request: NextRequest) {
                     actorId,
                     actorName,
                     actorRole,
-                    details: JSON.stringify({ deliveryType, itemCount: items.length, total: numTotal })
+                    details: JSON.stringify({ deliveryType, itemCount: items.length, total: finalTotal })
                 }
             });
             return order;

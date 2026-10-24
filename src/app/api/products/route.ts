@@ -153,6 +153,18 @@ export async function PATCH(request: NextRequest) {
 
         const dataToUpdate: any = {};
         if (typeof stockIncrement === 'number') {
+            if (stockIncrement < 0) {
+                const existing = await prisma.product.findUnique({ where: { id, tenantId }, select: { stock: true, reservedStock: true } });
+                if (existing) {
+                    const newStock = existing.stock + stockIncrement;
+                    if (newStock < (existing.reservedStock || 0)) {
+                        return NextResponse.json({ 
+                            success: false, 
+                            error: `Ajuste inválido: el stock resultante (${newStock}) no puede ser menor a las unidades ya reservadas (${existing.reservedStock || 0}).` 
+                        }, { status: 400 });
+                    }
+                }
+            }
             dataToUpdate.stock = { increment: stockIncrement };
         }
         if (estante !== undefined) dataToUpdate.estante = estante;
