@@ -61,8 +61,24 @@ export async function POST(request: NextRequest) {
             }
         });
 
-        // 4. Si hay descuadre negativo (faltante), mandamos alerta push silenciosa a Firebase
+        // 4. Si hay descuadre negativo (faltante), registrar en auditoría Prisma y emitir alerta
         if (discrepancy < 0) {
+            await prisma.auditLog.create({
+                data: {
+                    tenantId,
+                    action: 'CASH_MISMATCH_DETECTED',
+                    details: JSON.stringify({
+                        cashierId,
+                        cashierName: cashierName || 'Cajero',
+                        expectedAmount,
+                        declaredAmount: cleanDeclared,
+                        discrepancy
+                    }),
+                    userId: cashierId,
+                    synced: true
+                }
+            }).catch(() => {});
+
             try {
                 await firestoreAdmin.collection('alerts').add({
                     type: 'CASH_MISMATCH',
