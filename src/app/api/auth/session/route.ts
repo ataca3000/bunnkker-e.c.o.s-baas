@@ -320,8 +320,10 @@ export async function POST(request: NextRequest) {
       const matchedUser = user;
       
       // CANDADO ESTRICTO DE DISPOSITIVO (Device Binding)
+      // Solo aplica a cuentas operativas reales de sucursal; las cuentas demo-* permiten pruebas multi-navegador en Vercel/LAN
+      const isDemoAccount = String(matchedUser.id || '').startsWith('demo-') || INITIAL_STAFF_PIN_VALUES.includes(cleanPin);
       const OPERATIONAL_ROLES = ['inventory', 'carga_descarga', 'driver', 'sales'];
-      if (OPERATIONAL_ROLES.includes(matchedUser.role)) {
+      if (!isDemoAccount && OPERATIONAL_ROLES.includes(matchedUser.role)) {
         if (matchedUser.deviceId && deviceId && matchedUser.deviceId !== deviceId) {
           return NextResponse.json(
             { 
@@ -334,7 +336,7 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      if (deviceId && !matchedUser.deviceId) {
+      if (!isDemoAccount && deviceId && !matchedUser.deviceId) {
         try {
           await prisma.user.update({ where: { id: matchedUser.id }, data: { deviceId } });
         } catch (e) {
