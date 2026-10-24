@@ -230,18 +230,26 @@ export async function POST(request: NextRequest) {
                 }
               });
             } catch {
-              user = {
-                id: `demo-${defaultRoleInfo.role}`,
-                tenantId: 'default',
-                name: defaultRoleInfo.name,
-                role: defaultRoleInfo.role,
-                active: true
-              };
+              if (process.env.NODE_ENV !== 'production') {
+                user = {
+                  id: `demo-${defaultRoleInfo.role}`,
+                  tenantId: 'default',
+                  name: defaultRoleInfo.name,
+                  role: defaultRoleInfo.role,
+                  active: true
+                };
+              }
             }
           }
         }
-      } catch (dbErr) {
-        console.warn("[AUTH SESSION] Fallback a PINs iniciales por error de BD:", dbErr);
+      } catch (dbErr: any) {
+        console.error("[AUTH SESSION FAIL-CLOSED] Error de base de datos:", dbErr?.message);
+        if (process.env.NODE_ENV === 'production') {
+          return NextResponse.json(
+            { success: false, error: 'Servicio no disponible: La base de datos local no responde.' },
+            { status: 503 }
+          );
+        }
         const defaultRoleInfo = INITIAL_STAFF_PINS[cleanPin] || 
                                 INITIAL_STAFF_PINS[strippedPin] || 
                                 INITIAL_STAFF_PINS[prefixedPin] || 

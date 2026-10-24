@@ -73,11 +73,36 @@ export async function POST(req: NextRequest) {
             data: { pin: newPin }
         });
 
+        if (staffAuth.ok) {
+            return NextResponse.json({
+                success: true,
+                message: `¡Contraseña/PIN restablecido por personal autorizado! El nuevo PIN temporal es: ${newPin}.`,
+                newPin
+            });
+        }
+
+        // Para autogestión pública: enviar por correo sin exponer el PIN en la respuesta HTTP
+        if (customer.email && !customer.email.endsWith('@cliente.local')) {
+            try {
+                const { sendMail } = await import('@/lib/mail');
+                await sendMail({
+                    to: customer.email,
+                    subject: 'Tu nuevo PIN temporal de acceso - BUNKKER E.C.O.S.',
+                    html: `<p>Hola <strong>${customer.name}</strong>,</p><p>Tu nuevo PIN temporal para ingresar a tu cuenta es: <strong>${newPin}</strong></p><p>Por tu seguridad, cámbialo en tu perfil al iniciar sesión.</p>`
+                });
+            } catch (mailErr) {
+                console.warn('[RESET PASSWORD EMAIL WARN]:', mailErr);
+            }
+            return NextResponse.json({
+                success: true,
+                message: `Hemos enviado tu nuevo PIN temporal a tu correo registrado (${customer.email.slice(0, 3)}***). Inicia sesión con él.`
+            });
+        }
+
         return NextResponse.json({
-            success: true,
-            message: `¡Contraseña/PIN restablecido con éxito! Tu nuevo PIN temporal es: ${newPin}. Inicia sesión y modifícalo en tu perfil.`,
-            newPin
-        });
+            success: false,
+            error: 'Por seguridad, acude a mostrador en la sucursal para que un cajero verifique tu identidad y te proporcione tu PIN temporal.'
+        }, { status: 403 });
 
     } catch (error: any) {
         console.error('[RESET PASSWORD ERROR]', error);
