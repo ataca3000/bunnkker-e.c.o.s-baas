@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { usePathname } from 'next/navigation';
 import { Printer, Radio, Wifi, Sliders, RefreshCw, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { getPendingPrintJobsCount, flushPendingPrintJobs } from '@/lib/thermalPrinter';
 import HardwareSettingsModal from './HardwareSettingsModal';
@@ -9,18 +10,21 @@ import { toast } from '@/lib/toast';
 
 export default function StationHardwareHUD() {
     const { profile } = useAuth();
+    const pathname = usePathname();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [pendingPrints, setPendingPrints] = useState(0);
     const [isFlushing, setIsFlushing] = useState(false);
     const [printerMode, setPrinterMode] = useState<string>('serial');
 
-    // Solo para roles del sistema (nunca clientes del storefront)
+    // Solo para roles del sistema y EXCLUSIVAMENTE dentro del dashboard administrativo (nunca en el catálogo virtual)
     const isStaff = profile?.role && [
         'superadmin', 'admin', 'sales', 'caja', 'inventory', 'almacen', 'driver', 'delivery', 'patio', 'carga_descarga', 'billing'
     ].includes(profile.role);
 
+    const isDashboard = pathname?.startsWith('/dashboard');
+
     useEffect(() => {
-        if (!isStaff || typeof window === 'undefined') return;
+        if (!isStaff || !isDashboard || typeof window === 'undefined') return;
 
         const checkConfigAndQueue = () => {
             try {
@@ -38,9 +42,9 @@ export default function StationHardwareHUD() {
         checkConfigAndQueue();
         const interval = setInterval(checkConfigAndQueue, 4000);
         return () => clearInterval(interval);
-    }, [isStaff]);
+    }, [isStaff, isDashboard]);
 
-    if (!isStaff) return null;
+    if (!isStaff || !isDashboard) return null;
 
     const handleFlush = async (e: React.MouseEvent) => {
         e.stopPropagation();
