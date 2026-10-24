@@ -21,7 +21,7 @@ export async function POST(req: Request) {
             try {
                 const decoded = await firebaseAdminAuth.verifyIdToken(idToken);
                 userId = decoded.uid;
-                userEmail = decoded.email || userEmail;
+                userEmail = (decoded as any).email || userEmail;
             } catch {
                 // Modo resiliente: continuar con datos de cliente si token expiró
             }
