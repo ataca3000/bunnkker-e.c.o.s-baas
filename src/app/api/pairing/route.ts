@@ -1,7 +1,10 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { requireRole } from '@/lib/apiAuth';
 import { prisma } from '@/lib/prisma';
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  const auth = requireRole(req, ['superadmin', 'admin']);
+  if (!auth.ok) return auth.response;
   try {
     const { serial } = await req.json();
 

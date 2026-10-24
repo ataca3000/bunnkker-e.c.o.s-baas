@@ -502,11 +502,17 @@ function createResilientPrismaClient(): PrismaClient {
   }
 
   let hasFailed = false;
+  let lastFailTime = 0;
+  const RECONNECT_INTERVAL_MS = 20000; // Reintentar reconexión a la BD real cada 20 segundos
 
   return new Proxy(realPrisma, {
     get(target, prop: string) {
       if (hasFailed) {
-        return (fallback as any)[prop];
+        if (Date.now() - lastFailTime > RECONNECT_INTERVAL_MS) {
+          hasFailed = false; // Intentar reconectar
+        } else {
+          return (fallback as any)[prop];
+        }
       }
 
       if (prop === '$transaction') {
@@ -517,7 +523,7 @@ function createResilientPrismaClient(): PrismaClient {
           } catch (err: any) {
             if (isDatabaseConnectivityFailure(err)) {
               console.warn('[AI Studio Backend] $transaction detectó caída de BD, cambiando a backend compatible:', err?.message);
-              hasFailed = true;
+              hasFailed = true; lastFailTime = Date.now();
               return (fallback as any).$transaction(arg);
             }
             throw err;
@@ -535,7 +541,7 @@ function createResilientPrismaClient(): PrismaClient {
               return res.catch((err: any) => {
                 if (isDatabaseConnectivityFailure(err)) {
                   console.warn(`[AI Studio Backend] ${prop} detectó caída de BD, cambiando a backend compatible:`, err?.message);
-                  hasFailed = true;
+                  hasFailed = true; lastFailTime = Date.now();
                   return (fallback as any)[prop](...args);
                 }
                 throw err;
@@ -545,7 +551,7 @@ function createResilientPrismaClient(): PrismaClient {
           } catch (err: any) {
             if (isDatabaseConnectivityFailure(err)) {
               console.warn(`[AI Studio Backend] ${prop} falló sincrónicamente por BD, cambiando a backend compatible:`, err?.message);
-              hasFailed = true;
+              hasFailed = true; lastFailTime = Date.now();
               return (fallback as any)[prop](...args);
             }
             throw err;
@@ -573,7 +579,7 @@ function createResilientPrismaClient(): PrismaClient {
                 } catch (err: any) {
                   if (isDatabaseConnectivityFailure(err)) {
                     console.warn(`[AI Studio Backend] prisma.${prop}.${modelProp} detectó caída de BD (${err?.message}), ejecutando en backend compatible:`);
-                    hasFailed = true;
+                    hasFailed = true; lastFailTime = Date.now();
                     const fallbackModel = (fallback as any)[prop];
                     if (fallbackModel && typeof fallbackModel[modelProp] === 'function') {
                       return await fallbackModel[modelProp](...args);
