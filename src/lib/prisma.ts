@@ -16,83 +16,7 @@ function hashPin(pin: string): string {
 const PERSISTENCE_FILE = path.join(process.cwd(), '.prisma_memory_store.json');
 
 const initialMemoryStore: Record<string, any[]> = {
-  product: [
-    {
-      id: 'PROD-101',
-      tenantId: 'default',
-      name: 'Kit de Herramientas Básico',
-      price: 499.99,
-      stock: 50,
-      reservedStock: 0,
-      category: 'Herramientas',
-      image: 'https://images.unsplash.com/photo-1530124566582-a618bc2615dc?w=800',
-      description: 'Kit básico de herramientas para hogar y taller.',
-      estante: 'A1',
-      fila: '1',
-      orderIndex: 0,
-      deletedAt: null,
-    },
-    {
-      id: 'PROD-102',
-      tenantId: 'default',
-      name: 'Taladro Inalámbrico 20V',
-      price: 1299.5,
-      stock: 15,
-      reservedStock: 0,
-      category: 'Eléctricas',
-      image: 'https://images.unsplash.com/photo-1504148455328-c376907d081c?w=800',
-      description: 'Taladro inalámbrico con batería de larga duración.',
-      estante: 'A1',
-      fila: '2',
-      orderIndex: 1,
-      deletedAt: null,
-    },
-    {
-      id: 'PROD-103',
-      tenantId: 'default',
-      name: 'Set de Llaves Combinadas',
-      price: 850.0,
-      stock: 30,
-      reservedStock: 0,
-      category: 'Herramientas',
-      image: 'https://images.unsplash.com/photo-1581092334651-ddf26d9a09d0?w=800',
-      description: 'Llaves métricas e imperiales de alta resistencia.',
-      estante: 'B1',
-      fila: '1',
-      orderIndex: 2,
-      deletedAt: null,
-    },
-    {
-      id: 'PROD-104',
-      tenantId: 'default',
-      name: 'Cinta Métrica 8m',
-      price: 120.0,
-      stock: 100,
-      reservedStock: 0,
-      category: 'Medición',
-      image: 'https://images.unsplash.com/photo-1580870059865-fb18e8093db4?w=800',
-      description: 'Cinta métrica resistente a impactos.',
-      estante: 'B1',
-      fila: '2',
-      orderIndex: 3,
-      deletedAt: null,
-    },
-    {
-      id: 'PROD-105',
-      tenantId: 'default',
-      name: 'Cemento Portland 50kg',
-      price: 210.0,
-      stock: 200,
-      reservedStock: 0,
-      category: 'Materiales',
-      image: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800',
-      description: 'Saco de cemento Portland tipo compuesto.',
-      estante: 'PATIO',
-      fila: '1',
-      orderIndex: 4,
-      deletedAt: null,
-    },
-  ],
+  product: [],
   user: [
     { id: 'demo-superadmin', tenantId: 'default', name: 'Dueño (Superadmin)', email: 'superadmin@bunnkker.local', role: 'superadmin', pin: hashPin('0000'), active: true, createdAt: new Date() },
     { id: 'demo-admin', tenantId: 'default', name: 'Gerente (Admin)', email: 'admin@bunnkker.local', role: 'admin', pin: hashPin('1111'), active: true, createdAt: new Date() },
@@ -182,7 +106,7 @@ function loadPersistedStore(): Record<string, any[]> {
       const parsed = JSON.parse(content);
       if (parsed && typeof parsed === 'object') {
         for (const [key, val] of Object.entries(initialMemoryStore)) {
-          if (!parsed[key] || !Array.isArray(parsed[key]) || parsed[key].length === 0) {
+          if (!parsed[key] || !Array.isArray(parsed[key])) {
             parsed[key] = [...val];
           }
         }

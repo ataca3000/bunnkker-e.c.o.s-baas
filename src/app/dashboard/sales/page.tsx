@@ -7,7 +7,8 @@ import { useCart, type Product } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import {
     Clock, Bell, History, User, Store, ShieldAlert, Wifi, Globe, TerminalSquare, AlertCircle, XCircle, CheckCircle2, Phone, Lock, Unlock,
-    LayoutDashboard, LogOut, ShoppingCart, Trash2, Zap, UserCheck, Scale, Settings, PenTool, Camera, RefreshCw, Package, Search
+    LayoutDashboard, LogOut, ShoppingCart, Trash2, Zap, UserCheck, Scale, Settings, PenTool, Camera, RefreshCw, Package, Search,
+    Columns, Receipt, DollarSign
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
@@ -18,7 +19,7 @@ import { toast } from '@/lib/toast';
 import { useERPStore } from '@/store/useERPStore';
 import { broadcastSync } from '@/lib/syncNotifier';
 import { playSupermarketBeep, playIncrementBeep, playErrorBeep, initAudioContextOnFirstGesture } from '@/lib/scannerAudio';
-import { saveDigitalTicket, type DigitalTicket } from '@/lib/digitalTicket';
+import { saveDigitalTicket, getDigitalTickets, type DigitalTicket } from '@/lib/digitalTicket';
 import { loadPosCartFromIDB, savePosCartToIDB, enqueueOfflineOrder, removeQueuedOfflineOrder } from '@/lib/indexedDBCart';
 
 // Lazy loading de componentes pesados (cero bloqueo en el arranque del POS)
@@ -42,6 +43,7 @@ import type { OrderType } from '@/components/sales/caja-movil/Cart';
 import type { DeliveryInfo } from '@/components/sales/caja-movil/DeliveryModal';
 import { StockAlertModal, type StockIssue } from '@/components/sales/caja-movil/StockAlertModal';
 import { CashTenderModal } from '@/components/sales/CashTenderModal';
+import { TriColorOrdersBoard } from '@/components/sales/caja-movil/TriColorOrdersBoard';
 import ThemeToggle from '@/components/ThemeToggle';
 import { AnimatePresence, motion } from 'framer-motion';
 
@@ -90,6 +92,7 @@ export default function SalesDashboard() {
     const [pickingOrder, setPickingOrder] = useState<any | null>(null);
     const [deconstructingOrder, setDeconstructingOrder] = useState<any | null>(null);
     const [onlyMyOrders, setOnlyMyOrders] = useState(false);
+    const [colaViewMode, setColaViewMode] = useState<'board' | 'list'>('board');
 
     const handlePickingComplete = async (orderId: string) => {
         const id = typeof orderId === 'string' ? orderId : (orderId as any)?.orderId;
@@ -807,6 +810,54 @@ export default function SalesDashboard() {
     const cancelledOrders = orders.filter(o => isStoreOrder(o) && (o.status === 'cancelled' || o.status === 'refunded') && !isTestOrder(o));
     const cancelledReacomodoOrders = cancelledOrders.filter(o => o.rejectionReason !== 'CANCELADA_STOCK_RESTITUIDO');
 
+    const filterBySearch = (o: any) => {
+        if (!onlineSearch.trim()) return true;
+        const term = onlineSearch.toLowerCase().trim();
+        const matchesId = (o.id || '').toLowerCase().includes(term);
+        const matchesCustomer = (o.customer?.name || '').toLowerCase().includes(term);
+        const matchesPhone = (o.customer?.phone || '').includes(term);
+        const matchesItems = (o.items || []).some((it: any) =>
+            (it.name || it.productName || it.productId || '').toLowerCase().includes(term)
+        );
+        return matchesId || matchesCustomer || matchesPhone || matchesItems;
+    };
+
+    // 🟢 VERDE: "Los que pueden tomar" (pedidos libres sin asignar o no tomados por mí)
+    const greenCanClaimOrders = orders.filter(o => {
+        if (!isStoreOrder(o) || isTestOrder(o)) return false;
+        const isUnpaid = !o.confirmedAt && o.status !== 'paid' && o.status !== 'READY_FOR_PICKUP_PAID';
+        const isNotLoaded = !Boolean(o.isLoaded) && !['READY_TO_SHIP', 'READY_FOR_PICKUP'].includes(o.status);
+        const isTerminal = ['DELIVERED', 'COMPLETED', 'cancelled', 'refunded'].includes(o.status);
+        if (!isUnpaid || !isNotLoaded || isTerminal) return false;
+        // Libre para tomar si no tiene cajero asignado o fue iniciado por otro usuario
+        const canTake = !o.vendedorId || o.vendedorId !== profile?.uid;
+        return canTake;
+    }).filter(filterBySearch);
+
+    // 🟡 AMARILLO: "Los que tienes que preparar" (en almacén / mostrador pendientes de surtido)
+    const yellowNeedPrepOrders = orders.filter(o => {
+        if (!isStoreOrder(o) || isTestOrder(o)) return false;
+        const isUnpaid = !o.confirmedAt && o.status !== 'paid' && o.status !== 'READY_FOR_PICKUP_PAID';
+        const isNotLoaded = !Boolean(o.isLoaded) && !['READY_TO_SHIP', 'READY_FOR_PICKUP'].includes(o.status);
+        const isTerminal = ['DELIVERED', 'COMPLETED', 'cancelled', 'refunded'].includes(o.status);
+        if (!isUnpaid || !isNotLoaded || isTerminal) return false;
+        if (onlyMyOrders && o.vendedorId !== profile?.uid) return false;
+        return true;
+    }).filter(filterBySearch);
+
+    // 🔵 AZUL: "Los que ya puedes cobrar" (surtidos listos para cobrar)
+    // REGLA CRUCIAL DEL USUARIO: "caja cobra todos asi que ahi aparacen los de todos y el cobra ok"
+    const blueReadyToPayOrders = orders.filter(o => {
+        if (!isStoreOrder(o) || isTestOrder(o)) return false;
+        const isReady = (Boolean(o.isLoaded) || ['READY_TO_SHIP', 'READY_FOR_PICKUP'].includes(o.status));
+        const isUnpaid = !o.confirmedAt && o.status !== 'paid' && o.status !== 'READY_FOR_PICKUP_PAID';
+        const isTerminal = ['DELIVERED', 'COMPLETED', 'cancelled', 'refunded'].includes(o.status);
+        // ¡NO se aplica onlyMyOrders aquí! Caja cobra absolutamente todos los pedidos listos.
+        return isReady && isUnpaid && !isTerminal;
+    }).filter(filterBySearch);
+
+    const totalBlueReadyCash = blueReadyToPayOrders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+
     const displayedOrders = pendingOrders.filter(o => {
         if (onlyMyOrders) {
             const isMine = o.vendedorId === profile?.uid || o.loadedByUid === profile?.uid || o.vendedorName === profile?.displayName;
@@ -824,18 +875,7 @@ export default function SalesDashboard() {
             if (o.status !== 'cancelled' && o.status !== 'refunded') return false;
         }
 
-        if (onlineSearch.trim()) {
-            const term = onlineSearch.toLowerCase().trim();
-            const matchesId = o.id.toLowerCase().includes(term);
-            const matchesCustomer = (o.customer?.name || '').toLowerCase().includes(term);
-            const matchesPhone = (o.customer?.phone || '').includes(term);
-            const matchesItems = (o.items || []).some((it: any) =>
-                (it.name || it.productName || it.productId || '').toLowerCase().includes(term)
-            );
-            return matchesId || matchesCustomer || matchesPhone || matchesItems;
-        }
-
-        return true;
+        return filterBySearch(o);
     });
 
     return (
@@ -1127,16 +1167,36 @@ export default function SalesDashboard() {
                                         Cancelados ({cancelledOrders.length})
                                     </button>
                                 </div>
-                                <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={() => setColaViewMode('board')}
+                                        className={`px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center gap-1.5 border active:scale-95 ${colaViewMode === 'board'
+                                                ? 'bg-gradient-to-r from-emerald-600 via-amber-600 to-sky-600 text-white border-cyan-400 shadow-md shadow-cyan-500/20'
+                                                : 'bg-zinc-900/80 text-zinc-400 hover:text-white border-white/10'
+                                            }`}
+                                        title="Vista Tablero 3 Colores (Verde: Por Tomar, Amarillo: Por Preparar, Azul: Listos p/ Cobro)"
+                                    >
+                                        <Columns size={16} /> Tablero 3 Colores
+                                    </button>
+                                    <button
+                                        onClick={() => setColaViewMode('list')}
+                                        className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border active:scale-95 ${colaViewMode === 'list'
+                                                ? 'bg-zinc-800 text-white border-white/20'
+                                                : 'bg-zinc-900/80 text-zinc-400 hover:text-white border-white/10'
+                                            }`}
+                                        title="Vista Lista Clásica"
+                                    >
+                                        Lista
+                                    </button>
                                     <button
                                         onClick={() => setOnlyMyOrders(prev => !prev)}
-                                        className={`px-4 py-2.5 sm:py-3 rounded-2xl text-xs sm:text-sm font-black transition-all flex items-center gap-2 border active:scale-95 ${onlyMyOrders
+                                        className={`px-3.5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 border active:scale-95 ${onlyMyOrders
                                                 ? 'bg-sky-500 text-white border-sky-400 shadow-md shadow-sky-500/20'
                                                 : 'bg-zinc-900/80 text-zinc-300 hover:text-white border-white/10'
                                             }`}
                                         title="Filtrar solo pedidos atendidos o surtidos por mí"
                                     >
-                                        <span>👤</span> {onlyMyOrders ? 'Viendo: Mis Pedidos' : 'Ver solo mis pedidos'}
+                                        <span>👤</span> {onlyMyOrders ? 'Mis Pedidos' : 'Todos'}
                                     </button>
                                 </div>
                             </div>
@@ -1198,6 +1258,36 @@ export default function SalesDashboard() {
                             </div>
                         </div>
 
+                        {colaViewMode === 'board' ? (
+                            <TriColorOrdersBoard
+                                greenOrders={greenCanClaimOrders}
+                                yellowOrders={yellowNeedPrepOrders}
+                                blueOrders={blueReadyToPayOrders}
+                                onClaimOrder={handleClaimOrder}
+                                onLoadToPos={(order) => {
+                                    if (order.items && order.items.length > 0) {
+                                        const converted = order.items.map((it: any) => ({
+                                            id: it.productId || it.id,
+                                            name: it.name || it.productName || 'Producto',
+                                            price: it.price || 0,
+                                            stock: 99,
+                                            quantity: it.quantity || 1
+                                        }));
+                                        setPosCart(converted);
+                                        setActiveTab('pos');
+                                        showToast(`Pedido ${order.id} cargado en Punto de Venta.`);
+                                    }
+                                }}
+                                onPicking={(order) => setPickingOrder(order)}
+                                onTender={(order) => setCashTenderOrder(order)}
+                                onCancel={(orderId) => setOrderToCancel(orderId)}
+                                onDelete={(orderId) => handleDeleteOrder(orderId)}
+                                onOpenHistory={() => setIsHistoryOpen(true)}
+                                onOpenCorte={() => setShowCorteCaja(true)}
+                                formatCurrency={formatCurrency}
+                                claimingOrderId={claimingOrderId}
+                            />
+                        ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[8px] max-w-7xl mx-auto">
                             {displayedOrders.length === 0 ? (
                                 <div className="col-span-full py-20 text-center bg-zinc-900/40 backdrop-blur-md rounded-[32px] border border-white/10 shadow-lg">
@@ -1480,6 +1570,7 @@ export default function SalesDashboard() {
                                 })
                             )}
                         </div>
+                        )}
                     </div>
                 )}
             </main>
