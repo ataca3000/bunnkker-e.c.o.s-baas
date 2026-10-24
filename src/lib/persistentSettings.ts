@@ -3,38 +3,32 @@
  * BUNKKER E.C.O.S. — Soberanía Local-First (Invariante #4 / P2)
  *
  * Garantiza que las configuraciones persistan en disco entre reinicios del servidor
- * o la aplicación de escritorio sin depender de internet ni de Firebase.
+ * o la aplicación de escritorio sin depender de internet ni de Firebase, con
+ * fallback automático a os.tmpdir() (/tmp) en entornos Serverless Read-Only (Vercel).
  */
 import fs from 'fs';
-import path from 'path';
 import os from 'os';
+import path from 'path';
 import { atomicWriteFileSync } from './atomicFs';
 
 function getStorageDir(): string {
-  let baseDir: string;
-  if (process.env.APPDATA) {
-    baseDir = path.join(process.env.APPDATA, 'bunnkker-ecos', 'settings');
-  } else {
-    baseDir = path.join(process.cwd(), 'data', 'settings');
-  }
+  const candidates = [
+    process.env.APPDATA ? path.join(process.env.APPDATA, 'bunnkker-ecos', 'settings') : null,
+    path.join(process.cwd(), 'data', 'settings'),
+    path.join(os.tmpdir(), 'bunnkker-ecos', 'settings'),
+  ].filter(Boolean) as string[];
 
-  try {
-    if (!fs.existsSync(baseDir)) {
-      fs.mkdirSync(baseDir, { recursive: true });
-    }
-    return baseDir;
-  } catch {
-    // Fallback seguro para Vercel Serverless (Read-Only)
+  for (const dir of candidates) {
     try {
-      const tmpDir = path.join(os.tmpdir(), 'bunnkker-ecos', 'settings');
-      if (!fs.existsSync(tmpDir)) {
-        fs.mkdirSync(tmpDir, { recursive: true });
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
       }
-      return tmpDir;
+      return dir;
     } catch {
-      return os.tmpdir();
+      // Continuar al siguiente candidato (ej. /tmp en Vercel cuando /var/task es Read-Only)
     }
   }
+  return os.tmpdir();
 }
 
 const memoryCache = new Map<string, Record<string, any>>();
@@ -72,7 +66,6 @@ export function savePersistentSiteConfig(tenantId: string = 'default', data: Rec
   const cacheKey = `site_config_${tenantId}`;
   const dir = getStorageDir();
   const filePath = path.join(dir, `${cacheKey}.json`);
-  const tmpPath = path.join(dir, `${cacheKey}.tmp.${Date.now()}`);
 
   const payload = {
     ...data,
@@ -83,17 +76,9 @@ export function savePersistentSiteConfig(tenantId: string = 'default', data: Rec
   memoryCache.set(cacheKey, payload);
 
   try {
-    // Escritura atómica (write + rename) para prevenir corrupción de archivo en cortes de energía
-    fs.writeFileSync(tmpPath, JSON.stringify(payload, null, 2), 'utf-8');
-    fs.renameSync(tmpPath, filePath);
+    atomicWriteFileSync(filePath, JSON.stringify(payload, null, 2), true);
   } catch (err) {
-    console.error(`[PERSISTENT SETTINGS] Error guardando ${filePath}:`, err);
-    // Intento directo si falla el rename
-    try {
-      fs.writeFileSync(filePath, JSON.stringify(payload, null, 2), 'utf-8');
-    } catch (e) {
-      console.error(`[PERSISTENT SETTINGS] Fallo crítico al escribir configuración:`, e);
-    }
+    console.warn(`[PERSISTENT SETTINGS] Advertencia guardando ${filePath} (mantenido en RAM):`, err);
   }
 }
 
@@ -130,18 +115,12 @@ export function savePersistentAgentConfigs(tenantId: string = 'default', configs
   const cacheKey = `ai_agents_${tenantId}`;
   const dir = getStorageDir();
   const filePath = path.join(dir, `${cacheKey}.json`);
-  const tmpPath = path.join(dir, `${cacheKey}.tmp.${Date.now()}`);
 
   memoryCache.set(cacheKey, configs);
 
   try {
-    fs.writeFileSync(tmpPath, JSON.stringify(configs, null, 2), 'utf-8');
-    fs.renameSync(tmpPath, filePath);
+    atomicWriteFileSync(filePath, JSON.stringify(configs, null, 2), true);
   } catch (err) {
-    try {
-      fs.writeFileSync(filePath, JSON.stringify(configs, null, 2), 'utf-8');
-    } catch (e) {
-      console.error(`[PERSISTENT SETTINGS] Fallo crítico al escribir configuraciones de agente:`, e);
-    }
+    console.warn(`[PERSISTENT SETTINGS] Advertencia guardando configuración de agentes (mantenido en RAM):`, err);
   }
 }
