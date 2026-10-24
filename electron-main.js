@@ -266,8 +266,24 @@ const createWindow = (urlHost = 'localhost') => {
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
+            devTools: false,
             preload: path.join(__dirname, 'preload.js'),
         },
+    });
+
+    mainWindow.webContents.on('before-input-event', (event, input) => {
+        const key = String(input.key || '').toUpperCase();
+        if (
+            key === 'F12' ||
+            ((input.control || input.meta) && input.shift && ['I', 'J', 'C', 'K'].includes(key)) ||
+            ((input.control || input.meta) && key === 'U')
+        ) {
+            event.preventDefault();
+        }
+    });
+
+    mainWindow.webContents.on('devtools-opened', () => {
+        mainWindow?.webContents.closeDevTools();
     });
 
     mainWindow.once('ready-to-show', () => {
