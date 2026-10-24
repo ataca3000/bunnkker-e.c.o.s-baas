@@ -7,6 +7,8 @@ import { Camera, CheckCircle2, RefreshCw, X, ShieldCheck, PenTool, Image as Imag
 import { toast } from '@/lib/toast';
 import { saveDigitalTicket } from '@/lib/digitalTicket';
 import { compressImageToWebP } from '@/lib/imageCompression';
+import { broadcastSync } from '@/lib/syncNotifier';
+import { useERPStore } from '@/store/useERPStore';
 
 interface DeliveryProofModalProps {
     isOpen: boolean;
@@ -121,6 +123,15 @@ export default function DeliveryProofModal({
                 }
             );
 
+            // Actualizar store global en memoria de inmediato (optimista)
+            useERPStore.getState().setOrders(
+                useERPStore.getState().orders.map(o => 
+                    o.id === order.id ? { ...o, status: 'DELIVERED', photoData, signatureData } : o
+                )
+            );
+
+            // Notificar a todos los dispositivos, roles y pestañas (0ms BroadcastChannel + DOM + Socket)
+            broadcastSync({ action: 'ORDER_DELIVERED_POD', id: order.id });
             // Notificar a otros nodos y sockets
             if (typeof window !== 'undefined' && (window as any).__inventorySocket) {
                 (window as any).__inventorySocket.emit('sync_db_event', {

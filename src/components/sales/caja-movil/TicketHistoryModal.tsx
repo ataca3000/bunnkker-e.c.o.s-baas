@@ -6,7 +6,7 @@ import {
     CheckCircle2, MessageSquare, Plus, Check, Ban, AlertOctagon, Filter, 
     Receipt, RefreshCw, ArrowLeft, ArrowUpRight, TrendingUp
 } from 'lucide-react';
-import { getDigitalTickets, addNoteToDigitalTicket, cancelDigitalTicket, type DigitalTicket } from '@/lib/digitalTicket';
+import { getDigitalTickets, addNoteToDigitalTicket, cancelDigitalTicket, clearDigitalTickets, type DigitalTicket } from '@/lib/digitalTicket';
 
 interface TicketHistoryModalProps {
     isOpen: boolean;
@@ -23,6 +23,7 @@ export function TicketHistoryModal({ isOpen, onClose, cajaId = 'caja_1', onSelec
     const [noteInput, setNoteInput] = useState('');
     const [cancellingTicketId, setCancellingTicketId] = useState<string | null>(null);
     const [cancelReasonInput, setCancelReasonInput] = useState('');
+    const [showClearConfirm, setShowClearConfirm] = useState(false);
 
     const reloadTickets = () => {
         const list = getDigitalTickets(cajaId);
@@ -162,6 +163,15 @@ export function TicketHistoryModal({ isOpen, onClose, cajaId = 'caja_1', onSelec
                             </div>
                         </div>
                     )}
+
+                    <button
+                        onClick={() => setShowClearConfirm(true)}
+                        className="p-2 sm:px-3 sm:py-2 rounded-xl bg-rose-950/40 text-rose-300 hover:text-white hover:bg-rose-900 border border-rose-500/40 transition-colors flex items-center gap-1.5 text-xs font-bold active:scale-95"
+                        title="Limpiar bitácora de tickets o reiniciar turno"
+                    >
+                        <RefreshCw className="w-4 h-4" />
+                        <span className="hidden sm:inline">Reiniciar Turno</span>
+                    </button>
 
                     <button
                         onClick={onClose}
@@ -507,6 +517,42 @@ export function TicketHistoryModal({ isOpen, onClose, cajaId = 'caja_1', onSelec
                     </button>
                 </div>
             </footer>
+
+            {/* ── MODAL CONFIRMACIÓN REINICIAR TURNO / LIMPIAR TICKETS ── */}
+            {showClearConfirm && (
+                <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+                    <div className="bg-slate-900 border border-rose-500/40 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
+                        <div className="flex items-center gap-3 text-rose-400">
+                            <AlertOctagon className="w-8 h-8 shrink-0" />
+                            <div>
+                                <h3 className="text-base font-black uppercase text-white">¿Reiniciar Bitácora de Turno?</h3>
+                                <p className="text-xs text-slate-400">Esto limpiará el historial de tickets de esta caja para comenzar un turno nuevo desde $0.00.</p>
+                            </div>
+                        </div>
+                        <div className="p-3 rounded-xl bg-rose-950/30 border border-rose-500/20 text-xs text-rose-300">
+                            ⚠️ Se borrarán los {tickets.length} tickets registrados en la memoria local de esta caja.
+                        </div>
+                        <div className="flex justify-end gap-2.5 pt-2">
+                            <button
+                                onClick={() => setShowClearConfirm(false)}
+                                className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-bold hover:bg-slate-700"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={() => {
+                                    clearDigitalTickets(cajaId);
+                                    reloadTickets();
+                                    setShowClearConfirm(false);
+                                }}
+                                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-black uppercase tracking-wider shadow-lg active:scale-95"
+                            >
+                                Sí, Limpiar y Reiniciar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

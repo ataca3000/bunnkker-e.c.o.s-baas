@@ -645,6 +645,18 @@ export default function SalesDashboard() {
                 metadata: { orderId, total: posTotal, items: posCart.length, offlineQueued: !syncedImmediately },
             }).catch(() => { });
 
+            // Sincronización inmediata de estado local y multidispotivo (0ms)
+            try {
+                const currentOrders = useERPStore.getState().orders;
+                const existingIdx = currentOrders.findIndex(o => o.id === orderId);
+                if (existingIdx === -1) {
+                    useERPStore.getState().setOrders([orderPayload as any, ...currentOrders]);
+                }
+                broadcastSync({ action: 'POS_DIRECT_SALE', id: orderId });
+            } catch (syncErr) {
+                console.warn('[POS Sync] Error al actualizar estado local:', syncErr);
+            }
+
             // ─── RESGUARDO DE TICKET (COPIA CLIENTE + COPIA VENDEDOR) ───
             const savedTicket = saveDigitalTicket(
                 'caja_1',
@@ -854,6 +866,16 @@ export default function SalesDashboard() {
         const isTerminal = ['DELIVERED', 'COMPLETED', 'cancelled', 'refunded'].includes(o.status);
         // ¡NO se aplica onlyMyOrders aquí! Caja cobra absolutamente todos los pedidos listos.
         return isReady && isUnpaid && !isTerminal;
+    }).filter(filterBySearch);
+
+    // 📦 LISTOS ENTREGA: Surtidos y cobrados listos para entregar físicamente al cliente con firma y foto (PoD)
+    const readyToDeliverOrders = orders.filter(o => {
+        if (!isStoreOrder(o) || isTestOrder(o)) return false;
+        const isReady = ['READY_TO_SHIP', 'READY_FOR_PICKUP_PAID'].includes(o.status) || (Boolean(o.isLoaded) && (Boolean(o.confirmedAt) || o.status === 'paid')) || o.status === 'READY_FOR_PICKUP';
+        const isTerminal = ['DELIVERED', 'COMPLETED', 'cancelled', 'refunded'].includes(o.status);
+        const isPaid = Boolean(o.confirmedAt) || o.status === 'paid' || o.status === 'READY_FOR_PICKUP_PAID';
+        if (onlyMyOrders && o.vendedorId && o.vendedorId !== profile?.uid) return false;
+        return isReady && isPaid && !isTerminal;
     }).filter(filterBySearch);
 
     const totalBlueReadyCash = blueReadyToPayOrders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
@@ -1263,6 +1285,7 @@ export default function SalesDashboard() {
                                 greenOrders={greenCanClaimOrders}
                                 yellowOrders={yellowNeedPrepOrders}
                                 blueOrders={blueReadyToPayOrders}
+                                readyOrders={readyToDeliverOrders}
                                 onClaimOrder={handleClaimOrder}
                                 onLoadToPos={(order) => {
                                     if (order.items && order.items.length > 0) {
@@ -1280,6 +1303,7 @@ export default function SalesDashboard() {
                                 }}
                                 onPicking={(order) => setPickingOrder(order)}
                                 onTender={(order) => setCashTenderOrder(order)}
+                                onDeliveryProof={(order) => setOrderForDeliveryProof(order)}
                                 onCancel={(orderId) => setOrderToCancel(orderId)}
                                 onDelete={(orderId) => handleDeleteOrder(orderId)}
                                 onOpenHistory={() => setIsHistoryOpen(true)}

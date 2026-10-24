@@ -51,7 +51,7 @@ export function CheckoutForm({ formData, onChange, userRole, onClose, isLoggedIn
                     Debes tener una cuenta o iniciar sesión para poder realizar un pedido.
                 </p>
                 <Link
-                    href="/cuenta"
+                    href="/cuenta?redirect=/carrito"
                     onClick={onClose}
                     className="bg-[#0ea5e9] hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg w-full flex items-center justify-center gap-2 transition-colors"
                 >

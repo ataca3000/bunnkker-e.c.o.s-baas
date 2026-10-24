@@ -29,6 +29,7 @@ import ImportCSVButton from './ImportCSVButton';
 import { arrayMove } from '@dnd-kit/sortable';
 import { toast } from '@/lib/toast';
 import { useERPStore } from '@/store/useERPStore';
+import { broadcastSync } from '@/lib/syncNotifier';
 import CloudBackupConfigWidget from '@/components/admin/CloudBackupConfigWidget';
 import OrderPickingAssistant from '@/components/orders/OrderPickingAssistant';
 import MultiOrderPickingAssistant from '@/components/orders/MultiOrderPickingAssistant';
@@ -987,8 +988,6 @@ export default function InventoryDashboard() {
     };
 
     const pendingPrepOrders = (orders || []).filter(o => {
-        // Aislamiento estricto: pedidos a domicilio son 100% exclusivos de la ruta de repartidor
-        if (o.deliveryType === 'DELIVERY' || o.deliveryMethod === 'repartidor') return false;
         const isNotLoaded = !o.isLoaded && !['DELIVERED', 'COMPLETED', 'cancelled', 'refunded'].includes(o.status);
         if (onlyMyOrders && o.loadedByUid && o.loadedByUid !== profile?.uid) return false;
         return isNotLoaded;
@@ -2558,6 +2557,7 @@ export default function InventoryDashboard() {
                                     throw new Error(err.error || 'Error al delegar pedido');
                                 }
                                 setPickingOrder(null);
+                                broadcastSync({ action: 'ORDER_DELEGATED', id, target });
                                 if (typeof window !== 'undefined' && (window as any).__inventorySocket) {
                                     (window as any).__inventorySocket.emit('sync_db_event', { action: 'ORDER_DELEGATED', id, target });
                                 }
@@ -2599,6 +2599,7 @@ export default function InventoryDashboard() {
                                 const data = await res.json().catch(() => null);
                                 if (!res.ok || !data?.success) throw new Error(data?.error || 'Error al reincorporar artículos');
                                 toast.success(`✅ Todos los materiales del pedido ${orderId} fueron restituidos a su anaquel en Almacén.`);
+                                broadcastSync({ action: 'RESTOCK_COMPLETED', id: orderId });
                                 if (typeof window !== 'undefined' && (window as any).__inventorySocket) {
                                     (window as any).__inventorySocket.emit('sync_db_event', { action: 'RESTOCK_COMPLETED', id: orderId });
                                 }

@@ -151,6 +151,19 @@ export function getDigitalTickets(cajaId = 'caja_1'): DigitalTicket[] {
   return [];
 }
 
+export function clearDigitalTickets(cajaId = 'caja_1'): boolean {
+  const safeCaja = cajaId || 'caja_1';
+  const storageKey = `${STORAGE_PREFIX}${safeCaja}`;
+  try {
+    localStorage.removeItem(storageKey);
+    localStorage.removeItem('_bunkker_last_ticket');
+    return true;
+  } catch (e) {
+    console.warn('Error clearing digital tickets:', e);
+  }
+  return false;
+}
+
 export function getLastDigitalTicket(): DigitalTicket | null {
   try {
     const raw = localStorage.getItem('_bunkker_last_ticket');

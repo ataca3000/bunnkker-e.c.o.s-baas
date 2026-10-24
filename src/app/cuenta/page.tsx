@@ -9,6 +9,7 @@ import {
 import { useRouter } from 'next/navigation';
 import { toast } from '@/lib/toast';
 import { saveCustomerSession, clearCustomerSession, getCustomerAuthHeaders, getCustomerProfile } from '@/lib/customerAuth';
+import { useCart } from '@/context/CartContext';
 
 function isSafeLocalUrl(target: string | null | undefined): boolean {
     if (!target) return false;
@@ -31,6 +32,7 @@ function isSafeLocalUrl(target: string | null | undefined): boolean {
 
 export default function UserAccount() {
     const router = useRouter();
+    const { cart } = useCart();
     const [activeTab, setActiveTab] = useState<'profile' | 'invoicing' | 'orders'>('profile');
     
     // Auth State
@@ -492,6 +494,32 @@ export default function UserAccount() {
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[850px] h-[450px] bg-sky-500/10 blur-[140px] rounded-full pointer-events-none" />
 
             <div className="max-w-6xl mx-auto space-y-6 relative z-10">
+
+                {/* Banner de Carrito Pendiente para continuar compra */}
+                {cart && cart.length > 0 && (
+                    <div className="bg-gradient-to-r from-sky-950/80 to-blue-950/80 border-2 border-sky-500/60 rounded-3xl p-5 shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-4 backdrop-blur-md">
+                        <div className="flex items-center gap-3.5">
+                            <div className="w-12 h-12 rounded-2xl bg-sky-500/20 text-sky-400 flex items-center justify-center text-2xl border border-sky-400/40 shrink-0">
+                                🛒
+                            </div>
+                            <div>
+                                <h4 className="font-extrabold text-white text-sm uppercase tracking-wide">
+                                    Tienes {cart.length} producto(s) en tu carrito de compra
+                                </h4>
+                                <p className="text-xs text-sky-300/80 mt-0.5">
+                                    Tu sesión ya está activa. Finaliza tu pedido para enviarlo al equipo de tienda.
+                                </p>
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => router.push('/carrito/checkout')}
+                            className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-sky-500/30 flex items-center justify-center gap-2 shrink-0 cursor-pointer"
+                        >
+                            <span>Completar Compra en Carrito</span>
+                            <ArrowRight size={15} />
+                        </button>
+                    </div>
+                )}
 
                 {/* Header Superior del Portal */}
                 <div className="bg-slate-900/70 backdrop-blur-xl border border-slate-700/60 rounded-3xl p-6 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">

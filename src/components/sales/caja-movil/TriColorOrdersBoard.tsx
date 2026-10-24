@@ -3,17 +3,19 @@
 import React from 'react';
 import { 
     User, ShoppingCart, UserCheck, Trash2, Zap, Package, CheckCircle2, 
-    Clock, Receipt, Scale, XCircle, ArrowRight, ShieldCheck, AlertCircle 
+    Clock, Receipt, Scale, XCircle, ArrowRight, ShieldCheck, AlertCircle, PenTool 
 } from 'lucide-react';
 
 interface TriColorOrdersBoardProps {
     greenOrders: any[];
     yellowOrders: any[];
     blueOrders: any[];
+    readyOrders?: any[];
     onClaimOrder: (orderId: string) => void;
     onLoadToPos: (order: any) => void;
     onPicking: (order: any) => void;
     onTender: (order: any) => void;
+    onDeliveryProof?: (order: any) => void;
     onCancel: (orderId: string) => void;
     onDelete: (orderId: string) => void;
     onOpenHistory: () => void;
@@ -26,10 +28,12 @@ export function TriColorOrdersBoard({
     greenOrders,
     yellowOrders,
     blueOrders,
+    readyOrders = [],
     onClaimOrder,
     onLoadToPos,
     onPicking,
     onTender,
+    onDeliveryProof,
     onCancel,
     onDelete,
     onOpenHistory,
@@ -40,10 +44,10 @@ export function TriColorOrdersBoard({
     const totalBlueCash = blueOrders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12 gap-4 max-w-full mx-auto select-none">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12 gap-3 sm:gap-4 max-w-full mx-auto select-none">
             
             {/* 🟢 COLUMNA 1: VERDE — "Los que pueden tomar" (Libres / Disponibles) */}
-            <div className="xl:col-span-3 flex flex-col bg-emerald-950/15 border-2 border-emerald-500/40 rounded-2xl p-3 sm:p-4 shadow-lg backdrop-blur-md">
+            <div className="xl:col-span-2 flex flex-col bg-emerald-950/15 border-2 border-emerald-500/40 rounded-2xl p-3 sm:p-4 shadow-lg backdrop-blur-md">
                 <div className="flex items-center justify-between pb-3 mb-3 border-b border-emerald-500/20">
                     <div className="flex items-center gap-2">
                         <span className="w-3.5 h-3.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)] animate-pulse" />
@@ -152,7 +156,7 @@ export function TriColorOrdersBoard({
             </div>
 
             {/* 🟡 COLUMNA 2: AMARILLO — "Los que tienes que preparar" (En Almacén / Mostrador) */}
-            <div className="xl:col-span-3 flex flex-col bg-amber-950/15 border-2 border-amber-500/40 rounded-2xl p-3 sm:p-4 shadow-lg backdrop-blur-md">
+            <div className="xl:col-span-2 flex flex-col bg-amber-950/15 border-2 border-amber-500/40 rounded-2xl p-3 sm:p-4 shadow-lg backdrop-blur-md">
                 <div className="flex items-center justify-between pb-3 mb-3 border-b border-amber-500/20">
                     <div className="flex items-center gap-2">
                         <span className="w-3.5 h-3.5 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.8)] animate-pulse" />
@@ -253,7 +257,7 @@ export function TriColorOrdersBoard({
             </div>
 
             {/* 🔵 COLUMNA 3: AZUL — "Los que ya puedes cobrar" (LISTOS PARA COBRO - TODOS) */}
-            <div className="xl:col-span-4 flex flex-col bg-sky-950/20 border-2 border-sky-500/50 rounded-2xl p-3 sm:p-4 shadow-xl backdrop-blur-md">
+            <div className="xl:col-span-3 flex flex-col bg-sky-950/20 border-2 border-sky-500/50 rounded-2xl p-3 sm:p-4 shadow-xl backdrop-blur-md">
                 <div className="flex items-center justify-between pb-3 mb-3 border-b border-sky-500/20">
                     <div className="flex items-center gap-2">
                         <span className="w-3.5 h-3.5 rounded-full bg-cyan-400 shadow-[0_0_10px_rgba(6,182,212,0.9)] animate-ping" />
@@ -351,7 +355,107 @@ export function TriColorOrdersBoard({
                 </div>
             </div>
 
-            {/* 🟠 COLUMNA 4: NARANJA — LATERAL DE HISTORIAL & CONTROL DE CAJA */}
+            {/* 📦 COLUMNA 4: CYAN / ESMERALDA — "Listos Entrega" (Surtidos y Pagados — Entrega con Foto y Firma) */}
+            <div className="xl:col-span-3 flex flex-col bg-cyan-950/20 border-2 border-cyan-500/50 rounded-2xl p-3 sm:p-4 shadow-xl backdrop-blur-md">
+                <div className="flex items-center justify-between pb-3 mb-3 border-b border-cyan-500/20">
+                    <div className="flex items-center gap-2">
+                        <span className="w-3.5 h-3.5 rounded-full bg-cyan-400 shadow-[0_0_10px_rgba(6,182,212,0.9)] animate-pulse" />
+                        <div>
+                            <h3 className="text-xs sm:text-sm font-black text-cyan-400 uppercase tracking-wider flex items-center gap-1.5">
+                                4. Listos Entrega ({(readyOrders || []).length})
+                            </h3>
+                            <span className="text-[10px] text-cyan-300/80 font-mono font-bold">
+                                📦 Entregar al cliente con PoD
+                            </span>
+                        </div>
+                    </div>
+                    <span className="px-2.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 font-mono text-[10px] font-black border border-cyan-500/40">
+                        ENTREGA
+                    </span>
+                </div>
+
+                <div className="space-y-3 overflow-y-auto flex-1 max-h-[calc(100vh-270px)] custom-scrollbar pr-1">
+                    {(readyOrders || []).length === 0 ? (
+                        <div className="py-12 text-center text-cyan-300/40 text-xs font-mono border border-dashed border-cyan-500/20 rounded-xl p-4">
+                            No hay pedidos listos para entrega física
+                        </div>
+                    ) : (
+                        (readyOrders || []).map((order, idx) => (
+                            <div
+                                key={order.id}
+                                className="bg-zinc-900/95 border-2 border-cyan-500/50 hover:border-cyan-400 rounded-xl p-3.5 shadow-lg shadow-cyan-950/40 transition-all flex flex-col justify-between gap-3 relative group"
+                            >
+                                <div>
+                                    <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                                        <div className="flex items-center gap-1.5">
+                                            <span className="w-6 h-6 rounded-md bg-cyan-500/20 text-cyan-300 font-mono text-xs font-black flex items-center justify-center border border-cyan-500/40">
+                                                {idx + 1}
+                                            </span>
+                                            <span className="font-mono font-black text-sm text-white">
+                                                #{order.id}
+                                            </span>
+                                        </div>
+                                        <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1">
+                                            <CheckCircle2 size={11} /> PAGADO · LISTO
+                                        </span>
+                                    </div>
+
+                                    <div className="space-y-1 text-xs mt-2.5">
+                                        <p className="font-extrabold text-white text-sm flex items-center gap-1.5 truncate">
+                                            <User size={14} className="text-cyan-400 shrink-0" />
+                                            {order.customer?.name || order.customerName || 'Cliente Mostrador'}
+                                        </p>
+                                        <div className="flex items-center justify-between text-[11px] text-zinc-400">
+                                            <span>Surtido: <strong className="text-cyan-300">{order.loadedBy || 'Almacén'}</strong></span>
+                                            {order.deliveryType === 'PATIO' ? (
+                                                <span className="text-[10px] text-amber-300 font-bold bg-amber-500/20 px-2 py-0.5 rounded">
+                                                    🏗️ Patio
+                                                </span>
+                                            ) : (
+                                                <span className="text-[10px] text-emerald-300 font-bold bg-emerald-500/20 px-2 py-0.5 rounded">
+                                                    📦 Mostrador
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Artículos */}
+                                    {order.items && order.items.length > 0 && (
+                                        <div className="bg-black/40 rounded-lg p-2.5 my-2 border border-white/10 max-h-24 overflow-y-auto text-xs text-zinc-200 space-y-1 custom-scrollbar">
+                                            <span className="text-[10px] font-bold text-zinc-500 uppercase block">Artículos ({order.items.length}):</span>
+                                            {order.items.map((it: any, i: number) => (
+                                                <div key={i} className="flex justify-between text-[11px]">
+                                                    <span className="truncate max-w-[180px]">{it.quantity}x {it.name || it.productName || 'Prod'}</span>
+                                                    <span className="font-mono text-zinc-300 font-semibold">${Number(it.price * it.quantity).toFixed(2)}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    <div className="flex items-center justify-between p-2 rounded-xl bg-slate-950 border border-cyan-500/30">
+                                        <span className="text-xs uppercase font-bold text-zinc-400">Total</span>
+                                        <span className="text-base font-black font-mono text-emerald-400">
+                                            {formatCurrency(order.total)}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* BOTÓN DE ENTREGA CON FIRMA Y FOTO (PoD) */}
+                                <button
+                                    onClick={() => onDeliveryProof ? onDeliveryProof(order) : null}
+                                    className="w-full py-3.5 bg-gradient-to-r from-cyan-600 via-sky-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-black rounded-xl text-xs sm:text-sm uppercase tracking-wider shadow-[0_0_20px_rgba(6,182,212,0.4)] flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer"
+                                    title="Validar entrega física al cliente con firma en pantalla y foto de evidencia"
+                                >
+                                    <PenTool size={16} />
+                                    <span>Entregar (Firma + Foto PoD)</span>
+                                </button>
+                            </div>
+                        ))
+                    )}
+                </div>
+            </div>
+
+            {/* 🟠 COLUMNA 5: NARANJA — LATERAL DE HISTORIAL & CONTROL DE CAJA */}
             <div className="xl:col-span-2 flex flex-col justify-between bg-gradient-to-b from-amber-950/20 via-slate-900/60 to-slate-950/80 border-2 border-amber-500/40 rounded-2xl p-4 shadow-xl backdrop-blur-md space-y-4">
                 <div className="space-y-4">
                     <div className="border-b border-amber-500/20 pb-3">
@@ -399,6 +503,10 @@ export function TriColorOrdersBoard({
                         <div className="flex items-center justify-between text-cyan-400 font-bold">
                             <span>🔵 Listos Cobro:</span>
                             <span className="font-mono">{blueOrders.length}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-cyan-300 font-bold">
+                            <span>📦 Listos Entrega:</span>
+                            <span className="font-mono font-bold">{(readyOrders || []).length}</span>
                         </div>
                         
                         <div className="pt-2 border-t border-white/10 flex items-center justify-between text-white font-mono font-bold">

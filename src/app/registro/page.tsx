@@ -88,8 +88,11 @@ export default function RegisterPage() {
                     signature: data.signature,
                     token: data.token
                 }, data.customer);
-                setSuccess('¡Cuenta creada con éxito! Entrando a tu cuenta...');
-                window.location.assign('/cuenta');
+                const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+                const redirectParam = searchParams?.get('redirect');
+                const targetUrl = redirectParam && redirectParam.startsWith('/') && !redirectParam.startsWith('//') ? redirectParam : '/cuenta';
+                setSuccess('¡Cuenta creada con éxito! Continuando...');
+                window.location.assign(targetUrl);
             } else {
                 setError(data.error || 'Error al crear la cuenta. Intenta de nuevo.');
             }
@@ -123,8 +126,11 @@ export default function RegisterPage() {
                     signature: data.signature,
                     token: data.token
                 }, data.customer);
-                setSuccess('¡Bienvenido! Entrando a tu cuenta...');
-                window.location.assign('/cuenta');
+                const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+                const redirectParam = searchParams?.get('redirect');
+                const targetUrl = redirectParam && redirectParam.startsWith('/') && !redirectParam.startsWith('//') ? redirectParam : '/cuenta';
+                setSuccess('¡Bienvenido! Continuando...');
+                window.location.assign(targetUrl);
             } else {
                 setError(data.error || 'Número o contraseña incorrectos.');
             }
