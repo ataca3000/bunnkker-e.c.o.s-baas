@@ -59,7 +59,7 @@ const PUBLIC_DOMAINS = [
 
 // --- Helper HMAC Verification ---
 async function verifyHmac(session: string, role: string, sig: string, tenantId: string = 'default'): Promise<boolean> {
-  const secret = process.env.INTERNAL_API_SECRET;
+  const secret = process.env.INTERNAL_API_SECRET || process.env.JWT_SECRET;
   if (process.env.NODE_ENV === 'production' && !secret) {
     console.warn('[MIDDLEWARE] Missing INTERNAL_API_SECRET in production — using fallback');
   }
