@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════
@@ -431,5 +432,126 @@ describe('Stock Concurrency Race & Idempotency Forensics', () => {
     expect(reservedPickup).toBe(0);
   });
 
+  it('Integración Real con Prisma: Concurrencia de 3 Cajas simultáneas con Modelo de Reservas y Cero Sobreventa', async () => {
+    const testProdId = `prod-race-prisma-${Date.now()}`;
+    
+    // 1. Crear producto de prueba en la base de datos con stock = 1 y reservedStock = 0
+    await prisma.product.create({
+      data: {
+        id: testProdId,
+        tenantId: 'default',
+        name: 'Taladro Última Unidad',
+        price: 999.00,
+        stock: 1,
+        reservedStock: 0,
+        category: 'Herramientas'
+      }
+    });
+
+    // 2. Definir función transaccional idéntica a la tubería real de /api/orders y store-checkout
+    async function checkoutCashier(cajaName: string, orderId: string) {
+      try {
+        return await prisma.$transaction(async (tx) => {
+          const prod = await tx.product.findUnique({
+            where: { id: testProdId },
+            select: { stock: true, reservedStock: true, price: true }
+          });
+          if (!prod) throw new Error('PRODUCT_NOT_FOUND');
+
+          const available = prod.stock - (prod.reservedStock || 0);
+          if (available < 1) {
+            throw new Error('INSUFFICIENT_STOCK: Producto agotado');
+          }
+
+          // Apartar reserva en reservedStock con Control de Concurrencia Optimista (OCC):
+          // Verifica que reservedStock no haya cambiado desde que lo leímos.
+          // Si otra caja ganó la reserva, updated.count será 0 y la transacción abortará.
+          const updated = await tx.product.updateMany({
+            where: { 
+              id: testProdId,
+              reservedStock: prod.reservedStock || 0
+            },
+            data: { reservedStock: { increment: 1 } }
+          });
+          if (updated.count !== 1) {
+            throw new Error('INSUFFICIENT_STOCK: Inventario apartado concurrentemente por otra caja.');
+          }
+
+          // Crear la orden pagada
+          const order = await tx.order.create({
+            data: {
+              id: orderId,
+              tenantId: 'default',
+              total: prod.price,
+              status: 'paid',
+              paymentMethod: 'CASH',
+              items: {
+                create: [{
+                  tenantId: 'default',
+                  productId: testProdId,
+                  cantidad: 1,
+                  precio: prod.price
+                }]
+              }
+            }
+          });
+
+          return { success: true, cajaName, orderId: order.id };
+        });
+      } catch (err: any) {
+        return { success: false, cajaName, error: err.message };
+      }
+    }
+
+    // 3. Lanzar 3 cajas cobrando exactamente al mismo instante en paralelo
+    const results = await Promise.all([
+      checkoutCashier('Caja 1 Mostrador', `ORD-PRISMA-1-${Date.now()}`),
+      checkoutCashier('Caja 2 Patio', `ORD-PRISMA-2-${Date.now()}`),
+      checkoutCashier('Caja 3 Pasillo', `ORD-PRISMA-3-${Date.now()}`)
+    ]);
+
+    const successes = results.filter(r => r.success);
+    const failures = results.filter(r => !r.success);
+
+    // EXACTAMENTE 1 caja gana la venta y 2 son rechazadas por falta de inventario disponible
+    expect(successes.length).toBe(1);
+    expect(failures.length).toBe(2);
+    for (const fail of failures) {
+      expect((fail as any).error).toContain('INSUFFICIENT_STOCK');
+    }
+
+    // 4. Verificar estado en Prisma: stock sigue en 1 (físico aún en tienda) y reservedStock = 1 (apartado)
+    const midProd = await prisma.product.findUnique({ where: { id: testProdId } });
+    expect(midProd?.stock).toBe(1);
+    expect(midProd?.reservedStock).toBe(1);
+
+    // 5. Simular entrega final PoD de la orden ganadora:
+    // Se descuenta stock físico (1 -> 0) y se libera la reserva (1 -> 0)
+    const winningOrderId = (successes[0] as any).orderId;
+    await prisma.$transaction(async (tx) => {
+      await tx.product.update({
+        where: { id: testProdId },
+        data: {
+          stock: { decrement: 1 },
+          reservedStock: { decrement: 1 }
+        }
+      });
+      await tx.order.update({
+        where: { id: winningOrderId },
+        data: { status: 'DELIVERED' }
+      });
+    });
+
+    const finalProd = await prisma.product.findUnique({ where: { id: testProdId } });
+    expect(finalProd?.stock).toBe(0);
+    expect(finalProd?.reservedStock).toBe(0);
+
+    // 6. Intentar una 4ta compra cuando ya no hay stock
+    const lateAttempt = await checkoutCashier('Caja 4 Tarde', `ORD-PRISMA-4-${Date.now()}`);
+    expect(lateAttempt.success).toBe(false);
+    expect((lateAttempt as any).error).toContain('INSUFFICIENT_STOCK');
+  });
+
 });
+
 

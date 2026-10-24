@@ -29,7 +29,7 @@ export async function POST(req: Request) {
 
         // 3. Validar productos y stock en la base de datos única (Prisma)
         let orderTotal = 0;
-        const verifiedItems: Array<{ id: string; name: string; quantity: number; price: number }> = [];
+        const verifiedItems: Array<{ id: string; name: string; quantity: number; price: number; initialReservedStock?: number }> = [];
 
         for (const item of items) {
             if (!item.id || !item.quantity || item.quantity <= 0) {
@@ -60,7 +60,8 @@ export async function POST(req: Request) {
                 id: product.id,
                 name: product.name,
                 quantity: item.quantity,
-                price: realPrice
+                price: realPrice,
+                initialReservedStock: product.reservedStock || 0
             });
         }
 
@@ -72,16 +73,22 @@ export async function POST(req: Request) {
         const orderId = `ORD-${Date.now().toString().slice(-6)}`;
         const isDelivery = customerData?.deliveryMethod === 'repartidor';
 
-        // 5. Transacción atómica en Prisma: apartar reserva de stock y crear la orden
+        // 5. Transacción atómica en Prisma: apartar reserva de stock con OCC y crear la orden
         const createdOrder = await prisma.$transaction(async (tx) => {
-            // Apartar el inventario de cada producto en reservedStock
+            // Apartar el inventario de cada producto en reservedStock con Control de Concurrencia Optimista
             for (const item of verifiedItems) {
-                await tx.product.update({
-                    where: { id: item.id },
+                const occ = await tx.product.updateMany({
+                    where: { 
+                        id: item.id,
+                        reservedStock: item.initialReservedStock
+                    },
                     data: {
                         reservedStock: { increment: item.quantity }
                     }
                 });
+                if (occ.count !== 1) {
+                    throw new Error(`INSUFFICIENT_STOCK: El producto "${item.name}" fue apartado concurrentemente por otro cliente o caja.`);
+                }
             }
 
             // Crear la orden en Prisma

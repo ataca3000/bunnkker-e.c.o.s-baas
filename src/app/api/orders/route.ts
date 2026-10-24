@@ -309,7 +309,7 @@ export async function POST(request: NextRequest) {
             }
 
             // 2. Validación de Productos e Inventario (con auto-resolución resiliente)
-            const resolvedOrderItems: Array<{ productId: string; cantidad: number; precio: number }> = [];
+            const resolvedOrderItems: Array<{ productId: string; cantidad: number; precio: number; initialReservedStock?: number }> = [];
 
             for (const item of items) {
                 const prodId = item.productId || item.id;
@@ -373,7 +373,8 @@ export async function POST(request: NextRequest) {
                 resolvedOrderItems.push({
                     productId: current.id,
                     cantidad: qty,
-                    precio: resolvedPrice
+                    precio: resolvedPrice,
+                    initialReservedStock: current.reservedStock || 0
                 });
             }
 
@@ -394,13 +395,20 @@ export async function POST(request: NextRequest) {
                 finalTotal = numTotal;
             }
 
-            // Si la orden nace pagada de inmediato, apartar en reservedStock de forma segura
+            // Si la orden nace pagada de inmediato, apartar en reservedStock con Control de Concurrencia Optimista (OCC):
+            // Garantiza que si dos cajas compiten por la última pieza al mismo milisegundo, solo una gana la reserva.
             if (initialStatus === 'paid') {
                 for (const roi of resolvedOrderItems) {
-                    await tx.product.update({
-                        where: { id: roi.productId },
+                    const occ = await tx.product.updateMany({
+                        where: { 
+                            id: roi.productId,
+                            reservedStock: roi.initialReservedStock
+                        },
                         data: { reservedStock: { increment: roi.cantidad } }
                     });
+                    if (occ.count !== 1) {
+                        throw new Error(`INSUFFICIENT_STOCK: El inventario de uno de los productos fue apartado concurrentemente por otra caja.`);
+                    }
                 }
             }
 
@@ -425,7 +433,11 @@ export async function POST(request: NextRequest) {
                     deliveryAddress: clientData?.address || null,
                     customerId: customerId,
                     items: {
-                        create: resolvedOrderItems
+                        create: resolvedOrderItems.map(roi => ({
+                            productId: roi.productId,
+                            cantidad: roi.cantidad,
+                            precio: roi.precio
+                        }))
                     }
                 },
                 include: { customer: true, items: true }
@@ -848,11 +860,16 @@ export async function PATCH(request: NextRequest) {
                 }
 
                 // EXCLUSIÓN MUTUA ATÓMICA:
-                // Previene condiciones de carrera si llegan dos peticiones de restitución simultáneas
+                // Previene condiciones de carrera si llegan dos peticiones de restitución simultáneas.
+                // IMPORTANTE: En SQL, NULL <> 'CANCELADA_STOCK_RESTITUIDO' evalúa a falso/UNKNOWN.
+                // Por ende, contemplamos explícitamente tanto rejectionReason: null como cualquier valor distinto.
                 const lockUpdate = await tx.order.updateMany({
                     where: {
                         id,
-                        rejectionReason: { not: 'CANCELADA_STOCK_RESTITUIDO' },
+                        OR: [
+                            { rejectionReason: null },
+                            { rejectionReason: { not: 'CANCELADA_STOCK_RESTITUIDO' } }
+                        ],
                         status: { notIn: ['DELIVERED', 'COMPLETED'] }
                     },
                     data: {
