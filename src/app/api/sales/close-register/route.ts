@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
             data: {
                 tenantId,
                 cashierId: effectiveCashierId,
-                cashierName: cashierName || 'Cajero',
+                cashierName: effectiveCashierName,
                 declaredAmount: cleanDeclared,
                 expectedAmount,
                 discrepancy,
@@ -79,12 +79,12 @@ export async function POST(request: NextRequest) {
                     action: 'CASH_MISMATCH_DETECTED',
                     details: JSON.stringify({
                         cashierId: effectiveCashierId,
-                        cashierName: cashierName || 'Cajero',
+                        cashierName: effectiveCashierName,
                         expectedAmount,
                         declaredAmount: cleanDeclared,
                         discrepancy
                     }),
-                    userId: cashierId: effectiveCashierId,
+                    userId: effectiveCashierId,
                     synced: true
                 }
             }).catch(() => {});
@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
                     type: 'CASH_MISMATCH',
                     tenantId,
                     cashierId: effectiveCashierId,
-                    cashierName: cashierName || 'Cajero',
+                    cashierName: effectiveCashierName,
                     expectedAmount,
                     declaredAmount,
                     discrepancy,
