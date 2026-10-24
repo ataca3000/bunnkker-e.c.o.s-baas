@@ -108,9 +108,13 @@ describe('thermalPrinter', () => {
     it('printReceipt: si el usuario cancela en modo serial, respeta la decisión (sin respaldo)', async () => {
         const err = Object.assign(new Error('No port selected by the user.'), { name: 'NotFoundError' });
         setSerial({ getPorts: async () => [], requestPort: vi.fn().mockRejectedValue(err) });
-        if (typeof window !== 'undefined') {
-            localStorage.setItem('_bunkker_hardware_config', JSON.stringify({ printerMode: 'serial' }));
-        }
+        const store: Record<string, string> = {
+            _bunkker_hardware_config: JSON.stringify({ printerMode: 'serial' })
+        };
+        (globalThis as any).localStorage = {
+            getItem: (k: string) => store[k] || null,
+            setItem: (k: string, v: string) => { store[k] = v; }
+        };
         const res = await printReceipt(data);
         expect(res).toMatchObject({ ok: false, code: 'cancelled' });
     });

@@ -397,9 +397,10 @@ export const printReceipt = async (data: PrintData): Promise<PrintResult> => {
     let targetIp: string | undefined;
     let serverUrl: string | undefined;
 
-    if (typeof window !== 'undefined') {
+    const storage = typeof window !== 'undefined' ? window.localStorage : (globalThis as any)?.localStorage;
+    if (storage && typeof storage.getItem === 'function') {
         try {
-            const raw = localStorage.getItem('_bunkker_hardware_config');
+            const raw = storage.getItem('_bunkker_hardware_config');
             if (raw) {
                 const cfg = JSON.parse(raw);
                 prefMode = cfg.printerMode || 'digital';
