@@ -186,6 +186,7 @@ const createServer = () => {
         }
 
         const effectiveInternalSecret = process.env.INTERNAL_API_SECRET || installationSecret;
+        process.env.INTERNAL_API_SECRET = effectiveInternalSecret;
 
         serverProcess = fork(serverPath, [], {
             cwd: serverDir,
@@ -316,7 +317,9 @@ const createWindow = (urlHost = 'localhost') => {
     });
 
     mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-        require('electron').shell.openExternal(url);
+        if (url && (url.startsWith('https://') || url.startsWith('http://'))) {
+            require('electron').shell.openExternal(url);
+        }
         return { action: 'deny' };
     });
 
@@ -504,7 +507,7 @@ const ensureFirewallRules = () => {
         const { exec } = require('child_process');
         exec('netsh advfirewall firewall show rule name="BUNKKER ERP LAN"', (err, stdout) => {
             if (err || !stdout || !stdout.includes('BUNKKER ERP LAN')) {
-                exec('netsh advfirewall firewall add rule name="BUNKKER ERP LAN" dir=in action=allow protocol=TCP localport=3000,3001,3002 profile=any', (addErr) => {
+                exec('netsh advfirewall firewall add rule name="BUNKKER ERP LAN" dir=in action=allow protocol=TCP localport=3000,3001,3002 profile=private,domain', (addErr) => {
                     if (!addErr) {
                         console.log('[Firewall] ✅ Regla de Firewall para LAN configurada en puertos 3000, 3001 y 3002.');
                     }

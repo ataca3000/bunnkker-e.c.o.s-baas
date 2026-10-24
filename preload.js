@@ -7,6 +7,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getMachineId: () => ipcRenderer.invoke('get-machine-id'),
     getRniUrl: () => ipcRenderer.invoke('get-rni-url'),
     restoreBackup: (fileContent) => ipcRenderer.invoke('restore-backup', fileContent),
+    printSilent: (ticketHtml) => ipcRenderer.invoke('print-silent', ticketHtml),
 
     onUpdateAvailable: (cb) => ipcRenderer.on('update-available', (_, version) => cb(version)),
     onUpdateProgress: (cb) => ipcRenderer.on('update-progress', (_, percent) => cb(percent)),

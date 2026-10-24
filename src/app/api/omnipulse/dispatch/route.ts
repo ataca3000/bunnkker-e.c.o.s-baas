@@ -7,6 +7,7 @@
  * Actualiza el estado en tiempo real mediante Server-Sent Events.
  */
 import { NextRequest, NextResponse } from 'next/server';
+import { requireRole } from '@/lib/apiAuth';
 import { resolveSpintax } from '@/lib/omnipulse/spintax';
 import type { NetworkId, DispatchResult, DispatchStatus } from '@/lib/omnipulse/types';
 import { dispatchResults, postStore } from '@/lib/omnipulse/store';
@@ -172,6 +173,9 @@ function getCharLimit(network: NetworkId): number {
 }
 
 export async function POST(request: NextRequest) {
+    const auth = requireRole(request, ['superadmin', 'admin', 'marketing']);
+    if (!auth.ok) return auth.response;
+
     try {
         const body = await request.json() as {
             postId: string;
@@ -199,6 +203,10 @@ export async function POST(request: NextRequest) {
             status: 'pending' as DispatchStatus,
         }));
 
+        if (dispatchResults.size >= 200) {
+            const oldestKey = dispatchResults.keys().next().value;
+            if (oldestKey) dispatchResults.delete(oldestKey);
+        }
         dispatchResults.set(body.postId, results);
 
         // Despacho asíncrono (no bloqueamos la respuesta HTTP)

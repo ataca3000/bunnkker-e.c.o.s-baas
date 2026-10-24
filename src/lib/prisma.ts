@@ -122,6 +122,7 @@ function loadPersistedStore(): Record<string, any[]> {
 
 let saveTimer: any = null;
 export function flushPersistedStore() {
+  if (process.env.NODE_ENV === 'test' || process.env.VITEST) return;
   try {
     const g = globalThis as any;
     const store = g._bunkker_memory_store;
@@ -135,6 +136,7 @@ export function flushPersistedStore() {
 }
 
 function triggerStoreSave(store: Record<string, any[]>) {
+  if (process.env.NODE_ENV === 'test' || process.env.VITEST) return;
   if (saveTimer) clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
     try {

@@ -298,7 +298,7 @@ export async function POST(request: NextRequest) {
             } else if (clientData && (clientData.phone || clientData.name)) {
                 const phone = clientData.phone || '0000000000';
                 let customer = await tx.customer.findFirst({
-                    where: { phone }
+                    where: { tenantId, phone }
                 });
 
                 if (!customer) {
@@ -314,8 +314,8 @@ export async function POST(request: NextRequest) {
                                 : null
                         }
                     });
-                } else if (deliveryType === 'DELIVERY' && clientData.address) {
-                    // Actualizar datos de entrega si regresó con nueva dirección
+                } else if (deliveryType === 'DELIVERY' && clientData.address && (staffSession.ok || !customer.pin)) {
+                    // Solo actualizar el perfil maestro si es staff en caja o cuenta de mostrador sin contraseña
                     customer = await tx.customer.update({
                         where: { id: customer.id },
                         data: {
@@ -401,13 +401,14 @@ export async function POST(request: NextRequest) {
             }
 
             const isClientOrder = Boolean(authenticatedCustomerId || body.asRequest || !staffSession.ok || paymentMethod === 'pago_caja');
+            const allowedInitialStatuses = ['paid', 'pending_payment', 'pending_confirmation', 'READY_TO_SHIP'];
             const initialStatus = isClientOrder
                 ? 'pending_payment'
-                : (body.status || 'paid');
+                : (allowedInitialStatuses.includes(body.status) ? body.status : 'paid');
 
-            // RECALCULO DE TOTAL OBLIGATORIO EN EL SERVIDOR:
+            // RECALCULO DE TOTAL OBLIGATORIO EN EL SERVIDOR (prohibido shippingCost negativo):
             const calculatedItemsTotal = resolvedOrderItems.reduce((acc, it) => acc + roundMoney(it.cantidad * it.precio), 0);
-            const shippingCost = roundMoney(Number(body.shippingCost || body.costoEnvio || 0));
+            const shippingCost = Math.max(0, roundMoney(Number(body.shippingCost || body.costoEnvio || 0)));
             const expectedTotal = roundMoney(calculatedItemsTotal + shippingCost);
 
             // Si es pedido de cliente o mostrador, se impone el total recalculado por el servidor
@@ -424,7 +425,8 @@ export async function POST(request: NextRequest) {
                     const occ = await tx.product.updateMany({
                         where: { 
                             id: roi.productId,
-                            reservedStock: roi.initialReservedStock
+                            reservedStock: roi.initialReservedStock,
+                            stock: { gte: (roi.initialReservedStock || 0) + roi.cantidad }
                         },
                         data: { reservedStock: { increment: roi.cantidad } }
                     });
@@ -445,9 +447,9 @@ export async function POST(request: NextRequest) {
                             deliveryType: deliveryType || (deliveryMethod === 'repartidor' ? 'DELIVERY' : (['pickup', 'piso', 'tienda'].includes(deliveryMethod) ? 'PICKUP' : 'LOCAL')),
                             paymentMethod: isCashierRequest ? 'pago_caja' : paymentMethod || 'CASH',
                             status: initialStatus,
-                            vendedorId: isCashierRequest ? null : body.vendedorId || null,
-                            vendedorName: isCashierRequest ? null : body.vendedorName || null,
-                            confirmedAt: isCashierRequest ? null : body.confirmedAt ? new Date(body.confirmedAt) : new Date(),
+                            vendedorId: isCashierRequest ? null : (staffSession.ok ? staffSession.uid : null),
+                            vendedorName: isCashierRequest ? null : (staffUser?.name || body.vendedorName || null),
+                            confirmedAt: isCashierRequest ? null : new Date(),
                             expiresAt: body.expiresAt ? new Date(body.expiresAt) : null,
                     deliveryPin: body.deliveryPin || null,
                     deliveryLat: typeof deliveryLat === 'number' ? deliveryLat : null,

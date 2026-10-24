@@ -1,24 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma, flushPersistedStore } from '@/lib/prisma';
-import { requireRole } from '@/lib/apiAuth';
+import { requireActiveRole, getTenantId } from '@/lib/apiAuth';
 import crypto from 'crypto';
 
 export async function GET(request: NextRequest) {
-    const auth = requireRole(request, ['superadmin', 'admin']);
+    const auth = await requireActiveRole(request, ['superadmin', 'admin']);
     if (!auth.ok) return auth.response;
+    const tenantId = auth.tenantId || getTenantId(request);
 
     try {
-        // Fetch all 12 operational and financial tables
-        const products = await prisma.product.findMany();
-        const orders = await prisma.order.findMany({ include: { items: true, events: true } });
-        const customers = await prisma.customer.findMany();
-        const users = await prisma.user.findMany();
-        const shrinkage = await prisma.shrinkageLog.findMany();
-        const cashRegisterLogs = await prisma.cashRegisterLog.findMany();
-        const purchases = await prisma.purchase.findMany();
-        const auditLogs = await prisma.auditLog.findMany({ take: 5000 });
-        const appConfig = await prisma.appConfig.findMany();
-        const supportTickets = await prisma.supportTicket.findMany();
+        // Fetch all 12 operational and financial tables scoped by tenantId
+        const products = await prisma.product.findMany({ where: { tenantId } });
+        const orders = await prisma.order.findMany({ where: { tenantId }, include: { items: true, events: true } });
+        const customers = await prisma.customer.findMany({ where: { tenantId } });
+        const rawUsers = await prisma.user.findMany({ where: { tenantId } });
+        const users = rawUsers.map(({ pin: _pin, pinHash: _pinHash, ...safeUser }: any) => safeUser);
+        const shrinkage = await prisma.shrinkageLog.findMany({ where: { tenantId } });
+        const cashRegisterLogs = await prisma.cashRegisterLog.findMany({ where: { tenantId } });
+        const purchases = await prisma.purchase.findMany({ where: { tenantId } });
+        const auditLogs = await prisma.auditLog.findMany({ where: { tenantId }, take: 5000 });
+        const appConfig = await prisma.appConfig.findMany({ where: { tenantId } });
+        const supportTickets = await prisma.supportTicket.findMany({ where: { tenantId } });
 
         const rawData = {
             products,
@@ -74,7 +76,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-    const auth = requireRole(request, ['superadmin', 'admin']);
+    const auth = await requireActiveRole(request, ['superadmin', 'admin']);
     if (!auth.ok) return auth.response;
 
     try {

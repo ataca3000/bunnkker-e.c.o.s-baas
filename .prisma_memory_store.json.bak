@@ -7,11 +7,9 @@
       "name": "Dueño (Superadmin)",
       "email": "superadmin@bunnkker.local",
       "role": "superadmin",
-      "pin": "741d13f078743d11f01a28999ca272affc8b8ffa639f49fdce6158e91c869d31",
+      "pin": "9af15b336e6a9619928537df30b2e6a2376569fcf9d7e773eccede65606529a0",
       "active": true,
-      "createdAt": "2026-10-14T17:17:08.419Z",
-      "deviceId": "DEV-2f6fab3e-mv8dia7r",
-      "pinHash": "$2b$10$zvRjkK6ey8y0/KaXQRwu2OjtPAD5Dz4CzxWuB/mlmF0dSh.v3Hh.2"
+      "createdAt": "2026-10-24T00:00:00.000Z"
     },
     {
       "id": "demo-admin",
@@ -21,9 +19,7 @@
       "role": "admin",
       "pin": "0ffe1abd1a08215353c233d6e009613e95eec4253832a761af28ff37ac5a150c",
       "active": true,
-      "createdAt": "2026-10-14T17:17:08.419Z",
-      "pinHash": "$2b$10$pMFS7s0sUKnBnWjO.ZEZE.ujnrd.a.y5kFIeM7uctwmwIQWJ8s79e",
-      "deviceId": "DEV-3d3813de-mvlyv8o4"
+      "createdAt": "2026-10-24T00:00:00.000Z"
     },
     {
       "id": "demo-sales",
@@ -33,9 +29,7 @@
       "role": "sales",
       "pin": "edee29f882543b956620b26d0ee0e7e950399b1c4222f5de05e06425b4c995e9",
       "active": true,
-      "createdAt": "2026-10-14T17:17:08.419Z",
-      "pinHash": "$2b$10$TsEU2y.8WYrmdq7hiULZTuIn7CuLFJAA/c08EnFI5E9X7ifZ/TnjK",
-      "deviceId": "DEV-6da8bc2e-mvh60m5i"
+      "createdAt": "2026-10-24T00:00:00.000Z"
     },
     {
       "id": "demo-inventory",
@@ -45,7 +39,7 @@
       "role": "inventory",
       "pin": "318aee3fed8c9d040d35a7fc1fa776fb31303833aa2de885354ddf3d44d8fb69",
       "active": true,
-      "createdAt": "2026-10-14T17:17:08.419Z"
+      "createdAt": "2026-10-24T00:00:00.000Z"
     },
     {
       "id": "demo-marketing",
@@ -55,7 +49,7 @@
       "role": "marketing",
       "pin": "79f06f8fde333461739f220090a23cb2a79f6d714bee100d0e4b4af249294619",
       "active": true,
-      "createdAt": "2026-10-14T17:17:08.419Z"
+      "createdAt": "2026-10-24T00:00:00.000Z"
     },
     {
       "id": "demo-driver",
@@ -65,7 +59,7 @@
       "role": "driver",
       "pin": "c1f330d0aff31c1c87403f1e4347bcc21aff7c179908723535f2b31723702525",
       "active": true,
-      "createdAt": "2026-10-14T17:17:08.419Z"
+      "createdAt": "2026-10-24T00:00:00.000Z"
     },
     {
       "id": "demo-carga_descarga",
@@ -73,11 +67,9 @@
       "name": "Patio / Carga y Descarga",
       "email": "patio@bunnkker.local",
       "role": "carga_descarga",
-      "pin": "d7697570462f7562b83e81258de0f1e41832e98072e44c36ec8efec46786e24e",
+      "pin": "b2210101f1f0472811484862597c76b56958e20e9b9d257298cf8f718569a252",
       "active": true,
-      "createdAt": "2026-10-14T17:17:08.419Z",
-      "pinHash": "$2b$10$xk6JcUwmy9BHjtWYS60LpusqhARvB4qjTmatBb5LcZ8tSoIQuRv.K",
-      "deviceId": "test-device"
+      "createdAt": "2026-10-24T00:00:00.000Z"
     },
     {
       "id": "demo-pickup",
@@ -85,362 +77,17 @@
       "name": "Mostrador / Pick Up",
       "email": "pickup@bunnkker.local",
       "role": "pickup",
-      "pin": "41c991eb6a66242c0454191244278183ce58cf4a6bcd372f799e4b9cc01886af",
+      "pin": "936a185caaa266bb9cbe981e9e05cb78cd732b0b3280eb944412bb6f8f8f07af",
       "active": true,
-      "createdAt": "2026-10-14T17:17:08.419Z"
+      "createdAt": "2026-10-24T00:00:00.000Z"
     }
   ],
-  "customer": [
-    {
-      "id": "76e05753-1d92-4c38-8588-794abfcc2acf",
-      "tenantId": "default",
-      "createdAt": "2026-10-18T02:05:15.882Z",
-      "name": "Juan Perez",
-      "phone": "5512345678",
-      "address": null,
-      "references": null,
-      "gpsCoords": null
-    },
-    {
-      "id": "5509f274-8e4c-4fe7-86fc-d1e20071b9b8",
-      "tenantId": "default",
-      "createdAt": "2026-10-18T02:07:13.879Z",
-      "phone": "5599887766",
-      "pin": "1234",
-      "name": "Test User"
-    },
-    {
-      "id": "af1bd6f3-82cd-46fe-a330-2b9600c570dd",
-      "tenantId": "default",
-      "createdAt": "2026-10-21T20:51:02.354Z",
-      "name": "Victima Legítima",
-      "email": "victim_1792615862351@test.com",
-      "phone": "5515862351",
-      "pin": "1234"
-    },
-    {
-      "id": "8f0d1747-141a-4eac-bbdc-4313803aad79",
-      "tenantId": "default",
-      "createdAt": "2026-10-21T20:51:02.416Z",
-      "name": "Usuario Valido",
-      "email": "user_ok_1792615862416@test.com",
-      "phone": "5515862416",
-      "pin": "CORRECT_PASS"
-    },
-    {
-      "id": "4b40315b-3386-43a9-b785-fdaaf8f85623",
-      "tenantId": "default",
-      "createdAt": "2026-10-21T20:51:02.480Z",
-      "name": "Nuevo Cliente Bunkker",
-      "email": "new_1792615862473@test.com",
-      "phone": "006e65775f31",
-      "pin": "new_pass_4321",
-      "address": "Calle 10 #40",
-      "rfc": null
-    },
-    {
-      "id": "c659be7a-56f7-4918-a260-4799be54f4a6",
-      "tenantId": "default",
-      "createdAt": "2026-10-21T20:51:41.827Z",
-      "name": "Victima Legítima",
-      "email": "victim_1792615901822@test.com",
-      "phone": "5515901822",
-      "pin": "1234"
-    },
-    {
-      "id": "ff06a999-a233-4f8b-b9d4-c8e9b8ac611f",
-      "tenantId": "default",
-      "createdAt": "2026-10-21T20:51:41.854Z",
-      "name": "Usuario Valido",
-      "email": "user_ok_1792615901854@test.com",
-      "phone": "5515901854",
-      "pin": "CORRECT_PASS"
-    },
-    {
-      "id": "bacd62a2-a037-41d6-9a59-8afe2bebf3f2",
-      "tenantId": "default",
-      "createdAt": "2026-10-22T05:58:55.548Z",
-      "name": "Victima Legítima",
-      "email": "victim_1792648735542@test.com",
-      "phone": "5548735542",
-      "pin": "1234"
-    },
-    {
-      "id": "e785d279-b9f7-42ad-a684-886a378db253",
-      "tenantId": "default",
-      "createdAt": "2026-10-22T05:58:55.571Z",
-      "name": "Usuario Valido",
-      "email": "user_ok_1792648735571@test.com",
-      "phone": "5548735571",
-      "pin": "CORRECT_PASS"
-    },
-    {
-      "id": "e20bebf8-11d3-4a21-ab71-b775562bb3fa",
-      "tenantId": "default",
-      "createdAt": "2026-10-22T16:55:39.547Z",
-      "name": "Victima Legítima",
-      "email": "victim_1792688137075@test.com",
-      "phone": "5588137075",
-      "pin": "1234"
-    },
-    {
-      "id": "34b5308a-2fe3-422c-80db-5b1d75864dc6",
-      "tenantId": "default",
-      "createdAt": "2026-10-22T16:55:39.658Z",
-      "name": "Usuario Valido",
-      "email": "user_ok_1792688139658@test.com",
-      "phone": "5588139658",
-      "pin": "CORRECT_PASS"
-    },
-    {
-      "id": "170eb810-ba50-464d-8ccd-0eb9cfaa40a6",
-      "tenantId": "default",
-      "createdAt": "2026-10-22T17:30:58.242Z",
-      "name": "Victima Legítima",
-      "email": "victim_1792690258227@test.com",
-      "phone": "5590258227",
-      "pin": "1234"
-    },
-    {
-      "id": "39528ae1-c321-4f25-a989-00b56c3fa0c3",
-      "tenantId": "default",
-      "createdAt": "2026-10-22T17:30:58.329Z",
-      "name": "Usuario Valido",
-      "email": "user_ok_1792690258328@test.com",
-      "phone": "5590258329",
-      "pin": "CORRECT_PASS"
-    },
-    {
-      "id": "06da8358-7aa4-406d-ab69-7f21201f0a3a",
-      "tenantId": "default",
-      "createdAt": "2026-10-23T15:54:56.751Z",
-      "name": "Victima Legítima",
-      "email": "victim_1792770896743@test.com",
-      "phone": "5570896743",
-      "pin": "1234"
-    },
-    {
-      "id": "2b5746ca-679c-4858-9823-62aadc6f7b43",
-      "tenantId": "default",
-      "createdAt": "2026-10-23T15:54:56.813Z",
-      "name": "Usuario Valido",
-      "email": "user_ok_1792770896812@test.com",
-      "phone": "5570896813",
-      "pin": "CORRECT_PASS"
-    },
-    {
-      "id": "cb953dba-abc9-45ab-807c-99477e924d14",
-      "tenantId": "default",
-      "createdAt": "2026-10-23T17:45:33.273Z",
-      "name": "Victima Legítima",
-      "email": "victim_1792777533261@test.com",
-      "phone": "5577533261",
-      "pin": "1234"
-    },
-    {
-      "id": "10256234-9028-4e8a-a14b-72181264c643",
-      "tenantId": "default",
-      "createdAt": "2026-10-23T17:45:33.314Z",
-      "name": "Usuario Valido",
-      "email": "user_ok_1792777533313@test.com",
-      "phone": "5577533314",
-      "pin": "CORRECT_PASS"
-    },
-    {
-      "id": "df44f482-6532-49be-a9e5-8b2f2669abac",
-      "tenantId": "default",
-      "createdAt": "2026-10-23T18:20:56.383Z",
-      "name": "Victima Legítima",
-      "email": "victim_1792779656371@test.com",
-      "phone": "5579656371",
-      "pin": "1234"
-    },
-    {
-      "id": "4ecfea7d-7c66-4325-824d-a0b87b424a96",
-      "tenantId": "default",
-      "createdAt": "2026-10-23T18:20:56.429Z",
-      "name": "Usuario Valido",
-      "email": "user_ok_1792779656429@test.com",
-      "phone": "5579656429",
-      "pin": "CORRECT_PASS"
-    },
-    {
-      "id": "dcb10d6f-abc3-4b22-b5e3-cdf6d93c1f4d",
-      "tenantId": "default",
-      "createdAt": "2026-10-23T18:41:18.860Z",
-      "name": "Victima Legítima",
-      "email": "victim_1792780878848@test.com",
-      "phone": "5580878848",
-      "pin": "1234"
-    },
-    {
-      "id": "89dc5cc9-799a-48e0-95e5-330f6b099198",
-      "tenantId": "default",
-      "createdAt": "2026-10-23T18:41:18.914Z",
-      "name": "Usuario Valido",
-      "email": "user_ok_1792780878914@test.com",
-      "phone": "5580878914",
-      "pin": "CORRECT_PASS"
-    },
-    {
-      "id": "084985d6-df5f-4bf8-b1ff-eaa9cbbfbae1",
-      "tenantId": "default",
-      "createdAt": "2026-10-23T21:26:58.763Z",
-      "name": "Victima Legítima",
-      "email": "victim_1792790818730@test.com",
-      "phone": "5590818730",
-      "pin": "1234"
-    },
-    {
-      "id": "1f8d3ff3-e1f9-474d-8f57-31cf6e83e8c7",
-      "tenantId": "default",
-      "createdAt": "2026-10-23T21:26:59.004Z",
-      "name": "Usuario Valido",
-      "email": "user_ok_1792790819004@test.com",
-      "phone": "5590819004",
-      "pin": "CORRECT_PASS"
-    },
-    {
-      "id": "c55eb3ce-2979-472d-a643-9a56606366cf",
-      "tenantId": "default",
-      "createdAt": "2026-10-23T22:10:14.926Z",
-      "name": "Victima Legítima",
-      "email": "victim_1792793414912@test.com",
-      "phone": "5593414912",
-      "pin": "1234"
-    },
-    {
-      "id": "c83a57c4-3c27-46c4-a449-84e8042a17de",
-      "tenantId": "default",
-      "createdAt": "2026-10-23T22:10:14.990Z",
-      "name": "Usuario Valido",
-      "email": "user_ok_1792793414990@test.com",
-      "phone": "5593414990",
-      "pin": "CORRECT_PASS"
-    },
-    {
-      "id": "17d2fa62-b4f5-4517-838c-642eb91496f1",
-      "tenantId": "default",
-      "createdAt": "2026-10-23T23:08:33.147Z",
-      "name": "Victima Legítima",
-      "email": "victim_1792796913134@test.com",
-      "phone": "5596913134",
-      "pin": "1234"
-    },
-    {
-      "id": "16fc0b36-fe6e-402a-b10b-0b3d9be3cf2c",
-      "tenantId": "default",
-      "createdAt": "2026-10-23T23:08:33.216Z",
-      "name": "Usuario Valido",
-      "email": "user_ok_1792796913216@test.com",
-      "phone": "5596913216",
-      "pin": "CORRECT_PASS"
-    },
-    {
-      "id": "4b095267-7323-4083-8de1-027fadf20fc8",
-      "tenantId": "default",
-      "createdAt": "2026-10-23T23:11:55.827Z",
-      "name": "Victima Legítima",
-      "email": "victim_1792797115819@test.com",
-      "phone": "5597115819",
-      "pin": "1234"
-    },
-    {
-      "id": "dea28630-8a5f-47ae-b1f0-a2cb1e1668b2",
-      "tenantId": "default",
-      "createdAt": "2026-10-23T23:11:55.903Z",
-      "name": "Usuario Valido",
-      "email": "user_ok_1792797115902@test.com",
-      "phone": "5597115903",
-      "pin": "CORRECT_PASS"
-    },
-    {
-      "id": "c375e0fe-a5b1-4945-8cae-362d163a7b72",
-      "tenantId": "default",
-      "createdAt": "2026-10-24T10:21:18.050Z",
-      "name": "Victima Legítima",
-      "email": "victim_1792837278029@test.com",
-      "phone": "5537278029",
-      "pin": "1234"
-    },
-    {
-      "id": "705f3bea-16f7-4d36-b76e-00c6b749b044",
-      "tenantId": "default",
-      "createdAt": "2026-10-24T10:21:18.129Z",
-      "name": "Usuario Valido",
-      "email": "user_ok_1792837278128@test.com",
-      "phone": "5537278128",
-      "pin": "CORRECT_PASS"
-    },
-    {
-      "id": "e9ce2c73-941b-4902-9ba7-ee413ef8773c",
-      "tenantId": "default",
-      "createdAt": "2026-10-24T11:30:09.180Z",
-      "name": "Victima Legítima",
-      "email": "victim_1792841409176@test.com",
-      "phone": "5541409176",
-      "pin": "1234"
-    },
-    {
-      "id": "bdf51d1d-d0e4-49f1-bad9-63f74cfa4d26",
-      "tenantId": "default",
-      "createdAt": "2026-10-24T11:30:09.240Z",
-      "name": "Usuario Valido",
-      "email": "user_ok_1792841409240@test.com",
-      "phone": "5541409240",
-      "pin": "CORRECT_PASS"
-    },
-    {
-      "id": "f4b169fc-257b-40fd-a448-dfe3f57fc93d",
-      "tenantId": "default",
-      "createdAt": "2026-10-24T11:35:21.851Z",
-      "name": "Victima Legítima",
-      "email": "victim_1792841721840@test.com",
-      "phone": "5541721840",
-      "pin": "1234"
-    },
-    {
-      "id": "faa392c4-b2a1-4207-9a24-b4c15795619e",
-      "tenantId": "default",
-      "createdAt": "2026-10-24T11:35:21.901Z",
-      "name": "Usuario Valido",
-      "email": "user_ok_1792841721901@test.com",
-      "phone": "5541721901",
-      "pin": "CORRECT_PASS"
-    },
-    {
-      "id": "ba53edeb-a978-4c42-8582-bc812b47bb9b",
-      "tenantId": "default",
-      "createdAt": "2026-10-24T21:16:39.680Z",
-      "name": "Victima Legítima",
-      "email": "victim_1792876599674@test.com",
-      "phone": "5576599674",
-      "pin": "1234"
-    },
-    {
-      "id": "e85a96cd-b382-47fe-8912-6fe4d8404646",
-      "tenantId": "default",
-      "createdAt": "2026-10-24T21:16:39.731Z",
-      "name": "Usuario Valido",
-      "email": "user_ok_1792876599731@test.com",
-      "phone": "5576599731",
-      "pin": "CORRECT_PASS"
-    }
-  ],
+  "customer": [],
   "order": [],
   "orderItem": [],
   "orderEvent": [],
   "syncQueue": [],
-  "auditLog": [
-    {
-      "id": "45a16467-67e1-46af-a834-9bd9a5200c2b",
-      "tenantId": "default",
-      "createdAt": "2026-10-20T21:24:07.236Z",
-      "action": "ORDER_DELIVERED",
-      "details": "Entrega validada (PoD) para orden TEST-PATIO-1792531312527 por Patio / Carga y Descarga (carga_descarga). Foto: SÍ, Firma: SÍ.",
-      "userId": "demo-carga_descarga"
-    }
-  ],
+  "auditLog": [],
   "supportTicket": [],
   "purchase": [],
   "cashRegisterLog": [],
@@ -450,7 +97,7 @@
       "id": "global",
       "licenseType": "TRIAL",
       "tenantId": "default",
-      "updatedAt": "2026-10-14T17:17:08.419Z"
+      "updatedAt": "2026-10-24T00:00:00.000Z"
     }
   ],
   "swarmTransaction": []

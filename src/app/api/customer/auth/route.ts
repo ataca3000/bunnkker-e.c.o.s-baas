@@ -1,12 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { SignJWT } from 'jose';
-import { signRole } from '@/lib/apiAuth';
+import { signRole, getTenantId } from '@/lib/apiAuth';
+import bcrypt from 'bcryptjs';
 
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'super_secret_local_key');
+const JWT_SECRET = new TextEncoder().encode(
+    process.env.JWT_SECRET || process.env.INTERNAL_API_SECRET || 'bunkker-ecos-default-local-dev-secret-key-2026'
+);
+
+function sanitizeCustomer(customer: any) {
+    if (!customer) return null;
+    const { pin: _pin, signatureData: _sig, photoData: _photo, ...safe } = customer;
+    return safe;
+}
 
 export async function POST(req: NextRequest) {
     try {
+        const tenantId = getTenantId(req);
         const { phone, pin, action, name } = await req.json();
 
         if (!phone || !pin) {
@@ -19,6 +29,7 @@ export async function POST(req: NextRequest) {
             const identifier = (phone || '').trim();
             const existing = await prisma.customer.findFirst({
                 where: {
+                    tenantId,
                     OR: [
                         { phone: identifier },
                         { email: identifier.toLowerCase() }
@@ -30,11 +41,13 @@ export async function POST(req: NextRequest) {
             }
 
             const isEmail = identifier.includes('@');
+            const hashedPin = await bcrypt.hash(String(pin).trim(), 10);
             const newCustomer = await prisma.customer.create({
                 data: {
+                    tenantId,
                     phone: isEmail ? `55${Date.now().toString().slice(-8)}` : identifier,
                     email: isEmail ? identifier.toLowerCase() : undefined,
-                    pin,
+                    pin: hashedPin,
                     name
                 }
             });
@@ -49,7 +62,7 @@ export async function POST(req: NextRequest) {
                 .setExpirationTime('30d')
                 .sign(JWT_SECRET);
 
-            const sig = signRole('client', newCustomer.id);
+            const sig = signRole('client', newCustomer.id, tenantId);
             const isHttps = req.url.startsWith('https://') || req.headers.get('x-forwarded-proto') === 'https';
             const cookieOpts = {
                 httpOnly: false,
@@ -58,88 +71,44 @@ export async function POST(req: NextRequest) {
                 path: '/',
                 maxAge: 30 * 24 * 60 * 60
             };
+            const safeCustomer = sanitizeCustomer(newCustomer);
             const res = NextResponse.json({ 
                 success: true, 
-                customer: newCustomer,
+                customer: safeCustomer,
                 uid: newCustomer.id,
                 role: 'client',
                 signature: sig,
                 token
             });
-            res.cookies.set('admincom_session', token, { ...cookieOpts, httpOnly: false });
+            res.cookies.set('admincom_session', token, cookieOpts);
             res.cookies.set('msj-session', newCustomer.id, cookieOpts);
             res.cookies.set('msj-role', 'client', cookieOpts);
             res.cookies.set('msj-role-sig', sig, cookieOpts);
             return res;
         }
 
-        // --- SUPER ADMIN / WORKER HIDDEN LOGIN (EASTER EGG) ---
-        if (phone === '0000000000') {
-            // Master fallback
-            if ((pin === '0000' || pin === 'admin') && process.env.NODE_ENV === 'test') {
-                const token = await new SignJWT({ 
-                    uid: 'local_master', 
-                    phone: '0000000000', 
-                    role: 'superadmin',
-                    name: 'Super Admin Maestro' 
-                })
-                    .setProtectedHeader({ alg: 'HS256' })
-                    .setExpirationTime('30d')
-                    .sign(JWT_SECRET);
-                
-                const sig = signRole('superadmin', 'local_master');
-                const res = NextResponse.json({ success: true, customer: { role: 'superadmin' }, redirect: '/dashboard' });
-                res.cookies.set('msj-session', 'local_master', { path: '/' });
-                res.cookies.set('msj-role', 'superadmin', { path: '/' });
-                res.cookies.set('msj-role-sig', sig, { path: '/' });
-                return res;
-            }
-
-            // Real worker check by PIN (findFirst — pin ya no es @unique por migración a pinHash)
-            const rawPin = String(pin).trim();
-            // Busca por pinHash (bcrypt) primero, fallback a pin legacy
-            const workers = await prisma.user.findMany({
-                where: { active: true },
-                select: { id: true, role: true, active: true, pin: true, pinHash: true },
-            });
-            let matchedWorker = null;
-            for (const w of workers) {
-                if (w.pinHash) {
-                    const { compare } = await import('bcryptjs');
-                    if (await compare(rawPin, w.pinHash)) { matchedWorker = w; break; }
-                } else if (w.pin && w.pin === rawPin) {
-                    matchedWorker = w; break;
-                }
-            }
-            if (matchedWorker && matchedWorker.active) {
-                const sig = signRole(matchedWorker.role, matchedWorker.id);
-                const res = NextResponse.json({ success: true, customer: { role: matchedWorker.role }, redirect: '/dashboard' });
-                res.cookies.set('msj-session', matchedWorker.id, { path: '/' });
-                res.cookies.set('msj-role', matchedWorker.role, { path: '/' });
-                res.cookies.set('msj-role-sig', sig, { path: '/' });
-                return res;
-            }
-
-            return NextResponse.json({ error: 'PIN de acceso denegado.' }, { status: 401 });
-        }
-        // ------------------------------------------------------
-
-        // Login de Clientes Normal
+        // Login de Clientes Normal (sin backdoor de empleados)
         const identifier = (phone || '').trim();
         const customer = await prisma.customer.findFirst({
             where: {
+                tenantId,
                 OR: [
                     { phone: identifier },
                     { email: identifier.toLowerCase() }
                 ]
             }
         });
-        if (!customer) {
-            return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 });
+        if (!customer || !customer.pin) {
+            return NextResponse.json({ error: 'Credenciales inválidas' }, { status: 401 });
         }
 
-        if (customer.pin !== pin) {
-            return NextResponse.json({ error: 'PIN o contraseña incorrecta' }, { status: 401 });
+        const isBcrypt = customer.pin.startsWith('$2a$') || customer.pin.startsWith('$2b$');
+        const pinValid = isBcrypt
+            ? await bcrypt.compare(String(pin).trim(), customer.pin)
+            : customer.pin === String(pin).trim();
+
+        if (!pinValid) {
+            return NextResponse.json({ error: 'Credenciales inválidas' }, { status: 401 });
         }
 
         const token = await new SignJWT({ 
@@ -152,7 +121,7 @@ export async function POST(req: NextRequest) {
             .setExpirationTime('30d')
             .sign(JWT_SECRET);
 
-        const sig = signRole('client', customer.id);
+        const sig = signRole('client', customer.id, tenantId);
         const isHttps = req.url.startsWith('https://') || req.headers.get('x-forwarded-proto') === 'https';
         const cookieOpts = {
             httpOnly: false,
@@ -161,21 +130,22 @@ export async function POST(req: NextRequest) {
             path: '/',
             maxAge: 30 * 24 * 60 * 60
         };
+        const safeCustomer = sanitizeCustomer(customer);
         const res = NextResponse.json({ 
             success: true, 
-            customer,
+            customer: safeCustomer,
             uid: customer.id,
             role: 'client',
             signature: sig,
             token
         });
-        res.cookies.set('admincom_session', token, { ...cookieOpts, httpOnly: false });
+        res.cookies.set('admincom_session', token, cookieOpts);
         res.cookies.set('msj-session', customer.id, cookieOpts);
         res.cookies.set('msj-role', 'client', cookieOpts);
         res.cookies.set('msj-role-sig', sig, cookieOpts);
         
         return res;
-    } catch (error: any) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+    } catch {
+        return NextResponse.json({ error: 'Error procesando autenticación de cliente' }, { status: 500 });
     }
 }

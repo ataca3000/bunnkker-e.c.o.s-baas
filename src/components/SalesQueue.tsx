@@ -32,8 +32,8 @@ export default function SalesQueue() {
             <TicketEntrega order={{...order, status: 'paid'}} businessInfo={siteConfig} />
         );
 
-        // 3. Llamar a la impresión silenciosa de Electron
-        if ((window as any).electronAPI) {
+        // 3. Llamar a la impresión silenciosa de Electron si está disponible
+        if (typeof (window as any).electronAPI?.printSilent === 'function') {
             await (window as any).electronAPI.printSilent(ticketHtml);
         } else {
             // Fallback para navegador si no estamos en Electron

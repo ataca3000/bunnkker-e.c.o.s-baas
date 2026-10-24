@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { buildReceiptBytes } from '@/lib/thermalPrinter';
+import { requireRole } from '@/lib/apiAuth';
 import net from 'net';
 
 export const runtime = 'nodejs';
@@ -16,6 +17,18 @@ interface PrintJobPayload {
     mode?: 'network_ip' | 'spool';
 }
 
+const ALLOWED_PRINT_ROLES = ['superadmin', 'admin', 'sales', 'caja', 'inventory', 'almacen', 'carga_descarga', 'pickup'];
+
+function isValidLanPrinterIp(ip: string): boolean {
+    if (!net.isIPv4(ip)) return false;
+    return (
+        ip === '127.0.0.1' ||
+        ip.startsWith('192.168.') ||
+        ip.startsWith('10.') ||
+        /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(ip)
+    );
+}
+
 // Spool en memoria para terminales suscriptoras en red local
 const printSpoolQueue: Array<{
     id: string;
@@ -25,6 +38,9 @@ const printSpoolQueue: Array<{
 }> = [];
 
 export async function POST(req: NextRequest) {
+    const auth = requireRole(req, ALLOWED_PRINT_ROLES);
+    if (!auth.ok) return auth.response;
+
     try {
         const body: PrintJobPayload = await req.json();
 
@@ -42,10 +58,17 @@ export async function POST(req: NextRequest) {
         };
 
         const targetIp = body.targetIp?.trim();
-        const targetPort = body.targetPort || 9100;
+        const targetPort = Number(body.targetPort || 9100);
 
-        // 1. Envío directo TCP RAW (Puerto 9100 ESC/POS para impresoras WiFi/Ethernet)
+        // 1. Envío directo TCP RAW (restringido a IPs privadas LAN y puertos de impresora ESC/POS 9100-9109)
         if (body.mode === 'network_ip' && targetIp) {
+            if (!isValidLanPrinterIp(targetIp) || targetPort < 9100 || targetPort > 9109) {
+                return NextResponse.json(
+                    { success: false, error: 'Dirección IP o puerto de impresora no permitido (solo LAN privada puertos 9100-9109).' },
+                    { status: 400 }
+                );
+            }
+
             const rawChunks = buildReceiptBytes(printData);
             const totalBytesLength = rawChunks.reduce((acc, c) => acc + c.length, 0);
             const combinedBuffer = Buffer.alloc(totalBytesLength);
@@ -90,7 +113,6 @@ export async function POST(req: NextRequest) {
             timestamp: Date.now()
         });
 
-        // Mantener cola limpia (máximo 50 trabajos)
         if (printSpoolQueue.length > 50) {
             printSpoolQueue.shift();
         }
@@ -105,13 +127,15 @@ export async function POST(req: NextRequest) {
         console.error('Error en /api/printer/print:', err);
         return NextResponse.json({
             success: false,
-            error: err.message || 'Error interno al procesar impresión'
+            error: 'Error interno al procesar impresión'
         }, { status: 500 });
     }
 }
 
 export async function GET(req: NextRequest) {
-    // Permite a la PC central consultar trabajos pendientes si actúa como despachador
+    const auth = requireRole(req, ALLOWED_PRINT_ROLES);
+    if (!auth.ok) return auth.response;
+
     const pending = printSpoolQueue.filter(j => j.status === 'pending');
     return NextResponse.json({
         success: true,

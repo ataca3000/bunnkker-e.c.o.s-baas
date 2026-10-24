@@ -51,15 +51,19 @@ const prisma = new PrismaClient({
   }
 });
 
-const COOKIE_SECRET = process.env.INTERNAL_API_SECRET || 'bunkker-ecos-default-local-dev-secret-key-2026';
-function verifyRoleSignature(role, uid, signature) {
+const COOKIE_SECRET = process.env.INTERNAL_API_SECRET || process.env.JWT_SECRET || 'bunkker-ecos-default-local-dev-secret-key-2026';
+function verifyRoleSignature(role, uid, signature, tenantId = 'default') {
   if (!role || !uid || !signature) return false;
-  const expected = crypto.createHmac('sha256', COOKIE_SECRET).update(`${role}:${uid}`).digest('hex');
-  try {
-    return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature));
-  } catch {
-    return expected === signature;
-  }
+  const expectedScoped = crypto.createHmac('sha256', COOKIE_SECRET).update(`${tenantId}:${role}:${uid}`).digest('hex');
+  const expectedLegacy = crypto.createHmac('sha256', COOKIE_SECRET).update(`${role}:${uid}`).digest('hex');
+  const checkMatch = (expected) => {
+    try {
+      return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature));
+    } catch {
+      return expected === signature;
+    }
+  };
+  return checkMatch(expectedScoped) || checkMatch(expectedLegacy);
 }
 
 // ═════════════════════════════════════════════════════════════════════════════

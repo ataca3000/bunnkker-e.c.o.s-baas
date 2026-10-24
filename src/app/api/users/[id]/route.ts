@@ -41,6 +41,14 @@ export async function PUT(
             }
         }
 
+        const VALID_STAFF_ROLES = [
+            'superadmin', 'admin', 'sales', 'caja', 'inventory', 'almacen',
+            'marketing', 'driver', 'delivery', 'carga_descarga', 'pickup', 'billing', 'repartidor'
+        ];
+        if (role !== undefined && !VALID_STAFF_ROLES.includes(role)) {
+            return NextResponse.json({ success: false, error: 'Rol de usuario inválido.' }, { status: 400 });
+        }
+
         const updateData: any = {};
         if (role !== undefined) updateData.role = role;
         if (active !== undefined) updateData.active = Boolean(active);
