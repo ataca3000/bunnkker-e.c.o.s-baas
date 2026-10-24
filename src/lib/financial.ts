@@ -5,6 +5,8 @@
 
 export const ALLOWED_CLOSE_STATUSES = [
   'paid',
+  'PREPARANDO',
+  'CARGANDO',
   'READY_FOR_PICKUP_PAID',
   'READY_TO_SHIP',
   'OUT_FOR_DELIVERY',
@@ -62,11 +64,11 @@ export function safeMulMoney(amount: number, qty: number): number {
  * Calculates the expected cash amount from a list of orders.
  * Filters orders by status and payment method, computing sum in integer cents.
  */
-export function calculateExpectedAmount(orders: { total: number; paymentMethod: string; status: string }[]): number {
+export function calculateExpectedAmount(orders: { total: number; paymentMethod: string; status: string; confirmedAt?: Date | string | null }[]): number {
   const totalCents = orders
     .filter(order => 
       ['cash', 'CASH', 'efectivo', 'EFECTIVO'].includes(order.paymentMethod) && 
-      ALLOWED_CLOSE_STATUSES.includes(order.status)
+      (ALLOWED_CLOSE_STATUSES.includes(order.status) || Boolean(order.confirmedAt))
     )
     .reduce((sumCents, order) => sumCents + toCents(order.total || 0), 0);
 

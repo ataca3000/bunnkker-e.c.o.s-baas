@@ -14,39 +14,33 @@ interface CategoryFilterProps {
  * Separado del MarketCatalog principal para poder reutilizarlo en otras vistas.
  */
 export function CategoryFilter({ categories, selected, onSelect }: CategoryFilterProps) {
-    const pillClass = (active: boolean) =>
-        `w-16 h-16 shrink-0 rounded-full border-2 flex items-center justify-center text-2xl transition-all duration-300 shadow-md ${
-            active
-                ? 'border-amber-400 bg-gradient-to-br from-amber-400 to-amber-600 text-white scale-110 shadow-amber-900/20'
-                : 'bg-slate-800/60 border-white/10 text-slate-300 hover:border-amber-500/50 hover:bg-slate-700/60'
-        }`;
-
-    const labelClass = (active: boolean) =>
-        `text-lg font-black uppercase tracking-widest text-center transition-colors max-w-[80px] break-words leading-tight ${
-            active ? 'text-[#ffe900] font-extrabold' : 'text-slate-400 group-hover:text-slate-200'
-        }`;
-
     return (
-        <div className="flex gap-6 justify-start md:justify-center items-start w-full mb-14 overflow-x-auto py-4 no-scrollbar select-none px-4 text-[36px]">
+        <div className="flex gap-2.5 justify-start md:justify-center items-center w-full mb-8 overflow-x-auto py-2 px-2 no-scrollbar select-none">
             {/* Todos */}
             <button
                 onClick={() => onSelect('Todos')}
-                className="flex flex-col items-center gap-3 group cursor-pointer focus:outline-none shrink-0 transition-transform active:scale-95"
+                className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer ${
+                    selected === 'Todos'
+                        ? 'bg-[#008060] text-white shadow-sm shadow-[#008060]/20 scale-[1.02]'
+                        : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60'
+                }`}
             >
-                <div className={`${pillClass(selected === 'Todos')} !w-5 !h-5 text-xl`}>📦</div>
-                <span className={labelClass(selected === 'Todos')}>TODOS</span>
+                <span>📦</span>
+                <span>Todos</span>
             </button>
 
             {categories.map(cat => (
                 <button
                     key={cat}
                     onClick={() => onSelect(cat)}
-                    className="flex flex-col items-center gap-3 group cursor-pointer focus:outline-none shrink-0 transition-transform active:scale-95"
+                    className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer ${
+                        selected === cat
+                            ? 'bg-[#008060] text-white shadow-sm shadow-[#008060]/20 scale-[1.02]'
+                            : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60'
+                    }`}
                 >
-                    <div className={pillClass(selected === cat)}>
-                        {getCategoryIcon(cat)}
-                    </div>
-                    <span className={labelClass(selected === cat)}>{cat}</span>
+                    <span>{getCategoryIcon(cat)}</span>
+                    <span>{cat}</span>
                 </button>
             ))}
         </div>

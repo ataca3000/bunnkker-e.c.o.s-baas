@@ -63,15 +63,15 @@ export function ProductCard({ p, onOpenDetails }: ProductCardProps) {
     return (
         <motion.div
             layout
-            initial={{ opacity: 0, scale: 0.9 }}
+            initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            className="flex flex-col bg-[#050505] rounded-[24px] overflow-hidden border border-white/5 hover:border-white/20 transition-all duration-300 group"
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="flex flex-col bg-white dark:bg-slate-900 rounded-2xl overflow-hidden border border-slate-200/90 dark:border-slate-800 shadow-xs hover:shadow-md transition-all duration-300 group relative"
         >
-            {/* Imagen */}
+            {/* Imagen del Producto */}
             <button
                 type="button"
-                className="w-full aspect-[4/3] relative block overflow-hidden bg-black text-left"
+                className="w-full aspect-square relative block overflow-hidden bg-slate-50 dark:bg-slate-950 text-left cursor-pointer"
                 onClick={() => onOpenDetails(p)}
                 aria-label={`Ver detalles de ${p.name}`}
             >
@@ -79,141 +79,141 @@ export function ProductCard({ p, onOpenDetails }: ProductCardProps) {
                     <img
                         src={p.image}
                         alt={p.name}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 opacity-80 group-hover:opacity-100"
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                         onError={e => {
                             e.currentTarget.style.display = 'none';
                             (e.currentTarget.nextElementSibling as HTMLElement | null)?.style?.setProperty('display', 'flex');
                         }}
                     />
                 ) : null}
-                <div className={`absolute inset-0 flex items-center justify-center bg-slate-900/50 ${p.image ? 'hidden' : 'flex'}`}>
-                    <Package size={48} className="text-slate-700/50" />
+                <div className={`absolute inset-0 flex items-center justify-center bg-slate-100 dark:bg-slate-800 ${p.image ? 'hidden' : 'flex'}`}>
+                    <Package size={40} className="text-slate-400" />
                 </div>
+
+                {/* Insignia de Categoría (Superior Izquierda) */}
+                <div className="absolute top-3 left-3 z-10">
+                    <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-200 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md px-2.5 py-1 rounded-full border border-slate-200/60 dark:border-slate-700 shadow-xs">
+                        {p.category || 'General'}
+                    </span>
+                </div>
+
+                {/* Insignia si ya está en carrito (Superior Derecha) */}
+                {inCartQty > 0 && (
+                    <div className="absolute top-3 right-3 z-10">
+                        <span className="text-[11px] font-bold text-white bg-[#008060] px-2.5 py-1 rounded-full shadow-xs flex items-center gap-1">
+                            🛒 {inCartQty} en carrito
+                        </span>
+                    </div>
+                )}
+
+                {/* Estado Agotado */}
                 {availableStock === 0 && (
-                    <div className="absolute inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center text-red-500 font-black text-xl tracking-widest z-10 border-2 border-red-500/50 m-4 rounded-xl flex-col">
-                        AGOTADO
-                        {floatHold > 0 && <span className="text-xs text-yellow-400 mt-2 font-normal">({floatHold} en reserva)</span>}
+                    <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-[2px] flex items-center justify-center z-10">
+                        <span className="bg-red-600 text-white font-extrabold text-xs tracking-wider uppercase px-3 py-1.5 rounded-lg shadow-md">
+                            Agotado
+                        </span>
                     </div>
                 )}
             </button>
 
-            {/* Info */}
-            <div className="p-5 flex flex-col flex-1 relative">
-                <div className="flex justify-between items-center mb-3 flex-wrap gap-1">
-                    <span className="text-[0.65rem] font-bold tracking-widest uppercase text-slate-400 bg-white/5 border border-white/10 px-2 py-1 rounded-md">
-                        {p.category || 'General'}
-                    </span>
-                    {inCartQty > 0 && (
-                        <span className="text-[10px] font-semibold text-sky-400 bg-sky-500/10 border border-sky-400/20 px-2 py-0.5 rounded-full">
-                            🛒 {inCartQty} en carrito
-                        </span>
-                    )}
-                </div>
-
-                <h3 className="text-lg font-bold text-white mb-2 line-clamp-2 group-hover:text-blue-400 transition-colors">
-                    <button onClick={() => onOpenDetails(p)} className="text-left w-full">{p.name}</button>
+            {/* Contenido e Información */}
+            <div className="p-4 sm:p-5 flex flex-col flex-1">
+                {/* Título */}
+                <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white mb-1.5 line-clamp-2 leading-snug group-hover:text-[#008060] transition-colors">
+                    <button onClick={() => onOpenDetails(p)} className="text-left w-full hover:underline">
+                        {p.name}
+                    </button>
                 </h3>
 
-                <div className="mb-4 mt-auto">
+                {/* Calificación con estrellas */}
+                <div className="mb-2.5">
                     <StarRating rating={p.rating} count={p.reviewCount} />
                 </div>
 
-                <div>
-                    <div className="flex justify-between items-end mb-4">
-                        <div>
-                            <div className="text-2xl font-black text-white">${p.price.toLocaleString()} <span className="text-xs font-normal text-slate-400">MXN</span></div>
-                            <div className="flex flex-col gap-0.5 mt-1">
-                                <div className={`text-xs font-bold flex items-center gap-1 ${availableStock > 0 ? 'text-emerald-400' : inCartQty > 0 ? 'text-cyan-400' : 'text-red-500'}`}>
-                                    <Package size={12} />
-                                    {availableStock > 0 
-                                        ? `${availableStock} disponibles ${inCartQty > 0 ? `(${p.stock} total)` : ''}`
-                                        : inCartQty > 0 
-                                            ? `Todo tu stock (${inCartQty} pz) apartado`
-                                            : 'Sin stock disponible'}
-                                </div>
-                                {inCartQty > 0 && (
-                                    <div className="text-[11px] font-bold text-cyan-300 flex items-center gap-1">
-                                        ✓ Apartadas por ti: {inCartQty} pz
-                                    </div>
-                                )}
-                            </div>
+                {/* Precio y Stock */}
+                <div className="mt-auto pt-2 border-t border-slate-100 dark:border-slate-800/80">
+                    <div className="flex justify-between items-baseline mb-3">
+                        <div className="text-xl sm:text-2xl font-black text-slate-950 dark:text-white tracking-tight">
+                            ${p.price.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            <span className="text-[10px] font-bold text-slate-400 ml-1">MXN</span>
+                        </div>
+
+                        {/* Indicador de Stock estilo Shopify */}
+                        <div className="text-right">
+                            {availableStock > 5 ? (
+                                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-md">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                    {availableStock} en stock
+                                </span>
+                            ) : availableStock > 0 ? (
+                                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 px-2 py-0.5 rounded-md">
+                                    ⚡ ¡Últimas {availableStock} uds!
+                                </span>
+                            ) : (
+                                <span className="text-[11px] font-bold text-slate-400">Sin stock</span>
+                            )}
                         </div>
                     </div>
 
-                    {/* Controles Dinámicos: Si ya tiene en carrito vs si no tiene aún */}
+                    {/* Acciones de Carrito estilo Shopify Quick-Add */}
                     {inCartQty > 0 ? (
                         <div className="space-y-2">
-                            <div className="flex items-center justify-between bg-cyan-950/40 border border-cyan-500/30 rounded-xl p-1.5">
+                            <div className="flex items-center justify-between bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 rounded-xl p-1">
                                 <button
-                                    className="w-9 h-9 flex items-center justify-center text-cyan-300 hover:bg-cyan-500/20 active:scale-95 rounded-lg transition-all font-black text-base"
+                                    className="w-8 h-8 flex items-center justify-center text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 active:scale-95 rounded-lg transition-all font-bold"
                                     onClick={handleDecrementFromCart}
-                                    title="Quitar 1 pieza de tu carrito"
+                                    title="Quitar 1 pieza"
+                                    aria-label="Disminuir cantidad"
                                 >
-                                    <Minus size={16} />
+                                    <Minus size={14} />
                                 </button>
                                 <div className="text-center">
-                                    <span className="text-xs font-black text-white">{inCartQty} en Carrito</span>
-                                    <span className="text-[9px] text-cyan-300 block">(${Number(p.price * inCartQty).toFixed(2)})</span>
+                                    <span className="text-xs font-bold text-emerald-900 dark:text-emerald-100">{inCartQty} en carrito</span>
+                                    <span className="text-[10px] text-emerald-700 dark:text-emerald-400 block font-semibold">
+                                        (${(p.price * inCartQty).toFixed(2)})
+                                    </span>
                                 </div>
                                 <button
-                                    className={`w-9 h-9 flex items-center justify-center rounded-lg transition-all font-black text-base ${
+                                    className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all font-bold ${
                                         availableStock > 0 
-                                            ? 'text-cyan-300 hover:bg-cyan-500/20 active:scale-95' 
-                                            : 'text-slate-600 opacity-40 cursor-not-allowed'
+                                            ? 'text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 active:scale-95' 
+                                            : 'text-slate-400 opacity-40 cursor-not-allowed'
                                     }`}
                                     onClick={handleIncrementToCart}
                                     disabled={availableStock <= 0}
-                                    title={availableStock > 0 ? "Apartar 1 pieza más" : "No queda más stock"}
+                                    title={availableStock > 0 ? "Sumar 1 pieza" : "Sin más stock"}
+                                    aria-label="Aumentar cantidad"
                                 >
-                                    <Plus size={16} />
+                                    <Plus size={14} />
                                 </button>
                             </div>
                             <button
                                 onClick={() => {
                                     if (typeof window !== 'undefined') window.location.href = '/carrito';
                                 }}
-                                className="w-full py-2.5 px-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-black text-xs uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-cyan-950/40 transition-all active:scale-95"
+                                className="w-full py-2 px-3 bg-[#008060] hover:bg-[#006e52] text-white font-bold text-xs rounded-xl flex items-center justify-center gap-2 shadow-xs transition-all active:scale-[0.98]"
                             >
-                                <ShoppingCart size={15} /> Ver Carrito / Liquidar (${Number(p.price * inCartQty).toFixed(2)})
+                                <ShoppingCart size={14} /> Ir a Pagar · ${(p.price * inCartQty).toFixed(2)}
                             </button>
                         </div>
                     ) : (
-                        <div className="flex items-center gap-3">
-                            <div className="flex items-center bg-white/5 rounded-xl p-1 border border-white/10">
-                                <button
-                                    className={`w-8 h-8 flex items-center justify-center text-white transition-all rounded-lg ${qty <= 1 || availableStock === 0 ? 'opacity-30 cursor-not-allowed' : 'hover:bg-white/10 active:scale-95'}`}
-                                    onClick={() => setQty(Math.max(1, qty - 1))}
-                                    disabled={qty <= 1 || availableStock === 0}
-                                >
-                                    <Minus size={14} />
-                                </button>
-                                <span className="font-bold w-6 text-center text-sm text-white">{qty}</span>
-                                <button
-                                    className={`w-8 h-8 flex items-center justify-center text-white transition-all rounded-lg ${qty >= availableStock || availableStock === 0 ? 'opacity-30 cursor-not-allowed' : 'hover:bg-white/10 active:scale-95'}`}
-                                    onClick={() => setQty(Math.min(availableStock, qty + 1))}
-                                    disabled={qty >= availableStock || availableStock === 0}
-                                >
-                                    <Plus size={14} />
-                                </button>
-                            </div>
-                            <button
-                                className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold transition-all ${
-                                    availableStock === 0
-                                        ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
-                                        : 'bg-blue-600 hover:bg-blue-500 text-white active:scale-95'
-                                }`}
-                                onClick={() => {
-                                    if (availableStock > 0) {
-                                        addToCart(p, qty);
-                                        toast.success(`${qty}x ${p.name} apartado en tu carrito.`, '🛒 Apartado');
-                                    }
-                                }}
-                                disabled={availableStock === 0}
-                            >
-                                <ShoppingCart size={18} />
-                                {availableStock === 0 ? 'AGOTADO' : `APARTAR (${qty})`}
-                            </button>
-                        </div>
+                        <button
+                            className={`w-full py-2.5 px-4 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all ${
+                                availableStock === 0
+                                    ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed border border-slate-200 dark:border-slate-700'
+                                    : 'bg-[#008060] hover:bg-[#006e52] text-white shadow-xs hover:shadow-md active:scale-[0.98]'
+                            }`}
+                            onClick={() => {
+                                if (availableStock > 0) {
+                                    addToCart(p, 1);
+                                    toast.success(`${p.name} agregado al carrito.`, '🛒 Carrito');
+                                }
+                            }}
+                            disabled={availableStock === 0}
+                        >
+                            <ShoppingCart size={15} />
+                            {availableStock === 0 ? 'Sin Stock' : '+ Agregar al Carrito'}
+                        </button>
                     )}
                 </div>
             </div>

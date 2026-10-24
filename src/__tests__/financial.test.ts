@@ -17,6 +17,17 @@ describe('Financial Cash Close Calculations', () => {
       expect(expected).toBe(1400);
     });
 
+    it('should include orders in PREPARANDO or CARGANDO or with confirmedAt', () => {
+      const mockOrders = [
+        { total: 150, paymentMethod: 'cash', status: 'PREPARANDO' },
+        { total: 250, paymentMethod: 'cash', status: 'CARGANDO' },
+        { total: 100, paymentMethod: 'cash', status: 'CUSTOM_STATUS', confirmedAt: new Date() },
+      ];
+      
+      const expected = calculateExpectedAmount(mockOrders);
+      expect(expected).toBe(500);
+    });
+
     it('should ignore orders with non-cash payment methods', () => {
       const mockOrders = [
         { total: 100, paymentMethod: 'cash', status: 'COMPLETED' },

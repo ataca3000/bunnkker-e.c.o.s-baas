@@ -29,7 +29,10 @@ export async function POST(request: NextRequest) {
         const whereClause: any = {
             tenantId,
             paymentMethod: { in: ['cash', 'CASH', 'efectivo', 'EFECTIVO'] },
-            status: { in: ALLOWED_CLOSE_STATUSES }
+            OR: [
+                { status: { in: ALLOWED_CLOSE_STATUSES } },
+                { confirmedAt: { not: null } }
+            ]
         };
 
         if (lastLog) {

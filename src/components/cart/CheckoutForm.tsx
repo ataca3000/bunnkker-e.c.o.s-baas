@@ -272,44 +272,69 @@ interface CartFooterProps {
     onConfirm: () => void;
 }
 
-/** Pie del drawer con total, propina y botones de acción. */
 export function CartFooter({
     total, tip, deliveryMethod, step, isProcessing, isLoggedIn,
     onProceed, onBack, onConfirm
 }: CartFooterProps) {
+    const finalTotal = total + (deliveryMethod === 'repartidor' ? tip : 0);
+
     return (
         <div className={styles.footer}>
-            <div className={styles.totalRow} style={{ flexDirection: 'column', alignItems: 'flex-end' }}>
-                {deliveryMethod === 'repartidor' && tip > 0 && (
-                    <div style={{ fontSize: '0.7rem', color: '#d97706', marginBottom: '4px', fontWeight: 'bold' }}>
-                        + Propina repartidor: ${tip.toFixed(2)} MXN
-                    </div>
-                )}
-                <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
-                    <span>TOTAL:</span>
-                    <span>${(total + tip).toFixed(2)}</span>
+            <div className={styles.summaryRow}>
+                <span>Subtotal estimado</span>
+                <span style={{ fontWeight: 600, color: '#0f172a' }}>
+                    ${total.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MXN
+                </span>
+            </div>
+
+            {deliveryMethod === 'repartidor' && tip > 0 && (
+                <div className={styles.summaryRow} style={{ color: '#008060', fontWeight: 600 }}>
+                    <span>Propina de descarga</span>
+                    <span>+${tip.toFixed(2)} MXN</span>
                 </div>
+            )}
+
+            <div className={styles.totalRow}>
+                <span>Total</span>
+                <span className={styles.totalPrice}>
+                    ${finalTotal.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
+            </div>
+            <div className={styles.taxesNotice}>
+                Impuestos y tarifas calculados al tramitar pedido.
             </div>
 
             {step === 'cart' ? (
                 <button
                     onClick={onProceed}
-                    className={`bunkker-btn ${styles.payBtn}`}
+                    className={styles.payBtn}
                 >
-                    CONTINUAR PEDIDO <Truck size={20} />
+                    <Lock size={16} /> Tramitar Pedido · ${(finalTotal).toFixed(2)}
                 </button>
             ) : (
                 <div className={styles.checkoutActions}>
-                    <button onClick={onBack} className={styles.backBtn}>Volver</button>
+                    <button onClick={onBack} className={styles.backBtn}>← Volver</button>
                     <button
                         disabled={isProcessing}
                         onClick={onConfirm}
-                        className={`bunkker-btn ${styles.confirmBtn}`}
+                        className={styles.confirmBtn}
                     >
-                        {isProcessing ? 'PROCESANDO...' : 'GENERAR PEDIDO EN ESPERA'} <Truck size={20} />
+                        {isProcessing ? 'Confirmando...' : 'Confirmar y Apartar'} <Truck size={18} />
                     </button>
                 </div>
             )}
+
+            <div className={styles.trustBadges}>
+                <div className={styles.trustItem}>
+                    <Lock size={12} color="#008060" /> Compra Segura
+                </div>
+                <div className={styles.trustItem}>
+                    <Truck size={12} color="#008060" /> Despacho Rápido
+                </div>
+                <div className={styles.trustItem}>
+                    ✓ Stock en Tiempo Real
+                </div>
+            </div>
         </div>
     );
 }

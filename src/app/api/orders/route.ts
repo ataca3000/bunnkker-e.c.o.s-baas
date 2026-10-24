@@ -25,6 +25,26 @@ async function writeOrderEvent(tx: any, event: {
     });
 }
 
+function parseCoordinates(raw: unknown): { lat: number | null; lng: number | null } {
+    if (!raw) return { lat: null, lng: null };
+    if (typeof raw === 'object' && raw !== null) {
+        const obj = raw as Record<string, unknown>;
+        const lat = Number(obj.lat ?? obj.latitude);
+        const lng = Number(obj.lng ?? obj.longitude);
+        return {
+            lat: Number.isFinite(lat) ? lat : null,
+            lng: Number.isFinite(lng) ? lng : null,
+        };
+    }
+    if (typeof raw === 'string') {
+        const parts = raw.split(',').map(p => Number(p.trim()));
+        if (parts.length === 2 && Number.isFinite(parts[0]) && Number.isFinite(parts[1])) {
+            return { lat: parts[0], lng: parts[1] };
+        }
+    }
+    return { lat: null, lng: null };
+}
+
 export const dynamic = 'force-dynamic';
 
 
@@ -208,13 +228,28 @@ export async function POST(request: NextRequest) {
         }
 
         const isCashierRequest = Boolean(authenticatedCustomerId || body.asRequest || !staffSession.ok);
-        const location = clientData.gpsCoords || body.gpsCoords || {};
-        const deliveryLat = body.deliveryLat ?? body.lat ?? clientData.lat ?? location.lat;
-        const deliveryLng = body.deliveryLng ?? body.lng ?? clientData.lng ?? location.lng;
+        const rawCoords = body.gpsCoords || clientData.gpsCoords || body.coords || clientData.coords;
+        const parsedCoords = parseCoordinates(rawCoords);
+        const deliveryLat = body.deliveryLat ?? body.lat ?? clientData.lat ?? parsedCoords.lat ?? null;
+        const deliveryLng = body.deliveryLng ?? body.lng ?? clientData.lng ?? parsedCoords.lng ?? null;
 
         const numTotal = roundMoney(Number(total));
-        if (!orderId || Number.isNaN(numTotal) || !Array.isArray(items) || items.length === 0) {
-            return NextResponse.json({ success: false, error: 'Order ID, total numérico válido y productos son obligatorios.' }, { status: 400 });
+        if (!orderId || Number.isNaN(numTotal) || numTotal < 0 || !Array.isArray(items) || items.length === 0) {
+            return NextResponse.json({ success: false, error: 'Order ID, total numérico válido (no negativo) y productos son obligatorios.' }, { status: 400 });
+        }
+
+        for (const item of items) {
+            const qty = Number(item.cantidad ?? item.quantity);
+            const price = Number(item.precio ?? item.price);
+            if (!item.productId && !item.id) {
+                return NextResponse.json({ success: false, error: 'Cada producto debe tener un ID válido.' }, { status: 400 });
+            }
+            if (!Number.isInteger(qty) || qty <= 0) {
+                return NextResponse.json({ success: false, error: 'La cantidad de cada producto debe ser un entero positivo mayor a cero.' }, { status: 400 });
+            }
+            if (Number.isNaN(price) || price < 0) {
+                return NextResponse.json({ success: false, error: 'El precio de cada producto no puede ser negativo.' }, { status: 400 });
+            }
         }
 
         // IDEMPOTENCIA EN BASE DE DATOS: Si la orden ya existe en SQLite (por reintento de red o reinicio del nodo),
