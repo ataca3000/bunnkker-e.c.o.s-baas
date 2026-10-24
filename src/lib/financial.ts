@@ -3,7 +3,14 @@
  * Implements bank-grade zero-drift monetary arithmetic using integer cents.
  */
 
-export const ALLOWED_CLOSE_STATUSES = ['READY_TO_SHIP', 'OUT_FOR_DELIVERY', 'DELIVERED', 'COMPLETED'];
+export const ALLOWED_CLOSE_STATUSES = [
+  'paid',
+  'READY_FOR_PICKUP_PAID',
+  'READY_TO_SHIP',
+  'OUT_FOR_DELIVERY',
+  'DELIVERED',
+  'COMPLETED'
+];
 
 /**
  * Converts a floating point currency amount to integer cents.

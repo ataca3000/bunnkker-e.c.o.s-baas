@@ -786,28 +786,47 @@ export async function PATCH(request: NextRequest) {
                 return NextResponse.json({ success: false, error: 'Rol sin permiso para reincorporar productos a anaquel.' }, { status: 403 });
             }
 
-            const current = await prisma.order.findUnique({ where: { id }, include: { items: true } });
-            if (!current) return NextResponse.json({ success: false, error: 'Pedido no encontrado' }, { status: 404 });
-
-            // Idempotencia: Si ya fue restituido, retornar 200 sin volver a sumar stock
-            if (current.rejectionReason === 'CANCELADA_STOCK_RESTITUIDO') {
-                return NextResponse.json({ success: true, data: current, message: 'Este pedido ya fue restituido a estante con anterioridad.' });
-            }
-
-            // Ventas cerradas y entregadas son inmutables
-            if (['DELIVERED', 'COMPLETED'].includes(current.status)) {
-                return NextResponse.json({ 
-                    success: false, 
-                    error: 'VENTA_CERRADA: El pedido ya fue entregado al cliente. No procede restitución a anaquel sin movimiento de recepción nuevo.' 
-                }, { status: 409 });
-            }
-
             const updated = await prisma.$transaction(async (tx) => {
+                const current = await tx.order.findUnique({ where: { id }, include: { items: true } });
+                if (!current) throw new Error('ORDER_NOT_FOUND:Pedido no encontrado');
+
+                // Idempotencia atómica dentro de la transacción:
+                if (current.rejectionReason === 'CANCELADA_STOCK_RESTITUIDO') {
+                    return current;
+                }
+
+                // Ventas cerradas y entregadas son inmutables sin previa devolución
+                if (['DELIVERED', 'COMPLETED'].includes(current.status)) {
+                    throw new Error('VENTA_CERRADA: El pedido ya fue entregado al cliente. No procede restitución a anaquel sin movimiento de recepción nuevo.');
+                }
+
+                // PREVENCIÓN DE INFLACIÓN DE INVENTARIO:
+                // El stock físico en anaquel solo se descuenta cuando la orden fue entregada al cliente (DELIVERED/COMPLETED).
+                // Si la orden fue cancelada antes de la entrega (en status pending, paid, PREPARANDO o READY_FOR_PICKUP_PAID),
+                // el stock físico NUNCA salió ni se restó de la base de datos (solo estuvo apartado en reservedStock).
+                // Por lo tanto, reacomodar a estante NO debe sumar al stock físico.
+                const wasPhysicalStockDeducted = current.status === 'refunded';
+
                 for (const item of current.items) {
-                    await tx.product.update({
-                        where: { id: item.productId },
-                        data: { stock: { increment: item.cantidad } }
-                    });
+                    if (wasPhysicalStockDeducted) {
+                        // Solo se restituye físicamente si la orden fue devuelta de una entrega real
+                        await tx.product.update({
+                            where: { id: item.productId },
+                            data: { stock: { increment: item.cantidad } }
+                        });
+                    } else {
+                        // Si nunca se descontó físicamente, liberamos cualquier reserva remanente en reservedStock
+                        const prod = await tx.product.findUnique({
+                            where: { id: item.productId },
+                            select: { reservedStock: true }
+                        });
+                        if (prod && prod.reservedStock > 0) {
+                            await tx.product.update({
+                                where: { id: item.productId },
+                                data: { reservedStock: { decrement: Math.min(prod.reservedStock, item.cantidad) } }
+                            });
+                        }
+                    }
                 }
 
                 await tx.order.update({
@@ -830,14 +849,15 @@ export async function PATCH(request: NextRequest) {
                     details: {
                         verifiedBy: actorName,
                         reacomodoStatus: 'CANCELADA_STOCK_RESTITUIDO',
-                        returnedItemsCount: current.items.length
+                        returnedItemsCount: current.items.length,
+                        wasPhysicalStockRestored: wasPhysicalStockDeducted
                     }
                 });
 
                 return tx.order.findUnique({ where: { id }, include: { items: true, customer: true } });
             });
 
-            return NextResponse.json({ success: true, data: updated, message: 'Artículos reincorporados al anaquel exitosamente. Stock restituido.' });
+            return NextResponse.json({ success: true, data: updated, message: 'Artículos reincorporados al anaquel exitosamente. Inventario protegido contra duplicidad e inflación.' });
         }
 
         if (action === 'admin_return_as_new_intake') {
@@ -1108,6 +1128,12 @@ export async function PATCH(request: NextRequest) {
     } catch (error: any) {
         if (String(error.message).startsWith('ORDER_CONFLICT:')) {
             return NextResponse.json({ success: false, error: String(error.message).replace('ORDER_CONFLICT:', '') }, { status: 409 });
+        }
+        if (String(error.message).startsWith('ORDER_NOT_FOUND:')) {
+            return NextResponse.json({ success: false, error: String(error.message).replace('ORDER_NOT_FOUND:', '') }, { status: 404 });
+        }
+        if (String(error.message).startsWith('VENTA_CERRADA:')) {
+            return NextResponse.json({ success: false, error: error.message }, { status: 409 });
         }
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }

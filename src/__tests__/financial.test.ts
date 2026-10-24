@@ -3,16 +3,18 @@ import { calculateExpectedAmount, calculateDiscrepancy, ALLOWED_CLOSE_STATUSES }
 
 describe('Financial Cash Close Calculations', () => {
   describe('calculateExpectedAmount', () => {
-    it('should sum all cash orders with allowed status', () => {
+    it('should sum all cash orders with allowed status, including paid and READY_FOR_PICKUP_PAID', () => {
       const mockOrders = [
         { total: 100, paymentMethod: 'cash', status: 'COMPLETED' },
         { total: 250, paymentMethod: 'cash', status: 'DELIVERED' },
         { total: 150, paymentMethod: 'cash', status: 'READY_TO_SHIP' },
         { total: 300, paymentMethod: 'cash', status: 'OUT_FOR_DELIVERY' },
+        { total: 200, paymentMethod: 'cash', status: 'paid' },
+        { total: 400, paymentMethod: 'cash', status: 'READY_FOR_PICKUP_PAID' },
       ];
       
       const expected = calculateExpectedAmount(mockOrders);
-      expect(expected).toBe(800);
+      expect(expected).toBe(1400);
     });
 
     it('should ignore orders with non-cash payment methods', () => {

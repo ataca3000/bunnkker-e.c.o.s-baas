@@ -97,7 +97,12 @@ describe('N3 Stock Lifecycle & Authority Engine', () => {
                 throw new Error('VENTA_CERRADA: Imposible restituir venta entregada');
             }
 
-            this.stock += qty;
+            // REGLA ANTI-INFLACIÓN:
+            // Si la orden se canceló antes de entrega física, su stock físico nunca se restó del anaquel.
+            // Por lo tanto, no se debe sumar al stock físico (evita pasar de 10 a 15 piezas fantasma).
+            if (this.orderStatus === 'refunded') {
+                this.stock += qty;
+            }
             this.isLoaded = false;
             this.rejectionReason = 'CANCELADA_STOCK_RESTITUIDO';
             return { success: true, stockRestored: true };
@@ -161,7 +166,7 @@ describe('N3 Stock Lifecycle & Authority Engine', () => {
         expect(engine.stock).toBe(8);
     });
 
-    it('Axioma 4 (Deconstrucción e Idempotencia): Reacomodo a estante es idempotente y no duplica stock', () => {
+    it('Axioma 4 (Deconstrucción e Idempotencia): Reacomodo a estante es idempotente y no duplica stock ni infla piezas fantasma', () => {
         const engine = new InMemoryInventoryEngine(10);
 
         // Crear, cobrar y bajar de anaquel
@@ -174,17 +179,18 @@ describe('N3 Stock Lifecycle & Authority Engine', () => {
         const cancelResult = engine.cancelOrder(5);
         expect(cancelResult.rejectionReason).toBe('CANCELADO_PENDIENTE_REACOMODO');
         expect(engine.reservedStock).toBe(0); // Reserva liberada
-        expect(engine.stock).toBe(10); // Aún no regresa a anaquel
+        expect(engine.stock).toBe(10); // Stock físico nunca salió de la tienda
 
         // Bodeguero reacomoda materiales a su anaquel
         const restock1 = engine.returnToShelf(5, 'inventory');
         expect(restock1.stockRestored).toBe(true);
-        expect(engine.stock).toBe(15); // Restituido al estante
+        // REGLA DE ORO: El stock debe permanecer estrictamente en 10 (nunca inflarse a 15 piezas)
+        expect(engine.stock).toBe(10);
 
         // Reintento de llamada de red duplicada por Wi-Fi
         const restock2 = engine.returnToShelf(5, 'inventory');
         expect(restock2.duplicated).toBe(true);
-        expect(engine.stock).toBe(15); // NUNCA sube a 20
+        expect(engine.stock).toBe(10); // NUNCA sube a 15 ni a 20
     });
 
     it('Axioma 5 (Seguridad de Roles): Roles no autorizados no pueden manipular retorno a estante', () => {
