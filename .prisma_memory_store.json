@@ -391,6 +391,42 @@
       "email": "user_ok_1792793414990@test.com",
       "phone": "5593414990",
       "pin": "CORRECT_PASS"
+    },
+    {
+      "id": "17d2fa62-b4f5-4517-838c-642eb91496f1",
+      "tenantId": "default",
+      "createdAt": "2026-10-23T23:08:33.147Z",
+      "name": "Victima Legítima",
+      "email": "victim_1792796913134@test.com",
+      "phone": "5596913134",
+      "pin": "1234"
+    },
+    {
+      "id": "16fc0b36-fe6e-402a-b10b-0b3d9be3cf2c",
+      "tenantId": "default",
+      "createdAt": "2026-10-23T23:08:33.216Z",
+      "name": "Usuario Valido",
+      "email": "user_ok_1792796913216@test.com",
+      "phone": "5596913216",
+      "pin": "CORRECT_PASS"
+    },
+    {
+      "id": "4b095267-7323-4083-8de1-027fadf20fc8",
+      "tenantId": "default",
+      "createdAt": "2026-10-23T23:11:55.827Z",
+      "name": "Victima Legítima",
+      "email": "victim_1792797115819@test.com",
+      "phone": "5597115819",
+      "pin": "1234"
+    },
+    {
+      "id": "dea28630-8a5f-47ae-b1f0-a2cb1e1668b2",
+      "tenantId": "default",
+      "createdAt": "2026-10-23T23:11:55.903Z",
+      "name": "Usuario Valido",
+      "email": "user_ok_1792797115902@test.com",
+      "phone": "5597115903",
+      "pin": "CORRECT_PASS"
     }
   ],
   "order": [
