@@ -328,6 +328,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const tooltipRef                            = useRef<HTMLDivElement>(null);
     const [activeModules, setActiveModules]     = useState<string[] | null>(null);
     const [siteConfig, setSiteConfig]           = useState<any>(null);
+    const [isHardwareModalOpen, setIsHardwareModalOpen] = useState(false);
 
     const isDashboard = pathname?.startsWith('/dashboard');
     const { isReadOnly, isPremium, profile, signOut, loading: authLoading } = useAuth();
@@ -757,6 +758,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                             </button>
                         )}
 
+                        {/* Configuración de Impresora y Hardware */}
+                        <button
+                            onClick={() => setIsHardwareModalOpen(true)}
+                            style={{
+                                display: 'flex', alignItems: 'center', gap: '6px',
+                                fontSize: '0.75rem', fontWeight: '900', color: '#0ea5e9',
+                                backgroundColor: 'rgba(14,165,233,0.1)', padding: '6px 12px',
+                                borderRadius: '8px', border: '1px solid rgba(14,165,233,0.25)',
+                                cursor: 'pointer', transition: 'all 0.2s',
+                            }}
+                            title="Configurar Impresora de Tickets y Periféricos"
+                        >
+                            <Printer size={14} />
+                            <span className="hidden sm:inline">IMPRESORA</span>
+                        </button>
+
                         {/* Mi Perfil */}
                         <Link
                             href="/dashboard/profile"
@@ -812,14 +829,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 </div>
             </div>
 
-            {/* ── Super Admin Bottom Carousel Nav (Devices / Mobile) ──────── */}
-            {!isPOSFullscreen && (
-                <SuperAdminBottomNav
-                    isPremium={isPremium}
-                    userRole={profile?.role || 'superadmin'}
-                    allowedRoutes={rolePaths[profile?.role || 'superadmin']}
-                />
-            )}
+            {/* Modal de Configuración de Hardware & Impresora (fijado en panel de control) */}
+            <HardwareSettingsModal
+                isOpen={isHardwareModalOpen}
+                onClose={() => setIsHardwareModalOpen(false)}
+            />
         </div>
     );
 }
