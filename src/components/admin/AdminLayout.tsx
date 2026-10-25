@@ -36,7 +36,8 @@ import {
     RefreshCw as Refresh,
     Activity,
     Sparkles,
-    Boxes
+    Boxes,
+    Printer
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
@@ -48,7 +49,7 @@ import ThemeToggle from '@/components/ThemeToggle';
 import LanguageSelector from '@/components/LanguageSelector';
 import { useTranslation } from '@/context/LanguageContext';
 import IconCarouselNav from '@/components/admin/IconCarouselNav';
-import SuperAdminBottomNav from '@/components/admin/SuperAdminBottomNav';
+import HardwareSettingsModal from '@/components/hardware/HardwareSettingsModal';
 
 
 const rolePaths: Record<string, string[]> = {
