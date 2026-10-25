@@ -57,9 +57,8 @@ const rolePaths: Record<string, string[]> = {
         '/dashboard/admin/customers', '/dashboard/crm', '/dashboard/team', '/dashboard/purchases', '/dashboard/reports',
         '/dashboard/soporte', '/dashboard/setup', '/dashboard/pro-sync', '/dashboard/profile', '/dashboard/guia',
         '/dashboard/inventory', '/dashboard/delivery', '/dashboard/pickup', '/dashboard/patio', '/dashboard/design',
-        '/dashboard/marketing', '/dashboard/omnipulse', '/dashboard/billing', '/dashboard/audit', '/dashboard/suscripcion',
-        '/dashboard/qr', '/dashboard/demo', '/dashboard/payments', '/dashboard/verificador',
-        '/dashboard/migracion', '/dashboard/migration', '/dashboard/link', '/dashboard/node-view', '/dashboard/simulator'
+        '/dashboard/qr', '/dashboard/verificador',
+        '/dashboard/migracion', '/dashboard/link', '/dashboard/simulator'
     ],
     admin: [
         '/dashboard', '/dashboard/sales', '/dashboard/admin/sales', '/dashboard/admin/users', '/dashboard/users',
