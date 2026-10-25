@@ -48,11 +48,12 @@ export const DEFAULT_HARDWARE_CONFIG: HardwareConfig = {
 };
 
 interface HardwareSettingsModalProps {
-    isOpen: boolean;
-    onClose: () => void;
+    isOpen?: boolean;
+    onClose?: () => void;
+    isInline?: boolean;
 }
 
-export default function HardwareSettingsModal({ isOpen, onClose }: HardwareSettingsModalProps) {
+export default function HardwareSettingsModal({ isOpen = true, onClose, isInline = false }: HardwareSettingsModalProps) {
     const [config, setConfig] = useState<HardwareConfig>(DEFAULT_HARDWARE_CONFIG);
     const [isTesting, setIsTesting] = useState(false);
     const [btPairedName, setBtPairedName] = useState<string | null>(null);
@@ -69,7 +70,7 @@ export default function HardwareSettingsModal({ isOpen, onClose }: HardwareSetti
         }
     }, [isOpen]);
 
-    if (!isOpen) return null;
+    if (!isOpen && !isInline) return null;
 
     const handleSave = () => {
         try {
@@ -78,7 +79,7 @@ export default function HardwareSettingsModal({ isOpen, onClose }: HardwareSetti
         } catch {
             toast.error('Error al guardar configuración local.');
         }
-        onClose();
+        if (onClose) onClose();
     };
 
     const handlePairBluetooth = async () => {
@@ -157,32 +158,33 @@ export default function HardwareSettingsModal({ isOpen, onClose }: HardwareSetti
         }
     };
 
-    return (
-        <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md font-sans">
-            <div className="bg-slate-950 border border-cyan-500/30 rounded-3xl shadow-2xl w-full max-w-4xl overflow-hidden text-white flex flex-col max-h-[90vh]">
-                
-                {/* Header */}
-                <div className="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-900/90">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2.5 rounded-2xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 shadow-inner">
-                            <Sliders className="w-5 h-5" />
-                        </div>
-                        <div>
-                            <h3 className="font-black text-white text-base tracking-tight flex items-center gap-2">
-                                <span>VINCULACIÓN DE HARDWARE & PERIFÉRICOS</span>
-                                <span className="text-[10px] font-mono bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 px-2 py-0.5 rounded-full uppercase">
-                                    ROLES & ESTACIÓN
-                                </span>
-                            </h3>
-                            <p className="text-xs text-slate-400">
-                                Configura impresoras de tickets, pistolas láser/cámara y básculas para tu estación de trabajo.
-                            </p>
-                        </div>
+    const content = (
+        <div className={`bg-slate-950 border border-cyan-500/30 rounded-3xl shadow-2xl w-full ${isInline ? 'border-slate-800' : 'max-w-4xl max-h-[90vh]'} overflow-hidden text-white flex flex-col font-sans`}>
+            
+            {/* Header */}
+            <div className="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-900/90">
+                <div className="flex items-center gap-3">
+                    <div className="p-2.5 rounded-2xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 shadow-inner">
+                        <Sliders className="w-5 h-5" />
                     </div>
+                    <div>
+                        <h3 className="font-black text-white text-base tracking-tight flex items-center gap-2">
+                            <span>VINCULACIÓN DE HARDWARE & PERIFÉRICOS</span>
+                            <span className="text-[10px] font-mono bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 px-2 py-0.5 rounded-full uppercase">
+                                ROLES & ESTACIÓN
+                            </span>
+                        </h3>
+                        <p className="text-xs text-slate-400">
+                            Configura impresoras de tickets, pistolas láser/cámara y básculas para tu estación de trabajo.
+                        </p>
+                    </div>
+                </div>
+                {!isInline && onClose && (
                     <button onClick={onClose} className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors">
                         <X className="w-5 h-5" />
                     </button>
-                </div>
+                )}
+            </div>
 
                 {/* Contenido scrolleable */}
                 <div className="p-6 overflow-y-auto space-y-6 flex-1 text-xs">
@@ -514,12 +516,14 @@ export default function HardwareSettingsModal({ isOpen, onClose }: HardwareSetti
 
                 {/* Footer */}
                 <div className="p-4 border-t border-slate-800 bg-slate-900/90 flex justify-end gap-2.5">
-                    <button
-                        onClick={onClose}
-                        className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold"
-                    >
-                        Cancelar
-                    </button>
+                    {!isInline && onClose && (
+                        <button
+                            onClick={onClose}
+                            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold"
+                        >
+                            Cancelar
+                        </button>
+                    )}
                     <button
                         onClick={handleSave}
                         className="px-6 py-2 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-emerald-500/20 flex items-center gap-1.5"
@@ -530,6 +534,15 @@ export default function HardwareSettingsModal({ isOpen, onClose }: HardwareSetti
                 </div>
 
             </div>
+    );
+
+    if (isInline) {
+        return content;
+    }
+
+    return (
+        <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md font-sans">
+            {content}
         </div>
     );
 }

@@ -49,7 +49,6 @@ import ThemeToggle from '@/components/ThemeToggle';
 import LanguageSelector from '@/components/LanguageSelector';
 import { useTranslation } from '@/context/LanguageContext';
 import IconCarouselNav from '@/components/admin/IconCarouselNav';
-import HardwareSettingsModal from '@/components/hardware/HardwareSettingsModal';
 
 
 const rolePaths: Record<string, string[]> = {
@@ -328,7 +327,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const tooltipRef                            = useRef<HTMLDivElement>(null);
     const [activeModules, setActiveModules]     = useState<string[] | null>(null);
     const [siteConfig, setSiteConfig]           = useState<any>(null);
-    const [isHardwareModalOpen, setIsHardwareModalOpen] = useState(false);
 
     const isDashboard = pathname?.startsWith('/dashboard');
     const { isReadOnly, isPremium, profile, signOut, loading: authLoading } = useAuth();
@@ -758,21 +756,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                             </button>
                         )}
 
-                        {/* Configuración de Impresora y Hardware */}
-                        <button
-                            onClick={() => setIsHardwareModalOpen(true)}
+                        {/* Configuración de Impresora y Hardware en Dashboard */}
+                        <Link
+                            href="/dashboard/setup?step=7"
                             style={{
                                 display: 'flex', alignItems: 'center', gap: '6px',
                                 fontSize: '0.75rem', fontWeight: '900', color: '#0ea5e9',
                                 backgroundColor: 'rgba(14,165,233,0.1)', padding: '6px 12px',
                                 borderRadius: '8px', border: '1px solid rgba(14,165,233,0.25)',
-                                cursor: 'pointer', transition: 'all 0.2s',
+                                textDecoration: 'none', transition: 'all 0.2s',
                             }}
-                            title="Configurar Impresora de Tickets y Periféricos"
+                            title="Ir al Dashboard de Impresoras y Hardware"
                         >
                             <Printer size={14} />
                             <span className="hidden sm:inline">IMPRESORA</span>
-                        </button>
+                        </Link>
 
                         {/* Mi Perfil */}
                         <Link
@@ -828,12 +826,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     {children}
                 </div>
             </div>
-
-            {/* Modal de Configuración de Hardware & Impresora (fijado en panel de control) */}
-            <HardwareSettingsModal
-                isOpen={isHardwareModalOpen}
-                onClose={() => setIsHardwareModalOpen(false)}
-            />
         </div>
     );
 }
