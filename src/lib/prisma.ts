@@ -6,8 +6,20 @@ import path from 'path';
 
 // Prisma Client inicializado de forma segura y compatible con SQLite local, PostgreSQL cloud y modo en memoria (AI Studio)
 
-if (process.env.DATABASE_URL && !process.env.DIRECT_URL) {
-  process.env.DIRECT_URL = process.env.DATABASE_URL;
+if (process.env.DATABASE_URL) {
+  if (process.env.DATABASE_URL.includes('neon.tech') && !process.env.DATABASE_URL.includes('sslmode=')) {
+    const sep = process.env.DATABASE_URL.includes('?') ? '&' : '?';
+    process.env.DATABASE_URL = `${process.env.DATABASE_URL}${sep}sslmode=require`;
+  }
+  if (!process.env.DIRECT_URL) {
+    process.env.DIRECT_URL = process.env.DATABASE_URL.includes('-pooler')
+      ? process.env.DATABASE_URL.replace('-pooler', '')
+      : process.env.DATABASE_URL;
+  }
+  if (process.env.DIRECT_URL && process.env.DIRECT_URL.includes('neon.tech') && !process.env.DIRECT_URL.includes('sslmode=')) {
+    const sep = process.env.DIRECT_URL.includes('?') ? '&' : '?';
+    process.env.DIRECT_URL = `${process.env.DIRECT_URL}${sep}sslmode=require`;
+  }
 }
 
 function hashPin(pin: string): string {
