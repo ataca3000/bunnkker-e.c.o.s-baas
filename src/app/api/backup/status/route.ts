@@ -44,6 +44,34 @@ const DEFAULT_SETTINGS: PersistedBackupSettings = {
     lastBackupFiles: [],
 };
 
+/**
+ * Sanitiza y valida rutas de respaldo para prevenir Path Traversal (CWE-22)
+ * Prohíbe bytes nulos, secuencias de escape de directorio '../' y caracteres no permitidos.
+ */
+function sanitizeBackupDirectory(rawPath: unknown, fallbackDir: string): string {
+    if (typeof rawPath !== 'string') return fallbackDir;
+    const trimmed = rawPath.trim();
+    if (!trimmed || trimmed.includes('\0') || trimmed.includes('..')) {
+        return fallbackDir;
+    }
+
+    const normalized = path.normalize(trimmed);
+    if (normalized.includes('..')) {
+        return fallbackDir;
+    }
+
+    // Aceptar rutas absolutas válidas en Windows (C:\...) o POSIX (/...) o relativas limpias
+    const isWindowsPath = /^[a-zA-Z]:[\\/]([^<>:"|?*\0]+[\\/]?)*$/.test(normalized);
+    const isPosixPath = /^\/([^<>:"|?*\0]+\/?)*$/.test(normalized);
+    const isRelativePath = /^([^<>:"|?*\0]+[\\/]?)+$/.test(normalized);
+
+    if (!isWindowsPath && !isPosixPath && !isRelativePath) {
+        return fallbackDir;
+    }
+
+    return path.resolve(normalized);
+}
+
 function readLocalBackupSettings(): PersistedBackupSettings {
     try {
         if (fs.existsSync(BACKUP_CONFIG_PATH)) {
@@ -139,9 +167,10 @@ export async function POST(request: NextRequest) {
         const frequencyMinutes = Number(body.frequencyMinutes ?? current.frequencyMinutes) || 120;
         const enabled = typeof body.enabled === 'boolean' ? body.enabled : current.enabled;
         const destination = body.destination || current.destination || 'onedrive';
-        const onedrivePath = body.onedrivePath || current.onedrivePath || DEFAULT_SETTINGS.onedrivePath;
-        const gdrivePath = body.gdrivePath || current.gdrivePath || DEFAULT_SETTINGS.gdrivePath;
-        const usbPath = body.usbPath || current.usbPath || DEFAULT_SETTINGS.usbPath;
+        const defaultLocalDir = path.join(process.cwd(), 'backups');
+        const onedrivePath = sanitizeBackupDirectory(body.onedrivePath ?? current.onedrivePath, DEFAULT_SETTINGS.onedrivePath || defaultLocalDir);
+        const gdrivePath = sanitizeBackupDirectory(body.gdrivePath ?? current.gdrivePath, DEFAULT_SETTINGS.gdrivePath || defaultLocalDir);
+        const usbPath = sanitizeBackupDirectory(body.usbPath ?? current.usbPath, DEFAULT_SETTINGS.usbPath || defaultLocalDir);
         const format = body.format || current.format || 'all';
         const retentionDays = Number(body.retentionDays ?? current.retentionDays) || 30;
         const encryptAES256 = typeof body.encryptAES256 === 'boolean' ? body.encryptAES256 : current.encryptAES256;
@@ -212,7 +241,8 @@ export async function POST(request: NextRequest) {
             }
 
             // Escribir los archivos en cada carpeta destino disponible
-            for (const dir of targetDirs) {
+            for (const rawDir of targetDirs) {
+                const dir = path.resolve(rawDir);
                 try {
                     if (!fs.existsSync(dir)) {
                         fs.mkdirSync(dir, { recursive: true });
@@ -230,7 +260,7 @@ export async function POST(request: NextRequest) {
                         savedFiles.push(excelFile);
                     }
                 } catch (writeErr) {
-                    console.warn(`[backup/status] No se pudo escribir en carpeta ${dir}:`, writeErr);
+                    console.warn('[backup/status] No se pudo escribir en carpeta de respaldo:', writeErr instanceof Error ? writeErr.message : '');
                 }
             }
 

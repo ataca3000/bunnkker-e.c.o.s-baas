@@ -13,12 +13,20 @@ import path from 'path';
  *    redirige de forma transparente a os.tmpdir() (/tmp) sin romper la ejecución.
  */
 export function resolveWritablePath(targetPath: string): string {
-    const dir = path.dirname(targetPath);
+    if (!targetPath || typeof targetPath !== 'string' || targetPath.includes('\0')) {
+        throw new Error('Ruta inválida proporcionada a atomicFs');
+    }
+    const cleanPath = path.normalize(targetPath);
+    if (cleanPath.includes('..')) {
+        throw new Error('Path traversal detectado en atomicFs');
+    }
+    const resolvedPath = path.resolve(cleanPath);
+    const dir = path.dirname(resolvedPath);
     try {
         if (!fs.existsSync(dir)) {
             fs.mkdirSync(dir, { recursive: true });
         }
-        return targetPath;
+        return resolvedPath;
     } catch {
         // Fallback para entornos Serverless de solo lectura (Vercel / AWS Lambda)
         const fallbackDir = path.join(os.tmpdir(), 'bunnkker-ecos');
@@ -29,13 +37,19 @@ export function resolveWritablePath(targetPath: string): string {
         } catch {
             // Ignorar si /tmp ya existe
         }
-        return path.join(fallbackDir, path.basename(targetPath));
+        return path.join(fallbackDir, path.basename(resolvedPath));
     }
 }
 
 export function atomicWriteFileSync(filePath: string, data: string | Buffer, createBackup = false): void {
+    if (!filePath || typeof filePath !== 'string' || filePath.includes('\0')) {
+        throw new Error('Ruta inválida proporcionada a atomicWriteFileSync');
+    }
     const safeFilePath = resolveWritablePath(filePath);
-    const tempPath = `${safeFilePath}.${Date.now()}.${Math.random().toString(36).substring(2, 7)}.tmp`;
+    const safeDir = path.dirname(safeFilePath);
+    const safeBase = path.basename(safeFilePath);
+    const tempName = `${safeBase}.${Date.now()}.${Math.random().toString(36).substring(2, 7)}.tmp`;
+    const tempPath = path.join(safeDir, tempName);
 
     // 1. Escribir y forzar vaciado a disco físico (fsync)
     const fd = fs.openSync(tempPath, 'w');
@@ -57,7 +71,8 @@ export function atomicWriteFileSync(filePath: string, data: string | Buffer, cre
     // 2. Rotación previa si existe archivo previo y se solicita backup
     if (createBackup && fs.existsSync(safeFilePath)) {
         try {
-            const bakPath = `${safeFilePath}.bak`;
+            const bakName = `${safeBase}.bak`;
+            const bakPath = path.join(safeDir, bakName);
             fs.copyFileSync(safeFilePath, bakPath);
         } catch {
             // Ignorar error no crítico de rotación secundaria
