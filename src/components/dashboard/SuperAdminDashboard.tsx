@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useMemo, useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { AreaChart, Area, BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Users, FileText, ShieldCheck, CheckCircle, Maximize2, Share2, Map, TrendingUp, Zap, Package, ShoppingCart, Truck, Settings, ReceiptText, BookOpen, Cloud, BarChart3, Headphones, Terminal, Store, Boxes, Radio } from 'lucide-react';
+import { Users, FileText, ShieldCheck, CheckCircle, Maximize2, Share2, Map, TrendingUp, Zap, Package, ShoppingCart, Truck, Settings, ReceiptText, BookOpen, Cloud, BarChart3, Headphones, Terminal, Store, Boxes, Radio, Download } from 'lucide-react';
 import Link from 'next/link';
 import StaffRankingWidget from '@/components/admin/StaffRankingWidget';
 import RestockAlertWidget from '@/components/admin/RestockAlertWidget';
@@ -434,6 +434,19 @@ export default function SuperAdminDashboard({
                             }}
                         />
                     </motion.label>
+
+                    {/* Descargar Instalador Windows */}
+                    <motion.a
+                        href="/programas/Bunkker_Setup.exe"
+                        download="Bunkker_Setup.exe"
+                        whileHover={{ scale: 1.03 }}
+                        whileTap={{ scale: 0.97 }}
+                        className="px-3.5 py-2 rounded-xl text-xs font-bold tracking-wide border border-cyan-400/60 bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-[0_4px_18px_rgba(16,185,129,0.3)] flex items-center gap-1.5 hover:brightness-110 transition-all cursor-pointer"
+                        title="Descargar instalador de Windows"
+                    >
+                        <Download size={16} />
+                        <span>DESCARGAR .EXE</span>
+                    </motion.a>
 
                     {/* Escanear Producto */}
                     <motion.button
