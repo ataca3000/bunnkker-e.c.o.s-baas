@@ -88,8 +88,13 @@ const menuGroups = [
             { id: 'dashboard',  title: 'Dashboard General',  icon: <LayoutDashboard size={20} />, href: '/dashboard',             premium: false },
             { id: 'pos',        title: 'Punto de Venta (POS)', icon: <Calculator size={20} />,    href: '/dashboard/sales',       premium: false },
             { id: 'team',       title: 'Control de Roles',   icon: <Users size={20} />,           href: '/dashboard/team',        premium: false },
+            { id: 'users',      title: 'Usuarios y Roles',   icon: <Users size={20} />,           href: '/dashboard/admin/users', premium: false },
             { id: 'crm',        title: 'CRM y Clientes',     icon: <User size={20} />,            href: '/dashboard/crm',         premium: false },
+            { id: 'customers',  title: 'Gestión de Clientes',icon: <User size={20} />,            href: '/dashboard/admin/customers', premium: false },
             { id: 'billing',    title: 'CFDI y Facturas',    icon: <FileText size={20} />,        href: '/dashboard/billing',     premium: false },
+            { id: 'qr',         title: 'Vincular por QR',    icon: <Share2 size={20} />,          href: '/dashboard/qr',          premium: false },
+            { id: 'guide',      title: 'Guía / Manual',      icon: <BookOpen size={20} />,        href: '/dashboard/guia',        premium: false },
+            { id: 'demo',       title: 'Test ISO / Demo',    icon: <Activity size={20} />,        href: '/dashboard/demo',        premium: false },
         ],
     },
     {

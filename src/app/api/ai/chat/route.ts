@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { generateText, gateway } from 'ai';
 import { validateApiSession } from '@/lib/apiAuth';
 
 /**
@@ -94,6 +95,37 @@ export async function POST(req: NextRequest) {
 
         const lastUserMsg = [...messages].reverse().find((m: any) => m.role === 'user')?.content || '';
         const effectiveRole = String(role).toLowerCase();
+
+        const roleInstructions: Record<string, string> = {
+            customer: 'Ayuda a clientes a encontrar productos, consultar precios y preparar pedidos. Nunca inventes stock ni confirmes pagos.',
+            support: 'Atiende soporte a clientes con respuestas claras, consulta el contexto disponible y escala incidencias que requieran permisos.',
+            sales: 'Asiste a caja con precios, existencias y cobro. Nunca autorices descuentos, devoluciones o cambios sin confirmación humana.',
+            cashier: 'Asiste a caja con precios, existencias y cobro. Nunca autorices descuentos, devoluciones o cambios sin confirmación humana.',
+            inventory: 'Asiste al almacén con existencias, ubicaciones, recepción y mermas. No modifiques inventario sin autorización.',
+            warehouse: 'Asiste al almacén con existencias, ubicaciones, recepción y mermas. No modifiques inventario sin autorización.',
+            driver: 'Asiste al repartidor con rutas, pedidos y evidencias. No marques una entrega como completada sin confirmación.',
+            delivery: 'Asiste al repartidor con rutas, pedidos y evidencias. No marques una entrega como completada sin confirmación.',
+            owner: 'Asiste al dueño con resúmenes, alertas y decisiones operativas. Separa hechos del contexto de cualquier recomendación.',
+            admin: 'Asiste al gerente con auditoría, inventario, ventas y finanzas. No ejecutes acciones irreversibles.',
+            superadmin: 'Asiste al gerente del sistema con auditoría, configuración y métricas. No expongas secretos ni API keys.',
+        };
+        const systemPrompt = `Eres el agente ${effectiveRole} de BUNKKER E.C.O.S. ${roleInstructions[effectiveRole] || roleInstructions.customer} Responde en español, de forma breve y accionable. Datos disponibles: ${JSON.stringify(contextData)}`;
+
+        // Modelo gratuito del AI Gateway. Si no está disponible, cae al motor local sin bloquear la operación.
+        try {
+            const gatewayResult = await generateText({
+                model: gateway('nvidia/nemotron-3.5-lightning-free'),
+                system: systemPrompt,
+                prompt: lastUserMsg,
+                maxOutputTokens: 600,
+                temperature: 0.4,
+            });
+            if (gatewayResult.text?.trim()) {
+                return NextResponse.json({ reply: gatewayResult.text, engine: 'ai-gateway-free', role: effectiveRole });
+            }
+        } catch (gatewayError) {
+            console.warn('[AI Gateway Warning]: fallback a Gemini/local', gatewayError);
+        }
 
         // 1. Obtener API Key de Gemini: prioridad a env, luego header x-gemini-key, luego body
         const apiKey = process.env.GEMINI_API_KEY || req.headers.get('x-gemini-key') || clientApiKey;

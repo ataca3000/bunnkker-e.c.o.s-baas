@@ -3,9 +3,14 @@ import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { auth } from '@/lib/firebase-admin';
 import { isConfiguredPriceId } from '@/lib/products';
+import { membershipCheckoutEnabled } from '@/flags';
 
 export async function POST(req: Request) {
   try {
+    if (!(await membershipCheckoutEnabled())) {
+      return NextResponse.json({ error: 'El checkout de membresías está pausado.' }, { status: 403 });
+    }
+
     const secretKey = process.env.STRIPE_SECRET_KEY;
     if (!secretKey) return NextResponse.json({ error: 'Stripe no está configurado.' }, { status: 503 });
 
@@ -22,8 +27,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Plan no disponible o Price ID no configurado.' }, { status: 400 });
     }
 
-    const origin = req.headers.get('origin') || process.env.NEXT_PUBLIC_BASE_URL;
-    if (!origin) return NextResponse.json({ error: 'Origen de checkout no configurado.' }, { status: 500 });
+    const configuredBaseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+    const origin = configuredBaseUrl ? new URL(configuredBaseUrl).origin : new URL(req.url).origin;
+    const requestOrigin = req.headers.get('origin');
+    if (requestOrigin && new URL(requestOrigin).origin !== origin) {
+      return NextResponse.json({ error: 'Origen no permitido.' }, { status: 403 });
+    }
 
     const stripe = new Stripe(secretKey, { apiVersion: '2026-06-24.dahlia' as any });
     const session = await stripe.checkout.sessions.create(

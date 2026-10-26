@@ -101,7 +101,7 @@ export default function BarcodeScanner({
                     <div>
                         <h3 className="font-bold text-base text-white flex items-center gap-2">
                             <Zap className="w-5 h-5 text-cyan-400" />
-                            Escáner de Códigos de Barra
+                            Escáner QR y de barras
                         </h3>
                         <p className="text-xs text-zinc-400">
                             {isContinuous ? 'Modo Pasillo / Continuo activo (+1 por escaneo)' : 'Modo unitario'}
@@ -167,7 +167,7 @@ export default function BarcodeScanner({
                 )}
 
                 <p className="text-center text-xs text-zinc-400 mt-3">
-                    Apunta la cámara al código de barras o QR de la etiqueta. Si vuelves a pasar el mismo código, aumentará +1 automáticamente.
+                    Apunta la cámara al QR o código de barras del producto. Al reconocerlo se agrega automáticamente a la cesta para cobro exprés; si lo vuelves a escanear, aumenta la cantidad.
                 </p>
             </div>
         </div>

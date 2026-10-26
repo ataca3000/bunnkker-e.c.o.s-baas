@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'node:crypto';
 import { prisma } from '@/lib/prisma';
 import { requireRole, requireActiveRole, getTenantId } from '@/lib/apiAuth';
 
@@ -19,16 +20,14 @@ export async function POST(req: NextRequest) {
         }
 
         const tenantId = getTenantId(req);
-        const cleanFolio = folio && typeof folio === 'string'
-            ? folio.trim()
-            : `TKT-${Math.floor(100000 + Math.random() * 900000)}`;
+        const cleanFolio = typeof folio === 'string' ? folio.trim() : '';
 
         const newTicket = await prisma.supportTicket.create({
             data: {
                 tenantId,
-                folio: cleanFolio,
-                customerEmail: customerEmail && typeof customerEmail === 'string' ? customerEmail.trim() : 'anonimo@tienda.com',
-                customerName: customerName && typeof customerName === 'string' ? customerName.trim() : 'Anónimo',
+                folio: cleanFolio || `TKT-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
+                customerEmail: typeof customerEmail === 'string' && customerEmail.trim() ? customerEmail.trim() : 'anonimo@tienda.com',
+                customerName: typeof customerName === 'string' && customerName.trim() ? customerName.trim() : 'Anónimo',
                 message: message.trim(),
                 status: 'Pendiente (IA)'
             }

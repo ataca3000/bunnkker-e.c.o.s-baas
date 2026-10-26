@@ -1636,6 +1636,8 @@ export default function SalesDashboard() {
                         const product = products.find(p => p.barcode?.toLowerCase() === code || p.id.toLowerCase() === code || p.name.toLowerCase() === code);
                         if (product) {
                             handleAddProduct(product);
+                            setPosSearch('');
+                            showToast(`Agregado a la cesta: ${product.name}`);
                         } else {
                             if (posConfig.soundEnabled) playErrorBeep(posConfig.soundVolume);
                             showToast('❌ Producto no encontrado: ' + decodedText);
