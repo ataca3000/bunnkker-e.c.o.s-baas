@@ -32,6 +32,24 @@ function Field({
 const inputCls = "w-full py-3.5 pl-[52px] pr-4 bg-slate-800/60 border border-slate-700/60 rounded-2xl focus:border-purple-500 focus:ring-1 focus:ring-purple-500/30 outline-none transition-all text-white placeholder-slate-500 text-sm font-medium";
 const selectCls = "w-full py-3.5 pl-[52px] pr-4 bg-slate-800/60 border border-slate-700/60 rounded-2xl focus:border-purple-500 outline-none transition-all text-white text-sm font-medium appearance-none";
 
+/**
+ * Validador estricto anti-Open-Redirect (CWE-601).
+ * Garantiza que la redirección sea exclusivamente a rutas internas relativas seguras.
+ */
+function getSafeInternalRedirect(rawUrl: string | null | undefined): string {
+    if (!rawUrl || typeof rawUrl !== 'string') return '/cuenta';
+    const trimmed = rawUrl.trim();
+    // Bloquear explícitamente schemes (http:, https:, javascript:, data:), doble slash //, backslash \
+    if (!trimmed.startsWith('/') || trimmed.startsWith('//') || trimmed.includes('\\') || trimmed.includes(':')) {
+        return '/cuenta';
+    }
+    // Permitir únicamente rutas relativas compuestas por caracteres alfanuméricos y guiones
+    if (!/^\/[a-zA-Z0-9_\-\/]*$/.test(trimmed)) {
+        return '/cuenta';
+    }
+    return trimmed;
+}
+
 export default function RegisterPage() {
     const router = useRouter();
     const [mode, setMode] = useState<Mode>('register');
@@ -90,9 +108,9 @@ export default function RegisterPage() {
                 }, data.customer);
                 const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
                 const redirectParam = searchParams?.get('redirect');
-                const targetUrl = redirectParam && redirectParam.startsWith('/') && !redirectParam.startsWith('//') ? redirectParam : '/cuenta';
+                const targetUrl = getSafeInternalRedirect(redirectParam);
                 setSuccess('¡Cuenta creada con éxito! Continuando...');
-                window.location.assign(targetUrl);
+                router.push(targetUrl);
             } else {
                 setError(data.error || 'Error al crear la cuenta. Intenta de nuevo.');
             }
@@ -128,9 +146,9 @@ export default function RegisterPage() {
                 }, data.customer);
                 const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
                 const redirectParam = searchParams?.get('redirect');
-                const targetUrl = redirectParam && redirectParam.startsWith('/') && !redirectParam.startsWith('//') ? redirectParam : '/cuenta';
+                const targetUrl = getSafeInternalRedirect(redirectParam);
                 setSuccess('¡Bienvenido! Continuando...');
-                window.location.assign(targetUrl);
+                router.push(targetUrl);
             } else {
                 setError(data.error || 'Número o contraseña incorrectos.');
             }
