@@ -133,6 +133,9 @@ export default async function RootLayout({
     <html lang="es" suppressHydrationWarning className="dark bg-[var(--bunkker-surface)]">
       <head>
         <ThemeScript />
+        <link rel="preconnect" href="https://images.unsplash.com" />
+        <link rel="dns-prefetch" href="https://images.unsplash.com" />
+        <link rel="preconnect" href="https://www.googletagmanager.com" />
         <Script
           strategy="afterInteractive"
           src="https://www.googletagmanager.com/gtag/js?id=AW-17871952404"

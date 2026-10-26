@@ -75,5 +75,12 @@ if (typeof window !== 'undefined') {
 }
 
 // ─── Instancia de Auth & Storage ──────────────────────────────────────────────
-export const auth = getAuth(app);
+// Si no hay credenciales reales en producción o estamos offline, evitar llamadas que bloqueen la red
+const mockAuth = {
+  currentUser: null,
+  onAuthStateChanged: (cb: any) => { cb(null); return () => {}; },
+  signOut: async () => {},
+};
+
+export const auth = hasRealCredentials ? getAuth(app) : (mockAuth as any);
 export const storage = null as any;
