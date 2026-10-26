@@ -130,6 +130,22 @@ export default async function RootLayout({
     <html lang="es" suppressHydrationWarning className="dark bg-[var(--bunkker-surface)]">
       <head>
         <ThemeScript />
+        <Script
+          strategy="afterInteractive"
+          src="https://www.googletagmanager.com/gtag/js?id=AW-17871952404"
+        />
+        <Script
+          id="google-analytics-aw"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'AW-17871952404');
+            `,
+          }}
+        />
       </head>
       <body className={`${inter.className} bg-[var(--bunkker-surface)] text-[var(--bunkker-ink)] antialiased font-sans`}>
         <SchemaMarkup />
