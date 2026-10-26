@@ -24,7 +24,10 @@ export async function generateMetadata(): Promise<Metadata> {
   const baseUrl = `${protocol}://${host}`;
 
   const defaultVerification = {
-    google: 'CRRkmj4XJ1qPMAkpFbfzftUC4kS0viq_JgEFG_YvG3Y'
+    google: [
+      'CRRkmj4XJ1qPMAkpFbfzftUC4kS0viq_JgEFG_YvG3Y',
+      'RUykPROROSIAER1hDacV4WS_Op3YAlo0ua4ea6Az8Wo'
+    ]
   };
 
   if (tenantId === 'default' || tenantId === 'admin.com') {
