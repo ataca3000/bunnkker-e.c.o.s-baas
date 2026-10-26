@@ -45,7 +45,7 @@ const STRIPE_PRICE_IDS = {
 export type MembershipFlags = {
     checkoutEnabled: boolean;
     customerBillingPortalEnabled: boolean;
-    planVisibility: 'all' | 'local-hybrid' | 'enterprise-only';
+    planVisibility: 'all' | 'monthly' | 'local' | 'enterprise';
 };
 
 export default function PricingPage({ flags }: { flags: MembershipFlags }) {
@@ -66,8 +66,8 @@ export default function PricingPage({ flags }: { flags: MembershipFlags }) {
 
     const { profile } = useAuth();
     const visiblePlans = SUBSCRIPTION_PLANS.filter((plan) => {
-        if (flags.planVisibility === 'enterprise-only') return plan.id === 'enterprise';
-        if (flags.planVisibility === 'local-hybrid') return plan.id !== 'enterprise';
+        if (flags.planVisibility === 'enterprise') return plan.id === 'enterprise';
+        if (flags.planVisibility === 'local') return plan.id !== 'enterprise';
         return true;
     });
 
@@ -336,31 +336,40 @@ export default function PricingPage({ flags }: { flags: MembershipFlags }) {
             </motion.div>
 
             {/* Billing Period Toggle */}
-            <div className="z-10 mb-8 flex items-center bg-slate-900 border border-slate-800 p-1 rounded-xl shadow-lg">
-                <button
-                    onClick={() => setBillingPeriod('monthly')}
-                    className={`px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
-                        billingPeriod === 'monthly'
-                            ? 'bg-cyan-500 text-slate-950 shadow-md font-black'
-                            : 'text-slate-400 hover:text-white'
-                    }`}
+            {flags.planVisibility === 'monthly' ? (
+                <p
+                    role="status"
+                    className="z-10 mb-8 rounded-xl border border-slate-800 bg-slate-900 px-5 py-3 text-xs font-bold uppercase tracking-wider text-cyan-300 shadow-lg"
                 >
                     Facturación Mensual
-                </button>
-                <button
-                    onClick={() => setBillingPeriod('annual')}
-                    className={`px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${
-                        billingPeriod === 'annual'
-                            ? 'bg-amber-500 text-slate-950 shadow-md font-black'
-                            : 'text-slate-400 hover:text-white'
-                    }`}
-                >
-                    Pago Anual
-                    <span className="text-[10px] bg-slate-950/70 text-amber-200 px-1.5 py-0.5 rounded font-black">
-                        -17% (2 meses gratis)
-                    </span>
-                </button>
-            </div>
+                </p>
+            ) : (
+                <div className="z-10 mb-8 flex items-center bg-slate-900 border border-slate-800 p-1 rounded-xl shadow-lg">
+                    <button
+                        onClick={() => setBillingPeriod('monthly')}
+                        className={`px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
+                            billingPeriod === 'monthly'
+                                ? 'bg-cyan-500 text-slate-950 shadow-md font-black'
+                                : 'text-slate-400 hover:text-white'
+                        }`}
+                    >
+                        Facturación Mensual
+                    </button>
+                    <button
+                        onClick={() => setBillingPeriod('annual')}
+                        className={`px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${
+                            billingPeriod === 'annual'
+                                ? 'bg-amber-500 text-slate-950 shadow-md font-black'
+                                : 'text-slate-400 hover:text-white'
+                        }`}
+                    >
+                        Pago Anual
+                        <span className="text-[10px] bg-slate-950/70 text-amber-200 px-1.5 py-0.5 rounded font-black">
+                            -17% (2 meses gratis)
+                        </span>
+                    </button>
+                </div>
+            )}
 
             {/* ── 4 MONETIZABLE PLAN CARDS ───────────────────────────────────────── */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 w-full max-w-6xl z-10 relative">

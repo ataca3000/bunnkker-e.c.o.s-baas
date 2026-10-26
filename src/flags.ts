@@ -23,14 +23,15 @@ export const customerBillingPortalEnabled = flag<boolean>({
   adapter: vercelAdapter,
 })
 
-export const membershipPlanVisibility = flag<'all' | 'local-hybrid' | 'enterprise-only'>({
+export const membershipPlanVisibility = flag<'all' | 'monthly' | 'local' | 'enterprise'>({
   key: 'membership-plan-visibility',
-  description: 'Controla qué planes de membresía se muestran al cliente.',
+  description: 'Controla los planes y la modalidad de cobro que se muestran al cliente.',
   defaultValue: 'all',
   options: [
     { value: 'all', label: 'Todos' },
-    { value: 'local-hybrid', label: 'Local e Híbrido' },
-    { value: 'enterprise-only', label: 'Solo Enterprise' },
+    { value: 'monthly', label: 'Solo mensual' },
+    { value: 'local', label: 'Local e híbrido' },
+    { value: 'enterprise', label: 'Solo Enterprise' },
   ],
   adapter: vercelAdapter,
 })
