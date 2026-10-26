@@ -37,9 +37,7 @@
   },
   "build": {
     "appId": "com.bunkkererp.erp",
-    "productName": "BUNKKER E.C.O.S. ERP",
-    "electronVersion": "42.11.10",
-    "electronDist": ".electron-dist",
+    "productName": "BUNKKER E.C.O.s ERP",
     "copyright": "Copyright © 2026 brecha soluciones ds bunkker e.c.o.s",
     "directories": {
       "output": "dist-build-win",
