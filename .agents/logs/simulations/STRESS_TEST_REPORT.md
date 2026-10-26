@@ -1,6 +1,6 @@
 # Reporte de Pruebas de Estrés & Estratos RBAC (Archivario de Base)
 
-> **Fecha de Ejecución:** 2026-10-26T19:23:02.131Z
+> **Fecha de Ejecución:** 2026-10-26T19:58:24.233Z
 > **Estado:** PASS (100% Exitoso)
 
 - **Peticiones Simuladas:** 1,000 peticiones en paralelo.
