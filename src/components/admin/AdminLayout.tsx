@@ -1,4 +1,3 @@
-// @ts-nocheck
 /* eslint-disable */
 "use client";
 
@@ -36,7 +35,9 @@ import {
     Save,
     RefreshCw as Refresh,
     Activity,
-    Sparkles
+    Sparkles,
+    Boxes,
+    Printer
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
@@ -45,6 +46,8 @@ import { db } from '@/lib/firebase';
 import { doc, updateDoc, onSnapshot, getDoc } from 'firebase/firestore';
 import { toast } from '@/lib/toast';
 import ThemeToggle from '@/components/ThemeToggle';
+import LanguageSelector from '@/components/LanguageSelector';
+import { useTranslation } from '@/context/LanguageContext';
 import IconCarouselNav from '@/components/admin/IconCarouselNav';
 
 
@@ -55,8 +58,8 @@ const rolePaths: Record<string, string[]> = {
         '/dashboard/soporte', '/dashboard/setup', '/dashboard/pro-sync', '/dashboard/profile', '/dashboard/guia',
         '/dashboard/inventory', '/dashboard/delivery', '/dashboard/pickup', '/dashboard/patio', '/dashboard/design',
         '/dashboard/marketing', '/dashboard/omnipulse', '/dashboard/billing', '/dashboard/audit', '/dashboard/suscripcion',
-        '/dashboard/qr', '/dashboard/demo', '/dashboard/tests', '/dashboard/payments', '/dashboard/verificador',
-        '/dashboard/migracion', '/dashboard/migration', '/dashboard/link', '/dashboard/node-view'
+        '/dashboard/qr', '/dashboard/demo', '/dashboard/payments', '/dashboard/verificador',
+        '/dashboard/migracion', '/dashboard/migration', '/dashboard/link', '/dashboard/node-view', '/dashboard/simulator'
     ],
     admin: [
         '/dashboard', '/dashboard/sales', '/dashboard/admin/sales', '/dashboard/admin/users', '/dashboard/users',
@@ -64,7 +67,7 @@ const rolePaths: Record<string, string[]> = {
         '/dashboard/soporte', '/dashboard/setup', '/dashboard/pro-sync', '/dashboard/profile', '/dashboard/guia',
         '/dashboard/inventory', '/dashboard/delivery', '/dashboard/pickup', '/dashboard/patio', '/dashboard/design',
         '/dashboard/marketing', '/dashboard/omnipulse', '/dashboard/billing', '/dashboard/audit', '/dashboard/suscripcion',
-        '/dashboard/qr'
+        '/dashboard/qr', '/dashboard/simulator'
     ],
     sales: ['/dashboard', '/dashboard/sales', '/dashboard/admin/sales', '/dashboard/admin/customers', '/dashboard/crm', '/dashboard/qr', '/dashboard/profile', '/dashboard/guia'],
     caja: ['/dashboard', '/dashboard/sales', '/dashboard/admin/sales', '/dashboard/admin/customers', '/dashboard/crm', '/dashboard/qr', '/dashboard/profile', '/dashboard/guia'],
@@ -84,42 +87,34 @@ const menuGroups = [
         label: 'Administración y Ventas',
         items: [
             { id: 'dashboard',  title: 'Dashboard General',  icon: <LayoutDashboard size={20} />, href: '/dashboard',             premium: false },
-            { id: 'sales',      title: 'Control de Ventas',  icon: <ShoppingCart size={20} />,    href: '/dashboard/admin/sales', premium: false },
             { id: 'pos',        title: 'Punto de Venta (POS)', icon: <Calculator size={20} />,    href: '/dashboard/sales',       premium: false },
+            { id: 'team',       title: 'Control de Roles',   icon: <Users size={20} />,           href: '/dashboard/team',        premium: false },
             { id: 'users',      title: 'Usuarios y Roles',   icon: <Users size={20} />,           href: '/dashboard/admin/users', premium: false },
-            { id: 'customers',  title: 'CRM y Clientes',     icon: <User size={20} />,            href: '/dashboard/admin/customers', premium: false },
+            { id: 'crm',        title: 'CRM y Clientes',     icon: <User size={20} />,            href: '/dashboard/crm',         premium: false },
+            { id: 'customers',  title: 'Gestión de Clientes',icon: <User size={20} />,            href: '/dashboard/admin/customers', premium: false },
+            { id: 'billing',    title: 'CFDI y Facturas',    icon: <FileText size={20} />,        href: '/dashboard/billing',     premium: false },
             { id: 'qr',         title: 'Vincular por QR',    icon: <Share2 size={20} />,          href: '/dashboard/qr',          premium: false },
-            { id: 'guide',      title: 'Guía / Manual',      icon: <BookOpen size={20} />,           href: '/dashboard/guia',         premium: false },
+            { id: 'guide',      title: 'Guía / Manual',      icon: <BookOpen size={20} />,        href: '/dashboard/guia',        premium: false },
             { id: 'demo',       title: 'Test ISO / Demo',    icon: <Activity size={20} />,        href: '/dashboard/demo',        premium: false },
         ],
     },
     {
         label: 'Operaciones y Logística',
         items: [
-            { id: 'inventory', title: 'Inventario',         icon: <Package size={20} />, href: '/dashboard/inventory', premium: false },
-            { id: 'delivery',  title: 'Logística y Reparto', icon: <Truck size={20} />,   href: '/dashboard/delivery',  premium: false },
-            { id: 'pickup',    title: 'Recolección en Tienda', icon: <Package size={20} />, href: '/dashboard/pickup',  premium: false },
+            { id: 'inventory', title: 'Control de Inventario', icon: <Package size={20} />, href: '/dashboard/inventory', premium: false },
+            { id: 'patio',     title: 'Patio de Carga',        icon: <Truck size={20} />,   href: '/dashboard/patio',     premium: false },
+            { id: 'pickup',    title: 'Mostrador / Tienda',    icon: <Package size={20} />, href: '/dashboard/pickup',    premium: false },
+            { id: 'delivery',  title: 'Logística y Reparto',   icon: <Truck size={20} />,   href: '/dashboard/delivery',  premium: false },
+            { id: 'simulator', title: 'Simulador 3D FerreFlujo', icon: <Boxes size={20} />, href: '/dashboard/simulator', premium: false },
         ],
     },
     {
         label: 'Diseño y Marketing',
         items: [
-            { id: 'design',    title: 'Diseño y Marca',  icon: <Palette size={20} />, href: '/dashboard/design',     premium: false },
             { id: 'marketing', title: 'Marketing y QR',  icon: <Share2 size={20} />,  href: '/dashboard/marketing',  premium: false },
-        ],
-    },
-    {
-        label: 'Licencias y Auditoría',
-        items: [
-            { id: 'billing',      title: 'Facturas SAT',       icon: <FileText size={20} />,  href: '/dashboard/billing',      premium: true  },
-            { id: 'audit',        title: 'Registro Auditoría', icon: <History size={20} />,   href: '/dashboard/audit',        premium: false },
-            { id: 'subscription', title: 'Mi Suscripción',     icon: <CreditCard size={20} />, href: '/dashboard/suscripcion', premium: false },
-        ],
-    },
-    {
-        label: 'Herramientas',
-        items: [
-            { id: 'tests', title: 'Pruebas de Lógica', icon: <Play size={20} />, href: '/dashboard/tests', premium: false },
+            { id: 'design',    title: 'Diseño de Marca', icon: <Palette size={20} />, href: '/dashboard/design',     premium: false },
+            { id: 'audit',     title: 'Registro Auditoría', icon: <History size={20} />, href: '/dashboard/audit',    premium: false },
+            { id: 'subscription', title: 'Mi Suscripción', icon: <CreditCard size={20} />, href: '/dashboard/suscripcion', premium: false },
         ],
     },
 ];
@@ -341,6 +336,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const isDashboard = pathname?.startsWith('/dashboard');
     const { isReadOnly, isPremium, profile, signOut, loading: authLoading } = useAuth();
     const { firebaseStatus } = useCart();
+    const { t } = useTranslation();
 
     /* persist sidebar and navigation mode preferences */
     useEffect(() => {
@@ -399,8 +395,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         const isAdminRole = profile.role === 'superadmin' || profile.role === 'admin';
         if (!isAdminRole && isDashboard) {
-            const paths = rolePaths[profile.role] || [];
-            const isAllowed = paths.some(p => pathname === p || pathname?.startsWith(p + '/'));
+            const currentRole = profile.role || '';
+            const paths = rolePaths[currentRole] || [];
+            const isAllowed = paths.some((p: string) => pathname === p || pathname?.startsWith(p + '/'));
             if (!isAllowed) {
                 router.replace('/dashboard');
                 return;
@@ -441,8 +438,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
     // Mostrar la barra lateral para superadmin y admin (y mantenerla estable durante la hidratación inicial de sesión)
     const isPOSFullscreen = pathname === '/dashboard/sales';
-    const showAdminSidebar = !isPOSFullscreen && (!profile || profile.role === 'superadmin' || profile.role === 'admin');
-    const sidebarWidth  = isCollapsed ? '90px' : '280px';
+    const showAdminSidebar = !isPOSFullscreen && (profile?.role === 'superadmin' || profile?.role === 'admin');
+    const sidebarWidth  = isCollapsed ? '72px' : '260px';
 
     /* ── Breadcrumbs helper ───────────────────────────────────── */
     const labelsMap: Record<string, string> = {
@@ -461,51 +458,67 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     };
 
     return (
-        <div className="bunkker-shell" style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bunkker-surface)', color: 'var(--bunkker-ink)' }}>
+        <div className="bunkker-shell" style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'transparent', color: '#f8fafc' }}>
 
-            {/* ── Sidebar (Layer 3) ─────────────────────────────────────────── */}
+            {/* ── Sidebar (Layer 4 Translucent Container) ─────────────────────────────────────────── */}
             {showAdminSidebar && (
-                <aside className="liquid-glass admin-sidebar" style={{
+                <aside className="admin-sidebar hidden md:flex" style={{
                     width: sidebarWidth,
                     color: 'white',
-                    padding: isCollapsed ? '2rem 0.75rem' : '2rem 1.5rem',
+                    padding: isCollapsed ? '1.5rem 0.5rem' : '1.5rem 1.25rem',
                     position: 'fixed',
                     height: '100vh',
                     overflowY: 'auto',
-                    zIndex: 100, // Superior Layer 3
+                    zIndex: 100,
                     transition: 'width 0.3s cubic-bezier(0.4,0,0.2,1), padding 0.3s cubic-bezier(0.4,0,0.2,1)',
                     display: 'flex',
                     flexDirection: 'column',
-                    background: 'rgba(15, 23, 42, 0.6)',
-                    backdropFilter: 'blur(16px)',
-                    borderRight: '1px solid rgba(0, 242, 255, 0.1)',
-                    boxShadow: '10px 0 30px rgba(0,0,0,0.5)',
+                    background: 'rgba(8, 12, 22, 0.85)',
+                    backdropFilter: 'blur(24px) saturate(140%)',
+                    WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+                    borderRight: '1px solid rgba(56, 189, 248, 0.18)',
+                    boxShadow: '10px 0 35px rgba(0,0,0,0.7)',
                 }}>
                     {/* Header + Toggle */}
                     <div style={{
-                        marginBottom: '3rem', display: 'flex', alignItems: 'center',
+                        marginBottom: '2rem', display: 'flex', alignItems: 'center',
                         justifyContent: isCollapsed ? 'center' : 'space-between', gap: '10px',
                     }}>
-                        {!isCollapsed && (
-                            <div>
-                                <h2 className="mystique-scales" style={{ fontSize: '1.4rem', margin: 0, textTransform: 'uppercase' }}>
-                                    {siteConfig?.businessName || 'CAMALEÓN ERP'}
-                                </h2>
-                                <span style={{ fontSize: '0.7rem', opacity: 0.7, color: 'var(--plasma-cyan)' }}>{siteConfig?.slogan || 'Sistema Empresarial'}</span>
+                        {!isCollapsed ? (
+                            <div className="flex items-center gap-2.5 min-w-0">
+                                <img 
+                                    src="/bunkker-logo-hero.png" 
+                                    alt="BUNKKER" 
+                                    className="w-8 h-8 object-contain rounded-lg border border-cyan-500/40 shadow-[0_0_12px_rgba(56,189,248,0.5)] shrink-0" 
+                                />
+                                <div className="min-w-0">
+                                    <h2 className="font-black text-white text-sm tracking-wider flex items-center gap-1 leading-none">
+                                        BUNKKER <span className="text-cyan-400 font-mono text-[10px]">ERP</span>
+                                    </h2>
+                                    <span className="text-[8px] uppercase tracking-widest text-cyan-400/80 block font-semibold truncate mt-1">
+                                        {siteConfig?.businessName || 'SISTEMA E.C.O.S.'}
+                                    </span>
+                                </div>
                             </div>
+                        ) : (
+                            <img 
+                                src="/bunkker-logo-hero.png" 
+                                alt="BUNKKER" 
+                                className="w-8 h-8 object-contain rounded-lg border border-cyan-500/40 shadow-[0_0_12px_rgba(56,189,248,0.5)]" 
+                            />
                         )}
                         <button
                             type="button"
                             onClick={toggleSidebar}
                             style={{
-                                background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white',
-                                padding: '8px', borderRadius: '8px', cursor: 'pointer',
+                                background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.2)', color: '#38bdf8',
+                                padding: '6px', borderRadius: '8px', cursor: 'pointer',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                transition: 'background 0.2s',
+                                transition: 'all 0.2s',
                             }}
                             title={isCollapsed ? 'Expandir Panel' : 'Colapsar Panel'}
                         >
-                            {isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+                            {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
                         </button>
                     </div>
 
@@ -607,22 +620,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 </aside>
             )}
 
-            {/* ── Main content (Layer 2) ────────────────────────────────────── */}
-            <div style={{
-                flex: 1,
-                marginLeft: showAdminSidebar ? sidebarWidth : '0',
-                width: showAdminSidebar ? `calc(100% - ${sidebarWidth})` : '100%',
-                transition: 'all 0.3s cubic-bezier(0.4,0,0.2,1)',
-                display: 'flex',
-                flexDirection: 'column',
-                minHeight: '100vh',
-                position: 'relative',
-                zIndex: 10, // Content Layer
-            }}>
-                {/* ── Top header bar ─────────────────────────────── */}
-                <div className="liquid-glass" style={{
-                    borderBottom: '1px solid rgba(0,242,255,0.2)',
-                    padding: '0.875rem 2rem',
+            {/* ── Main content (Layer 4) ────────────────────────────────────── */}
+            <div
+                className={`admin-main-viewport flex-1 flex flex-col min-h-screen relative z-10 transition-all duration-300 ${isPOSFullscreen ? 'pb-0' : 'pb-28'} w-full`}
+                style={{
+                    marginLeft: showAdminSidebar ? sidebarWidth : '0px',
+                    transition: 'margin-left 0.3s cubic-bezier(0.4,0,0.2,1)',
+                }}
+            >
+                {/* ── Top header bar (Layer 4 Translucent Container) ─────────────────────────────── */}
+                {!isPOSFullscreen && (
+                <div style={{
+                    background: 'rgba(8, 12, 22, 0.75)',
+                    backdropFilter: 'blur(20px) saturate(140%)',
+                    WebkitBackdropFilter: 'blur(20px) saturate(140%)',
+                    borderBottom: '1px solid rgba(56, 189, 248, 0.2)',
+                    padding: '0.75rem 2rem',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
@@ -631,6 +644,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     position: 'sticky',
                     top: 0,
                     zIndex: 50,
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
                 }}>
                     {/* Breadcrumbs */}
                     <nav style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.72rem', fontWeight: '700', color: '#94a3b8' }}>
@@ -640,7 +654,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                             onMouseEnter={e => (e.currentTarget.style.color = '#0284c7')}
                             onMouseLeave={e => (e.currentTarget.style.color = '#0ea5e9')}
                         >
-                            PANEL
+                            {t('nav.panel', 'PANEL')}
                         </Link>
 
                         {pathname !== '/dashboard' && (
@@ -672,7 +686,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     </nav>
 
                     {/* Status Indicators & Profile */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        {/* Selector de Idioma (Español, Inglés, Francés, Chino) */}
+                        <LanguageSelector />
+
                         {/* Selector de Tema */}
                         <ThemeToggle />
 
@@ -686,7 +703,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                             border: isPremium ? '1px solid rgba(245,158,11,0.2)' : '1px solid rgba(255,255,255,0.1)',
                         }}>
                             <ShieldCheck size={13} />
-                            <span className="hidden sm:inline">{isPremium ? 'PREMIUM ACTIVE' : 'BÁSICO'}</span>
+                            <span className="hidden sm:inline">{isPremium ? t('status.premium_active', 'PREMIUM ACTIVE') : t('status.basic', 'BÁSICO')}</span>
                         </div>
 
                         {/* Connection badge */}
@@ -720,7 +737,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                         }} />
                                     )}
                                 </span>
-                                <span className="hidden sm:inline">{firebaseStatus === 'online' ? 'SISTEMA ONLINE' : 'SIN CONEXIÓN'}</span>
+                                <span className="hidden sm:inline">{firebaseStatus === 'online' ? t('status.online', 'SISTEMA ONLINE') : t('status.offline', 'SIN CONEXIÓN')}</span>
                             </button>
 
                             <ConnectionTooltip isOpen={connTooltipOpen} firebaseStatus={firebaseStatus} />
@@ -740,9 +757,25 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                 title="Volver a la vista anterior"
                             >
                                 <ChevronLeft size={14} />
-                                <span className="hidden sm:inline">ATRÁS</span>
+                                <span className="hidden sm:inline">{t('nav.back', 'ATRÁS')}</span>
                             </button>
                         )}
+
+                        {/* Configuración de Impresora y Hardware en Dashboard */}
+                        <Link
+                            href="/dashboard/setup?step=7"
+                            style={{
+                                display: 'flex', alignItems: 'center', gap: '6px',
+                                fontSize: '0.75rem', fontWeight: '900', color: '#0ea5e9',
+                                backgroundColor: 'rgba(14,165,233,0.1)', padding: '6px 12px',
+                                borderRadius: '8px', border: '1px solid rgba(14,165,233,0.25)',
+                                textDecoration: 'none', transition: 'all 0.2s',
+                            }}
+                            title="Ir al Dashboard de Impresoras y Hardware"
+                        >
+                            <Printer size={14} />
+                            <span className="hidden sm:inline">IMPRESORA</span>
+                        </Link>
 
                         {/* Mi Perfil */}
                         <Link
@@ -757,7 +790,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                             title="Ir a Mi Perfil"
                         >
                             <User size={14} />
-                            <span className="hidden sm:inline">PERFIL</span>
+                            <span className="hidden sm:inline">{t('nav.profile', 'PERFIL')}</span>
                         </Link>
 
                         {/* Cerrar Sesión */}
@@ -773,10 +806,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                             title="Cerrar Sesión"
                         >
                             <LogOut size={14} />
-                            <span className="hidden sm:inline">SALIR</span>
+                            <span className="hidden sm:inline">{t('nav.logout', 'SALIR')}</span>
                         </button>
                     </div>
                 </div>
+                )}
 
                 {/* ── Read-only banner ──────────────────────────── */}
                 {isReadOnly && (
@@ -788,7 +822,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         borderBottom: '1px solid #FFCB05',
                     }}>
                         <AlertCircle size={16} color="#FFCB05" style={{ flexShrink: 0 }} />
-                        <span>MODO DEMOSTRACIÓN: Usted está en modo de solo lectura. Los cambios no se guardarán en la base de datos real.</span>
+                        <span>{t('status.demo_warning', 'MODO DEMOSTRACIÓN: Usted está en modo de solo lectura. Los cambios no se guardarán en la base de datos real.')}</span>
                     </div>
                 )}
 

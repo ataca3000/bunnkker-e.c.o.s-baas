@@ -20,7 +20,9 @@ export function useBarcodeScanner(
     const lastKeyTime = useRef(0);
     const keyBurstCount = useRef(0);
     const onScanRef = useRef(onScan);
-    onScanRef.current = onScan;
+    useEffect(() => {
+        onScanRef.current = onScan;
+    }, [onScan]);
 
     useEffect(() => {
         if (!enabled) return;

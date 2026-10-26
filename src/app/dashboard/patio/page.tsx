@@ -10,6 +10,7 @@ import BarcodeScanner from '@/components/BarcodeScanner';
 import { toast } from '@/lib/toast';
 import DeliveryProofModal from '@/components/orders/DeliveryProofModal';
 import TicketEntrega from '@/components/TicketEntrega';
+import OrderPickingAssistant from '@/components/orders/OrderPickingAssistant';
 
 export default function PatioDashboard() {
     const { orders, startLoading, completeLoading, products, siteConfig } = useCart();
@@ -21,10 +22,19 @@ export default function PatioDashboard() {
     const [notifiedOrder, setNotifiedOrder] = useState<any | null>(null);
     const [orderForDeliveryProof, setOrderForDeliveryProof] = useState<any | null>(null);
     const [deliveredTicketOrder, setDeliveredTicketOrder] = useState<any | null>(null);
+    const [pickingOrder, setPickingOrder] = useState<any | null>(null);
+    const [deconstructingOrder, setDeconstructingOrder] = useState<any | null>(null);
+    const [onlyMyLoads, setOnlyMyLoads] = useState(false);
 
-    // 1. Cargas pendientes de surtir en Almacén
+    // 1. Cargas pendientes de surtir en Almacén destinadas a Patio / Bahía de Carga
     const pendingLoads = useMemo(() => {
         return orders.filter(o => {
+            if (onlyMyLoads && o.loadedByUid && o.loadedByUid !== profile?.uid) return false;
+            // Exclusivo para pedidos de Patio / Carga pesada (no repartidor ni mostrador general)
+            const isPatioOrder = o.deliveryType === 'PATIO' || (o as any).deliveryMethod === 'patio' || (o as any).selectedDeliveryLocation === 'carga';
+            const isDelivery = o.deliveryType === 'DELIVERY' || (o as any).deliveryMethod === 'repartidor';
+            if (!isPatioOrder || isDelivery) return false;
+
             const validStatus = ['READY_TO_SHIP', 'paid', 'pending_payment', 'pending_confirmation', 'paid_pending_delivery', 'PREPARANDO', 'READY_FOR_PICKUP', 'NIGHT_QUEUE', 'PENDIENTE_LLEGADA'].includes(o.status);
             const notLoaded = !(o as any).isLoaded && !['DELIVERED', 'READY_FOR_PICKUP_PAID', 'OUT_FOR_DELIVERY', 'COMPLETED'].includes(o.status);
             const custName = o.customer?.name || o.customerName || 'Cliente';
@@ -36,20 +46,21 @@ export default function PatioDashboard() {
             if (b.status === 'NIGHT_QUEUE' || b.status === 'PENDIENTE_LLEGADA') return -1;
             return 0;
         });
-    }, [orders, searchTerm]);
+    }, [orders, searchTerm, onlyMyLoads, profile?.uid]);
 
     // 2. Pedidos que Almacén marcó como listos en Bahía de Carga / Patio para entrega directa
     const readyPatioLoads = useMemo(() => {
         return orders.filter(o => {
+            if (onlyMyLoads && o.loadedByUid !== profile?.uid && (o as any).deliveryProof?.deliveredByUid !== profile?.uid) return false;
             const isLoaded = (o as any).isLoaded;
-            const isPatioLocation = o.deliveryType === 'PATIO' || (o as any).selectedDeliveryLocation === 'carga';
+            const isPatioLocation = (o.deliveryType === 'PATIO' || (o as any).deliveryMethod === 'patio' || (o as any).selectedDeliveryLocation === 'carga') && o.deliveryType !== 'DELIVERY' && (o as any).deliveryMethod !== 'repartidor';
             const notDelivered = o.status !== 'DELIVERED';
             const custName = o.customer?.name || o.customerName || 'Cliente';
             const matchesSearch = o.id.toLowerCase().includes(searchTerm.toLowerCase()) || 
                                  custName.toLowerCase().includes(searchTerm.toLowerCase());
             return isLoaded && isPatioLocation && notDelivered && matchesSearch;
         });
-    }, [orders, searchTerm]);
+    }, [orders, searchTerm, onlyMyLoads, profile?.uid]);
 
     const finalizeOrderAndNotify = async (orderId: string, targetLocation: 'caja' | 'carga' = 'caja') => {
         setProcessingId(orderId);
@@ -136,26 +147,38 @@ export default function PatioDashboard() {
             </header>
 
             {/* Pestañas de Vista Operacional */}
-            <div className="flex gap-3 mb-6 border-b border-slate-800/80 pb-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-6 border-b border-slate-800/80 pb-3">
+                <div className="flex gap-3">
+                    <button
+                        onClick={() => setActiveTab('pending')}
+                        className={`px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-2 transition-all ${
+                            activeTab === 'pending'
+                                ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/25 ring-2 ring-sky-400/50'
+                                : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-850'
+                        }`}
+                    >
+                        <Clock size={16} /> Cargas en Preparación ({pendingLoads.length})
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('ready_patio')}
+                        className={`px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-2 transition-all ${
+                            activeTab === 'ready_patio'
+                                ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/25 ring-2 ring-emerald-400/50'
+                                : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-850'
+                        }`}
+                    >
+                        <PenTool size={16} /> Listos para Entrega en Patio · PoD ({readyPatioLoads.length})
+                    </button>
+                </div>
                 <button
-                    onClick={() => setActiveTab('pending')}
-                    className={`px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-2 transition-all ${
-                        activeTab === 'pending'
-                            ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/25 ring-2 ring-sky-400/50'
-                            : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-850'
+                    onClick={() => setOnlyMyLoads(prev => !prev)}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 border ${
+                        onlyMyLoads
+                            ? 'bg-sky-500 text-white border-sky-400 shadow-md shadow-sky-500/25'
+                            : 'bg-slate-900 text-slate-400 hover:text-white border-slate-800'
                     }`}
                 >
-                    <Clock size={16} /> Cargas en Preparación ({pendingLoads.length})
-                </button>
-                <button
-                    onClick={() => setActiveTab('ready_patio')}
-                    className={`px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-2 transition-all ${
-                        activeTab === 'ready_patio'
-                            ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/25 ring-2 ring-emerald-400/50'
-                            : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-850'
-                    }`}
-                >
-                    <PenTool size={16} /> Listos para Entrega en Patio · PoD ({readyPatioLoads.length})
+                    <span>👤</span> {onlyMyLoads ? 'Viendo: Mis Cargas de Hoy' : 'Ver solo mis cargas'}
                 </button>
             </div>
 
@@ -262,9 +285,15 @@ export default function PatioDashboard() {
                                         ) : !order.loadedBy ? (
                                             <div className="flex flex-col gap-2">
                                                 <button 
+                                                    onClick={() => setPickingOrder(order)}
+                                                    className="bg-purple-600 hover:bg-purple-500 text-white px-6 py-2.5 rounded-xl font-black text-xs uppercase flex items-center gap-2 justify-center transition-all shadow-md active:scale-95 border border-purple-400/30"
+                                                >
+                                                    🤖 Asistente Recolección IA
+                                                </button>
+                                                <button 
                                                     onClick={() => handleAction(order.id, 'start')}
                                                     disabled={!!processingId}
-                                                    className="bg-sky-500 hover:bg-sky-400 text-white px-6 py-3.5 rounded-xl font-black text-xs uppercase flex items-center gap-2 justify-center transition-all shadow-lg shadow-sky-500/25 active:scale-95"
+                                                    className="bg-sky-500 hover:bg-sky-400 text-white px-6 py-3 rounded-xl font-black text-xs uppercase flex items-center gap-2 justify-center transition-all shadow-lg shadow-sky-500/25 active:scale-95"
                                                 >
                                                     {processingId === order.id ? <Loader2 className="animate-spin" size={16} /> : <Play size={16} />} INICIAR SURTIDO
                                                 </button>
@@ -541,6 +570,54 @@ export default function PatioDashboard() {
                             </div>
                         </motion.div>
                     </div>
+                )}
+
+                {/* Asistente de Recolección / Carga IA */}
+                {pickingOrder && (
+                    <OrderPickingAssistant
+                        order={pickingOrder}
+                        role="patio"
+                        mode="picking"
+                        onClose={() => setPickingOrder(null)}
+                        onComplete={async (orderId) => {
+                            setPickingOrder(null);
+                            await finalizeOrderAndNotify(orderId, 'carga');
+                        }}
+                        onDelegate={async (id, target) => {
+                            try {
+                                const res = await fetch('/api/orders', {
+                                    method: 'PATCH',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ id, action: 'delegate_order', targetRole: target })
+                                });
+                                if (!res.ok) {
+                                    const err = await res.json().catch(() => ({}));
+                                    throw new Error(err.error || 'Error al delegar pedido');
+                                }
+                                setPickingOrder(null);
+                                if (typeof window !== 'undefined' && (window as any).__inventorySocket) {
+                                    (window as any).__inventorySocket.emit('sync_db_event', { action: 'ORDER_DELEGATED', id, target });
+                                }
+                                toast.success(`📦 Pedido delegado exitosamente a ${target.toUpperCase()}`);
+                            } catch (err: any) {
+                                toast.error(err.message || 'Error al delegar');
+                            }
+                        }}
+                    />
+                )}
+
+                {/* Asistente de Deconstrucción IA */}
+                {deconstructingOrder && (
+                    <OrderPickingAssistant
+                        order={deconstructingOrder}
+                        role="patio"
+                        mode="deconstruction"
+                        onClose={() => setDeconstructingOrder(null)}
+                        onComplete={async (orderId) => {
+                            setDeconstructingOrder(null);
+                            toast.success(`✅ Todos los materiales del pedido ${orderId} fueron reingresados a su estante en Patio.`);
+                        }}
+                    />
                 )}
             </AnimatePresence>
         </div>

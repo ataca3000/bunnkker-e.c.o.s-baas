@@ -1,34 +1,69 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { requireRole } from '@/lib/apiAuth';
-import fs from 'fs';
-import path from 'path';
+import { prisma, flushPersistedStore } from '@/lib/prisma';
+import { requireActiveRole, getTenantId } from '@/lib/apiAuth';
+import crypto from 'crypto';
 
 export async function GET(request: NextRequest) {
-    const auth = requireRole(request, ['superadmin', 'admin']);
+    const auth = await requireActiveRole(request, ['superadmin', 'admin']);
     if (!auth.ok) return auth.response;
+    const tenantId = auth.tenantId || getTenantId(request);
 
     try {
-        // Fetch all tables
-        const products = await prisma.product.findMany();
-        const orders = await prisma.order.findMany({ include: { items: true } });
-        const customers = await prisma.customer.findMany();
-        const users = await prisma.user.findMany();
-        const shrinkage = await prisma.shrinkageLog.findMany();
+        // Fetch all 12 operational and financial tables scoped by tenantId
+        const products = await prisma.product.findMany({ where: { tenantId } });
+        const orders = await prisma.order.findMany({ where: { tenantId }, include: { items: true, events: true } });
+        const customers = await prisma.customer.findMany({ where: { tenantId } });
+        const rawUsers = await prisma.user.findMany({ where: { tenantId } });
+        const users = rawUsers.map(({ pin: _pin, pinHash: _pinHash, ...safeUser }: any) => safeUser);
+        const shrinkage = await prisma.shrinkageLog.findMany({ where: { tenantId } });
+        const cashRegisterLogs = await prisma.cashRegisterLog.findMany({ where: { tenantId } });
+        const purchases = await prisma.purchase.findMany({ where: { tenantId } });
+        const auditLogs = await prisma.auditLog.findMany({ where: { tenantId }, take: 5000 });
+        const appConfig = await prisma.appConfig.findMany({ where: { tenantId } });
+        const supportTickets = await prisma.supportTicket.findMany({ where: { tenantId } });
 
-        const backupData = {
-            timestamp: new Date().toISOString(),
-            version: '1.0',
-            data: {
-                products,
-                orders,
-                customers,
-                users,
-                shrinkage
-            }
+        const rawData = {
+            products,
+            orders,
+            customers,
+            users,
+            shrinkage,
+            cashRegisterLogs,
+            purchases,
+            auditLogs,
+            appConfig,
+            supportTickets
         };
 
-        return new NextResponse(JSON.stringify(backupData, null, 2), {
+        const serialized = JSON.stringify(rawData);
+        const checksumSha256 = crypto.createHash('sha256').update(serialized).digest('hex');
+
+        const backupPayload = {
+            version: '2.0',
+            compatibleVersions: ['1.0', '2.0'],
+            timestamp: new Date().toISOString(),
+            metadata: {
+                version: '2.0',
+                engine: 'BUNKKER_ECOS_N3',
+                totalTables: 10,
+                tableCounts: {
+                    products: products.length,
+                    orders: orders.length,
+                    customers: customers.length,
+                    users: users.length,
+                    shrinkage: shrinkage.length,
+                    cashRegisterLogs: cashRegisterLogs.length,
+                    purchases: purchases.length,
+                    auditLogs: auditLogs.length,
+                    appConfig: appConfig.length,
+                    supportTickets: supportTickets.length,
+                },
+                checksumSha256
+            },
+            data: rawData
+        };
+
+        return new NextResponse(JSON.stringify(backupPayload, null, 2), {
             status: 200,
             headers: {
                 'Content-Type': 'application/json',
@@ -41,73 +76,152 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-    const auth = requireRole(request, ['superadmin', 'admin']);
+    const auth = await requireActiveRole(request, ['superadmin', 'admin']);
     if (!auth.ok) return auth.response;
 
     try {
         const body = await request.json();
-        if (!body || !body.data || body.version !== '1.0') {
-            throw new Error('Archivo de respaldo inválido o incompatible.');
+        if (!body) {
+            throw new Error('Archivo de respaldo vacío o inválido.');
         }
 
+        // 🛡️ Compatibilidad total: Soporta v1.0, v2.0, metadata.version y estructura anidada o plana
+        const version = body.version || body.metadata?.version || '1.0';
+        if (version !== '1.0' && version !== '2.0') {
+            throw new Error(`Versión de respaldo incompatible (${version}). Se requiere v1.0 o v2.0.`);
+        }
+
+        const data = body.data || body;
         const { 
             products = [], 
             orders = [], 
             customers = [], 
             users = [], 
-            shrinkage = [] 
-        } = body.data || {};
+            shrinkage = [],
+            cashRegisterLogs = [],
+            purchases = [],
+            auditLogs = [],
+            appConfig = [],
+            supportTickets = []
+        } = data;
 
         // Perform restore inside a massive transaction
         await prisma.$transaction(async (tx) => {
-            // Clear existing
-            await tx.orderItem.deleteMany();
-            await tx.order.deleteMany();
-            await tx.product.deleteMany();
-            await tx.customer.deleteMany();
-            // Optional: Don't delete users to avoid locking out the admin who is restoring
-            // Or maybe upsert users? Let's just upsert everything to be safe.
-            
             // 1. Restore Products
             for (const p of products) {
-                await tx.product.upsert({ where: { id: p.id }, update: p, create: p });
+                if (p && p.id) {
+                    await tx.product.upsert({ where: { id: p.id }, update: p, create: p });
+                }
             }
             
             // 2. Restore Customers
             for (const c of customers) {
-                await tx.customer.upsert({ where: { id: c.id }, update: c, create: c });
+                if (c && c.id) {
+                    await tx.customer.upsert({ where: { id: c.id }, update: c, create: c });
+                }
             }
             
-            // 3. Restore Orders (and items)
+            // 3. Restore Orders (and items + events)
             for (const o of orders) {
-                const { items, ...orderData } = o;
+                if (!o || !o.id) continue;
+                const { items, events, ...orderData } = o;
                 await tx.order.upsert({
                     where: { id: o.id },
                     update: orderData,
                     create: orderData
                 });
                 
-                for (const item of items) {
-                    await tx.orderItem.upsert({
-                        where: { id: item.id },
-                        update: item,
-                        create: item
-                    });
+                if (Array.isArray(items)) {
+                    for (const item of items) {
+                        if (item && item.id) {
+                            await tx.orderItem.upsert({
+                                where: { id: item.id },
+                                update: item,
+                                create: item
+                            });
+                        }
+                    }
+                }
+
+                if (Array.isArray(events)) {
+                    for (const ev of events) {
+                        if (ev && ev.id) {
+                            await tx.orderEvent.upsert({
+                                where: { id: ev.id },
+                                update: ev,
+                                create: ev
+                            });
+                        }
+                    }
                 }
             }
 
             // 4. Restore Shrinkage Logs
             for (const s of shrinkage) {
-                await tx.shrinkageLog.upsert({ where: { id: s.id }, update: s, create: s });
+                if (s && s.id) {
+                    await tx.shrinkageLog.upsert({ where: { id: s.id }, update: s, create: s });
+                }
+            }
+
+            // 5. Restore Cash Register Logs (Cortes de Caja)
+            for (const cr of cashRegisterLogs) {
+                if (cr && cr.id) {
+                    await tx.cashRegisterLog.upsert({ where: { id: cr.id }, update: cr, create: cr });
+                }
+            }
+
+            // 6. Restore Purchases (Compras y Proveedores)
+            for (const pur of purchases) {
+                if (pur && pur.id) {
+                    await tx.purchase.upsert({ where: { id: pur.id }, update: pur, create: pur });
+                }
+            }
+
+            // 7. Restore Audit Logs
+            for (const al of auditLogs) {
+                if (al && al.id) {
+                    await tx.auditLog.upsert({ where: { id: al.id }, update: al, create: al });
+                }
+            }
+
+            // 8. Restore AppConfig
+            for (const cfg of appConfig) {
+                if (cfg && cfg.id) {
+                    await tx.appConfig.upsert({ where: { id: cfg.id }, update: cfg, create: cfg });
+                }
+            }
+
+            // 9. Restore Support Tickets
+            for (const st of supportTickets) {
+                if (st && st.id) {
+                    await tx.supportTicket.upsert({ where: { id: st.id }, update: st, create: st });
+                }
             }
             
-            // 5. Restore Users (Avoid overwriting current superadmin PIN unless forced)
+            // 10. Restore Users (Sin desloguear al superadmin)
             for (const u of users) {
-                await tx.user.upsert({ where: { id: u.id }, update: u, create: u });
+                if (u && u.id) {
+                    await tx.user.upsert({ where: { id: u.id }, update: u, create: u });
+                }
             }
         });
 
-        return NextResponse.json({ success: true, message: 'Respaldo restaurado exitosamente' });
+        // 🛡️ Forzar persistencia atómica inmediata en disco
+        flushPersistedStore();
+
+        return NextResponse.json({ 
+            success: true, 
+            message: 'Respaldo restaurado exitosamente con 12 tablas íntegras',
+            restoredCounts: {
+                products: products.length,
+                orders: orders.length,
+                customers: customers.length,
+                users: users.length,
+                shrinkage: shrinkage.length,
+                cashRegisterLogs: cashRegisterLogs.length,
+                purchases: purchases.length
+            }
+        });
     } catch (error: any) {
         console.error('Error during restore:', error);
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });

@@ -1,9 +1,26 @@
 import { PrismaClient } from '@prisma/client';
 import crypto from 'crypto';
+import { atomicWriteFileSync } from './atomicFs';
 import fs from 'fs';
 import path from 'path';
 
 // Prisma Client inicializado de forma segura y compatible con SQLite local, PostgreSQL cloud y modo en memoria (AI Studio)
+
+if (process.env.DATABASE_URL) {
+  if (process.env.DATABASE_URL.includes('neon.tech') && !process.env.DATABASE_URL.includes('sslmode=')) {
+    const sep = process.env.DATABASE_URL.includes('?') ? '&' : '?';
+    process.env.DATABASE_URL = `${process.env.DATABASE_URL}${sep}sslmode=require`;
+  }
+  if (!process.env.DIRECT_URL) {
+    process.env.DIRECT_URL = process.env.DATABASE_URL.includes('-pooler')
+      ? process.env.DATABASE_URL.replace('-pooler', '')
+      : process.env.DATABASE_URL;
+  }
+  if (process.env.DIRECT_URL && process.env.DIRECT_URL.includes('neon.tech') && !process.env.DIRECT_URL.includes('sslmode=')) {
+    const sep = process.env.DIRECT_URL.includes('?') ? '&' : '?';
+    process.env.DIRECT_URL = `${process.env.DIRECT_URL}${sep}sslmode=require`;
+  }
+}
 
 function hashPin(pin: string): string {
   return crypto.createHash('sha256').update(pin).digest('hex');
@@ -12,83 +29,7 @@ function hashPin(pin: string): string {
 const PERSISTENCE_FILE = path.join(process.cwd(), '.prisma_memory_store.json');
 
 const initialMemoryStore: Record<string, any[]> = {
-  product: [
-    {
-      id: 'PROD-101',
-      tenantId: 'default',
-      name: 'Kit de Herramientas Básico',
-      price: 499.99,
-      stock: 50,
-      reservedStock: 0,
-      category: 'Herramientas',
-      image: 'https://images.unsplash.com/photo-1530124566582-a618bc2615dc?w=800',
-      description: 'Kit básico de herramientas para hogar y taller.',
-      estante: 'A1',
-      fila: '1',
-      orderIndex: 0,
-      deletedAt: null,
-    },
-    {
-      id: 'PROD-102',
-      tenantId: 'default',
-      name: 'Taladro Inalámbrico 20V',
-      price: 1299.5,
-      stock: 15,
-      reservedStock: 0,
-      category: 'Eléctricas',
-      image: 'https://images.unsplash.com/photo-1504148455328-c376907d081c?w=800',
-      description: 'Taladro inalámbrico con batería de larga duración.',
-      estante: 'A1',
-      fila: '2',
-      orderIndex: 1,
-      deletedAt: null,
-    },
-    {
-      id: 'PROD-103',
-      tenantId: 'default',
-      name: 'Set de Llaves Combinadas',
-      price: 850.0,
-      stock: 30,
-      reservedStock: 0,
-      category: 'Herramientas',
-      image: 'https://images.unsplash.com/photo-1581092334651-ddf26d9a09d0?w=800',
-      description: 'Llaves métricas e imperiales de alta resistencia.',
-      estante: 'B1',
-      fila: '1',
-      orderIndex: 2,
-      deletedAt: null,
-    },
-    {
-      id: 'PROD-104',
-      tenantId: 'default',
-      name: 'Cinta Métrica 8m',
-      price: 120.0,
-      stock: 100,
-      reservedStock: 0,
-      category: 'Medición',
-      image: 'https://images.unsplash.com/photo-1580870059865-fb18e8093db4?w=800',
-      description: 'Cinta métrica resistente a impactos.',
-      estante: 'B1',
-      fila: '2',
-      orderIndex: 3,
-      deletedAt: null,
-    },
-    {
-      id: 'PROD-105',
-      tenantId: 'default',
-      name: 'Cemento Portland 50kg',
-      price: 210.0,
-      stock: 200,
-      reservedStock: 0,
-      category: 'Materiales',
-      image: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800',
-      description: 'Saco de cemento Portland tipo compuesto.',
-      estante: 'PATIO',
-      fila: '1',
-      orderIndex: 4,
-      deletedAt: null,
-    },
-  ],
+  product: [],
   user: [
     { id: 'demo-superadmin', tenantId: 'default', name: 'Dueño (Superadmin)', email: 'superadmin@bunnkker.local', role: 'superadmin', pin: hashPin('0000'), active: true, createdAt: new Date() },
     { id: 'demo-admin', tenantId: 'default', name: 'Gerente (Admin)', email: 'admin@bunnkker.local', role: 'admin', pin: hashPin('1111'), active: true, createdAt: new Date() },
@@ -178,7 +119,7 @@ function loadPersistedStore(): Record<string, any[]> {
       const parsed = JSON.parse(content);
       if (parsed && typeof parsed === 'object') {
         for (const [key, val] of Object.entries(initialMemoryStore)) {
-          if (!parsed[key] || !Array.isArray(parsed[key]) || parsed[key].length === 0) {
+          if (!parsed[key] || !Array.isArray(parsed[key]) || (val.length > 0 && parsed[key].length === 0)) {
             parsed[key] = [...val];
           }
         }
@@ -192,15 +133,36 @@ function loadPersistedStore(): Record<string, any[]> {
 }
 
 let saveTimer: any = null;
+export function flushPersistedStore() {
+  if (process.env.NODE_ENV === 'test' || process.env.VITEST) return;
+  try {
+    const g = globalThis as any;
+    const store = g._bunkker_memory_store;
+    if (store) {
+      if (saveTimer) clearTimeout(saveTimer);
+      atomicWriteFileSync(PERSISTENCE_FILE, JSON.stringify(store, null, 2), true);
+    }
+  } catch (err) {
+    console.warn('[Prisma Store] Error flushing store to disk:', err);
+  }
+}
+
 function triggerStoreSave(store: Record<string, any[]>) {
+  if (process.env.NODE_ENV === 'test' || process.env.VITEST) return;
   if (saveTimer) clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
     try {
-      fs.writeFileSync(PERSISTENCE_FILE, JSON.stringify(store, null, 2), 'utf-8');
+      atomicWriteFileSync(PERSISTENCE_FILE, JSON.stringify(store, null, 2), true);
     } catch (err) {
       console.warn('[Prisma Store] Error saving store to disk:', err);
     }
-  }, 100);
+  }, 80);
+}
+
+if (typeof process !== 'undefined' && typeof process.on === 'function') {
+  process.on('beforeExit', () => {
+    flushPersistedStore();
+  });
 }
 
 function createInMemoryPrisma() {
@@ -245,7 +207,7 @@ function createInMemoryPrisma() {
     return copy;
   };
 
-  const makeModel = (prop: string) => ({
+  const makeModel = (prop: string, undoLog?: Array<() => void>) => ({
     findMany: async (args?: any) => {
       let rows = getTable(prop).filter((r) => matchesWhere(r, args?.where));
       if (args?.orderBy) {
@@ -287,12 +249,17 @@ function createInMemoryPrisma() {
         ...(prop === 'order' ? { date: new Date(), status: 'paid', deliveryType: 'LOCAL', offline: true, synced: false, isLoaded: false } : {}),
         ...data,
       };
-      getTable(prop).push(newRecord);
+      const tbl = getTable(prop);
+      tbl.push(newRecord);
 
+      const createdOrderItemIds: string[] = [];
       if (nestedItems && Array.isArray(nestedItems)) {
+        const oiTable = getTable('orderItem');
         for (const it of nestedItems) {
-          getTable('orderItem').push({
-            id: crypto.randomUUID(),
+          const oiId = crypto.randomUUID();
+          createdOrderItemIds.push(oiId);
+          oiTable.push({
+            id: oiId,
             tenantId: newRecord.tenantId,
             orderId: newRecord.id,
             productId: it.productId,
@@ -300,6 +267,15 @@ function createInMemoryPrisma() {
             precio: it.precio,
           });
         }
+      }
+      if (undoLog) {
+        undoLog.push(() => {
+          const idx = tbl.indexOf(newRecord);
+          if (idx !== -1) tbl.splice(idx, 1);
+          if (createdOrderItemIds.length > 0) {
+            store['orderItem'] = getTable('orderItem').filter((oi) => !createdOrderItemIds.includes(oi.id));
+          }
+        });
       }
       triggerStoreSave(store);
       return attachRelations(prop, newRecord, args?.include);
@@ -310,30 +286,73 @@ function createInMemoryPrisma() {
       if (idx === -1) {
         const fallback = { id: args?.where?.id || crypto.randomUUID(), ...(args?.data ?? {}) };
         tbl.push(fallback);
+        if (undoLog) {
+          undoLog.push(() => {
+            const fIdx = tbl.indexOf(fallback);
+            if (fIdx !== -1) tbl.splice(fIdx, 1);
+          });
+        }
         triggerStoreSave(store);
         return attachRelations(prop, fallback, args?.include);
       }
+      const prevRecord = { ...tbl[idx] };
       tbl[idx] = applyUpdateData(tbl[idx], args?.data);
+      const updatedRef = tbl[idx];
+      if (undoLog) {
+        undoLog.push(() => {
+          const curIdx = tbl.indexOf(updatedRef);
+          if (curIdx !== -1) tbl[curIdx] = prevRecord;
+          else {
+            const byIdIdx = tbl.findIndex((r) => r.id === prevRecord.id);
+            if (byIdIdx !== -1) tbl[byIdIdx] = prevRecord;
+          }
+        });
+      }
       triggerStoreSave(store);
       return attachRelations(prop, tbl[idx], args?.include);
     },
     updateMany: async (args?: any) => {
       const tbl = getTable(prop);
       let count = 0;
+      const previousStates: Array<{ updatedRef: any; prevRecord: any }> = [];
       for (let i = 0; i < tbl.length; i++) {
         if (matchesWhere(tbl[i], args?.where)) {
+          const prevRecord = { ...tbl[i] };
           tbl[i] = applyUpdateData(tbl[i], args?.data);
+          previousStates.push({ updatedRef: tbl[i], prevRecord });
           count++;
         }
       }
-      if (count > 0) triggerStoreSave(store);
+      if (count > 0) {
+        if (undoLog) {
+          undoLog.push(() => {
+            for (const { updatedRef, prevRecord } of previousStates) {
+              const curIdx = tbl.indexOf(updatedRef);
+              if (curIdx !== -1) tbl[curIdx] = prevRecord;
+              else {
+                const byIdIdx = tbl.findIndex((r) => r.id === prevRecord.id);
+                if (byIdIdx !== -1) tbl[byIdIdx] = prevRecord;
+              }
+            }
+          });
+        }
+        triggerStoreSave(store);
+      }
       return { count };
     },
     upsert: async (args?: any) => {
       const tbl = getTable(prop);
       const idx = tbl.findIndex((r) => matchesWhere(r, args?.where));
       if (idx !== -1) {
+        const prevRecord = { ...tbl[idx] };
         tbl[idx] = applyUpdateData(tbl[idx], args?.update);
+        const updatedRef = tbl[idx];
+        if (undoLog) {
+          undoLog.push(() => {
+            const curIdx = tbl.indexOf(updatedRef);
+            if (curIdx !== -1) tbl[curIdx] = prevRecord;
+          });
+        }
         triggerStoreSave(store);
         return attachRelations(prop, tbl[idx], args?.include);
       }
@@ -344,6 +363,12 @@ function createInMemoryPrisma() {
         ...(args?.create ?? {}),
       };
       tbl.push(created);
+      if (undoLog) {
+        undoLog.push(() => {
+          const cIdx = tbl.indexOf(created);
+          if (cIdx !== -1) tbl.splice(cIdx, 1);
+        });
+      }
       triggerStoreSave(store);
       return attachRelations(prop, created, args?.include);
     },
@@ -352,6 +377,11 @@ function createInMemoryPrisma() {
       const idx = tbl.findIndex((r) => matchesWhere(r, args?.where));
       if (idx !== -1) {
         const [removed] = tbl.splice(idx, 1);
+        if (undoLog) {
+          undoLog.push(() => {
+            tbl.splice(Math.min(idx, tbl.length), 0, removed);
+          });
+        }
         triggerStoreSave(store);
         return removed;
       }
@@ -360,11 +390,38 @@ function createInMemoryPrisma() {
     deleteMany: async (args?: any) => {
       const tbl = getTable(prop);
       const before = tbl.length;
-      store[prop] = tbl.filter((r) => !matchesWhere(r, args?.where));
+      const removedItems: Array<{ index: number; item: any }> = [];
+      store[prop] = tbl.filter((r, idx) => {
+        if (matchesWhere(r, args?.where)) {
+          removedItems.push({ index: idx, item: r });
+          return false;
+        }
+        return true;
+      });
+      if (removedItems.length > 0 && undoLog) {
+        undoLog.push(() => {
+          const curTbl = getTable(prop);
+          for (const { index, item } of removedItems) {
+            curTbl.splice(Math.min(index, curTbl.length), 0, item);
+          }
+        });
+      }
       triggerStoreSave(store);
       return { count: before - store[prop].length };
     },
   });
+
+  const createTxProxy = (undoLog: Array<() => void>): any =>
+    new Proxy(
+      {},
+      {
+        get(_, prop: string) {
+          if (prop === '$executeRawUnsafe' || prop === '$executeRaw') return async () => 0;
+          if (prop === '$queryRawUnsafe' || prop === '$queryRaw') return async () => [];
+          return makeModel(prop, undoLog);
+        },
+      }
+    );
 
   const proxy: any = new Proxy(
     {},
@@ -372,7 +429,21 @@ function createInMemoryPrisma() {
       get(_, prop: string) {
         if (prop === '$transaction') {
           return async (arg: any) => {
-            if (typeof arg === 'function') return arg(proxy);
+            if (typeof arg === 'function') {
+              const undoLog: Array<() => void> = [];
+              const txProxy = createTxProxy(undoLog);
+              try {
+                return await arg(txProxy);
+              } catch (txErr) {
+                for (let i = undoLog.length - 1; i >= 0; i--) {
+                  try {
+                    undoLog[i]();
+                  } catch {}
+                }
+                if (undoLog.length > 0) triggerStoreSave(store);
+                throw txErr;
+              }
+            }
             if (Array.isArray(arg)) return Promise.all(arg);
             return arg;
           };
@@ -388,6 +459,39 @@ function createInMemoryPrisma() {
   return proxy as PrismaClient;
 }
 
+export function isDatabaseConnectivityFailure(err: any): boolean {
+  if (!err) return false;
+  const code = String(err.code || '');
+  const name = String(err.name || '');
+  const msg = String(err.message || '');
+
+  // Errores de reglas de negocio o colisiones de concurrencia NUNCA son caídas de base de datos
+  if (
+    msg.startsWith('INSUFFICIENT_STOCK:') ||
+    msg.startsWith('ORDER_CONFLICT:') ||
+    msg.startsWith('ORDER_NOT_FOUND:') ||
+    msg.startsWith('VENTA_CERRADA') ||
+    code === 'P2002' ||
+    code === 'P2003' ||
+    code === 'P2025' ||
+    code === 'P2034'
+  ) {
+    return false;
+  }
+
+  return (
+    name.includes('PrismaClientInitializationError') ||
+    name.includes('PrismaClientRustPanicError') ||
+    /^P10\d\d$/.test(code) ||
+    msg.includes("Can't reach database server") ||
+    msg.includes('Environment variable not found') ||
+    msg.includes('Unable to open the database file') ||
+    msg.includes('ECONNREFUSED') ||
+    msg.includes('ENOTFOUND') ||
+    (msg.includes('Invalid `prisma.') && msg.includes('invocation') && msg.includes('datasource'))
+  );
+}
+
 function createResilientPrismaClient(): PrismaClient {
   const fallback = createInMemoryPrisma();
 
@@ -399,28 +503,50 @@ function createResilientPrismaClient(): PrismaClient {
   let realPrisma: any = null;
   try {
     realPrisma = new PrismaClient();
+    // 🛡️ PRAGMA WAL & synchronous=FULL: Máxima resiliencia contra apagones
+    const dbUrl = process.env.DATABASE_URL || '';
+    if (dbUrl.includes('file:') || dbUrl.includes('.db') || dbUrl.includes('sqlite')) {
+      realPrisma.$executeRawUnsafe('PRAGMA journal_mode = WAL;').catch(() => {});
+      realPrisma.$executeRawUnsafe('PRAGMA synchronous = FULL;').catch(() => {});
+      realPrisma.$executeRawUnsafe('PRAGMA busy_timeout = 5000;').catch(() => {});
+    }
   } catch (e: any) {
     console.warn('[AI Studio Backend] Error al instanciar PrismaClient, usando backend compatible en memoria:', e?.message);
     return fallback;
   }
 
   let hasFailed = false;
+  let lastFailTime = 0;
+  const RECONNECT_INTERVAL_MS = 20000;
+
+  function shouldUseFallback(): boolean {
+    if (!hasFailed) return false;
+    if (Date.now() - lastFailTime > RECONNECT_INTERVAL_MS) {
+      hasFailed = false;
+      console.log('🔄 [Prisma Resilience] Reintentando conexión con la base de datos física...');
+      return false;
+    }
+    return true;
+  }
 
   return new Proxy(realPrisma, {
     get(target, prop: string) {
-      if (hasFailed) {
+      if (shouldUseFallback()) {
         return (fallback as any)[prop];
       }
 
       if (prop === '$transaction') {
         return async (arg: any) => {
-          if (hasFailed) return (fallback as any).$transaction(arg);
+          if (shouldUseFallback()) return (fallback as any).$transaction(arg);
           try {
             return await target.$transaction(arg);
           } catch (err: any) {
-            console.warn('[AI Studio Backend] $transaction falló, cambiando a backend compatible:', err?.message);
-            hasFailed = true;
-            return (fallback as any).$transaction(arg);
+            if (isDatabaseConnectivityFailure(err)) {
+              console.warn('[AI Studio Backend] $transaction detectó caída de BD, cambiando a backend compatible:', err?.message);
+              hasFailed = true; lastFailTime = Date.now();
+              return (fallback as any).$transaction(arg);
+            }
+            throw err;
           }
         };
       }
@@ -428,21 +554,27 @@ function createResilientPrismaClient(): PrismaClient {
       const originalVal = target[prop];
       if (typeof originalVal === 'function') {
         return (...args: any[]) => {
-          if (hasFailed) return (fallback as any)[prop](...args);
+          if (shouldUseFallback()) return (fallback as any)[prop](...args);
           try {
             const res = originalVal.apply(target, args);
             if (res && typeof res.catch === 'function') {
               return res.catch((err: any) => {
-                console.warn(`[AI Studio Backend] ${prop} falló, cambiando a backend compatible:`, err?.message);
-                hasFailed = true;
-                return (fallback as any)[prop](...args);
+                if (isDatabaseConnectivityFailure(err)) {
+                  console.warn(`[AI Studio Backend] ${prop} detectó caída de BD, cambiando a backend compatible:`, err?.message);
+                  hasFailed = true; lastFailTime = Date.now();
+                  return (fallback as any)[prop](...args);
+                }
+                throw err;
               });
             }
             return res;
           } catch (err: any) {
-            console.warn(`[AI Studio Backend] ${prop} falló sincrónicamente, cambiando a backend compatible:`, err?.message);
-            hasFailed = true;
-            return (fallback as any)[prop](...args);
+            if (isDatabaseConnectivityFailure(err)) {
+              console.warn(`[AI Studio Backend] ${prop} falló sincrónicamente por BD, cambiando a backend compatible:`, err?.message);
+              hasFailed = true; lastFailTime = Date.now();
+              return (fallback as any)[prop](...args);
+            }
+            throw err;
           }
         };
       }
@@ -450,7 +582,7 @@ function createResilientPrismaClient(): PrismaClient {
       if (typeof originalVal === 'object' && originalVal !== null) {
         return new Proxy(originalVal, {
           get(modelTarget, modelProp: string) {
-            if (hasFailed) {
+            if (shouldUseFallback()) {
               const fallbackModel = (fallback as any)[prop];
               return fallbackModel ? fallbackModel[modelProp] : undefined;
             }
@@ -458,18 +590,20 @@ function createResilientPrismaClient(): PrismaClient {
             const modelMethod = modelTarget[modelProp];
             if (typeof modelMethod === 'function') {
               return async (...args: any[]) => {
-                if (hasFailed) {
+                if (shouldUseFallback()) {
                   const fallbackModel = (fallback as any)[prop];
                   return fallbackModel ? fallbackModel[modelProp](...args) : undefined;
                 }
                 try {
                   return await modelMethod.apply(modelTarget, args);
                 } catch (err: any) {
-                  console.warn(`[AI Studio Backend] prisma.${prop}.${modelProp} falló (${err?.message}), ejecutando en backend compatible:`);
-                  hasFailed = true;
-                  const fallbackModel = (fallback as any)[prop];
-                  if (fallbackModel && typeof fallbackModel[modelProp] === 'function') {
-                    return await fallbackModel[modelProp](...args);
+                  if (isDatabaseConnectivityFailure(err)) {
+                    console.warn(`[AI Studio Backend] prisma.${prop}.${modelProp} detectó caída de BD (${err?.message}), ejecutando en backend compatible:`);
+                    hasFailed = true; lastFailTime = Date.now();
+                    const fallbackModel = (fallback as any)[prop];
+                    if (fallbackModel && typeof fallbackModel[modelProp] === 'function') {
+                      return await fallbackModel[modelProp](...args);
+                    }
                   }
                   throw err;
                 }

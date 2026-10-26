@@ -4,6 +4,24 @@ import reactHooks from "eslint-plugin-react-hooks";
 import js from "@eslint/js";
 
 export default [
+  // ── Ignored paths (Global en ESLint 9 Flat Config) ───────────────────────────
+  {
+    ignores: [
+      ".next/**",
+      "out/**",
+      "build/**",
+      "dist-build-win/**",
+      ".electron-dist/**",
+      "dist_electron/**",
+      "build-resources/**",
+      "node_modules/**",
+      "next-env.d.ts",
+      "**/*.js",
+      "src/__tests__/**",
+      "tests/**",
+    ],
+  },
+
   js.configs.recommended,
   ...tseslint.configs.recommended,
 
@@ -61,7 +79,6 @@ export default [
   {
     files: [
       "src/app/api/**/*.ts",
-      "src/worker/**/*.ts",
       "src/lib/**/*.ts",
       "scripts/**/*.{js,ts}",
       "electron-main.js",
@@ -89,20 +106,5 @@ export default [
     rules: {
       "no-undef": "off",
     },
-  },
-
-  // ── Ignored paths ───────────────────────────────────────────────────────────
-  {
-    ignores: [
-      ".next/**",
-      "out/**",
-      "build/**",
-      "dist_electron/**",
-      "node_modules/**",
-      "next-env.d.ts",
-      "**/*.js",
-      "src/__tests__/**",
-      "tests/**",
-    ],
   },
 ];

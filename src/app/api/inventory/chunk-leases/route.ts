@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getTenantId } from '@/lib/apiAuth';
+import { getTenantId, validateApiSession } from '@/lib/apiAuth';
 
 export const dynamic = 'force-dynamic';
 
@@ -73,6 +73,9 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+    const auth = validateApiSession(request);
+    if (!auth.ok) return auth.response;
+
     try {
         const tenantId = getTenantId(request);
         const body = await request.json();

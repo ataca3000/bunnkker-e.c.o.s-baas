@@ -3,16 +3,29 @@ import { calculateExpectedAmount, calculateDiscrepancy, ALLOWED_CLOSE_STATUSES }
 
 describe('Financial Cash Close Calculations', () => {
   describe('calculateExpectedAmount', () => {
-    it('should sum all cash orders with allowed status', () => {
+    it('should sum all cash orders with allowed status, including paid and READY_FOR_PICKUP_PAID', () => {
       const mockOrders = [
         { total: 100, paymentMethod: 'cash', status: 'COMPLETED' },
         { total: 250, paymentMethod: 'cash', status: 'DELIVERED' },
         { total: 150, paymentMethod: 'cash', status: 'READY_TO_SHIP' },
         { total: 300, paymentMethod: 'cash', status: 'OUT_FOR_DELIVERY' },
+        { total: 200, paymentMethod: 'cash', status: 'paid' },
+        { total: 400, paymentMethod: 'cash', status: 'READY_FOR_PICKUP_PAID' },
       ];
       
       const expected = calculateExpectedAmount(mockOrders);
-      expect(expected).toBe(800);
+      expect(expected).toBe(1400);
+    });
+
+    it('should include orders in PREPARANDO or CARGANDO or with confirmedAt', () => {
+      const mockOrders = [
+        { total: 150, paymentMethod: 'cash', status: 'PREPARANDO' },
+        { total: 250, paymentMethod: 'cash', status: 'CARGANDO' },
+        { total: 100, paymentMethod: 'cash', status: 'CUSTOM_STATUS', confirmedAt: new Date() },
+      ];
+      
+      const expected = calculateExpectedAmount(mockOrders);
+      expect(expected).toBe(500);
     });
 
     it('should ignore orders with non-cash payment methods', () => {
@@ -26,15 +39,18 @@ describe('Financial Cash Close Calculations', () => {
       expect(expected).toBe(100);
     });
 
-    it('should ignore orders with disallowed statuses', () => {
+    it('should ignore orders with disallowed statuses even if confirmedAt is present (cancelled/refunded immunity)', () => {
       const mockOrders = [
-        { total: 100, paymentMethod: 'cash', status: 'COMPLETED' },
+        { total: 100, paymentMethod: 'cash', status: 'COMPLETED', confirmedAt: new Date() },
         { total: 500, paymentMethod: 'cash', status: 'PENDING_PAYMENT' },
-        { total: 200, paymentMethod: 'cash', status: 'CANCELLED' },
+        { total: 200, paymentMethod: 'cash', status: 'CANCELLED', confirmedAt: new Date() },
+        { total: 350, paymentMethod: 'cash', status: 'cancelled', confirmedAt: new Date() },
+        { total: 450, paymentMethod: 'cash', status: 'refunded', confirmedAt: new Date() },
+        { total: 150, paymentMethod: 'Venta Directa POS', status: 'paid', confirmedAt: new Date() },
       ];
 
       const expected = calculateExpectedAmount(mockOrders);
-      expect(expected).toBe(100);
+      expect(expected).toBe(250);
     });
 
     it('should return 0 for an empty orders list', () => {

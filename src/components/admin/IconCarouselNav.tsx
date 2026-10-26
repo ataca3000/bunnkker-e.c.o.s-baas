@@ -201,15 +201,6 @@ export const ALL_CAROUSEL_MODULES: CarouselMenuItem[] = [
         desc: 'Plan activo y licencias de nodo'
     },
     {
-        id: 'tests',
-        title: 'Pruebas de Estrés',
-        category: 'Herramientas',
-        icon: <Play size={22} />,
-        href: '/dashboard/tests',
-        color: '#f97316',
-        desc: 'Simulaciones de alta concurrencia'
-    },
-    {
         id: 'demo',
         title: 'Test ISO / Demo',
         category: 'Herramientas',

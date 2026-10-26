@@ -53,9 +53,9 @@ export default function StaffRankingWidget({ tenantId }: { tenantId: string }) {
     }
 
     return (
-        <div className="bg-[#1a1d2d] border border-white/5 rounded-[5px] p-[8px] shadow-[0_0_20px_rgba(234,179,8,0.05)] relative overflow-hidden transition-all hover:shadow-[0_0_30px_rgba(234,179,8,0.1)]">
+        <div className="bunkker-translucent-card border border-amber-500/20 rounded-2xl p-6 shadow-[0_12px_40px_rgba(0,0,0,0.7)] relative overflow-hidden transition-all hover:border-amber-500/40 hover:shadow-[0_0_30px_rgba(245,158,11,0.15)]">
             {/* Decoración */}
-            <div className="absolute -right-6 -top-[8px] w-32 h-32 bg-yellow-500/10 rounded-full blur-3xl pointer-events-none"></div>
+            <div className="absolute -right-6 -top-[8px] w-32 h-32 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
             <div className="flex items-center gap-3 mb-6 border-b border-white/10 pb-4">
                 <div className="bg-yellow-500/20 p-2.5 rounded-xl text-yellow-400">

@@ -8,9 +8,31 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/lib/toast';
+import { saveCustomerSession, clearCustomerSession, getCustomerAuthHeaders, getCustomerProfile } from '@/lib/customerAuth';
+import { useCart } from '@/context/CartContext';
+
+function isSafeLocalUrl(target: string | null | undefined): boolean {
+    if (!target) return false;
+    if (
+        !target.startsWith('/') ||
+        target.startsWith('//') ||
+        target.startsWith('/\\') ||
+        target.includes('\\') ||
+        /^\/[\\/]+/.test(target)
+    ) {
+        return false;
+    }
+    try {
+        const dummy = new URL(target, 'http://localhost');
+        return dummy.origin === 'http://localhost' && !target.toLowerCase().includes('javascript:');
+    } catch {
+        return false;
+    }
+}
 
 export default function UserAccount() {
     const router = useRouter();
+    const { cart } = useCart();
     const [activeTab, setActiveTab] = useState<'profile' | 'invoicing' | 'orders'>('profile');
     
     // Auth State
@@ -48,16 +70,33 @@ export default function UserAccount() {
     const [savingProfile, setSavingProfile] = useState(false);
 
     const fetchProfile = useCallback(async () => {
+        // Pre-hidratar inmediatamente desde almacenamiento local
+        const cached = getCustomerProfile();
+        if (cached && cached.id) {
+            setCustomer(cached);
+            setOrders(cached.orders || []);
+            setProfileData({
+                name: cached.name || '',
+                phone: cached.phone || '',
+                address: cached.address || '',
+                references: cached.references || '',
+                rfc: cached.rfc || '',
+                razonSocial: cached.razonSocial || '',
+                regimenFiscal: cached.regimenFiscal || '',
+                usoCFDI: cached.usoCFDI || '',
+                codigoPostal: cached.codigoPostal || ''
+            });
+            setLoading(false);
+        }
+
         try {
-            const res = await fetch('/api/customer/me');
+            const authHeaders = getCustomerAuthHeaders();
+            const res = await fetch('/api/customer/me', {
+                credentials: 'include',
+                headers: authHeaders
+            });
             const data = await res.json();
             if (data.success && data.customer) {
-                const searchParams = new URLSearchParams(window.location.search);
-                const redirectParam = searchParams.get('redirect');
-                if (redirectParam) {
-                    window.location.href = redirectParam;
-                    return;
-                }
                 setCustomer(data.customer);
                 setOrders(data.customer.orders || []);
                 setProfileData({
@@ -71,7 +110,10 @@ export default function UserAccount() {
                     usoCFDI: data.customer.usoCFDI || '',
                     codigoPostal: data.customer.codigoPostal || ''
                 });
-            } else {
+                if (typeof window !== 'undefined') {
+                    localStorage.setItem('_bunkker_customer', JSON.stringify(data.customer));
+                }
+            } else if (!cached) {
                 setCustomer(null);
             }
         } catch (error) {
@@ -93,6 +135,7 @@ export default function UserAccount() {
             const res = await fetch('/api/customer/auth', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({ 
                     phone, 
                     pin, 
@@ -102,12 +145,22 @@ export default function UserAccount() {
             });
             const data = await res.json();
             if (data.success) {
+                // Guardar sesión y perfil de forma persistente y dual (localStorage + cookies)
+                if (data.customer) {
+                    saveCustomerSession({
+                        uid: data.uid || data.customer.id,
+                        role: data.role || 'client',
+                        signature: data.signature,
+                        token: data.token
+                    }, data.customer);
+                }
+
                 const searchParams = new URLSearchParams(window.location.search);
                 const redirectParam = searchParams.get('redirect');
-                if (redirectParam) {
-                    window.location.href = redirectParam;
-                } else if (data.redirect) {
-                    window.location.href = data.redirect;
+                if (redirectParam && isSafeLocalUrl(redirectParam)) {
+                    router.push(redirectParam);
+                } else if (data.redirect && isSafeLocalUrl(data.redirect)) {
+                    router.push(data.redirect);
                 } else {
                     fetchProfile();
                 }
@@ -129,6 +182,7 @@ export default function UserAccount() {
             const res = await fetch('/api/customer/reset-password', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({ phone: resetPhone })
             });
             const data = await res.json();
@@ -147,8 +201,12 @@ export default function UserAccount() {
     };
 
     const handleLogout = async () => {
-        document.cookie = "admincom_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-        document.cookie = "msj-session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        try {
+            await fetch('/api/customer/logout', { method: 'POST', credentials: 'include' });
+        } catch { }
+        clearCustomerSession();
+        setCustomer(null);
+        setOrders([]);
         window.location.href = '/catalogo';
     };
 
@@ -156,9 +214,14 @@ export default function UserAccount() {
         e.preventDefault();
         setSavingProfile(true);
         try {
+            const authHeaders = getCustomerAuthHeaders();
             const res = await fetch('/api/customer/me', {
                 method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    ...authHeaders
+                },
+                credentials: 'include',
                 body: JSON.stringify(profileData)
             });
             const data = await res.json();
@@ -178,32 +241,48 @@ export default function UserAccount() {
 
     const getOrderProgress = (order: any) => {
         const status = String(order.status || '').toUpperCase();
+        const isCancelled = ['CANCELLED', 'REFUNDED'].includes(status);
         const received = ['DELIVERED', 'COMPLETED'].includes(status);
         const paymentConfirmed = Boolean(order.confirmedAt) || ['PAID', 'OUT_FOR_DELIVERY', 'CLAIMED', 'READY_FOR_PICKUP_PAID'].includes(status);
         const readyForPayment = ['READY_TO_SHIP', 'READY_FOR_PICKUP'].includes(status);
-        const activeStep = received ? 2 : readyForPayment || paymentConfirmed ? 1 : 0;
-        const detail = received
-            ? 'Entregado y completado exitosamente.'
-            : ['OUT_FOR_DELIVERY', 'CLAIMED'].includes(status)
-                ? 'Pago confirmado. El pedido va en camino a tu domicilio.'
-                : paymentConfirmed
-                    ? 'Pago confirmado. Almacén está preparando tus productos.'
-                    : readyForPayment
-                        ? 'El pedido ya fue empacado. Pasa a caja a pagar para recogerlo.'
-                        : 'Pedido generado en espera. Pasa a caja en sucursal.';
-        return { activeStep, paymentConfirmed, detail };
+        const activeStep = isCancelled ? -1 : received ? 2 : (paymentConfirmed || readyForPayment) ? 1 : 0;
+        
+        let detail = 'Pedido generado en espera. Pasa a caja en sucursal.';
+        if (isCancelled) {
+            detail = 'El pedido ha sido cancelado.';
+        } else if (received) {
+            detail = 'Entregado y completado exitosamente con comprobante.';
+        } else if (['OUT_FOR_DELIVERY', 'CLAIMED'].includes(status)) {
+            detail = 'Pago confirmado. El repartidor va en camino a tu domicilio.';
+        } else if (status === 'READY_FOR_PICKUP_PAID') {
+            detail = 'Pago confirmado en Caja. Tu pedido está empacado y listo para entrega física.';
+        } else if (status === 'READY_FOR_PICKUP') {
+            detail = 'Tus artículos ya fueron recolectados. Pasa a Caja a realizar tu pago y recibir tu ticket.';
+        } else if (status === 'PREPARANDO') {
+            detail = paymentConfirmed
+                ? 'Pago confirmado. Personal de almacén está recolectando tus artículos en anaquel.'
+                : 'Personal de almacén está preparando tus productos. Puedes pagar en Caja mientras se empaca.';
+        } else if (paymentConfirmed) {
+            detail = 'Pago confirmado en Caja. En espera de recolección en anaqueles.';
+        }
+
+        return { activeStep, paymentConfirmed, detail, isCancelled };
     };
 
     const getOrderEventLabel = (eventType: string) => ({
         ORDER_CREATED: 'Pedido generado',
         CASHIER_CLAIMED: 'Pedido tomado por caja',
-        PAYMENT_CONFIRMED: 'Pago confirmado',
-        LOADING_CLAIMED: 'Empaque en proceso',
-        LOADING_COMPLETED: 'Empaque completado',
+        PAYMENT_CONFIRMED: 'Pago confirmado en Caja',
+        LOADING_CLAIMED: 'Recolección en proceso',
+        LOADING_COMPLETED: 'Recolección completada',
+        ORDER_CLAIMED: 'Pedido tomado para preparación',
+        ORDER_DELEGATED: 'Pedido reasignado de área',
         DRIVER_CLAIMED: 'Asignado a repartidor',
-        DELIVERY_RECEIVED: 'Entrega finalizada',
-        PICKUP_RECEIVED: 'Entregado en mostrador',
-        ORDER_CANCELLED: 'Pedido cancelado'
+        DELIVERY_RECEIVED: 'Entrega finalizada en domicilio',
+        ORDER_DELIVERED_POD: 'Entrega física completada con comprobante',
+        PICKUP_RECEIVED: 'Entregado en mostrador/patio',
+        ORDER_CANCELLED: 'Pedido cancelado',
+        RESTOCK_COMPLETED: 'Artículos devueltos al anaquel'
     } as Record<string, string>)[eventType] || eventType.replaceAll('_', ' ');
 
     if (loading) {
@@ -415,6 +494,32 @@ export default function UserAccount() {
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[850px] h-[450px] bg-sky-500/10 blur-[140px] rounded-full pointer-events-none" />
 
             <div className="max-w-6xl mx-auto space-y-6 relative z-10">
+
+                {/* Banner de Carrito Pendiente para continuar compra */}
+                {cart && cart.length > 0 && (
+                    <div className="bg-gradient-to-r from-sky-950/80 to-blue-950/80 border-2 border-sky-500/60 rounded-3xl p-5 shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-4 backdrop-blur-md">
+                        <div className="flex items-center gap-3.5">
+                            <div className="w-12 h-12 rounded-2xl bg-sky-500/20 text-sky-400 flex items-center justify-center text-2xl border border-sky-400/40 shrink-0">
+                                🛒
+                            </div>
+                            <div>
+                                <h4 className="font-extrabold text-white text-sm uppercase tracking-wide">
+                                    Tienes {cart.length} producto(s) en tu carrito de compra
+                                </h4>
+                                <p className="text-xs text-sky-300/80 mt-0.5">
+                                    Tu sesión ya está activa. Finaliza tu pedido para enviarlo al equipo de tienda.
+                                </p>
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => router.push('/carrito/checkout')}
+                            className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-sky-500/30 flex items-center justify-center gap-2 shrink-0 cursor-pointer"
+                        >
+                            <span>Completar Compra en Carrito</span>
+                            <ArrowRight size={15} />
+                        </button>
+                    </div>
+                )}
 
                 {/* Header Superior del Portal */}
                 <div className="bg-slate-900/70 backdrop-blur-xl border border-slate-700/60 rounded-3xl p-6 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -708,13 +813,15 @@ export default function UserAccount() {
 
                                                             <div className="text-right">
                                                                 <span className={`px-3 py-1 text-[10px] font-bold uppercase rounded-full border ${
-                                                                    progress.activeStep === 2
-                                                                        ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
-                                                                        : progress.activeStep === 1
-                                                                            ? 'bg-sky-500/20 text-sky-400 border-sky-500/30'
-                                                                            : 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+                                                                    progress.isCancelled
+                                                                        ? 'bg-rose-500/20 text-rose-400 border-rose-500/30'
+                                                                        : progress.activeStep === 2
+                                                                            ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                                                                            : progress.activeStep === 1
+                                                                                ? 'bg-sky-500/20 text-sky-400 border-sky-500/30'
+                                                                                : 'bg-amber-500/20 text-amber-400 border-amber-500/30'
                                                                 }`}>
-                                                                    {steps[progress.activeStep]}
+                                                                    {progress.isCancelled ? 'Cancelado' : steps[progress.activeStep]}
                                                                 </span>
                                                                 <p className="text-lg font-black text-white mt-1">
                                                                     ${Number(order.total || 0).toFixed(2)} MXN

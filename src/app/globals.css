@@ -278,99 +278,47 @@ button:disabled {
 .bunkker-shell main, .bunkker-shell section { color: var(--bunkker-ink); }
 .bunkker-shell h1, .bunkker-shell h2, .bunkker-shell h3 { letter-spacing: -0.025em; }
 
-/* BUNKKER ERP industrial marketplace */
-.bunkker-industrial,
-.bunkker-shell main { background: var(--bunkker-surface); }
-.bunkker-industrial .bunkker-card,
-.bunkker-shell main .bunkker-card { background: var(--bunkker-paper); border: 1px solid var(--bunkker-line); box-shadow: 0 8px 24px rgba(17,17,17,.07); }
-.bunkker-industrial .text-cyan-400,
-.bunkker-shell main .text-cyan-400 { color: var(--bunkker-yellow) !important; }
-.bunkker-industrial .text-emerald-500 { color: #6d8700 !important; }
-.bunkker-industrial .text-rose-500 { color: var(--bunkker-red) !important; }
-.bunkker-industrial button:hover, .bunkker-industrial a:hover { box-shadow: 0 0 0 2px rgba(200,240,0,.28); }
-.bunkker-help { border-left: 3px solid var(--bunkker-yellow); background: #fffbe8; color: var(--bunkker-ink); }
+/* ─── SISTEMA VISUAL CAPA 4: CONTENEDORES TRANSLÚCIDOS NEGROS Y CIBER-AZUL ─── */
+@keyframes pulseSlow {
+  0%, 100% { opacity: 0.35; transform: scale(1); filter: drop-shadow(0 0 15px rgba(14, 165, 233, 0.3)); }
+  50% { opacity: 0.65; transform: scale(1.02); filter: drop-shadow(0 0 30px rgba(56, 189, 248, 0.7)); }
+}
+.animate-pulse-slow {
+  animation: pulseSlow 5s ease-in-out infinite;
+}
+
+.bunkker-translucent-card,
+.bunkker-card {
+  background: rgba(8, 12, 22, 0.78) !important;
+  backdrop-filter: blur(20px) saturate(140%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(140%) !important;
+  border: 1px solid rgba(56, 189, 248, 0.18) !important;
+  border-radius: 18px !important;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+  color: #f8fafc !important;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.bunkker-translucent-card:hover,
+.bunkker-card:hover {
+  border-color: rgba(56, 189, 248, 0.4) !important;
+  box-shadow: 0 16px 50px rgba(0, 0, 0, 0.75), 0 0 25px rgba(14, 165, 233, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+}
+
+.bunkker-shell main {
+  background: transparent !important;
+}
+
+.bunkker-industrial {
+  background: transparent !important;
+}
 
 /* Responsive Utilities */
 @media (max-width: 768px) {
-  .bunkker-shell aside.admin-sidebar {
-    position: fixed !important;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    top: auto;
-    width: 100% !important;
-    height: auto !important;
-    max-height: 104px;
-    padding: 0.5rem 0.75rem calc(0.5rem + env(safe-area-inset-bottom)) !important;
-    border-right: 0 !important;
-    border-top: 1px solid var(--bunkker-teal) !important;
-    box-shadow: 0 -8px 24px rgba(19, 35, 43, 0.18) !important;
-  }
-
-  .bunkker-shell aside.admin-sidebar > div:first-child {
-    display: none !important;
-  }
-
-  .bunkker-shell aside.admin-sidebar .admin-sidebar-nav {
-    display: flex !important;
-    flex-direction: row !important;
-    align-items: stretch;
-    gap: 0.5rem !important;
-    width: 100%;
-    overflow-x: auto !important;
-    overflow-y: hidden !important;
-    padding: 0 0 2px !important;
-    scrollbar-width: none;
-    flex: none !important;
-    -webkit-overflow-scrolling: touch;
-    scroll-snap-type: x proximity;
-  }
-
-  .bunkker-shell aside.admin-sidebar .admin-sidebar-nav::-webkit-scrollbar { display: none; }
-  .bunkker-shell aside.admin-sidebar .admin-sidebar-nav > div,
-  .bunkker-shell aside.admin-sidebar .admin-sidebar-nav > a {
-    flex: 0 0 auto;
-  }
-  .bunkker-shell aside.admin-sidebar .admin-sidebar-nav > div {
-    display: contents !important;
-  }
-  .bunkker-shell aside.admin-sidebar .admin-sidebar-nav > div > div {
-    display: none !important;
-  }
-  .bunkker-shell aside.admin-sidebar .admin-sidebar-nav > div > .admin-sidebar-link,
-  .bunkker-shell aside.admin-sidebar .admin-sidebar-nav > .admin-sidebar-link {
-    min-width: 76px;
-    width: 76px;
-    height: 64px;
-    padding: 8px 6px !important;
-    flex-direction: column;
-    justify-content: center !important;
-    gap: 4px !important;
-    border-left: 0 !important;
-    border-bottom: 3px solid transparent;
-    border-radius: 12px;
-    scroll-snap-align: start;
-  }
-  .bunkker-shell aside.admin-sidebar .admin-sidebar-link > span {
-    display: block !important;
-    max-width: 68px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    font-size: 0.62rem !important;
-    text-align: center;
-  }
-  .bunkker-shell aside.admin-sidebar .admin-sidebar-link[style*="rgba(0,242,255"] {
-    border-bottom-color: var(--bunkker-teal) !important;
-  }
-  .bunkker-shell aside.admin-sidebar .admin-sidebar-nav > div:nth-last-child(2),
-  .bunkker-shell aside.admin-sidebar .admin-sidebar-nav > div:nth-last-child(1) {
-    display: none !important;
-  }
   .bunkker-shell > div:last-child {
     margin-left: 0 !important;
     width: 100% !important;
-    padding-bottom: 104px;
+    padding-bottom: 120px;
   }
 
   .bunkker-btn,

@@ -16,6 +16,8 @@ interface KPICardProps {
         neutral?: boolean;
     };
     delayIndex: number;
+    isSelected?: boolean;
+    onClick?: () => void;
 }
 
 export default function KPICard({
@@ -26,21 +28,46 @@ export default function KPICard({
     icon,
     badge,
     delayIndex,
+    isSelected = false,
+    onClick,
 }: KPICardProps) {
     return (
         <motion.div
-            initial={{ opacity: 0, y: 12 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: delayIndex * 0.06 }}
-            className="bg-[#1a1d2d] border border-white/5 shadow-[0_0_15px_rgba(14,165,233,0.05)] hover:shadow-[0_0_20px_rgba(14,165,233,0.15)] transition-shadow"
-            style={{ borderLeft: `4px solid ${color}`, padding: '1.4rem', borderRadius: '16px' }}
+            whileHover={onClick ? { scale: 1.02, y: -2 } : undefined}
+            whileTap={onClick ? { scale: 0.98 } : undefined}
+            transition={{ delay: delayIndex * 0.05 }}
+            onClick={onClick}
+            role={onClick ? 'button' : undefined}
+            tabIndex={onClick ? 0 : undefined}
+            className={`bunkker-translucent-card p-3.5 rounded-xl transition-all relative overflow-hidden select-none ${
+                onClick ? 'cursor-pointer' : ''
+            } ${
+                isSelected
+                    ? 'border-2 shadow-[0_0_25px_rgba(14,165,233,0.35)] ring-1 ring-white/20'
+                    : 'border border-cyan-500/20 shadow-[0_6px_20px_rgba(0,0,0,0.5)] hover:border-cyan-400/50 hover:shadow-[0_0_20px_rgba(14,165,233,0.15)] opacity-90 hover:opacity-100'
+            }`}
+            style={{
+                borderLeft: `4px solid ${color}`,
+                borderColor: isSelected ? color : undefined,
+                background: isSelected ? 'rgba(15, 23, 42, 0.85)' : undefined,
+            }}
         >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            {isSelected && (
+                <div
+                    className="absolute top-1.5 right-2 px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider"
+                    style={{ backgroundColor: `${color}25`, color: color, border: `1px solid ${color}60` }}
+                >
+                    FILTRO ACTIVO
+                </div>
+            )}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
                 <div>
-                    <p style={{ color: '#94a3b8', fontSize: '0.7rem', textTransform: 'uppercase', fontWeight: '800', margin: '0 0 6px', letterSpacing: '0.07em' }}>
+                    <p style={{ color: '#94a3b8', fontSize: '0.65rem', textTransform: 'uppercase', fontWeight: '800', margin: '0 0 3px', letterSpacing: '0.06em' }}>
                         {label}
                     </p>
-                    <h3 style={{ fontSize: '1.9rem', fontWeight: '900', color: color, margin: 0, letterSpacing: '-0.02em' }}>
+                    <h3 style={{ fontSize: '1.35rem', fontWeight: '900', color: color, margin: '0 0 4px', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
                         {value}
                     </h3>
                     <TrendBadge
@@ -50,7 +77,7 @@ export default function KPICard({
                         neutral={badge.neutral}
                     />
                 </div>
-                <div style={{ background: bg, padding: '10px', borderRadius: '12px', flexShrink: 0 }}>
+                <div style={{ background: bg, padding: '7px', borderRadius: '10px', flexShrink: 0 }}>
                     {icon}
                 </div>
             </div>

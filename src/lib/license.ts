@@ -338,17 +338,10 @@ export function checkLicenseStatus(): LicenseState {
         return { status: 'active', clientName: updatedLic.clientName, key: updatedLic.key, expiresAt: updatedLic.expiresAt };
     }
 
-    const daysRemaining = getTrialDaysRemaining(updatedLic.trialStart);
-
-    if (daysRemaining <= 0) {
-        if (updatedLic.status !== 'expired') {
-            saveLocal({ ...updatedLic, status: 'expired' });
-        }
-        return { status: 'expired' };
-    }
-
+    // Modo VIP de Entrada: No bloqueamos por días de calendario.
+    // El límite de prueba es gobernado de forma soberana por el contador de 100 ventas (+20 colchón).
     saveLocal(updatedLic);
-    return { status: 'trial', daysRemaining };
+    return { status: 'active', clientName: updatedLic.clientName || 'Licencia VIP (100 Ventas)', key: updatedLic.key || 'VIP-TRIAL-100', daysRemaining: 30 };
 }
 
 // ─── Re-validate online (call on app start if connected) ─────────────────────

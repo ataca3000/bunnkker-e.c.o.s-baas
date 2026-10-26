@@ -27,8 +27,8 @@ export async function generateMetadata(): Promise<Metadata> {
 
   if (tenantId === 'default' || tenantId === 'admin.com') {
     return {
-      title: "BUNKKER E.C.O.S. | Sistema ERP",
-      description: "BUNKKER E.C.O.S. — Ecosistema Comercial Offline Sincronizado. El mejor sistema de gestión empresarial, punto de venta y logística para PYMEs.",
+      title: "BUNKKER ERP | Tecnología que Genera Impacto Real",
+      description: "BUNKKER E.C.O.S. — Energía · Control · Optimización · Sostenibilidad. Plataforma de alta tecnología y control operativo autónomo.",
       keywords: ["BUNKKER", "BUNKKER ERP", "ERP", "punto de venta", "gestión empresarial", "facturación", "local-first"],
       manifest: '/manifest.json',
       icons: {
@@ -104,6 +104,7 @@ export const viewport: Viewport = {
 import { CartProvider } from "@/context/CartContext";
 import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
+import { LanguageProvider } from "@/context/LanguageContext";
 import { ThemeScript } from "@/components/ThemeScript";
 import ClickSoundProvider from "@/components/ClickSoundProvider";
 import AntiDevTools from "@/components/AntiDevTools";
@@ -111,9 +112,7 @@ import DeviceLockScreen from "@/components/DeviceLockScreen";
 import ParticlesBackground from "@/components/ParticlesBackground";
 import ToastContainer from "@/components/ToastContainer";
 import FreemiumLockModal from "@/components/FreemiumLockModal";
-import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
-import CookieConsent from "@/components/CookieConsent";
 import ClientBootGuard from "@/components/ClientBootGuard";
 
 export default async function RootLayout({
@@ -133,31 +132,31 @@ export default async function RootLayout({
         <SchemaMarkup />
         <UsbLockScreen />
         <div className="flex flex-col min-h-screen">
-          <ThemeProvider>
-            <AuthProvider>
-              <DeviceLockScreen>
-                <CartProvider>
-                  <ConnectionStatus />
-                  <Navbar />
-                  <AdminLayout>
-                    <ClientBootGuard>
-                      {children}
-                    </ClientBootGuard>
-                  </AdminLayout>
-                  <AdminAsistente />
-                  <ClickSoundProvider />
-                  <UpdateNotification />
-                  <FreemiumLockModal />
-                  <Footer />
-                  <ToastContainer />
-                  <PWAInstallPrompt />
-                  <ServiceWorkerRegister />
-                </CartProvider>
-              </DeviceLockScreen>
-            </AuthProvider>
-          </ThemeProvider>
+          <LanguageProvider>
+            <ThemeProvider>
+              <AuthProvider>
+                <DeviceLockScreen>
+                  <CartProvider>
+                    <ConnectionStatus />
+                    <Navbar />
+                    <AdminLayout>
+                      <ClientBootGuard>
+                        {children}
+                      </ClientBootGuard>
+                    </AdminLayout>
+                    <AdminAsistente />
+                    <ClickSoundProvider />
+                    <UpdateNotification />
+                    <FreemiumLockModal />
+                    <Footer />
+                    <ToastContainer />
+                    <ServiceWorkerRegister />
+                  </CartProvider>
+                </DeviceLockScreen>
+              </AuthProvider>
+            </ThemeProvider>
+          </LanguageProvider>
         </div>
-        <CookieConsent />
       </body>
     </html>
   );

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { ShieldCheck, CloudLightning, KeyRound, Sparkles, Map, HeadphonesIcon, DatabaseZap, CloudDownload, Loader2 } from 'lucide-react';
+import Link from 'next/link';
 import { toast } from '@/lib/toast';
 import CloudBackupConfigWidget from '@/components/admin/CloudBackupConfigWidget';
 
@@ -187,12 +188,12 @@ export default function ProSyncPage() {
             {!isPro && (
               <div className="mt-8 pt-6 border-t border-slate-800">
                 <p className="text-slate-400 text-sm mb-4">¿Aún no tienes tu suscripción?</p>
-                <a 
+                <Link 
                   href="/dashboard/suscripcion"
                   className="w-full flex items-center justify-center gap-2 bg-white hover:bg-slate-200 text-slate-900 font-black uppercase tracking-widest py-4 rounded-xl transition-all"
                 >
                   Comprar Suscripción VIP
-                </a>
+                </Link>
               </div>
             )}
           </div>

@@ -6,9 +6,11 @@ import { useAuth } from '@/context/AuthContext';
 import { usePathname } from 'next/navigation';
 import { Mic, MicOff, Radio } from 'lucide-react';
 import { toast } from '@/lib/toast';
+import { useTranslation } from '@/context/LanguageContext';
 
 export default function LocalRadio() {
     const { profile } = useAuth();
+    const { t } = useTranslation();
     const pathname = usePathname();
     const [socket, setSocket] = useState<Socket | null>(null);
     const [isRecording, setIsRecording] = useState(false);
@@ -24,8 +26,8 @@ export default function LocalRadio() {
     // Ocultar botón de micrófono fuera del dashboard (/dashboard/*)
     const isDashboardRoute = pathname ? pathname.startsWith('/dashboard') : false;
 
-    // Solo habilitar para staff y dentro del dashboard
-    const isStaff = profile?.role && profile.role !== 'client' && isDashboardRoute;
+    // Solo habilitar para staff y dentro del dashboard (ocultar en POS para no tapar artículos)
+    const isStaff = profile?.role && profile.role !== 'client' && isDashboardRoute && pathname !== '/dashboard/sales';
 
     useEffect(() => {
         if (!isStaff || typeof window === 'undefined') return;
@@ -221,9 +223,9 @@ export default function LocalRadio() {
     if (!isStaff) return null;
 
     return (
-        <div className="fixed bottom-6 right-6 z-[9000] pointer-events-auto flex flex-col items-end">
+        <div className="fixed bottom-20 md:bottom-20 left-4 md:left-6 z-[9000] pointer-events-auto flex flex-col items-start">
             {isReceiving && (
-                <div className="absolute -top-12 right-0 bg-sky-500 text-white text-xs font-black px-4 py-1.5 rounded-full whitespace-nowrap animate-pulse shadow-[0_0_15px_rgba(14,165,233,0.5)] flex items-center gap-2">
+                <div className="absolute -top-12 left-0 bg-sky-500 text-white text-xs font-black px-4 py-1.5 rounded-full whitespace-nowrap animate-pulse shadow-[0_0_15px_rgba(14,165,233,0.5)] flex items-center gap-2">
                     <Radio size={14} className="animate-spin-slow" />
                     {rxSender}
                 </div>
@@ -240,7 +242,7 @@ export default function LocalRadio() {
                         ? 'bg-sky-500/90 text-white scale-105 shadow-[0_0_20px_rgba(14,165,233,0.6)] border-2 border-white'
                         : 'bg-slate-900/60 text-cyan-400 hover:bg-slate-800/80 hover:text-white border border-cyan-500/40 shadow-[0_0_15px_rgba(0,242,255,0.15)]'
                 }`}
-                title="Mantén presionado para hablar (o usa la barra espaciadora)"
+                title={t('radio.hold_to_talk', 'Mantén presionado para hablar (o usa la barra espaciadora)')}
             >
                 {isRecording ? <Mic size={28} className="animate-pulse" /> : <MicOff size={24} />}
                 
@@ -249,8 +251,8 @@ export default function LocalRadio() {
                     <div className="absolute inset-0 border-2 border-red-500 rounded-full animate-ping opacity-75"></div>
                 )}
             </button>
-            <p className="text-[9px] text-right text-slate-500 font-bold uppercase tracking-widest mt-2 hidden md:block">
-                {connectionState === 'connected' ? 'Radio LAN · PTT (Espacio)' : connectionState === 'connecting' ? 'Conectando radio local…' : 'Radio local offline · inicia radio-server.js'}
+            <p className="text-[9px] text-left text-slate-400 font-bold uppercase tracking-wider mt-1.5 max-w-[170px] leading-tight hidden md:block">
+                {connectionState === 'connected' ? t('radio.lan_ptt', 'Radio LAN · PTT (Espacio)') : connectionState === 'connecting' ? t('radio.connecting', 'Conectando radio local…') : t('radio.offline', 'Radio offline · inicia radio-server')}
             </p>
         </div>
     );

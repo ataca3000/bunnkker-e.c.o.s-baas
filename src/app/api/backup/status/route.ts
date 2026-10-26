@@ -4,35 +4,44 @@ import { requireRole } from '@/lib/apiAuth';
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
+import { atomicWriteFileSync } from '@/lib/atomicFs';
 
 const BACKUP_CONFIG_PATH = path.resolve(process.cwd(), 'bunkker.backup.json');
 
-interface PersistedBackupSettings {
+const userHome = process.env.USERPROFILE || process.env.HOME || 'C:/Users/Usuario';
+
+export interface PersistedBackupSettings {
     enabled: boolean;
-    destination?: 'all' | 'gcp' | 'usb';
+    destination?: 'all' | 'onedrive' | 'gdrive' | 'usb';
+    onedrivePath?: string;
+    gdrivePath?: string;
     usbPath?: string;
+    format?: 'all' | 'excel' | 'text';
     frequencyMinutes: number;
     retentionDays: number;
-    region: string;
     encryptAES256: boolean;
     autoSyncOnCut: boolean;
     lastBackupAt: string | null;
     lastBackupSize: number | null;
     lastBackupHash: string | null;
+    lastBackupFiles?: string[];
 }
 
 const DEFAULT_SETTINGS: PersistedBackupSettings = {
     enabled: true,
-    destination: 'all',
-    usbPath: 'D:/BUNKKER_BACKUPS',
+    destination: 'onedrive',
+    onedrivePath: path.join(userHome, 'OneDrive', 'BUNKKER_RESPALDOS'),
+    gdrivePath: path.join(userHome, 'Google Drive', 'BUNKKER_RESPALDOS'),
+    usbPath: 'D:/BUNKKER_RESPALDOS',
+    format: 'all',
     frequencyMinutes: 120,
     retentionDays: 30,
-    region: 'us-central1',
-    encryptAES256: true,
+    encryptAES256: false,
     autoSyncOnCut: true,
     lastBackupAt: null,
     lastBackupSize: null,
     lastBackupHash: null,
+    lastBackupFiles: [],
 };
 
 function readLocalBackupSettings(): PersistedBackupSettings {
@@ -51,7 +60,7 @@ function writeLocalBackupSettings(settings: Partial<PersistedBackupSettings>): P
     const current = readLocalBackupSettings();
     const merged: PersistedBackupSettings = { ...current, ...settings };
     try {
-        fs.writeFileSync(BACKUP_CONFIG_PATH, JSON.stringify(merged, null, 2), 'utf-8');
+        atomicWriteFileSync(BACKUP_CONFIG_PATH, JSON.stringify(merged, null, 2));
     } catch (e) {
         console.warn('[backup/status] Could not write bunkker.backup.json:', e);
     }
@@ -69,7 +78,7 @@ export async function GET(request: NextRequest) {
         try {
             dbConfig = await prisma.appConfig.findUnique({ where: { id: 'global' } });
         } catch {
-            // Fallback to localSettings if database is unreachable
+            // Fallback to localSettings
         }
 
         const lastBackupAt = dbConfig?.lastBackupAt
@@ -98,16 +107,19 @@ export async function GET(request: NextRequest) {
 
         return NextResponse.json({
             enabled,
-            destination: localSettings.destination || 'all',
-            usbPath: localSettings.usbPath || 'D:/BUNKKER_BACKUPS',
+            destination: localSettings.destination || 'onedrive',
+            onedrivePath: localSettings.onedrivePath || DEFAULT_SETTINGS.onedrivePath,
+            gdrivePath: localSettings.gdrivePath || DEFAULT_SETTINGS.gdrivePath,
+            usbPath: localSettings.usbPath || DEFAULT_SETTINGS.usbPath,
+            format: localSettings.format || 'all',
             frequencyMinutes,
             retentionDays: localSettings.retentionDays,
-            region: localSettings.region,
             encryptAES256: localSettings.encryptAES256,
             autoSyncOnCut: localSettings.autoSyncOnCut,
             lastBackupAt,
             lastBackupSize,
             lastBackupHash,
+            lastBackupFiles: localSettings.lastBackupFiles || [],
             status,
             nextBackupIn,
         });
@@ -126,29 +138,105 @@ export async function POST(request: NextRequest) {
 
         const frequencyMinutes = Number(body.frequencyMinutes ?? current.frequencyMinutes) || 120;
         const enabled = typeof body.enabled === 'boolean' ? body.enabled : current.enabled;
-        const destination = body.destination || current.destination || 'all';
-        const usbPath = body.usbPath || current.usbPath || 'D:/BUNKKER_BACKUPS';
+        const destination = body.destination || current.destination || 'onedrive';
+        const onedrivePath = body.onedrivePath || current.onedrivePath || DEFAULT_SETTINGS.onedrivePath;
+        const gdrivePath = body.gdrivePath || current.gdrivePath || DEFAULT_SETTINGS.gdrivePath;
+        const usbPath = body.usbPath || current.usbPath || DEFAULT_SETTINGS.usbPath;
+        const format = body.format || current.format || 'all';
         const retentionDays = Number(body.retentionDays ?? current.retentionDays) || 30;
-        const region = body.region || current.region || 'us-central1';
         const encryptAES256 = typeof body.encryptAES256 === 'boolean' ? body.encryptAES256 : current.encryptAES256;
         const autoSyncOnCut = typeof body.autoSyncOnCut === 'boolean' ? body.autoSyncOnCut : current.autoSyncOnCut;
 
         let lastBackupAt = current.lastBackupAt;
         let lastBackupSize = current.lastBackupSize;
         let lastBackupHash = current.lastBackupHash;
+        let savedFiles: string[] = [];
 
         if (body.triggerNow) {
-            const nowIso = new Date().toISOString();
-            const payloadSeed = JSON.stringify({
-                timestamp: nowIso,
-                region,
-                destination,
-                frequencyMinutes,
-                retentionDays,
+            const now = new Date();
+            const nowIso = now.toISOString();
+            const dateStr = now.toISOString().slice(0, 10);
+            const timeStr = now.toTimeString().slice(0, 8).replace(/:/g, '-');
+            const fileStamp = `${dateStr}_${timeStr}`;
+
+            // Obtener datos reales de SQLite
+            const products = await prisma.product.findMany();
+            const orders = await prisma.order.findMany({ include: { items: true } });
+            const customers = await prisma.customer.findMany();
+            const users = await prisma.user.findMany({
+                select: { id: true, email: true, name: true, role: true, createdAt: true }
             });
+
+            // 1. Archivo de Texto / JSON Completo
+            const jsonBackup = JSON.stringify({
+                metadata: {
+                    version: '2.0',
+                    timestamp: nowIso,
+                    totalProducts: products.length,
+                    totalOrders: orders.length,
+                    totalCustomers: customers.length,
+                    generator: 'BUNKKER ERP Local-First Backup Engine'
+                },
+                data: { products, orders, customers, users }
+            }, null, 2);
+
+            // 2. Archivo Excel / CSV con BOM
+            const csvHeaders = ['ID', 'Nombre', 'Categoria', 'Precio', 'Stock', 'Estante', 'Fila', 'CodigoBarras'];
+            const csvRows = products.map(p => [
+                `"${p.id}"`,
+                `"${(p.name || '').replace(/"/g, '""')}"`,
+                `"${(p.category || 'General').replace(/"/g, '""')}"`,
+                p.price,
+                p.stock,
+                `"${p.estante || ''}"`,
+                `"${p.fila || ''}"`,
+                `"${p.barcode || ''}"`
+            ].join(','));
+            const csvContent = '\uFEFF' + [csvHeaders.join(','), ...csvRows].join('\r\n');
+
+            // Determinar carpetas destino según la selección del usuario
+            const targetDirs: string[] = [];
+            if (destination === 'onedrive' || destination === 'all') {
+                if (onedrivePath) targetDirs.push(onedrivePath);
+            }
+            if (destination === 'gdrive' || destination === 'all') {
+                if (gdrivePath) targetDirs.push(gdrivePath);
+            }
+            if (destination === 'usb' || destination === 'all') {
+                if (usbPath) targetDirs.push(usbPath);
+            }
+
+            // Si no hay carpetas válidas o fallan, asegurar una carpeta local de respaldo
+            if (targetDirs.length === 0) {
+                targetDirs.push(path.join(process.cwd(), 'backups'));
+            }
+
+            // Escribir los archivos en cada carpeta destino disponible
+            for (const dir of targetDirs) {
+                try {
+                    if (!fs.existsSync(dir)) {
+                        fs.mkdirSync(dir, { recursive: true });
+                    }
+
+                    if (format === 'all' || format === 'text') {
+                        const jsonFile = path.join(dir, `bunkker_respaldo_texto_${fileStamp}.json`);
+                        atomicWriteFileSync(jsonFile, jsonBackup);
+                        savedFiles.push(jsonFile);
+                    }
+
+                    if (format === 'all' || format === 'excel') {
+                        const excelFile = path.join(dir, `bunkker_inventario_excel_${fileStamp}.csv`);
+                        atomicWriteFileSync(excelFile, csvContent);
+                        savedFiles.push(excelFile);
+                    }
+                } catch (writeErr) {
+                    console.warn(`[backup/status] No se pudo escribir en carpeta ${dir}:`, writeErr);
+                }
+            }
+
             lastBackupAt = nowIso;
-            lastBackupSize = Buffer.byteLength(payloadSeed, 'utf-8') * 384;
-            lastBackupHash = crypto.createHash('sha256').update(payloadSeed).digest('hex');
+            lastBackupSize = Buffer.byteLength(jsonBackup, 'utf-8') + Buffer.byteLength(csvContent, 'utf-8');
+            lastBackupHash = crypto.createHash('sha256').update(jsonBackup).digest('hex');
 
             try {
                 await prisma.appConfig.upsert({
@@ -166,22 +254,25 @@ export async function POST(request: NextRequest) {
                     },
                 });
             } catch {
-                // Non-fatal if SQLite/Postgres table isn't migrated yet
+                // Non-fatal
             }
         }
 
         const saved = writeLocalBackupSettings({
             enabled,
             destination,
+            onedrivePath,
+            gdrivePath,
             usbPath,
+            format,
             frequencyMinutes,
             retentionDays,
-            region,
             encryptAES256,
             autoSyncOnCut,
             lastBackupAt,
             lastBackupSize,
             lastBackupHash,
+            lastBackupFiles: savedFiles.length > 0 ? savedFiles : current.lastBackupFiles,
         });
 
         return NextResponse.json({
@@ -189,8 +280,10 @@ export async function POST(request: NextRequest) {
             ...saved,
             status: !saved.enabled ? 'disabled' : saved.lastBackupAt ? 'ok' : 'never',
             nextBackupIn: saved.frequencyMinutes,
+            savedFiles,
         });
     } catch (error: any) {
+        console.error('[backup/status] Error:', error);
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
 }

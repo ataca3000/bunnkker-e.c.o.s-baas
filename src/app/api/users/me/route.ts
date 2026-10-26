@@ -28,8 +28,8 @@ export async function GET(req: NextRequest) {
             user = null;
         }
 
-        // Fallback para sesiones demo o arranque inicial
-        if (!user && (session.startsWith('demo-') || role)) {
+        // Fallback únicamente para sesiones demo explícitas en entorno de desarrollo/test
+        if (!user && session.startsWith('demo-') && process.env.NODE_ENV !== 'production') {
             const roleNameMap: Record<string, string> = {
                 superadmin: 'Dueño (Superadmin)',
                 admin: 'Gerente (Admin)',
@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
             };
             user = {
                 id: session,
-                name: roleNameMap[role] || 'Usuario Staff',
+                name: roleNameMap[role] || 'Usuario Staff Demo',
                 role: role,
                 active: true
             };

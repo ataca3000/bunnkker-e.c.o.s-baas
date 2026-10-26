@@ -7,8 +7,15 @@ export type AppEnvironment = 'demo' | 'local' | 'nube';
  * nube: Ecosistema PRO desplegado en Firebase (APIs de Google activas, Red B2B)
  */
 export function getAppEnv(): AppEnvironment {
+    if (process.env.NEXT_PUBLIC_APP_ENV) {
+        return process.env.NEXT_PUBLIC_APP_ENV as AppEnvironment;
+    }
+    // Si corre en Vercel y no se especificó variable de entorno, el default seguro es 'demo'
+    if (process.env.VERCEL || process.env.NEXT_PUBLIC_VERCEL_ENV) {
+        return 'demo';
+    }
     // Si no está definido (por ejemplo, en 'npm run dev'), asumimos 'local' para no generar costos.
-    return (process.env.NEXT_PUBLIC_APP_ENV as AppEnvironment) || 'local';
+    return 'local';
 }
 
 export const isDemo = () => getAppEnv() === 'demo';

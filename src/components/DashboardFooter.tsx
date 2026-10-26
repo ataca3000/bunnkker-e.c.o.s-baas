@@ -1,5 +1,6 @@
 "use client";
 
+
 import Link from 'next/link';
 import { Mail, MapPin, MessageSquare } from 'lucide-react';
 
@@ -14,7 +15,7 @@ export default function DashboardFooter() {
     const handleWhatsApp = () => {
         // Enlace directo a WhatsApp del desarrollador
         // Reemplaza el número 52... con tu número real de WhatsApp
-        window.open('https://wa.me/522411234567', '_blank'); 
+        window.open('https://wa.me/522411234567', '_blank');
     };
 
     return (
@@ -30,14 +31,14 @@ export default function DashboardFooter() {
                 </div>
 
                 <div className="flex flex-wrap justify-center gap-4">
-                    <a 
+                    <a
                         href={`mailto:${devInfo.email}`}
                         className="flex items-center gap-2 bg-gray-50 hover:bg-blue-50 text-gray-600 hover:text-[#0ea5e9] px-4 py-2 rounded-xl text-xs font-bold transition-all border border-gray-100"
                     >
                         <Mail size={14} /> {devInfo.email}
                     </a>
-                    
-                    <button 
+
+                    <button
                         onClick={handleWhatsApp}
                         className="flex items-center gap-2 bg-[#27ae60] hover:bg-green-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95"
                     >
@@ -52,7 +53,7 @@ export default function DashboardFooter() {
                     </span>
                 </div>
             </div>
-            
+
             <div className="flex flex-wrap justify-center gap-4 text-xs font-semibold text-gray-500 mt-6 pt-4 border-t border-gray-100">
                 <Link href="/dashboard/migracion" className="hover:text-[#0ea5e9] transition-colors">
                     📲 Migración y Respaldo de Dispositivo

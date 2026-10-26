@@ -9,6 +9,8 @@ import type { Product, CartItem, Order } from '@/lib/types';
 import { toast } from '@/lib/toast';
 import { checkLicenseStatus } from '@/lib/license';
 import { enqueueOfflineOrder, flushOfflineOrderQueue, getQueuedOfflineOrders } from '@/lib/indexedDBCart';
+import { getCustomerAuthHeaders } from '@/lib/customerAuth';
+import { broadcastSync } from '@/lib/syncNotifier';
 
 export type { Product, CartItem, Order };
 
@@ -37,7 +39,7 @@ export interface PromoWidget {
 
 export interface VisualLayoutBlock {
     id: string;
-    type: 'hero' | 'catalog' | 'map' | 'custom_text' | 'image' | 'widget' | 'about';
+    type: 'hero' | 'catalog' | 'map' | 'custom_text' | 'image' | 'widget' | 'about' | 'banner';
     order: number;
     visible: boolean;
     settings?: {
@@ -45,16 +47,19 @@ export interface VisualLayoutBlock {
         alignment?: 'left' | 'center' | 'right';
         columns?: number;
         categoryFilter?: string;
+        categoryTarget?: string;
         showRatings?: boolean;
         borderRadius?: number;
         buttonText?: string;
         backgroundColor?: string;
         textColor?: string;
+        titleColor?: string;
         whatsappNumber?: string;
         questionsText?: string;
         titleText?: string;
         subtitleText?: string;
         imageUrl?: string;
+        mediaUrl?: string;
     };
 }
 
@@ -115,6 +120,24 @@ export interface SiteConfig {
     enableWebPayments?: boolean;
     allowWebCheckout?: boolean;
     requireCashierInspection?: boolean;
+    deliveryZone?: {
+        enabled: boolean;
+        center: [number, number];
+        radiusKm: number;
+        address?: string;
+        updatedAt?: string;
+    };
+    servicesData?: {
+        title?: string;
+        subtitle?: string;
+        items: Array<{
+            id: string;
+            title: string;
+            desc: string;
+            icon?: string;
+            active?: boolean;
+        }>;
+    };
 }
 
 export type FirebaseStatus = 'connecting' | 'online' | 'offline' | 'demo';
@@ -151,20 +174,24 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         } catch {}
 
         let isFetching = false;
+        let refetchQueued = false;
         const fetchLocalData = async () => {
-            if (isFetching || localMutationInFlight.current > 0) return;
+            if (isFetching || localMutationInFlight.current > 0) {
+                refetchQueued = true;
+                return;
+            }
             isFetching = true;
             try {
-                // 1. Si hay pedidos pendientes en IndexedDB (guardados durante conexión inestable o cierre de navegador), sincronizarlos primero
+                // 1. Si hay pedidos pendientes en IndexedDB, sincronizarlos primero
                 const flushResult = await flushOfflineOrderQueue((syncedOrderId) => {
                     toast.success(`Pedido offline ${syncedOrderId} sincronizado desde IndexedDB.`, '☁️ Sincronizado');
                 });
-                if (flushResult.synced > 0 && typeof window !== 'undefined' && (window as any).__inventorySocket) {
-                    (window as any).__inventorySocket.emit('sync_db_event', { action: 'OFFLINE_QUEUE_SYNCED' });
+                if (flushResult.synced > 0) {
+                    broadcastSync({ action: 'OFFLINE_QUEUE_SYNCED' });
                 }
 
-                // Fetch Products from Local API
-                const prodRes = await fetch('/api/products');
+                // Fetch Products from Local API con cache: no-store
+                const prodRes = await fetch('/api/products', { cache: 'no-store', headers: { 'Cache-Control': 'no-cache' } });
                 if (prodRes.ok) {
                     const prodData = await prodRes.json();
                     if (prodData.success) {
@@ -185,8 +212,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
                     }
                 }
 
-                // Fetch Orders from Local API and merge any still-queued offline orders from IndexedDB
-                const ordRes = await fetch('/api/orders');
+                // Fetch Orders from Local API con cache: no-store
+                const ordRes = await fetch('/api/orders', { cache: 'no-store', headers: { 'Cache-Control': 'no-cache' } });
                 if (ordRes.ok) {
                     const ordData = await ordRes.json();
                     if (ordData.success) {
@@ -212,6 +239,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             } finally {
                 setLoading(false);
                 isFetching = false;
+                if (refetchQueued) {
+                    refetchQueued = false;
+                    fetchLocalData();
+                }
             }
         };
 
@@ -222,8 +253,25 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         const handleOnline = () => {
             fetchLocalData();
         };
+
+        // Sincronización instantánea multi-pestaña y multi-pantalla (0ms)
+        let tabChannel: BroadcastChannel | null = null;
         if (typeof window !== 'undefined') {
             window.addEventListener('online', handleOnline);
+            window.addEventListener('bunkker_sync_event', fetchLocalData);
+
+            if (typeof BroadcastChannel !== 'undefined') {
+                try {
+                    tabChannel = new BroadcastChannel('bunkker_tab_sync');
+                    tabChannel.onmessage = (event) => {
+                        if (event.data?.type === 'SYNC_REFETCH') {
+                            fetchLocalData();
+                        }
+                    };
+                } catch (e) {
+                    console.warn('[CartContext] Error initializing tabChannel:', e);
+                }
+            }
         }
 
         // Ultra-fast polling for local network (every 2 seconds)
@@ -233,6 +281,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             clearInterval(pollInterval);
             if (typeof window !== 'undefined') {
                 window.removeEventListener('online', handleOnline);
+                window.removeEventListener('bunkker_sync_event', fetchLocalData);
+                if (tabChannel) {
+                    try { tabChannel.close(); } catch {}
+                }
             }
         };
     }, [setProducts, setOrders, setFirebaseStatus, setLoading]);
@@ -302,33 +354,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             // Make socket available globally for checkout reservation
             (window as any).__inventorySocket = newSocket;
 
-            // BroadcastChannel for 0ms Multi-Tab synchronization in the same browser
-            let tabChannel: BroadcastChannel | null = null;
-            if (typeof BroadcastChannel !== 'undefined') {
-                tabChannel = new BroadcastChannel('bunkker_tab_sync');
-                tabChannel.onmessage = (event) => {
-                    if (event.data?.type === 'SYNC_REFETCH') {
-                        // Refetch products and orders immediately across tabs
-                        const state = useERPStore.getState();
-                        Promise.all([fetch('/api/products'), fetch('/api/orders')]).then(async ([resP, resO]) => {
-                            if (resP.ok) {
-                                const dataP = await resP.json();
-                                if (state.setProducts) {
-                                    state.setProducts((dataP.data || []).map((p: any) => ({
-                                        ...p,
-                                        location: { estante: p.estante || '', fila: p.fila || '' }
-                                    })));
-                                }
-                            }
-                            if (resO.ok) {
-                                const dataO = await resO.json();
-                                if (state.setOrders) state.setOrders(dataO.data || []);
-                            }
-                        }).catch(() => {});
-                    }
-                };
-            }
-
             // LFEDS Timer: Auto-limpieza de reservas expiradas (>30 min)
             const reservationCheckInterval = setInterval(() => {
                 const state = useERPStore.getState();
@@ -339,7 +364,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
             return () => {
                 newSocket.disconnect();
-                if (tabChannel) tabChannel.close();
                 clearInterval(reservationCheckInterval);
             };
         }
@@ -394,7 +418,7 @@ export const useCart = () => {
 
         // Validación Límite Freemium (300 Ventas Máximo sin Licencia Activa)
         const lic = checkLicenseStatus();
-        const VALID_SALES = ['paid', 'COMPLETED', 'READY_TO_SHIP', 'OUT_FOR_DELIVERY', 'DELIVERED'];
+        const VALID_SALES = ['paid', 'COMPLETED', 'READY_TO_SHIP', 'OUT_FOR_DELIVERY', 'DELIVERED', 'READY_FOR_PICKUP_PAID'];
         const completedSalesCount = state.orders.filter(o => VALID_SALES.includes(o.status)).length;
         if (lic.status !== 'active' && completedSalesCount >= 300) {
             toast.error('⚠️ Límite Freemium alcanzado (300/300 ventas). Para continuar vendiendo, activa tu Suscripción Mensual PRO ($200 MXN / mes).', '🔒 Límite Alcanzado');
@@ -423,7 +447,9 @@ export const useCart = () => {
             }
         }
 
-        let finalStatus = asRequest ? 'pending_payment' : 'paid';
+        const isStaff = ['sales', 'billing', 'admin', 'superadmin'].includes(profile?.role || '');
+        const shouldBePending = asRequest || !isStaff || customerData.paymentMethod === 'pago_caja';
+        let finalStatus = shouldBePending ? 'pending_payment' : 'paid';
         const expiresAt = asRequest ? new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString() : null;
 
         // BUG-7 FIX: Usar crypto.getRandomValues en lugar de Math.random() para el PIN de entrega.
@@ -467,19 +493,20 @@ export const useCart = () => {
                 throw new TypeError('Failed to fetch (Offline)');
             }
 
+            const authHeaders = getCustomerAuthHeaders();
             const res = await fetch('/api/orders', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    ...authHeaders
+                },
+                credentials: 'include',
                 body: JSON.stringify(apiPayload)
             });
 
             if (!res.ok) {
                 const errData = await res.json().catch(() => ({}));
-                // Si el servidor falla con 5xx, mantener en IndexedDB para auto-sincronización
-                if (res.status >= 500) {
-                    throw new TypeError(`Server error ${res.status}`);
-                }
-                // Si fue rechazo de validación o negocio (400/401/403), remover de la cola offline
+                // Si el servidor respondió (cualquier código 4xx o 5xx), eliminar de IndexedDB porque fue un rechazo activo del servidor
                 const { removeQueuedOfflineOrder } = await import('@/lib/indexedDBCart');
                 await removeQueuedOfflineOrder(orderId);
                 const detail = errData.error || errData.message || (res.status === 401 ? 'Acceso denegado (Inicia sesión como cliente o personal)' : `Error en servidor local (HTTP ${res.status})`);
@@ -490,6 +517,8 @@ export const useCart = () => {
             const { removeQueuedOfflineOrder } = await import('@/lib/indexedDBCart');
             await removeQueuedOfflineOrder(orderId);
 
+            // Actualizar store local de inmediato con la nueva orden
+            state.setOrders([newOrder as any, ...state.orders.filter(o => o.id !== orderId)]);
             state.clearCart();
             await logAudit({
                 type: 'ORDER_CREATE', userId: profile?.uid || 'GUEST',
@@ -499,7 +528,8 @@ export const useCart = () => {
                 metadata: { paymentMethod: asRequest ? 'pago_caja' : (isOnline ? 'Online' : 'Venta Directa') }
             });
 
-            // Disparar sincronización en tiempo real a otras pestañas/dispositivos
+            // Disparar sincronización instantánea (0ms Multi-Tab / Multi-Rol)
+            broadcastSync({ action: 'NEW_ORDER', id: orderId });
             if (typeof window !== 'undefined' && (window as any).__inventorySocket) {
                 (window as any).__inventorySocket.emit('sync_db_event', { action: 'NEW_ORDER', id: orderId });
             }
@@ -507,18 +537,19 @@ export const useCart = () => {
             return { orderId, deliveryPin, queuedOffline: false };
         } catch (err: any) {
             const isNetworkFailure =
-                err instanceof TypeError ||
                 (typeof navigator !== 'undefined' && navigator.onLine === false) ||
-                String(err?.message || '').includes('Failed to fetch') ||
-                String(err?.message || '').includes('NetworkError') ||
-                String(err?.message || '').includes('Server error');
+                (err instanceof TypeError && (
+                    String(err.message).includes('Failed to fetch') ||
+                    String(err.message).includes('NetworkError') ||
+                    String(err.message).includes('fetch failed')
+                ));
 
             if (isNetworkFailure) {
                 // Mantener en IndexedDB, agregar optimísticamente al store local y limpiar el carrito
                 state.setOrders([{ ...newOrder, offlineQueued: true } as any, ...state.orders]);
                 state.clearCart();
                 toast.warning(
-                    `Conexión inestable: Tu pedido ${orderId} se guardó de forma segura en IndexedDB y se enviará automáticamente al reconectar.`,
+                    `Sin conexión: Tu pedido ${orderId} se guardó de forma segura en tu dispositivo (IndexedDB) y se enviará al reconectar.`,
                     '💾 Guardado Offline (IndexedDB)',
                     8000
                 );
@@ -558,6 +589,19 @@ export const useCart = () => {
             const result = await res.json().catch(() => null);
             if (!res.ok || !result?.success) throw new Error(result?.error || 'No se pudo confirmar el pago.');
 
+            // Actualización optimista inmediata en memoria
+            state.setOrders(state.orders.map(o => {
+                if (o.id === orderId) {
+                    return {
+                        ...o,
+                        ...(result?.data || {}),
+                        status: result?.data?.status || (o.isLoaded ? 'READY_FOR_PICKUP_PAID' : 'paid'),
+                        confirmedAt: result?.data?.confirmedAt || new Date().toISOString()
+                    };
+                }
+                return o;
+            }));
+
             await logAudit({
                 type: 'ORDER_CREATE', userId: profile?.uid || 'SYSTEM',
                 userName: sellerName, userRole: 'sales',
@@ -566,6 +610,7 @@ export const useCart = () => {
             });
 
             // Disparar sincronización en tiempo real a otras pestañas/dispositivos
+            broadcastSync({ action: 'ORDER_CONFIRMED', id: orderId });
             if (typeof window !== 'undefined' && (window as any).__inventorySocket) {
                 (window as any).__inventorySocket.emit('commit_stock', orderId);
                 (window as any).__inventorySocket.emit('sync_db_event', { action: 'ORDER_CONFIRMED', id: orderId });
@@ -586,6 +631,7 @@ export const useCart = () => {
         });
         const result = await response.json().catch(() => null);
         if (!response.ok || !result?.success) throw new Error(result?.error || 'No se pudo tomar este pedido.');
+        broadcastSync({ action: 'ORDER_CASHIER_CLAIMED', id: orderId });
         if (typeof window !== 'undefined' && (window as any).__inventorySocket) {
             (window as any).__inventorySocket.emit('sync_db_event', { action: 'ORDER_CASHIER_CLAIMED', id: orderId });
         }
@@ -608,6 +654,23 @@ export const useCart = () => {
                 })
             });
             if (!response.ok) throw new Error('No se pudo iniciar la preparación de la orden.');
+            const resData = await response.json().catch(() => null);
+
+            // Actualización optimista de recolección iniciada
+            state.setOrders(state.orders.map(o => {
+                if (o.id === orderId) {
+                    return {
+                        ...o,
+                        ...(resData?.data || {}),
+                        loadedBy: workerName,
+                        loadedByUid: profile?.uid,
+                        status: 'PREPARANDO'
+                    };
+                }
+                return o;
+            }));
+
+            broadcastSync({ action: 'ORDER_LOADING_STARTED', id: orderId });
             if (typeof window !== 'undefined' && (window as any).__inventorySocket) {
                 (window as any).__inventorySocket.emit('sync_db_event', { action: 'ORDER_LOADING_STARTED', id: orderId });
             }
@@ -638,6 +701,32 @@ export const useCart = () => {
                 })
             });
             if (!response.ok) throw new Error('No se pudo finalizar la preparación de la orden.');
+            const resData = await response.json().catch(() => null);
+
+            // Actualización optimista en el store de Zustand
+            state.setOrders(state.orders.map(o => {
+                if (o.id === orderId) {
+                    const isPaid = Boolean(o.confirmedAt) || o.status === 'paid' || o.status === 'READY_FOR_PICKUP_PAID';
+                    const target = targetLocation || 'caja';
+                    const nextStatus = (target === 'caja' || target === 'carga')
+                        ? (isPaid ? 'READY_FOR_PICKUP_PAID' : 'READY_FOR_PICKUP')
+                        : 'COMPLETED';
+                    return {
+                        ...o,
+                        ...(resData?.data || {}),
+                        isLoaded: true,
+                        status: resData?.data?.status || nextStatus,
+                        loadedBy: resData?.data?.loadedBy || workerName
+                    };
+                }
+                return o;
+            }));
+
+            broadcastSync({ 
+                action: 'ORDER_LOADING_COMPLETED', 
+                id: orderId,
+                targetLocation: targetLocation || 'caja'
+            });
             if (typeof window !== 'undefined' && (window as any).__inventorySocket) {
                 (window as any).__inventorySocket.emit('sync_db_event', { 
                     action: 'ORDER_LOADING_COMPLETED', 
@@ -785,7 +874,10 @@ export const useCart = () => {
                 description: `Pedido cancelado: ${orderId}`, metadata: { orderId, refundTotal: order.total },
             });
 
+            state.setOrders(state.orders.map(o => o.id === orderId ? { ...o, status: 'cancelled' } : o));
+
             // Notificar a otros dispositivos del cambio
+            broadcastSync({ action: 'ORDER_CANCELLED', id: orderId });
             if (typeof window !== 'undefined' && (window as any).__inventorySocket) {
                 (window as any).__inventorySocket.emit('sync_db_event', { action: 'ORDER_CANCELLED', id: orderId });
             }

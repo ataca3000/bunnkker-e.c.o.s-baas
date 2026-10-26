@@ -17,8 +17,15 @@ export function PinReminderModal() {
   const [showQR, setShowQR] = useState(false);
   const [userRole, setUserRole] = useState('');
 
+  const [hint, setHint] = useState('');
+  const [showSavedHint, setShowSavedHint] = useState(false);
+  const [savedHintText, setSavedHintText] = useState('');
+
   const checkPinStatus = async () => {
     try {
+      const storedHint = localStorage.getItem('bunkker_pin_hint') || '';
+      if (storedHint) setSavedHintText(storedHint);
+
       const res = await fetch('/api/users/me');
       if (!res.ok) return;
       const data = await res.json();
@@ -41,7 +48,7 @@ export function PinReminderModal() {
       checkPinStatus();
     }, 10000);
 
-    // Bucle recurrente cada 3 MINUTOS ("Chingar hasta que lo haga" 😃)
+    // Bucle recurrente cada 3 MINUTOS
     const intervalTimer = setInterval(() => {
       checkPinStatus();
     }, REMINDER_INTERVAL_MS);
@@ -61,7 +68,7 @@ export function PinReminderModal() {
     const digits = cleanCode.match(/\d/g) || [];
 
     if (cleanCode.length !== 5 || letters.length !== 1 || digits.length !== 4) {
-      setError('El código debe tener exactamente 5 caracteres (1 Letra y 4 Números, ej: A1234, 1A234, 12B34).');
+      setError('El código debe tener 5 caracteres (1 Letra y 4 Números, ej: A1234).');
       return;
     }
 
@@ -85,6 +92,10 @@ export function PinReminderModal() {
         setSuccess(true);
         setShowQR(true);
         localStorage.setItem(`bunkker_pin_changed_${data.user?.id || 'current'}`, 'true');
+        if (hint.trim()) {
+          localStorage.setItem('bunkker_pin_hint', hint.trim());
+          if (data.user?.id) localStorage.setItem(`bunkker_pin_hint_${data.user.id}`, hint.trim());
+        }
         setTimeout(() => {
           setIsOpen(false);
         }, 8000);
@@ -106,41 +117,35 @@ export function PinReminderModal() {
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="w-full max-w-md bg-slate-900 border border-amber-500/50 rounded-3xl p-6 sm:p-8 shadow-[0_0_60px_rgba(245,158,11,0.25)] relative overflow-hidden"
+        className="w-full max-w-md bg-slate-900 border border-amber-500/50 rounded-3xl p-6 sm:p-7 shadow-[0_0_60px_rgba(245,158,11,0.25)] relative overflow-hidden"
       >
         <button
           onClick={() => setIsOpen(false)}
           className="absolute top-4 right-4 text-slate-400 hover:text-white p-2 rounded-xl bg-slate-800"
-          title="Cerrar por 3 minutos"
+          title="Cerrar"
         >
           <X className="w-5 h-5" />
         </button>
 
         {!showQR ? (
           <>
-            <div className="flex flex-col items-center text-center mb-6">
-              <div className="w-14 h-14 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center mb-3">
-                <ShieldAlert className="w-7 h-7" />
+            <div className="flex flex-col items-center text-center mb-5">
+              <div className="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center mb-2.5">
+                <ShieldAlert className="w-6 h-6" />
               </div>
-              <span className="text-[10px] font-black text-amber-400 uppercase tracking-widest bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20 mb-2">
-                Sugerencia de Seguridad Recurrente (3 Min)
-              </span>
-              <h2 className="text-xl font-black text-white">¡Actualiza tu Código de Seguridad!</h2>
-              <p className="text-xs text-slate-400 mt-1 max-w-xs">
-                Tu cuenta sigue utilizando la clave predeterminada. Personaliza tu código de **5 caracteres (1 Letra + 4 Números)** para dificultar ataques.
-              </p>
+              <h2 className="text-xl font-black text-white">Actualiza tu Código de Seguridad</h2>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-3.5">
               {error && (
-                <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-xs font-semibold text-center">
+                <div className="p-2.5 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-xs font-semibold text-center">
                   {error}
                 </div>
               )}
 
               <div>
-                <label className="block text-[10px] font-bold text-amber-400 uppercase tracking-widest mb-1.5">
-                  Nuevo Código (1 Letra + 4 Números, ej: A1234, 1A234) *
+                <label className="block text-[10px] font-bold text-amber-400 uppercase tracking-widest mb-1">
+                  NUEVO CÓDIGO (1 Letra + 4 Números) *
                 </label>
                 <input
                   type="text"
@@ -149,13 +154,13 @@ export function PinReminderModal() {
                   value={newCode}
                   onChange={e => setNewCode(e.target.value.toUpperCase())}
                   placeholder="A1234"
-                  className="w-full bg-slate-950 border border-amber-500/40 rounded-xl py-3 px-4 text-center text-xl font-mono text-white tracking-[0.4em] uppercase focus:outline-none focus:border-amber-400 transition-colors"
+                  className="w-full bg-slate-950 border border-amber-500/40 rounded-xl py-2.5 px-4 text-center text-xl font-mono text-white tracking-[0.4em] uppercase focus:outline-none focus:border-amber-400 transition-colors"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-amber-400 uppercase tracking-widest mb-1.5">
-                  Confirmar Código *
+                <label className="block text-[10px] font-bold text-amber-400 uppercase tracking-widest mb-1">
+                  CONFIRMAR CÓDIGO *
                 </label>
                 <input
                   type="text"
@@ -164,20 +169,54 @@ export function PinReminderModal() {
                   value={confirmCode}
                   onChange={e => setConfirmCode(e.target.value.toUpperCase())}
                   placeholder="A1234"
-                  className="w-full bg-slate-950 border border-amber-500/40 rounded-xl py-3 px-4 text-center text-xl font-mono text-white tracking-[0.4em] uppercase focus:outline-none focus:border-amber-400 transition-colors"
+                  className="w-full bg-slate-950 border border-amber-500/40 rounded-xl py-2.5 px-4 text-center text-xl font-mono text-white tracking-[0.4em] uppercase focus:outline-none focus:border-amber-400 transition-colors"
                 />
               </div>
+
+              {/* Método de Recuperación / Indicio de Contraseña */}
+              <div>
+                <label className="block text-[10px] font-bold text-cyan-400 uppercase tracking-widest mb-1">
+                  💡 Indicio o Pista de Contraseña (Opcional)
+                </label>
+                <input
+                  type="text"
+                  value={hint}
+                  onChange={e => setHint(e.target.value)}
+                  placeholder="Ej: Año de fundación o apodo familiar"
+                  className="w-full bg-slate-950 border border-cyan-500/40 rounded-xl py-2 px-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 transition-colors"
+                />
+                <span className="text-[10px] text-slate-400 block mt-0.5">
+                  Te ayudará a recordar tu clave en caso de olvido.
+                </span>
+              </div>
+
+              {savedHintText && (
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setShowSavedHint(!showSavedHint)}
+                    className="text-[11px] font-bold text-amber-300 hover:text-white underline cursor-pointer"
+                  >
+                    {showSavedHint ? 'Ocultar indicio actual' : '¿Olvidaste tu clave? Ver indicio actual'}
+                  </button>
+                  {showSavedHint && (
+                    <div className="mt-1.5 p-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs font-mono">
+                      Pista guardada: <b>{savedHintText}</b>
+                    </div>
+                  )}
+                </div>
+              )}
 
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-sm shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2 transition-all active:scale-95"
+                className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-sm shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer"
               >
                 {loading ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
                   <>
-                    <span>Guardar y Generar Código QR</span>
+                    <span>Guardar Código</span>
                     <Sparkles className="w-4 h-4" />
                   </>
                 )}

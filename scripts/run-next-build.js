@@ -35,6 +35,16 @@ if (isLocalDesktop) {
     console.error('[Build Desktop] prisma generate (SQLite) falló. Schema restaurado.');
     process.exit(gen.status || 1);
   }
+} else {
+  // En compilación para la web / nube (ej. Vercel), sincronizar y preparar base de datos si está configurada
+  const prep = spawnSync(process.execPath, [path.join(__dirname, 'prepare-db.js')], {
+    cwd: projectRoot,
+    stdio: 'inherit',
+    env: process.env,
+  });
+  if (prep.status !== 0) {
+    process.exit(prep.status || 1);
+  }
 }
 
 let buildStatus = 0;
@@ -42,10 +52,6 @@ try {
   const serverDir = path.join(projectRoot, '.next', 'server');
   if (!fs.existsSync(serverDir)) {
     fs.mkdirSync(serverDir, { recursive: true });
-  }
-  const pagesDir = path.join(serverDir, 'pages');
-  if (!fs.existsSync(pagesDir)) {
-    fs.mkdirSync(pagesDir, { recursive: true });
   }
   const edgeFile = path.join(serverDir, 'edge-runtime-webpack.js');
   if (!fs.existsSync(edgeFile)) {

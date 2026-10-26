@@ -8,6 +8,8 @@ import {
   ChevronRight, KeyRound, Mail, Phone, Building2
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { saveCustomerSession } from '@/lib/customerAuth';
+import { saveStaffSession } from '@/lib/staffAuth';
 
 function applyBrowserSessionCookies(uid?: string, role?: string, signature?: string) {
   if (typeof window === 'undefined' || !uid || !role || !signature) return;
@@ -29,6 +31,21 @@ export default function LoginPage() {
   const [staffLoading, setStaffLoading] = useState(false);
   const [staffError, setStaffError] = useState('');
   const [staffSuccess, setStaffSuccess] = useState('');
+  const [showStaffHint, setShowStaffHint] = useState(false);
+  const [staffHint, setStaffHint] = useState('');
+
+  const handleRevealHint = () => {
+    if (typeof window !== 'undefined') {
+      const hint = localStorage.getItem('bunkker_pin_hint');
+      if (hint) {
+        setStaffHint(hint);
+        setShowStaffHint(true);
+      } else {
+        setStaffHint('Sin indicio registrado. Si eres Dueño usa 0000 o contacta a soporte.');
+        setShowStaffHint(true);
+      }
+    }
+  };
 
   // ── Estados del Panel 2: Portal de Clientes (Email/Teléfono + Contraseña) ──
   const [isRegisterMode, setIsRegisterMode] = useState(false);
@@ -132,6 +149,20 @@ export default function LoginPage() {
 
       if (res.ok && data.success) {
         applyBrowserSessionCookies(data.uid, data.role, data.signature);
+        saveStaffSession({
+          uid: data.uid,
+          role: data.role,
+          signature: data.signature,
+          user: { id: data.uid, role: data.role, name: data.user?.name || data.name || 'Personal' },
+          profile: {
+            uid: data.uid,
+            displayName: data.user?.name || data.name || 'Personal',
+            role: data.role,
+            signature: data.signature,
+            isPremium: true,
+            lastLogin: Date.now()
+          }
+        });
         setStaffSuccess('Credenciales verificadas. Ingresando al Dashboard...');
 
         const roleRedirects: Record<string, string> = {
@@ -194,6 +225,12 @@ export default function LoginPage() {
 
         const data = await res.json();
         if (res.ok && data.success) {
+          saveCustomerSession({
+            uid: data.uid,
+            role: data.role || 'client',
+            signature: data.signature,
+            token: data.token
+          }, data.customer);
           applyBrowserSessionCookies(data.uid, data.role || 'client', data.signature);
           setClientSuccess('¡Cuenta creada con éxito! Redirigiendo a tu portal...');
           window.location.assign('/cuenta');
@@ -219,6 +256,12 @@ export default function LoginPage() {
         });
         const data = await res.json();
         if (res.ok && data.success) {
+          saveCustomerSession({
+            uid: data.uid,
+            role: data.role || 'client',
+            signature: data.signature,
+            token: data.token
+          }, data.customer);
           applyBrowserSessionCookies(data.uid, data.role || 'client', data.signature);
           setClientSuccess('¡Bienvenido! Entrando a tu cuenta...');
           window.location.assign('/cuenta');
@@ -319,6 +362,20 @@ export default function LoginPage() {
                     className="w-full bg-slate-950 border-2 border-amber-500/40 rounded-2xl py-4 px-10 text-center text-3xl tracking-[0.4em] font-mono text-white placeholder-slate-700 focus:outline-none focus:border-amber-400 focus:ring-4 focus:ring-amber-500/20 transition-all shadow-inner"
                   />
                 </div>
+                <div className="flex items-center justify-between text-xs pt-2">
+                  <button
+                    type="button"
+                    onClick={handleRevealHint}
+                    className="text-amber-400 hover:text-amber-300 underline font-semibold transition cursor-pointer"
+                  >
+                    ¿Olvidaste tu PIN? Ver indicio
+                  </button>
+                </div>
+                {showStaffHint && (
+                  <div className="mt-2 p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-200 text-xs font-mono text-center">
+                    💡 Pista / Indicio: <b>{staffHint}</b>
+                  </div>
+                )}
               </div>
 
               <button

@@ -135,41 +135,57 @@ export default function MarketingPage() {
     ];
 
     return (
-        <main className="p-12 max-w-[1200px] mx-auto">
+        <main className="p-4 sm:p-6 lg:p-8 max-w-[1800px] mx-auto w-full">
 
-            {/* Header */}
-            <header className="mb-10">
-                <h1 className="text-5xl font-[1000] text-[#0ea5e9] italic uppercase tracking-tighter">ESTACIÓN DE CONTROL VISUAL</h1>
-                <p className="text-gray-600 font-bold uppercase text-xs tracking-widest">Ajusta la imagen de tu empresa y genera herramientas de captación digital.</p>
-            </header>
+            {/* ── TOP BAR: TÍTULO Y PESTAÑAS PRINCIPALES EN UNA SOLA LÍNEA COMPACTA ── */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-800/80">
+                <div>
+                    <div className="flex items-center gap-3">
+                        <h1 className="text-3xl sm:text-4xl font-[1000] text-[#0ea5e9] italic uppercase tracking-tighter">
+                            ESTACIÓN DE CONTROL VISUAL
+                        </h1>
+                        <span className="hidden sm:inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
+                            CANVAS STUDIO
+                        </span>
+                    </div>
+                    <p className="text-gray-400 font-bold uppercase text-[11px] tracking-wider mt-0.5">
+                        Ajusta la imagen de tu empresa y genera herramientas de captación digital.
+                    </p>
+                </div>
 
-            {/* Tabs */}
-            <div className="flex gap-2 mb-10 p-1.5 bg-[#0f172a]/50 backdrop-blur-sm rounded-xl border border-gray-800/50 w-fit">
-                {tabs.map(tab => (
-                    <button
-                        key={tab.id}
-                        onClick={() => setActiveTab(tab.id as 'studio' | 'qr' | 'config')}
-                        className={`flex items-center gap-2 py-3 px-6 rounded-lg font-bold cursor-pointer text-sm transition-all duration-300 ${
-                            activeTab === tab.id 
-                                ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/25 scale-100' 
-                                : 'bg-transparent text-slate-400 hover:text-white hover:bg-slate-800/50 scale-95 hover:scale-100'
-                        }`}
-                    >
-                        {tab.icon} {tab.label}
-                    </button>
-                ))}
+                {/* Tabs de la Consola */}
+                <div className="flex items-center gap-1.5 p-1.5 bg-slate-900/90 backdrop-blur-md rounded-2xl border border-slate-800/80 shrink-0">
+                    {tabs.map(tab => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id as 'studio' | 'qr' | 'config')}
+                            className={`flex items-center gap-2 py-2 px-4 rounded-xl font-black cursor-pointer text-xs uppercase tracking-wider transition-all duration-200 ${
+                                activeTab === tab.id 
+                                    ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 shadow-md shadow-cyan-500/25' 
+                                    : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                            }`}
+                        >
+                            {tab.icon} <span>{tab.label.replace(/^[^\w]+/, '')}</span>
+                        </button>
+                    ))}
+                </div>
             </div>
 
-            <AnimatePresence mode="wait">
-                {activeTab === 'studio' && (
-                    <motion.div key="studio" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
-                        <StoreBuilderCanvas />
-                    </motion.div>
-                )}
+            {/* ── LAYOUT DE 2 COLUMNAS: CONSOLA AMPLIA A LA IZQUIERDA + INSTRUCCIONES A LA DERECHA ── */}
+            <div className="grid grid-cols-1 xl:grid-cols-[1fr_360px] 2xl:grid-cols-[1fr_400px] gap-6 items-start">
+                
+                {/* ── ÁREA PRINCIPAL: TODA LA CONSOLA ── */}
+                <div className="min-w-0">
+                    <AnimatePresence mode="wait">
+                        {activeTab === 'studio' && (
+                            <motion.div key="studio" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
+                                <StoreBuilderCanvas />
+                            </motion.div>
+                        )}
 
-                {activeTab === 'qr' && (
-                    <motion.div key="qr" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
-                        className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                        {activeTab === 'qr' && (
+                            <motion.div key="qr" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+                                className="grid grid-cols-1 md:grid-cols-2 gap-12">
 
                         <div className="bunkker-card p-10 text-center bg-slate-800/80">
                             <div className="mb-8">
@@ -409,6 +425,110 @@ export default function MarketingPage() {
                     </motion.div>
                 )}
             </AnimatePresence>
+        </div>
+
+                {/* ── COLUMNA DERECHA: ESPACIO DE INSTRUCCIONES, CONTROL Y ACCESOS RÁPIDOS ── */}
+                <aside className="space-y-4 xl:sticky xl:top-6">
+                    {/* Card 1: Modo En Vivo In-Situ */}
+                    <div className="p-5 rounded-3xl bg-gradient-to-br from-slate-900/95 via-purple-950/40 to-slate-900/95 border border-cyan-500/30 shadow-2xl backdrop-blur-xl">
+                        <div className="flex items-center justify-between gap-2 mb-2">
+                            <span className="px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
+                                ⭐ MODO EN VIVO IN-SITU
+                            </span>
+                            <span className="flex h-2 w-2 relative">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
+                            </span>
+                        </div>
+                        
+                        <h3 className="text-white font-black text-sm tracking-tight mb-2">
+                            Personalización Visual de Fachada
+                        </h3>
+                        
+                        <p className="text-xs text-slate-300 leading-relaxed mb-4">
+                            Navega y edita directamente sobre tu tienda pública. Personaliza Hero multimedia con herramientas a la izquierda, y en <b>Servicios, Nosotros y Contacto</b> con barra superior y switch <b>❌ / ✔️</b> por tarjeta.
+                        </p>
+
+                        <div className="space-y-2">
+                            <a
+                                href="/?editMode=true"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-slate-950 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/25 transition-all hover:scale-[1.02]"
+                            >
+                                <span>🎨 Abrir Editor (Inicio)</span>
+                            </a>
+                            <a
+                                href="/servicios?editMode=true"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="w-full py-2 px-3 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 text-cyan-300 border border-cyan-500/30 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-colors"
+                            >
+                                <span>🛠️ Servicios (❌ / ✔️)</span>
+                            </a>
+                            <a
+                                href="/"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="w-full py-2 px-3 rounded-xl bg-slate-950/80 hover:bg-slate-900 text-slate-300 border border-slate-700/60 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-colors"
+                            >
+                                <span>🌐 Ver Tienda Online</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    {/* Card 2: Guía Paso a Paso de la Consola */}
+                    <div className="p-5 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl backdrop-blur-xl">
+                        <h4 className="text-xs font-black text-cyan-400 uppercase tracking-widest mb-3.5 flex items-center gap-2">
+                            <span>📖</span> GUÍA RÁPIDA DEL EDITOR
+                        </h4>
+                        
+                        <div className="space-y-3.5 text-xs text-slate-300">
+                            <div className="flex gap-2.5 items-start">
+                                <span className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-300 font-black text-[10px] flex items-center justify-center shrink-0 mt-0.5 border border-cyan-500/30">1</span>
+                                <div>
+                                    <strong className="text-white block font-bold">Selecciona Sección</strong>
+                                    Usa las pestañas superiores (Inicio, Catálogo, Servicios, Empresa, Contacto).
+                                </div>
+                            </div>
+
+                            <div className="flex gap-2.5 items-start">
+                                <span className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-300 font-black text-[10px] flex items-center justify-center shrink-0 mt-0.5 border border-cyan-500/30">2</span>
+                                <div>
+                                    <strong className="text-white block font-bold">Barra de Herramientas</strong>
+                                    Añade texto con fuentes exclusivas, imágenes, videos directos o stickers animados.
+                                </div>
+                            </div>
+
+                            <div className="flex gap-2.5 items-start">
+                                <span className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-300 font-black text-[10px] flex items-center justify-center shrink-0 mt-0.5 border border-cyan-500/30">3</span>
+                                <div>
+                                    <strong className="text-white block font-bold">Inspector de Estilos</strong>
+                                    Toca cualquier capa o bloque para modificar colores, tamaño, neón o brillo.
+                                </div>
+                            </div>
+
+                            <div className="flex gap-2.5 items-start">
+                                <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-300 font-black text-[10px] flex items-center justify-center shrink-0 mt-0.5 border border-emerald-500/30">4</span>
+                                <div>
+                                    <strong className="text-emerald-400 block font-bold">Aplicar en Market</strong>
+                                    Guarda tus cambios con el botón superior para sincronizar con tus clientes en vivo.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Card 3: Consejos de Diseño & Conversión */}
+                    <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-500/10 via-slate-900/90 to-slate-900 border border-amber-500/20 shadow-lg">
+                        <h4 className="text-[11px] font-black text-amber-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+                            <span>💡</span> TIPS DE ALTO IMPACTO
+                        </h4>
+                        <p className="text-xs text-slate-300 leading-relaxed">
+                            Alterna entre la vista <b>Escritorio</b> y <b>Móvil</b> en la barra del lienzo para asegurar que tus textos y botones no se tapen en pantallas pequeñas.
+                        </p>
+                    </div>
+                </aside>
+            </div>
 
             <style>{`
                 @media print {

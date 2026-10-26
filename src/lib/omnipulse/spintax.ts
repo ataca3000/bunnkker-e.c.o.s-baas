@@ -14,18 +14,34 @@
  * Output: "Buen día Ferretería Norte, visita nuestro catálogo."
  */
 export function resolveSpintax(template: string, vars: Record<string, string> = {}): string {
-    // Fase 1: Resolver bloques de variantes {opcion1|opcion2}
-    let resolved = template.replace(/\{([^}]+)\}/g, (_, block: string) => {
-        const options = block.split('|');
-        return options[Math.floor(Math.random() * options.length)];
-    });
+    let output = '';
+    let i = 0;
+    const len = template.length;
 
-    // Fase 2: Inyectar variables dinámicas del tenant {{variable}}
-    resolved = resolved.replace(/\{\{(\w+)\}\}/g, (_, key: string) => {
-        return vars[key] ?? `[${key}]`;
-    });
+    while (i < len) {
+        if (template[i] === '{' && template[i + 1] === '{') {
+            const end = template.indexOf('}}', i + 2);
+            if (end !== -1) {
+                const key = template.slice(i + 2, end).trim();
+                output += vars[key] ?? `[${key}]`;
+                i = end + 2;
+                continue;
+            }
+        } else if (template[i] === '{') {
+            const end = template.indexOf('}', i + 1);
+            if (end !== -1) {
+                const block = template.slice(i + 1, end);
+                const options = block.split('|');
+                output += options[Math.floor(Math.random() * options.length)];
+                i = end + 1;
+                continue;
+            }
+        }
+        output += template[i];
+        i++;
+    }
 
-    return resolved;
+    return output;
 }
 
 /**
@@ -54,10 +70,26 @@ export function generateVariations(template: string, count: number = 5, vars: Re
  * Cuenta el número de combinaciones únicas posibles en una plantilla Spintax.
  */
 export function countCombinations(template: string): number {
-    const matches = template.match(/\{([^}]+)\}/g);
-    if (!matches) return 1;
-    return matches.reduce((acc, match) => {
-        const options = match.slice(1, -1).split('|');
-        return acc * options.length;
-    }, 1);
+    let count = 1;
+    let i = 0;
+    const len = template.length;
+    while (i < len) {
+        if (template[i] === '{' && template[i + 1] === '{') {
+            const end = template.indexOf('}}', i + 2);
+            i = end !== -1 ? end + 2 : i + 2;
+            continue;
+        }
+        if (template[i] === '{') {
+            const end = template.indexOf('}', i + 1);
+            if (end !== -1) {
+                const block = template.slice(i + 1, end);
+                const options = block.split('|');
+                count *= options.length;
+                i = end + 1;
+                continue;
+            }
+        }
+        i++;
+    }
+    return count;
 }

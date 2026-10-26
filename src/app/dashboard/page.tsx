@@ -3,99 +3,91 @@
 import { useCart } from '@/context/CartContext';
 import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import BarcodeScanner from '@/components/BarcodeScanner';
 import dynamic from 'next/dynamic';
 import { Loader2 } from 'lucide-react';
 import { toast } from '@/lib/toast';
 
+import CentroDeControlBunkker from '@/components/dashboard/CentroDeControlBunkker';
+
 const LoadingFallback = () => (
-    <div className="min-h-screen flex items-center justify-center bg-[#0f111a]">
-        <Loader2 className="animate-spin text-sky-500" size={32} />
+    <div className="min-h-screen flex items-center justify-center bg-[#0b132b]">
+        <div className="flex flex-col items-center gap-2">
+            <Loader2 className="animate-spin text-cyan-400" size={32} />
+            <span className="text-xs text-slate-400 font-mono">Cargando Centro de Control Espejo...</span>
+        </div>
     </div>
 );
 
-// Dynamic Imports for Code Splitting
+// Dynamic Imports on demand (Solo se descargan si el usuario alterna explícitamente a la consola clásica)
 const SuperAdminDashboard = dynamic(() => import('@/components/dashboard/SuperAdminDashboard'), { loading: () => <LoadingFallback /> });
-// Los roles operativos usan sus consolas completas y funcionales, no resúmenes.
 const SalesDashboard = dynamic(() => import('@/app/dashboard/sales/page'), { loading: () => <LoadingFallback /> });
 const InventoryDashboard = dynamic(() => import('@/app/dashboard/inventory/page'), { loading: () => <LoadingFallback /> });
-const CargaDescargaDashboardWorker = dynamic(() => import('@/components/dashboard/CargaDescargaDashboardWorker'), { loading: () => <LoadingFallback /> });
+const PatioDashboard = dynamic(() => import('@/app/dashboard/patio/page'), { loading: () => <LoadingFallback /> });
+const DeliveryDashboard = dynamic(() => import('@/app/dashboard/delivery/page'), { loading: () => <LoadingFallback /> });
+const PickupDashboard = dynamic(() => import('@/app/dashboard/pickup/page'), { loading: () => <LoadingFallback /> });
 const MarketingDashboard = dynamic(() => import('@/app/dashboard/marketing/page'), { loading: () => <LoadingFallback /> });
-const DeliveryDashboardWorker = dynamic(() => import('@/components/dashboard/DeliveryDashboardWorker'), { loading: () => <LoadingFallback /> });
 
 export default function DashboardRouter() {
-    const { orders, products, maintenanceBalance, ownerBalance, siteConfig, formatCurrency, startLoading, completeLoading } = useCart();
-    const { profile, signOut } = useAuth();
-    const [isScannerOpen, setIsScannerOpen] = useState(false);
+    const { orders, products, maintenanceBalance, ownerBalance, siteConfig, formatCurrency } = useCart();
+    const { profile } = useAuth();
+    
+    // Modo Espejo Organismo Único por defecto (ahorro drástico de RAM y fosa común reactiva)
+    const [viewMode, setViewMode] = useState<'mirror' | 'classic'>('mirror');
 
-    const handleAdminScan = (code: string) => {
-        const product = products.find(p => p.id === code || p.barcode === code);
-        if (product) {
-            toast.info(
-                `Stock: ${product.stock} uds · Precio: ${formatCurrency(product.price)}`,
-                `✅ ${product.name}`
-            );
-        } else {
-            toast.warning(`Código "${code}" no encontrado en el sistema.`, 'Sin resultado');
-        }
-        setIsScannerOpen(false);
-    };
+    const role = profile?.role || 'superadmin';
+    const userName = profile?.displayName || 'Operador';
+    const userId = profile?.uid || 'OPERADOR-01';
 
-    const hour     = new Date().getHours();
-    const greeting = hour < 12 ? 'Buenos días' : hour < 18 ? 'Buenas tardes' : 'Buenas noches';
-    const userName = profile?.displayName?.split(' ')[0] || 'Trabajador';
-    const role     = profile?.role || 'superadmin';
+    // 1. Arquitectura Espejo Condicional (Organismo Único Bunkker ERP)
+    if (viewMode === 'mirror' && role !== 'marketing') {
+        return (
+            <CentroDeControlBunkker
+                usuario={{
+                    id: userId,
+                    nombre: userName,
+                    rol: role,
+                    nodo_id: 'NUC-01'
+                }}
+                onSwitchToClassic={() => setViewMode('classic')}
+            />
+        );
+    }
 
-    /* ── Role routing ── */
+    // 2. Vistas Clásicas Desacopladas (Fallback opcional bajo demanda)
     if (role === 'sales' || role === 'billing') {
         return <SalesDashboard />;
     }
     if (role === 'inventory') {
         return <InventoryDashboard />;
     }
-    if (role === 'carga_descarga') {
-        return (
-            <CargaDescargaDashboardWorker
-                userName={userName} greeting={greeting}
-                orders={orders} startLoading={startLoading}
-                completeLoading={completeLoading} profile={profile}
-                signOut={signOut} formatCurrency={formatCurrency}
-            />
-        );
+    if (role === 'carga_descarga' || role === 'patio') {
+        return <PatioDashboard />;
+    }
+    if (role === 'driver' || role === 'delivery') {
+        return <DeliveryDashboard />;
+    }
+    if (role === 'pickup' || role === 'mostrador') {
+        return <PickupDashboard />;
     }
     if (role === 'marketing') {
         return <MarketingDashboard />;
     }
-    if (role === 'driver') {
-        return <DeliveryDashboardWorker userName={userName} greeting={greeting} orders={orders} signOut={signOut} />;
-    }
 
-    /* ── Default: Super Admin ── */
+    /* ── Super Admin Maestro ── */
     return (
-        <>
-            <SuperAdminDashboard
-                profile={profile}
-                userName={userName}
-                greeting={greeting}
-                products={products}
-                orders={orders}
-                maintenanceBalance={maintenanceBalance}
-                ownerBalance={ownerBalance}
-                siteConfig={siteConfig}
-                formatCurrency={formatCurrency}
-                isScannerOpen={isScannerOpen}
-                setIsScannerOpen={setIsScannerOpen}
-                handleAdminScan={handleAdminScan}
-            />
-
-            {isScannerOpen && (
-                <BarcodeScanner
-                    onScanSuccess={handleAdminScan}
-                    onClose={() => setIsScannerOpen(false)}
-                    mode="admin"
-                />
-            )}
-        </>
+        <SuperAdminDashboard
+            profile={profile}
+            userName={userName}
+            greeting="Bienvenido al Ecosistema"
+            products={products}
+            orders={orders}
+            maintenanceBalance={maintenanceBalance}
+            ownerBalance={ownerBalance}
+            siteConfig={siteConfig}
+            formatCurrency={formatCurrency}
+            isScannerOpen={false}
+            setIsScannerOpen={() => {}}
+            handleAdminScan={() => {}}
+        />
     );
 }
-

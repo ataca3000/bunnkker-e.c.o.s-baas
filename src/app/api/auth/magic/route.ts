@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL('/login?error=invalid_magic_link', request.url));
     }
 
-    // El token está cifrado con AES-256-CBC
+    // El token está cifrado y autenticado con AES-256-GCM
     const payload = decryptToken(token);
     if (!payload) {
       logSecurityEvent('QR_INVALID', { reason: 'Desencriptación fallida o secreto incorrecto', ip: clientIp });
@@ -46,13 +46,13 @@ export async function GET(request: NextRequest) {
 
     const { uid, pin, nodeId, nonce, expiresAt } = payload;
 
-    if (!uid) {
-      logSecurityEvent('QR_INVALID', { reason: 'UID ausente en payload', ip: clientIp });
+    if (!uid || !nonce || !expiresAt) {
+      logSecurityEvent('QR_INVALID', { reason: 'Campos obligatorios (uid, nonce, expiresAt) ausentes en payload', ip: clientIp });
       return NextResponse.redirect(new URL('/login?error=invalid_magic_link', request.url));
     }
 
-    // 1. Validar expiración del Magic Link / QR (15 minutos)
-    if (expiresAt && Date.now() > expiresAt) {
+    // 1. Validar expiración obligatoria del Magic Link / QR (15 minutos)
+    if (Date.now() > Number(expiresAt)) {
       logSecurityEvent('QR_EXPIRED', { uid, expiresAt, ip: clientIp });
       return NextResponse.redirect(new URL('/login?error=expired_magic_link', request.url));
     }
@@ -65,16 +65,14 @@ export async function GET(request: NextRequest) {
     }
 
     // 3. Validar Nonce anti-replay (uso único)
-    if (nonce) {
-      const nonceKey = `used_qr_nonce:${nonce}`;
-      const wasUsed = await redis.get(nonceKey);
-      if (wasUsed) {
-        logSecurityEvent('QR_REPLAY_ATTEMPT', { uid, nonce, ip: clientIp });
-        return NextResponse.redirect(new URL('/login?error=qr_already_used', request.url));
-      }
-      await redis.set(nonceKey, '1');
-      await redis.expire(nonceKey, 15 * 60); // 15 minutos de ventana
+    const nonceKey = `used_qr_nonce:${nonce}`;
+    const wasUsed = await redis.get(nonceKey);
+    if (wasUsed) {
+      logSecurityEvent('QR_REPLAY_ATTEMPT', { uid, nonce, ip: clientIp });
+      return NextResponse.redirect(new URL('/login?error=qr_already_used', request.url));
     }
+    await redis.set(nonceKey, '1');
+    await redis.expire(nonceKey, 15 * 60); // 15 minutos de ventana
 
     // 4. Buscar usuario y verificar que esté activo en la base de datos
     const user = await prisma.user.findFirst({
@@ -94,8 +92,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL('/login?error=user_inactive', request.url));
     }
 
-    // Firmar y crear sesión legítima
-    const sig = signRole(user.role, user.id);
+    // Firmar y crear sesión legítima amarrada al tenant del usuario
+    const sig = signRole(user.role, user.id, user.tenantId || 'default');
     
     logSecurityEvent('LOGIN_SUCCESS_QR', { uid: user.id, role: user.role, ip: clientIp });
 

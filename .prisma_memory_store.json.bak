@@ -1,0 +1,104 @@
+{
+  "product": [],
+  "user": [
+    {
+      "id": "demo-superadmin",
+      "tenantId": "default",
+      "name": "Dueño (Superadmin)",
+      "email": "superadmin@bunnkker.local",
+      "role": "superadmin",
+      "pin": "9af15b336e6a9619928537df30b2e6a2376569fcf9d7e773eccede65606529a0",
+      "active": true,
+      "createdAt": "2026-10-24T00:00:00.000Z"
+    },
+    {
+      "id": "demo-admin",
+      "tenantId": "default",
+      "name": "Gerente (Admin)",
+      "email": "admin@bunnkker.local",
+      "role": "admin",
+      "pin": "0ffe1abd1a08215353c233d6e009613e95eec4253832a761af28ff37ac5a150c",
+      "active": true,
+      "createdAt": "2026-10-24T00:00:00.000Z"
+    },
+    {
+      "id": "demo-sales",
+      "tenantId": "default",
+      "name": "Cajero / Ventas",
+      "email": "sales@bunnkker.local",
+      "role": "sales",
+      "pin": "edee29f882543b956620b26d0ee0e7e950399b1c4222f5de05e06425b4c995e9",
+      "active": true,
+      "createdAt": "2026-10-24T00:00:00.000Z"
+    },
+    {
+      "id": "demo-inventory",
+      "tenantId": "default",
+      "name": "Bodeguero / Inventario",
+      "email": "inventory@bunnkker.local",
+      "role": "inventory",
+      "pin": "318aee3fed8c9d040d35a7fc1fa776fb31303833aa2de885354ddf3d44d8fb69",
+      "active": true,
+      "createdAt": "2026-10-24T00:00:00.000Z"
+    },
+    {
+      "id": "demo-marketing",
+      "tenantId": "default",
+      "name": "Diseñador / Marketing",
+      "email": "marketing@bunnkker.local",
+      "role": "marketing",
+      "pin": "79f06f8fde333461739f220090a23cb2a79f6d714bee100d0e4b4af249294619",
+      "active": true,
+      "createdAt": "2026-10-24T00:00:00.000Z"
+    },
+    {
+      "id": "demo-driver",
+      "tenantId": "default",
+      "name": "Chofer / Repartidor",
+      "email": "driver@bunnkker.local",
+      "role": "driver",
+      "pin": "c1f330d0aff31c1c87403f1e4347bcc21aff7c179908723535f2b31723702525",
+      "active": true,
+      "createdAt": "2026-10-24T00:00:00.000Z"
+    },
+    {
+      "id": "demo-carga_descarga",
+      "tenantId": "default",
+      "name": "Patio / Carga y Descarga",
+      "email": "patio@bunnkker.local",
+      "role": "carga_descarga",
+      "pin": "b2210101f1f0472811484862597c76b56958e20e9b9d257298cf8f718569a252",
+      "active": true,
+      "createdAt": "2026-10-24T00:00:00.000Z"
+    },
+    {
+      "id": "demo-pickup",
+      "tenantId": "default",
+      "name": "Mostrador / Pick Up",
+      "email": "pickup@bunnkker.local",
+      "role": "pickup",
+      "pin": "936a185caaa266bb9cbe981e9e05cb78cd732b0b3280eb944412bb6f8f8f07af",
+      "active": true,
+      "createdAt": "2026-10-24T00:00:00.000Z"
+    }
+  ],
+  "customer": [],
+  "order": [],
+  "orderItem": [],
+  "orderEvent": [],
+  "syncQueue": [],
+  "auditLog": [],
+  "supportTicket": [],
+  "purchase": [],
+  "cashRegisterLog": [],
+  "shrinkageLog": [],
+  "appConfig": [
+    {
+      "id": "global",
+      "licenseType": "TRIAL",
+      "tenantId": "default",
+      "updatedAt": "2026-10-24T00:00:00.000Z"
+    }
+  ],
+  "swarmTransaction": []
+}

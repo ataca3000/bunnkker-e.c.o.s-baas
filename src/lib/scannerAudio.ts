@@ -148,3 +148,33 @@ export function initAudioContextOnFirstGesture() {
     window.addEventListener('keydown', unlock, { once: true });
     window.addEventListener('touchstart', unlock, { once: true });
 }
+
+export const playScannerBeep = playSupermarketBeep;
+export const playErrorBuzz = playErrorBeep;
+
+export function playSuccessChime() {
+    try {
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        const now = ctx.currentTime;
+        [1200, 1600, 2400].forEach((freq, idx) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, now + idx * 0.06);
+
+            gain.gain.setValueAtTime(0.2, now + idx * 0.06);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + (idx + 1) * 0.08);
+
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+
+            osc.start(now + idx * 0.06);
+            osc.stop(now + (idx + 1) * 0.08);
+        });
+
+        if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+            navigator.vibrate(60);
+        }
+    } catch {}
+}

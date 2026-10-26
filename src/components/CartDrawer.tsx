@@ -17,9 +17,10 @@ import styles from "./CartDrawer.module.css";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "@/lib/toast";
 
-import { CartHeader, CartItemList, CartEmptyState } from "./cart/CartItems";
+import { CartHeader, CartItemList, CartEmptyState, FreeShippingBar } from "./cart/CartItems";
 import { CheckoutForm, CartFooter, type CheckoutFormData } from "./cart/CheckoutForm";
 import { loadCheckoutDraftFromIDB, saveCheckoutDraftToIDB } from "@/lib/indexedDBCart";
+import { getCustomerProfile, getCustomerAuthHeaders } from "@/lib/customerAuth";
 
 const DEFAULT_FORM: CheckoutFormData = {
     name: '',
@@ -29,7 +30,7 @@ const DEFAULT_FORM: CheckoutFormData = {
     lng: 0,
     pickupTime: '',
     tip: 0,
-    deliveryMethod: 'tienda',
+    deliveryMethod: 'piso',
     paymentMethod: 'pago_caja',
     rfc: '',
     regimenFiscal: '',
@@ -39,7 +40,7 @@ const DEFAULT_FORM: CheckoutFormData = {
 };
 
 export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
-    const { cart, products, removeFromCart, total, createOrder } = useCart();
+    const { cart, products, removeFromCart, addToCart, decrementFromCart, total, createOrder } = useCart() as any;
     const { profile } = useAuth();
     const [customerAccount, setCustomerAccount] = useState<any | null>(null);
     const [customerAccountLoaded, setCustomerAccountLoaded] = useState(false);
@@ -94,13 +95,33 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
     useEffect(() => {
         if (!isOpen) return;
         let active = true;
-        fetch('/api/customer/me')
+
+        const cached = getCustomerProfile();
+        if (cached && cached.id) {
+            setCustomerAccount(cached);
+            setCustomerAccountLoaded(true);
+        }
+
+        const authHeaders = getCustomerAuthHeaders();
+        fetch('/api/customer/me', {
+            credentials: 'include',
+            headers: authHeaders
+        })
             .then(async response => response.ok ? response.json() : null)
             .then(data => {
-                if (active) setCustomerAccount(data?.success ? data.customer : null);
+                if (!active) return;
+                const account = data?.success ? data.customer : null;
+                if (account) {
+                    setCustomerAccount(account);
+                    if (typeof window !== 'undefined') {
+                        localStorage.setItem('_bunkker_customer', JSON.stringify(account));
+                    }
+                } else if (!cached) {
+                    setCustomerAccount(null);
+                }
             })
             .catch(() => {
-                if (active) setCustomerAccount(null);
+                if (active && !cached) setCustomerAccount(null);
             })
             .finally(() => {
                 if (active) setCustomerAccountLoaded(true);
@@ -155,8 +176,8 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
         let orderCreated = false;
         try {
             if (socket) {
-                const itemsToReserve = cart.map(item => ({ id: item.id, qty: item.quantity }));
-                const dbStockMap = Object.fromEntries(itemsToReserve.map(item => {
+                const itemsToReserve = cart.map((item: any) => ({ id: item.id, qty: item.quantity }));
+                const dbStockMap = Object.fromEntries(itemsToReserve.map((item: any) => {
                     const product = products.find((current: any) => current.id === item.id);
                     return [item.id, Math.max(0, (product?.stock || 0) - (product?.reservedStock || 0))];
                 }));
@@ -214,14 +235,30 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
                         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
                         className={styles.drawer}
                     >
-                        <CartHeader onClose={onClose} />
+                        <CartHeader
+                            itemCount={cart.reduce((sum: number, item: any) => sum + (item.quantity || 1), 0)}
+                            onClose={onClose}
+                        />
+
+                        {cart.length > 0 && <FreeShippingBar subtotal={total} threshold={999} />}
 
                         {cart.length === 0 ? (
                             <CartEmptyState onClose={onClose} />
                         ) : (
                             <>
                                 {step === 'cart' ? (
-                                    <CartItemList cart={cart} onRemove={removeFromCart} />
+                                    <CartItemList
+                                        cart={cart}
+                                        onRemove={removeFromCart}
+                                        onIncrement={(id) => {
+                                            const prod = products.find((p: any) => p.id === id);
+                                            if (prod) addToCart(prod, 1);
+                                        }}
+                                        onDecrement={(id) => {
+                                            if (decrementFromCart) decrementFromCart(id);
+                                            else removeFromCart(id);
+                                        }}
+                                    />
                                 ) : (
                                     <div className={styles.checkoutForm}>
                                         <CheckoutForm

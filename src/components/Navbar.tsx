@@ -10,6 +10,7 @@ import { usePathname } from "next/navigation";
 import CartDrawer from "./CartDrawer";
 import BarcodeScanner from "./BarcodeScanner";
 import ThemeToggle from "./ThemeToggle";
+import LanguageSelector from "./LanguageSelector";
 import styles from "./Navbar.module.css";
 import { toast } from "@/lib/toast";
 
@@ -152,6 +153,9 @@ export default function Navbar() {
 
                     {/* Actions Area */}
                     <div className={styles.actionsArea}>
+                        {/* Selector de Idioma (Español, Inglés, Francés, Chino) */}
+                        <LanguageSelector />
+
                         {/* Selector de Tema */}
                         <ThemeToggle className="mr-1" />
 

@@ -4,6 +4,8 @@ import { createContext, useContext, useState, useEffect } from 'react';
 
 import type { UserProfile } from '@/lib/types';
 
+import { getStaffSession, saveStaffSession, clearStaffSession } from '@/lib/staffAuth';
+
 export type { UserProfile };
 
 interface AuthContextType {
@@ -25,9 +27,32 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-    const [user, setUser] = useState<any | null>(null);
-    const [profile, setProfile] = useState<UserProfile | null>(null);
-    const [loading, setLoading] = useState(true);
+    // Pre-hidratación instantánea (0ms) desde almacenamiento local
+    const [user, setUser] = useState<any | null>(() => {
+        const cached = getStaffSession();
+        return cached?.user || (cached?.uid ? { id: cached.uid, role: cached.role } : null);
+    });
+    const [profile, setProfile] = useState<UserProfile | null>(() => {
+        const cached = getStaffSession();
+        if (cached?.profile) return cached.profile as UserProfile;
+        if (cached?.uid && cached?.role) {
+            return {
+                uid: cached.uid,
+                email: '',
+                displayName: cached.user?.name || 'Personal',
+                role: cached.role,
+                signature: cached.signature,
+                nodeAccess: [],
+                lastLogin: Date.now(),
+                isPremium: true
+            };
+        }
+        return null;
+    });
+    const [loading, setLoading] = useState(() => {
+        // Si ya tenemos sesión persistida en el navegador, no bloquear con pantalla de carga
+        return !getStaffSession();
+    });
     const [isReadOnly, setIsReadOnly] = useState(false);
     const [networkMode, setNetworkMode] = useState(() => {
         if (typeof window !== 'undefined') {
@@ -59,51 +84,61 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         const loadUser = async (silent = false) => {
             try {
-                if (!silent) setLoading(true);
+                if (!silent && !getStaffSession()) setLoading(true);
                 const res = await fetch('/api/users/me', { credentials: 'include' }).catch(() => null);
                 if (res && res.ok) {
                     const data = await res.json().catch(() => null);
                     if (data && data.success && data.user) {
+                        const newProfile: UserProfile = {
+                            uid: data.user.id,
+                            email: data.user.email || '',
+                            displayName: data.user.name || 'Usuario ERP',
+                            role: data.user.role || 'sales',
+                            signature: data.user.signature || '',
+                            nodeAccess: [],
+                            lastLogin: Date.now(),
+                            isPremium: true
+                        };
+
                         setUser((prev: any) => (prev?.id === data.user.id && prev?.role === data.user.role ? prev : data.user));
                         setProfile((prev) => {
                             if (
                                 prev &&
-                                prev.uid === data.user.id &&
-                                prev.role === (data.user.role || 'sales') &&
-                                prev.displayName === (data.user.name || 'Usuario ERP')
+                                prev.uid === newProfile.uid &&
+                                prev.role === newProfile.role &&
+                                prev.displayName === newProfile.displayName
                             ) {
                                 return prev;
                             }
-                            return {
-                                uid: data.user.id,
-                                email: data.user.email || '',
-                                displayName: data.user.name || 'Usuario ERP',
-                                role: data.user.role || 'sales',
-                                signature: data.user.signature || '',
-                                nodeAccess: [],
-                                lastLogin: Date.now(),
-                                isPremium: true
-                            };
+                            return newProfile;
                         });
-                    } else if (!silent) {
+
+                        // Persistir sesión de trabajador validada
+                        saveStaffSession({
+                            uid: data.user.id,
+                            role: data.user.role || 'sales',
+                            signature: data.user.signature || '',
+                            user: data.user,
+                            profile: newProfile
+                        });
+                    } else if (!silent && !getStaffSession()) {
                         setUser(null);
                         setProfile(null);
                     }
                 } else if (res && res.status === 401) {
-                    setUser(null);
-                    setProfile(null);
-                } else if (!silent) {
+                    // Solo cerrar sesión si el backend explícitamente rechazó las credenciales
+                    clearStaffSession();
                     setUser(null);
                     setProfile(null);
                 }
+                // Si la red falló o hubo timeout, NO borramos la sesión persistida
             } catch {
-                // En polling silencioso, un hipo de red NUNCA debe borrar la sesión activa ni retraer el sidebar
-                if (!silent) {
+                if (!silent && !getStaffSession()) {
                     setUser(null);
                     setProfile(null);
                 }
             } finally {
-                if (!silent) setLoading(false);
+                setLoading(false);
             }
         };
 
@@ -123,6 +158,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const signOut = async () => {
         try {
             await fetch('/api/auth/session', { method: 'DELETE' });
+            clearStaffSession();
             setUser(null);
             setProfile(null);
             if (typeof window !== 'undefined') {
@@ -130,6 +166,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
         } catch (error) {
             console.error('Error signing out', error);
+            clearStaffSession();
+            setUser(null);
+            setProfile(null);
+            if (typeof window !== 'undefined') {
+                window.location.href = '/login';
+            }
         }
     };
 

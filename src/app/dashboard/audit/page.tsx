@@ -5,10 +5,9 @@ import { useMemo, useState, useEffect, useCallback, memo, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import VirtualizedAuditList, { type AuditRowData } from '@/components/VirtualizedAuditList';
 import { type AuditLog } from '@/types/audit';
-// @ts-expect-error - react-window types not resolved
 import { areEqual, type ListChildComponentProps } from 'react-window';
 import Link from 'next/link';
-import { Settings, ShieldCheck, Camera, PenTool, CheckCircle2, Clock, Eye, X, Package, FileText } from 'lucide-react';
+import { Settings, ShieldCheck, Camera, PenTool, CheckCircle2, Clock, Eye, X, Package, FileText, Store, Truck, UserCheck, AlertTriangle } from 'lucide-react';
 
 const isNode = typeof window === 'undefined' || !!(window as any).electronAPI;
 
@@ -44,7 +43,7 @@ Row.displayName = "AuditLogRow";
 
 export default function RadarAuditPage() {
     const { profile, signOut } = useAuth();
-    const [viewTab, setViewTab] = useState<'logs' | 'traceability'>('traceability');
+    const [viewTab, setViewTab] = useState<'commercial' | 'warehouse' | 'logistics' | 'traceability' | 'logs'>('commercial');
     const [logs, setLogs] = useState<AuditLog[]>([]);
     const [orders, setOrders] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
@@ -149,6 +148,38 @@ export default function RadarAuditPage() {
         );
     }, [logs, searchTerm, filterType]);
 
+    // 1. Dominio Comercial / Tienda (Ventas, Cobros, Cajeros)
+    const commercialOrders = useMemo(() => {
+        return orders.filter(o => {
+            if (!searchTerm) return true;
+            const term = searchTerm.toLowerCase();
+            return o.id?.toLowerCase().includes(term) || 
+                   o.customer?.name?.toLowerCase().includes(term) ||
+                   o.customerName?.toLowerCase().includes(term) ||
+                   o.vendedorName?.toLowerCase().includes(term);
+        });
+    }, [orders, searchTerm]);
+
+    // 2. Dominio Almacén / Kardex (Movimientos físicos y stock)
+    const warehouseLogs = useMemo(() => {
+        const WAREHOUSE_TYPES = ['STOCK_UPDATE', 'STOCK_IN', 'INVENTORY_ENTRY', 'RESTOCK_COMPLETED', 'ADMIN_RETURN_INTAKE', 'SHRINKAGE', 'PRODUCT_ARCHIVED', 'PRODUCT_RESTORED', 'ORDER_LOADED', 'SECURITY_ALERT'];
+        return filteredLogs.filter(l => WAREHOUSE_TYPES.includes(l.type) || (l.description && (l.description.toLowerCase().includes('stock') || l.description.toLowerCase().includes('inventario') || l.description.toLowerCase().includes('anaquel') || l.description.toLowerCase().includes('almacén'))));
+    }, [filteredLogs]);
+
+    // 3. Dominio Rutas & Choferes / Repartidores (Entregas y PoD)
+    const logisticsOrders = useMemo(() => {
+        return orders.filter(o => {
+            const isDelivery = o.deliveryMethod === 'repartidor' || o.deliveryType === 'DELIVERY' || o.deliveryProof || o.photoData || o.signatureData;
+            if (!isDelivery) return false;
+            if (!searchTerm) return true;
+            const term = searchTerm.toLowerCase();
+            return o.id?.toLowerCase().includes(term) || 
+                   o.customer?.name?.toLowerCase().includes(term) ||
+                   o.customerName?.toLowerCase().includes(term) ||
+                   (o.deliveryProof?.deliveredBy || o.loadedBy || '').toLowerCase().includes(term);
+        });
+    }, [orders, searchTerm]);
+
     return (
         <div className="bg-[#0a0a0c] min-h-screen p-8 text-white">
             <header className="flex justify-between items-center mb-10">
@@ -215,52 +246,339 @@ export default function RadarAuditPage() {
                 </div>
             </header>
             
-            {/* Selector de Pestañas de Auditoría */}
-            <div className="flex gap-2 mb-6">
+            {/* Selector de Pestañas de Auditoría Segregada por Dominio */}
+            <div className="flex flex-wrap gap-2 mb-6">
+                <button
+                    onClick={() => setViewTab('commercial')}
+                    className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 ${
+                        viewTab === 'commercial' 
+                            ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/30 ring-2 ring-emerald-400/50' 
+                            : 'bg-zinc-900/80 text-zinc-400 hover:text-white border border-white/10'
+                    }`}
+                >
+                    <Store size={15} /> 1. Ventas & Cobros (Tienda / Caja)
+                </button>
+                <button
+                    onClick={() => setViewTab('warehouse')}
+                    className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 ${
+                        viewTab === 'warehouse' 
+                            ? 'bg-amber-600 text-white shadow-lg shadow-amber-900/30 ring-2 ring-amber-400/50' 
+                            : 'bg-zinc-900/80 text-zinc-400 hover:text-white border border-white/10'
+                    }`}
+                >
+                    <Package size={15} /> 2. Kardex & Inventarios (Almacén)
+                </button>
+                <button
+                    onClick={() => setViewTab('logistics')}
+                    className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 ${
+                        viewTab === 'logistics' 
+                            ? 'bg-sky-600 text-white shadow-lg shadow-sky-900/30 ring-2 ring-sky-400/50' 
+                            : 'bg-zinc-900/80 text-zinc-400 hover:text-white border border-white/10'
+                    }`}
+                >
+                    <Truck size={15} /> 3. Rutas & Envíos (Repartidores)
+                </button>
                 <button
                     onClick={() => setViewTab('traceability')}
                     className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 ${
                         viewTab === 'traceability' 
-                            ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/30' 
+                            ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/30 ring-2 ring-blue-400/50' 
                             : 'bg-zinc-900/80 text-zinc-400 hover:text-white border border-white/10'
                     }`}
                 >
-                    <ShieldCheck size={16} /> Trazabilidad de Ciclo de Pedidos & Entregas (PoD)
+                    <ShieldCheck size={15} /> Ciclo Integral (PoD)
                 </button>
                 <button
                     onClick={() => setViewTab('logs')}
                     className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 ${
                         viewTab === 'logs' 
-                            ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/30' 
+                            ? 'bg-zinc-700 text-white shadow-lg' 
                             : 'bg-zinc-900/80 text-zinc-400 hover:text-white border border-white/10'
                     }`}
                 >
-                    <FileText size={16} /> Registro Inmutable de Eventos (Logs)
+                    <FileText size={15} /> Registro Inmutable (Logs)
                 </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-[8px] mb-8">
-                <div className="bg-emerald-500/10 border border-emerald-500/20 p-[8px] rounded-[5px]">
-                    <h3 className="text-emerald-400 font-bold text-xs uppercase tracking-widest mb-2">Ventas de Hoy</h3>
-                    <p className="text-3xl font-black text-white">
-                        ${filteredLogs.filter(l => l.type === 'ORDER_CREATE').reduce((acc, l) => acc + (l.metadata?.total || 0), 0).toFixed(2)}
-                    </p>
-                </div>
-                <div className="bg-red-500/10 border border-red-500/20 p-[8px] rounded-[5px]">
-                    <h3 className="text-red-400 font-bold text-xs uppercase tracking-widest mb-2">Cancelaciones</h3>
-                    <p className="text-3xl font-black text-white">
-                        {filteredLogs.filter(l => l.type === 'ORDER_CANCEL').length}
-                    </p>
-                </div>
-                <div className="bg-blue-500/10 border border-blue-500/20 p-[8px] rounded-[5px]">
-                    <h3 className="text-blue-400 font-bold text-xs uppercase tracking-widest mb-2">Total Pedidos en Sistema</h3>
-                    <p className="text-3xl font-black text-white">
-                        {orders.length}
-                    </p>
-                </div>
-            </div>
+            {/* DOMINIO 1: COMERCIAL / VENTAS & COBROS (CAJA) */}
+            {viewTab === 'commercial' && (
+                <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-xl">
+                            <h3 className="text-emerald-400 font-bold text-xs uppercase tracking-widest mb-1 flex items-center gap-1.5">
+                                <Store size={14} /> Total Cobrado en Tienda
+                            </h3>
+                            <p className="text-3xl font-black text-white">
+                                ${commercialOrders.filter(o => o.confirmedAt || o.status === 'paid').reduce((acc, o) => acc + (Number(o.total) || 0), 0).toFixed(2)}
+                            </p>
+                            <span className="text-[10px] text-zinc-400 mt-1 block">Ventas liquidadas y firmadas</span>
+                        </div>
+                        <div className="bg-blue-500/10 border border-blue-500/20 p-4 rounded-xl">
+                            <h3 className="text-blue-400 font-bold text-xs uppercase tracking-widest mb-1">
+                                Tickets Emitidos
+                            </h3>
+                            <p className="text-3xl font-black text-white">
+                                {commercialOrders.length}
+                            </p>
+                            <span className="text-[10px] text-zinc-400 mt-1 block">Órdenes totales registradas</span>
+                        </div>
+                        <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-xl">
+                            <h3 className="text-amber-400 font-bold text-xs uppercase tracking-widest mb-1">
+                                Pendientes de Cobro
+                            </h3>
+                            <p className="text-3xl font-black text-white">
+                                {commercialOrders.filter(o => !o.confirmedAt && o.status !== 'paid').length}
+                            </p>
+                            <span className="text-[10px] text-zinc-400 mt-1 block">En espera de liquidación en mostrador</span>
+                        </div>
+                    </div>
 
-            {viewTab === 'traceability' ? (
+                    <div className="bg-slate-900/80 rounded-xl border border-white/10 shadow-2xl overflow-hidden">
+                        <div className="p-4 border-b border-white/10 flex justify-between items-center bg-slate-950/60">
+                            <div>
+                                <h2 className="text-base font-bold text-white flex items-center gap-2">
+                                    <Store className="text-emerald-400" size={18} /> Historial Comercial de Ventas & Cajeros
+                                </h2>
+                                <p className="text-xs text-zinc-400 mt-0.5">
+                                    Control inmutable de tickets, atención de clientes, montos cobrados y cortes de caja.
+                                </p>
+                            </div>
+                            <button onClick={fetchOrders} className="text-xs text-blue-400 hover:text-blue-300 font-bold bg-blue-500/10 px-3 py-1.5 rounded-lg border border-blue-500/20">
+                                Actualizar
+                            </button>
+                        </div>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left text-xs text-zinc-300">
+                                <thead className="bg-black/40 text-zinc-400 uppercase text-[10px] font-bold border-b border-white/5">
+                                    <tr>
+                                        <th className="py-3 px-4">Folio</th>
+                                        <th className="py-3 px-4">Cliente</th>
+                                        <th className="py-3 px-4">Fecha / Hora</th>
+                                        <th className="py-3 px-4">Atendido Por</th>
+                                        <th className="py-3 px-4">Estado Cobro</th>
+                                        <th className="py-3 px-4">Método</th>
+                                        <th className="py-3 px-4 text-right">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-white/5">
+                                    {commercialOrders.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={7} className="py-12 text-center text-zinc-500">No hay ventas registradas.</td>
+                                        </tr>
+                                    ) : (
+                                        commercialOrders.map(o => (
+                                            <tr key={o.id} className="hover:bg-white/[0.02]">
+                                                <td className="py-3 px-4 font-mono font-bold text-white">{o.id}</td>
+                                                <td className="py-3 px-4 text-zinc-200">{o.customer?.name || o.customerName || 'Cliente Mostrador'}</td>
+                                                <td className="py-3 px-4 text-zinc-400 font-mono text-[11px]">{o.date ? new Date(o.date).toLocaleString('es-MX') : 'N/A'}</td>
+                                                <td className="py-3 px-4 text-zinc-300 font-medium">{o.vendedorName || 'Piso'}</td>
+                                                <td className="py-3 px-4">
+                                                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${o.confirmedAt || o.status === 'paid' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'}`}>
+                                                        {o.confirmedAt || o.status === 'paid' ? '✓ Cobrado' : 'Pendiente'}
+                                                    </span>
+                                                </td>
+                                                <td className="py-3 px-4 text-zinc-400">{o.paymentMethod || 'Venta POS'}</td>
+                                                <td className="py-3 px-4 text-right font-black text-emerald-400">${Number(o.total || 0).toFixed(2)}</td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* DOMINIO 2: ALMACÉN / KARDEX & INVENTARIOS */}
+            {viewTab === 'warehouse' && (
+                <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-xl">
+                            <h3 className="text-amber-400 font-bold text-xs uppercase tracking-widest mb-1 flex items-center gap-1.5">
+                                <Package size={14} /> Movimientos de Kardex
+                            </h3>
+                            <p className="text-3xl font-black text-white">{warehouseLogs.length}</p>
+                            <span className="text-[10px] text-zinc-400 mt-1 block">Ajustes, conteos y entradas físicas</span>
+                        </div>
+                        <div className="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-xl">
+                            <h3 className="text-emerald-400 font-bold text-xs uppercase tracking-widest mb-1">
+                                Entradas & Devoluciones
+                            </h3>
+                            <p className="text-3xl font-black text-white">
+                                {warehouseLogs.filter(l => l.type === 'ADMIN_RETURN_INTAKE' || l.type === 'RESTOCK_COMPLETED' || l.type === 'STOCK_IN').length}
+                            </p>
+                            <span className="text-[10px] text-zinc-400 mt-1 block">Reingresos a anaquel validados</span>
+                        </div>
+                        <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-xl">
+                            <h3 className="text-red-400 font-bold text-xs uppercase tracking-widest mb-1">
+                                Mermas / Robo Hormiga
+                            </h3>
+                            <p className="text-3xl font-black text-white">
+                                {warehouseLogs.filter(l => l.type === 'SHRINKAGE' || l.type === 'SECURITY_ALERT').length}
+                            </p>
+                            <span className="text-[10px] text-zinc-400 mt-1 block">Discrepancias de conteo registradas</span>
+                        </div>
+                    </div>
+
+                    <div className="bg-slate-900/80 rounded-xl border border-white/10 shadow-2xl overflow-hidden">
+                        <div className="p-4 border-b border-white/10 flex justify-between items-center bg-slate-950/60">
+                            <div>
+                                <h2 className="text-base font-bold text-white flex items-center gap-2">
+                                    <Package className="text-amber-400" size={18} /> Kardex Inmutable de Operadores de Almacén
+                                </h2>
+                                <p className="text-xs text-zinc-400 mt-0.5">
+                                    Registro separado de entradas de stock, surtidos por anaquel, mermas y reincorporaciones físicas.
+                                </p>
+                            </div>
+                            <button onClick={() => fetchLogs(true)} className="text-xs text-amber-400 hover:text-amber-300 font-bold bg-amber-500/10 px-3 py-1.5 rounded-lg border border-amber-500/20">
+                                Actualizar Kardex
+                            </button>
+                        </div>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left text-xs text-zinc-300">
+                                <thead className="bg-black/40 text-zinc-400 uppercase text-[10px] font-bold border-b border-white/5">
+                                    <tr>
+                                        <th className="py-3 px-4">Fecha / Hora</th>
+                                        <th className="py-3 px-4">Operador Almacén</th>
+                                        <th className="py-3 px-4">Acción / Tipo</th>
+                                        <th className="py-3 px-4">Detalle / Movimiento</th>
+                                        <th className="py-3 px-4">Referencia</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-white/5">
+                                    {warehouseLogs.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={5} className="py-12 text-center text-zinc-500">No hay movimientos de inventario registrados.</td>
+                                        </tr>
+                                    ) : (
+                                        warehouseLogs.map(l => (
+                                            <tr key={l.id} className="hover:bg-white/[0.02]">
+                                                <td className="py-3 px-4 font-mono text-[11px] text-zinc-400">
+                                                    {(l as any).isoDate ? new Date((l as any).isoDate).toLocaleString('es-MX') : 'N/A'}
+                                                </td>
+                                                <td className="py-3 px-4 font-bold text-zinc-200">
+                                                    {(l as any).userId || 'Almacenista'}
+                                                </td>
+                                                <td className="py-3 px-4">
+                                                    <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase font-mono ${
+                                                        l.type === 'ADMIN_RETURN_INTAKE' || l.type === 'RESTOCK_COMPLETED' ? 'bg-emerald-500/20 text-emerald-300' :
+                                                        l.type === 'SHRINKAGE' || l.type === 'SECURITY_ALERT' ? 'bg-red-500/20 text-red-300' :
+                                                        'bg-amber-500/20 text-amber-300'
+                                                    }`}>
+                                                        {l.type}
+                                                    </span>
+                                                </td>
+                                                <td className="py-3 px-4 text-zinc-300">{l.description}</td>
+                                                <td className="py-3 px-4 font-mono text-[11px] text-zinc-500">{l.id}</td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* DOMINIO 3: LOGÍSTICA / RUTAS & REPARTIDORES */}
+            {viewTab === 'logistics' && (
+                <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="bg-sky-500/10 border border-sky-500/20 p-4 rounded-xl">
+                            <h3 className="text-sky-400 font-bold text-xs uppercase tracking-widest mb-1 flex items-center gap-1.5">
+                                <Truck size={14} /> Total Envíos a Domicilio
+                            </h3>
+                            <p className="text-3xl font-black text-white">{logisticsOrders.length}</p>
+                            <span className="text-[10px] text-zinc-400 mt-1 block">Rutas asignadas a repartidores</span>
+                        </div>
+                        <div className="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-xl">
+                            <h3 className="text-emerald-400 font-bold text-xs uppercase tracking-widest mb-1">
+                                Entregas con Evidencia PoD
+                            </h3>
+                            <p className="text-3xl font-black text-white">
+                                {logisticsOrders.filter(o => o.photoData || o.signatureData || o.status === 'DELIVERED').length}
+                            </p>
+                            <span className="text-[10px] text-zinc-400 mt-1 block">Respaldadas con foto y firma</span>
+                        </div>
+                        <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-xl">
+                            <h3 className="text-amber-400 font-bold text-xs uppercase tracking-widest mb-1">
+                                En Curso / Pendientes
+                            </h3>
+                            <p className="text-3xl font-black text-white">
+                                {logisticsOrders.filter(o => o.status !== 'DELIVERED').length}
+                            </p>
+                            <span className="text-[10px] text-zinc-400 mt-1 block">Chofer en trayecto</span>
+                        </div>
+                    </div>
+
+                    <div className="bg-slate-900/80 rounded-xl border border-white/10 shadow-2xl overflow-hidden">
+                        <div className="p-4 border-b border-white/10 flex justify-between items-center bg-slate-950/60">
+                            <div>
+                                <h2 className="text-base font-bold text-white flex items-center gap-2">
+                                    <Truck className="text-sky-400" size={18} /> Auditoría Logística & Desempeño de Repartidores
+                                </h2>
+                                <p className="text-xs text-zinc-400 mt-0.5">
+                                    Trazabilidad de unidades, horarios de salida, entregas a pie de obra y firmas de conformidad.
+                                </p>
+                            </div>
+                            <button onClick={fetchOrders} className="text-xs text-sky-400 hover:text-sky-300 font-bold bg-sky-500/10 px-3 py-1.5 rounded-lg border border-sky-500/20">
+                                Actualizar Rutas
+                            </button>
+                        </div>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left text-xs text-zinc-300">
+                                <thead className="bg-black/40 text-zinc-400 uppercase text-[10px] font-bold border-b border-white/5">
+                                    <tr>
+                                        <th className="py-3 px-4">Folio</th>
+                                        <th className="py-3 px-4">Chofer Asignado</th>
+                                        <th className="py-3 px-4">Cliente / Destino</th>
+                                        <th className="py-3 px-4">Estado Entrega</th>
+                                        <th className="py-3 px-4 text-center">Evidencia PoD</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-white/5">
+                                    {logisticsOrders.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={5} className="py-12 text-center text-zinc-500">No hay órdenes de reparto registradas.</td>
+                                        </tr>
+                                    ) : (
+                                        logisticsOrders.map(o => (
+                                            <tr key={o.id} className="hover:bg-white/[0.02]">
+                                                <td className="py-3 px-4 font-mono font-bold text-white">{o.id}</td>
+                                                <td className="py-3 px-4 font-bold text-sky-300">{o.deliveryProof?.deliveredBy || o.loadedBy || 'Chofer'}</td>
+                                                <td className="py-3 px-4">
+                                                    <div className="font-semibold text-zinc-200">{o.customer?.name || o.customerName || 'Cliente'}</div>
+                                                    <div className="text-[10px] text-zinc-500">{o.customer?.address || 'Dirección registrada'}</div>
+                                                </td>
+                                                <td className="py-3 px-4">
+                                                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${o.status === 'DELIVERED' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-sky-500/20 text-sky-400'}`}>
+                                                        {o.status}
+                                                    </span>
+                                                </td>
+                                                <td className="py-3 px-4 text-center">
+                                                    {(o.photoData || o.signatureData) ? (
+                                                        <button
+                                                            onClick={() => setSelectedOrderEvidence(o)}
+                                                            className="px-2.5 py-1 bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-300 border border-emerald-500/30 rounded-lg font-bold text-[11px] flex items-center gap-1.5 mx-auto transition-all"
+                                                        >
+                                                            <Eye size={12} /> Ver Foto & Firma
+                                                        </button>
+                                                    ) : (
+                                                        <span className="text-zinc-600 text-[10px]">Sin evidencia</span>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* DOMINIO 4: CICLO INTEGRAL (POD) */}
+            {viewTab === 'traceability' && (
                 <div className="bg-slate-900/80 rounded-xl border border-white/10 shadow-2xl overflow-hidden">
                     <div className="p-4 border-b border-white/10 flex justify-between items-center bg-slate-950/60">
                         <div>
@@ -362,7 +680,10 @@ export default function RadarAuditPage() {
                         </table>
                     </div>
                 </div>
-            ) : (
+            )}
+
+            {/* DOMINIO 5: REGISTRO INMUTABLE (LOGS RAW) */}
+            {viewTab === 'logs' && (
                 <div id="tour-audit-loglist" className="bg-slate-800/80/5 rounded-lg overflow-hidden border border-white/10 shadow-2xl">
                     <VirtualizedAuditList 
                         logs={filteredLogs}

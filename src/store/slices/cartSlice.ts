@@ -41,18 +41,13 @@ export const createCartSlice: StateCreator<
                 if (existing.quantity + quantity > product.stock) return;
                 existing.quantity += quantity;
                 (existing as any).lastModified = now;
-                (existing as any).reservedAt = now;
-                (existing as any).mutexState = 1; // 1 = Reservado / In-flight (Mutex Multicaja)
             } else {
                 state.cart.push({
                     ...product,
                     quantity,
-                    lastModified: now,
-                    reservedAt: now,
-                    mutexState: 1 // 1 = Reservado / In-flight (Mutex Multicaja)
+                    lastModified: now
                 } as any);
             }
-            broadcastReservationChange(product.id, 'RESERVE', quantity);
         }),
 
     decrementFromCart: (productId: string) =>

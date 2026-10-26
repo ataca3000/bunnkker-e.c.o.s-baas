@@ -29,10 +29,10 @@ export default function ModuleSection({
             {/* Section title */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1.2rem' }}>
                 <div style={{ width: '4px', height: '20px', borderRadius: '4px', backgroundColor: accentColor }} />
-                <h3 style={{ margin: 0, fontSize: '0.75rem', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#64748b' }}>
+                <h3 style={{ margin: 0, fontSize: '0.75rem', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#38bdf8' }}>
                     {title}
                 </h3>
-                <div style={{ flex: 1, height: '1px', backgroundColor: '#f1f5f9' }} />
+                <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(56, 189, 248, 0.2)' }} />
             </div>
 
             {/* Grid */}
@@ -47,16 +47,20 @@ export default function ModuleSection({
                         whileTap={{ scale: 0.98 }}
                     >
                         <Link href={node.href} style={{ textDecoration: 'none', display: 'block' }}>
-                            <div className="glass-module hover-lift" style={{
+                            <div className="bunkker-translucent-card" style={{
                                 height: '100%',
                                 display: 'flex',
                                 flexDirection: 'column',
                                 justifyContent: 'space-between',
                                 cursor: 'pointer',
                                 borderTop: `3px solid ${node.color}`,
-                                padding: '1.2rem',
+                                border: '1px solid rgba(56, 189, 248, 0.18)',
+                                borderTopColor: node.color,
+                                padding: '1.25rem',
                                 borderRadius: '16px',
-                                transition: 'box-shadow 0.2s',
+                                background: 'rgba(8, 12, 22, 0.75)',
+                                backdropFilter: 'blur(20px)',
+                                transition: 'all 0.25s ease',
                             }}>
                                 <div>
                                     <div style={{ color: node.color, marginBottom: '12px' }}>{node.icon}</div>

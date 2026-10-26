@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Settings, Volume2, Scale, Printer, LayoutGrid, Check, X, Bell, Zap, Shield, Smartphone } from 'lucide-react';
+import { Settings, Volume2, Scale, Printer, LayoutGrid, Check, X, Bell, Zap, Shield, Smartphone, Sliders } from 'lucide-react';
 import { playSupermarketBeep, playIncrementBeep, playErrorBeep } from '@/lib/scannerAudio';
 import { toast } from '@/lib/toast';
+import HardwareSettingsModal from '@/components/hardware/HardwareSettingsModal';
 
 export interface PosConfig {
     soundEnabled: boolean;
@@ -38,6 +39,7 @@ interface PosSettingsModalProps {
 
 export function PosSettingsModal({ isOpen, onClose, config, onSaveConfig }: PosSettingsModalProps) {
     const [localConfig, setLocalConfig] = useState<PosConfig>(config);
+    const [hardwareOpen, setHardwareOpen] = useState(false);
 
     useEffect(() => {
         setLocalConfig(config);
@@ -229,6 +231,21 @@ export function PosSettingsModal({ isOpen, onClose, config, onSaveConfig }: PosS
                                 />
                             </div>
                         </div>
+
+                        {/* Botón Vinculación de Impresoras (Bluetooth, USB o Red LAN Wi-Fi PC) */}
+                        <div className="pt-2 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-2">
+                            <span className="text-[11px] text-zinc-400">
+                                Conexión directa a impresora USB, Bluetooth o Wi-Fi PC:
+                            </span>
+                            <button
+                                type="button"
+                                onClick={() => setHardwareOpen(true)}
+                                className="px-3 py-1.5 rounded-lg bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-[11px] font-bold hover:bg-cyan-500/30 transition-all flex items-center gap-1.5 shrink-0"
+                            >
+                                <Sliders className="w-3.5 h-3.5" />
+                                Vincular Periféricos
+                            </button>
+                        </div>
                     </div>
 
                 </div>
@@ -250,6 +267,12 @@ export function PosSettingsModal({ isOpen, onClose, config, onSaveConfig }: PosS
                     </button>
                 </div>
             </div>
+
+            {/* Modal de Dispositivos y Hardware */}
+            <HardwareSettingsModal 
+                isOpen={hardwareOpen} 
+                onClose={() => setHardwareOpen(false)} 
+            />
         </div>
     );
 }

@@ -1,4 +1,4 @@
 {
-  "buildCommand": "npx prisma generate && next build",
+  "buildCommand": "npm run build:demo",
   "framework": "nextjs"
 }

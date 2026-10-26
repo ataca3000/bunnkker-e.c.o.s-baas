@@ -7,7 +7,7 @@ import Link from 'next/link';
 export default function DeliveryDashboardWorker({ userName, greeting, orders = [], signOut }: any) {
     const pendingDeliveries = orders.filter((o: any) =>
         (o.deliveryType === 'DELIVERY' || o.deliveryMethod === 'repartidor') &&
-        ['out_for_delivery', 'claimed', 'processing', 'shipping', 'ready_for_delivery'].includes(String(o.status).toLowerCase())
+        !['delivered', 'completed', 'cancelled', 'refunded'].includes(String(o.status).toLowerCase())
     );
 
     return (

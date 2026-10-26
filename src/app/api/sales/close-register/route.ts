@@ -1,21 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { validateApiSession } from '@/lib/apiAuth';
+import { requireRole, getTenantId } from '@/lib/apiAuth';
 import { prisma } from '@/lib/prisma';
 import { db as firestoreAdmin } from '@/lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
-import { calculateExpectedAmount, calculateDiscrepancy, ALLOWED_CLOSE_STATUSES } from '@/lib/financial';
+import { calculateExpectedAmount, calculateDiscrepancy, ALLOWED_CLOSE_STATUSES, EXCLUDED_CLOSE_STATUSES, CASH_PAYMENT_METHODS, roundMoney } from '@/lib/financial';
 
 export async function POST(request: NextRequest) {
-    const auth = validateApiSession(request);
+    const auth = requireRole(request, ['superadmin', 'admin', 'sales']);
     if (!auth.ok) return auth.response;
     try {
-        const tenantId = request.headers.get('x-tenant-id') || 'default-local';
+        const tenantId = getTenantId(request);
         const body = await request.json();
-        const { declaredAmount, cashierId, cashierName } = body;
-
-        if (declaredAmount === undefined || !cashierId) {
-            return NextResponse.json({ error: 'Faltan datos requeridos (declaredAmount, cashierId)' }, { status: 400 });
+        const { declaredAmount } = body;
+        if (declaredAmount === undefined) {
+            return NextResponse.json({ error: 'Faltan datos requeridos: declaredAmount' }, { status: 400 });
         }
+
+        // ANTI-SUPLANTACIÓN: El cajero que cierra se extrae de la sesión autenticada y verificada
+        // Solo un administrador o superadministrador puede especificar un cashierId alterno de un empleado a su cargo
+        const effectiveCashierId = (['superadmin', 'admin'].includes(auth.role) && body.cashierId) ? body.cashierId : auth.uid;
+        const effectiveCashierName = body.cashierName || (auth as any).name || 'Cajero';
+
+        const cleanDeclared = roundMoney(Number(declaredAmount));
 
         // 1. Obtener el último cierre de caja de este tenant
         const lastLog = await prisma.cashRegisterLog.findFirst({
@@ -23,50 +29,72 @@ export async function POST(request: NextRequest) {
             orderBy: { createdAt: 'desc' }
         });
 
-        // 2. Sumar todas las ventas en efectivo (cash) completadas/enviadas desde ese momento
-        const whereClause: any = {
-            tenantId,
-            paymentMethod: { in: ['cash', 'CASH', 'efectivo', 'EFECTIVO'] },
-            status: { in: ALLOWED_CLOSE_STATUSES }
-        };
-
-        if (lastLog) {
-            whereClause.date = { gt: lastLog.createdAt };
-        } else {
-            // Si no hay corte previo, calculamos del día de hoy
+        // 2. Sumar todas las ventas en efectivo completadas/enviadas desde el último corte
+        // excluyendo órdenes canceladas o reembolsadas aunque hayan tenido confirmedAt previo.
+        const cutoffDate = lastLog ? new Date(lastLog.createdAt) : (() => {
             const startOfDay = new Date();
             startOfDay.setHours(0, 0, 0, 0);
-            whereClause.date = { gte: startOfDay };
-        }
+            return startOfDay;
+        })();
 
-        const ordersToCount = await prisma.order.findMany({
-            where: whereClause
+        const candidateOrders = await prisma.order.findMany({
+            where: {
+                tenantId,
+                paymentMethod: { in: CASH_PAYMENT_METHODS },
+                status: { notIn: EXCLUDED_CLOSE_STATUSES },
+                date: { gte: cutoffDate },
+                OR: [
+                    { status: { in: ALLOWED_CLOSE_STATUSES } },
+                    { confirmedAt: { not: null } }
+                ]
+            }
+        });
+
+        const ordersToCount = candidateOrders.filter((ord) => {
+            const effectivePaidAt = ord.confirmedAt ? new Date(ord.confirmedAt) : new Date(ord.date);
+            return lastLog ? effectivePaidAt > cutoffDate : effectivePaidAt >= cutoffDate;
         });
 
         const expectedAmount = calculateExpectedAmount(ordersToCount);
-        const discrepancy = calculateDiscrepancy(declaredAmount, expectedAmount);
+        const discrepancy = calculateDiscrepancy(cleanDeclared, expectedAmount);
 
         // 3. Registrar de forma inmutable en Prisma
         const log = await prisma.cashRegisterLog.create({
             data: {
                 tenantId,
-                cashierId,
-                cashierName: cashierName || 'Cajero',
-                declaredAmount,
+                cashierId: effectiveCashierId,
+                cashierName: effectiveCashierName,
+                declaredAmount: cleanDeclared,
                 expectedAmount,
                 discrepancy,
                 synced: false
             }
         });
 
-        // 4. Si hay descuadre negativo (faltante), mandamos alerta push silenciosa a Firebase
+        // 4. Si hay descuadre negativo (faltante), registrar en auditoría Prisma y emitir alerta
         if (discrepancy < 0) {
+            await prisma.auditLog.create({
+                data: {
+                    tenantId,
+                    action: 'CASH_MISMATCH_DETECTED',
+                    details: JSON.stringify({
+                        cashierId: effectiveCashierId,
+                        cashierName: effectiveCashierName,
+                        expectedAmount,
+                        declaredAmount: cleanDeclared,
+                        discrepancy
+                    }),
+                    userId: effectiveCashierId,
+                    synced: true
+                }
+            }).catch(() => {});
+
             try {
                 await firestoreAdmin.collection('alerts').add({
                     type: 'CASH_MISMATCH',
                     tenantId,
-                    cashierId,
-                    cashierName: cashierName || 'Cajero',
+                    cashierId: effectiveCashierId,
+                    cashierName: effectiveCashierName,
                     expectedAmount,
                     declaredAmount,
                     discrepancy,

@@ -5,20 +5,21 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCart, type Product } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
-import { 
+import {
     Clock, Bell, History, User, Store, ShieldAlert, Wifi, Globe, TerminalSquare, AlertCircle, XCircle, CheckCircle2, Phone, Lock, Unlock,
-    LayoutDashboard, LogOut, ShoppingCart, Trash2, Zap, UserCheck, Scale, Settings, PenTool, Camera
+    LayoutDashboard, LogOut, ShoppingCart, Trash2, Zap, UserCheck, Scale, Settings, PenTool, Camera, RefreshCw, Package, Search,
+    Columns, Receipt, DollarSign
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { useBluetoothScale } from '@/hooks/useBluetoothScale';
-import { printReceiptWithWebSerial } from '@/lib/thermalPrinter';
+import { printReceipt } from '@/lib/thermalPrinter';
 import { logAudit } from '@/lib/audit';
 import { toast } from '@/lib/toast';
 import { useERPStore } from '@/store/useERPStore';
 import { broadcastSync } from '@/lib/syncNotifier';
 import { playSupermarketBeep, playIncrementBeep, playErrorBeep, initAudioContextOnFirstGesture } from '@/lib/scannerAudio';
-import { saveDigitalTicket, type DigitalTicket } from '@/lib/digitalTicket';
+import { saveDigitalTicket, getDigitalTickets, type DigitalTicket } from '@/lib/digitalTicket';
 import { loadPosCartFromIDB, savePosCartToIDB, enqueueOfflineOrder, removeQueuedOfflineOrder } from '@/lib/indexedDBCart';
 
 // Lazy loading de componentes pesados (cero bloqueo en el arranque del POS)
@@ -31,6 +32,7 @@ const TicketReceiptModal = dynamic(() => import('@/components/sales/caja-movil/T
 const TicketHistoryModal = dynamic(() => import('@/components/sales/caja-movil/TicketHistoryModal').then(m => m.TicketHistoryModal), { ssr: false });
 const PosSettingsModal = dynamic(() => import('@/components/sales/caja-movil/PosSettingsModal').then(m => m.PosSettingsModal), { ssr: false });
 const DeliveryProofModal = dynamic(() => import('@/components/orders/DeliveryProofModal'), { ssr: false });
+import OrderPickingAssistant from '@/components/orders/OrderPickingAssistant';
 
 // Componentes de Caja Móvil
 import { Catalog } from '@/components/sales/caja-movil/Catalog';
@@ -41,6 +43,7 @@ import type { OrderType } from '@/components/sales/caja-movil/Cart';
 import type { DeliveryInfo } from '@/components/sales/caja-movil/DeliveryModal';
 import { StockAlertModal, type StockIssue } from '@/components/sales/caja-movil/StockAlertModal';
 import { CashTenderModal } from '@/components/sales/CashTenderModal';
+import { TriColorOrdersBoard } from '@/components/sales/caja-movil/TriColorOrdersBoard';
 import ThemeToggle from '@/components/ThemeToggle';
 import { AnimatePresence, motion } from 'framer-motion';
 
@@ -48,10 +51,10 @@ export default function SalesDashboard() {
     const router = useRouter();
     const { products, orders, confirmRequest, claimCashierOrder, cancelOrder, formatCurrency, createOrder, siteConfig } = useCart();
     const { profile, signOut } = useAuth();
-    
+
     // UI State
     const [activeTab, setActiveTab] = useState<'pos' | 'online'>('pos');
-    const [orderFilter, setOrderFilter] = useState<'all' | 'pending' | 'ready' | 'delivery'>('all');
+    const [orderFilter, setOrderFilter] = useState<'all' | 'pending' | 'ready' | 'delivery' | 'cancelled'>('all');
     const [showCorteCaja, setShowCorteCaja] = useState(false);
     const [showCameraScanner, setShowCameraScanner] = useState(false);
     const [currentTime, setCurrentTime] = useState('');
@@ -61,6 +64,7 @@ export default function SalesDashboard() {
     // POS State
     const [isKioskMode, setIsKioskMode] = useState(false);
     const [posSearch, setPosSearch] = useState('');
+    const [onlineSearch, setOnlineSearch] = useState('');
     const [posCart, setPosCart] = useState<(Product & { quantity: number })[]>([]);
     const [orderType, setOrderType] = useState<OrderType>('local');
     const [isPaymentOpen, setIsPaymentOpen] = useState(false);
@@ -85,6 +89,69 @@ export default function SalesDashboard() {
     const [claimingOrderId, setClaimingOrderId] = useState<string | null>(null);
     const [orderForDeliveryProof, setOrderForDeliveryProof] = useState<any>(null);
     const [cashTenderOrder, setCashTenderOrder] = useState<any | null>(null);
+    const [pickingOrder, setPickingOrder] = useState<any | null>(null);
+    const [deconstructingOrder, setDeconstructingOrder] = useState<any | null>(null);
+    const [onlyMyOrders, setOnlyMyOrders] = useState(false);
+    const [colaViewMode, setColaViewMode] = useState<'board' | 'list'>('board');
+
+    const handlePickingComplete = async (orderId: string) => {
+        const id = typeof orderId === 'string' ? orderId : (orderId as any)?.orderId;
+        const order = orders.find(o => o.id === id) || pickingOrder;
+        setPickingOrder(null);
+        if (order) {
+            setCashTenderOrder(order);
+        }
+    };
+
+    const handleDeconstructComplete = async (orderId: string) => {
+        const id = typeof orderId === 'string' ? orderId : (orderId as any)?.orderId;
+        if (!id) {
+            setDeconstructingOrder(null);
+            return;
+        }
+        try {
+            const res = await fetch('/api/orders', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id, action: 'return_to_shelf' })
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast(`📦 Artículos del pedido ${id} reincorporados al anaquel.`);
+                broadcastSync();
+            } else {
+                toast.error(data.error || 'Error reincorporando artículos.');
+            }
+        } catch {
+            toast.error('Error de red al reincorporar artículos.');
+        } finally {
+            setDeconstructingOrder(null);
+        }
+    };
+
+    const handleAdminRefund = async (orderId: string) => {
+        if (!confirm(`¿Autorizar devolución de la venta #${orderId}? Los artículos quedarán pendientes de reincorporación a inventario.`)) return;
+        try {
+            const res = await fetch('/api/orders', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: orderId, action: 'admin_refund_order', reason: 'Devolución autorizada por Admin' })
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast(`↩️ Devolución de venta ${orderId} autorizada.`);
+                broadcastSync();
+                const target = orders.find(o => o.id === orderId);
+                if (target) {
+                    setDeconstructingOrder(target);
+                }
+            } else {
+                toast.error(data.error || 'No se pudo procesar la devolución.');
+            }
+        } catch {
+            toast.error('Error de red al procesar devolución.');
+        }
+    };
 
     // Cancel PIN states
     const [orderToCancel, setOrderToCancel] = useState<string | null>(null);
@@ -107,7 +174,7 @@ export default function SalesDashboard() {
             if (saved) {
                 setPosConfig(prev => ({ ...prev, ...JSON.parse(saved) }));
             }
-        } catch {}
+        } catch { }
 
         loadPosCartFromIDB().then((savedItems) => {
             if (Array.isArray(savedItems) && savedItems.length > 0) {
@@ -127,7 +194,9 @@ export default function SalesDashboard() {
             if (saved) {
                 posSessionIdRef.current = saved;
             } else {
-                const generated = `POS-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+                const randomBytes = new Uint32Array(1);
+                window.crypto.getRandomValues(randomBytes);
+                const generated = `POS-${randomBytes[0].toString(36).substring(0, 5).toUpperCase()}`;
                 sessionStorage.setItem('bunkker_pos_lease_session', generated);
                 posSessionIdRef.current = generated;
             }
@@ -136,7 +205,7 @@ export default function SalesDashboard() {
 
     useEffect(() => {
         if (!posCartHydrated.current) return;
-        savePosCartToIDB(posCart).catch(() => {});
+        savePosCartToIDB(posCart).catch(() => { });
 
         const sessionId = posSessionIdRef.current || 'POS-CAJA';
         if (posCart.length === 0) {
@@ -147,7 +216,7 @@ export default function SalesDashboard() {
                     action: 'release_session',
                     sessionId,
                 }),
-            }).catch(() => {});
+            }).catch(() => { });
             return;
         }
 
@@ -183,7 +252,7 @@ export default function SalesDashboard() {
                         }
                     }
                 })
-                .catch(() => {});
+                .catch(() => { });
         });
     }, [posCart, profile?.displayName]);
 
@@ -228,6 +297,79 @@ export default function SalesDashboard() {
     const stockIssues = getStockIssues();
     const hasStockIssues = stockIssues.length > 0;
 
+    const handleUpdateQuantity = (id: string, quantity: number) => {
+        const availableStock = getAvailableStock(id);
+        const product = products.find(p => p.id === id);
+        const prodName = product?.name || 'Producto';
+
+        if (quantity <= 0) {
+            setPosCart(prev => prev.filter(i => i.id !== id));
+            return;
+        }
+
+        if (quantity > availableStock) {
+            showToast(`⚠️ Stock insuficiente: Solicitas ${quantity}, pero solo hay ${availableStock} disponible(s) de "${prodName}". Venta bloqueada.`);
+        }
+
+        setPosCart(prev => prev.map(i => i.id === id ? { ...i, quantity } : i));
+    };
+
+    const handleAdjustStockItem = (productId: string, newQuantity: number) => {
+        if (newQuantity <= 0) {
+            setPosCart(prev => prev.filter(i => i.id !== productId));
+        } else {
+            setPosCart(prev => prev.map(i => i.id === productId ? { ...i, quantity: newQuantity } : i));
+        }
+        showToast('Cantidad ajustada al stock disponible.');
+    };
+
+    const handleRemoveStockItem = (productId: string) => {
+        setPosCart(prev => prev.filter(i => i.id !== productId));
+        showToast('Producto eliminado del pedido.');
+    };
+
+    const handleAdjustAllStock = () => {
+        setPosCart(prev => {
+            return prev.map(item => {
+                const available = getAvailableStock(item.id, item.stock);
+                if (item.quantity > available) {
+                    return available > 0 ? { ...item, quantity: available } : null;
+                }
+                return item;
+            }).filter(Boolean) as (Product & { quantity: number })[];
+        });
+        setIsStockAlertOpen(false);
+        showToast('Productos ajustados al stock físico disponible.');
+    };
+
+    const handleRemoveAllDeficits = () => {
+        setPosCart(prev => {
+            return prev.filter(item => {
+                const available = getAvailableStock(item.id, item.stock);
+                return item.quantity <= available;
+            });
+        });
+        setIsStockAlertOpen(false);
+        showToast('Se eliminaron los productos sin existencias suficientes.');
+    };
+
+    const posTotal = posCart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+    const handleCheckoutClick = useCallback(() => {
+        const issues = getStockIssues();
+        if (issues.length > 0) {
+            setIsStockAlertOpen(true);
+            showToast(`⛔ Venta bloqueada: ${issues.length} producto(s) no tienen suficiente stock.`);
+            return;
+        }
+
+        if (orderType === 'delivery') {
+            setIsDeliveryOpen(true);
+        } else {
+            setIsPaymentOpen(true);
+        }
+    }, [getStockIssues, orderType]);
+
     const handleAddProduct = (product: Product) => {
         const availableStock = getAvailableStock(product.id, product.stock);
         if (availableStock <= 0) {
@@ -267,12 +409,12 @@ export default function SalesDashboard() {
     useBarcodeScanner((barcode) => {
         if (activeTab !== 'pos') return;
         const code = barcode.trim().toLowerCase();
-        const product = products.find(p => 
-            p.barcode?.toLowerCase() === code || 
-            p.id.toLowerCase() === code || 
+        const product = products.find(p =>
+            p.barcode?.toLowerCase() === code ||
+            p.id.toLowerCase() === code ||
             p.name.toLowerCase() === code
         );
-        
+
         if (product) {
             handleAddProduct(product);
         } else {
@@ -359,80 +501,7 @@ export default function SalesDashboard() {
 
         window.addEventListener('keydown', handleGlobalKeyDown);
         return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-    }, [posCart, hasStockIssues]);
-
-    const handleUpdateQuantity = (id: string, quantity: number) => {
-        const availableStock = getAvailableStock(id);
-        const product = products.find(p => p.id === id);
-        const prodName = product?.name || 'Producto';
-
-        if (quantity <= 0) {
-            setPosCart(prev => prev.filter(i => i.id !== id));
-            return;
-        }
-
-        if (quantity > availableStock) {
-            showToast(`⚠️ Stock insuficiente: Solicitas ${quantity}, pero solo hay ${availableStock} disponible(s) de "${prodName}". Venta bloqueada.`);
-        }
-
-        setPosCart(prev => prev.map(i => i.id === id ? { ...i, quantity } : i));
-    };
-
-    const handleAdjustStockItem = (productId: string, newQuantity: number) => {
-        if (newQuantity <= 0) {
-            setPosCart(prev => prev.filter(i => i.id !== productId));
-        } else {
-            setPosCart(prev => prev.map(i => i.id === productId ? { ...i, quantity: newQuantity } : i));
-        }
-        showToast('Cantidad ajustada al stock disponible.');
-    };
-
-    const handleRemoveStockItem = (productId: string) => {
-        setPosCart(prev => prev.filter(i => i.id !== productId));
-        showToast('Producto eliminado del pedido.');
-    };
-
-    const handleAdjustAllStock = () => {
-        setPosCart(prev => {
-            return prev.map(item => {
-                const available = getAvailableStock(item.id, item.stock);
-                if (item.quantity > available) {
-                    return available > 0 ? { ...item, quantity: available } : null;
-                }
-                return item;
-            }).filter(Boolean) as (Product & { quantity: number })[];
-        });
-        setIsStockAlertOpen(false);
-        showToast('Productos ajustados al stock físico disponible.');
-    };
-
-    const handleRemoveAllDeficits = () => {
-        setPosCart(prev => {
-            return prev.filter(item => {
-                const available = getAvailableStock(item.id, item.stock);
-                return item.quantity <= available;
-            });
-        });
-        setIsStockAlertOpen(false);
-        showToast('Se eliminaron los productos sin existencias suficientes.');
-    };
-
-    const posTotal = posCart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-
-    const handleCheckoutClick = () => {
-        const issues = getStockIssues();
-        if (issues.length > 0) {
-            setIsStockAlertOpen(true);
-            showToast(`⛔ Venta bloqueada: ${issues.length} producto(s) no tienen suficiente stock.`);
-            return;
-        }
-
-        if (orderType === 'delivery') {
-            setIsDeliveryOpen(true);
-        } else {
-            setIsPaymentOpen(true);
-        }
-    };
+    }, [posCart, hasStockIssues, activeTab, handleCheckoutClick]);
 
     const handleDeliveryConfirm = (info: DeliveryInfo) => {
         setDeliveryInfo(info);
@@ -464,12 +533,12 @@ export default function SalesDashboard() {
         // deriva a pickup o reparto según deliveryType.
         const finalStatus = 'paid';
         const cName = orderType === 'delivery' ? deliveryInfo?.customerName : 'Cliente Mostrador';
-        
+
         const orderPayload = {
             id: orderId,
-            customer: { 
-                name: cName, 
-                phone: deliveryInfo?.phone || '', 
+            customer: {
+                name: cName,
+                phone: deliveryInfo?.phone || '',
                 address: deliveryInfo?.address || 'Mostrador',
                 reference: deliveryInfo?.reference || ''
             },
@@ -574,7 +643,19 @@ export default function SalesDashboard() {
                 userRole: profile?.role || 'sales',
                 description: `[POS] Venta directa ${orderId} — $${posTotal.toFixed(2)}${syncedImmediately ? '' : ' (Encolada en IndexedDB)'}`,
                 metadata: { orderId, total: posTotal, items: posCart.length, offlineQueued: !syncedImmediately },
-            }).catch(() => {});
+            }).catch(() => { });
+
+            // Sincronización inmediata de estado local y multidispotivo (0ms)
+            try {
+                const currentOrders = useERPStore.getState().orders;
+                const existingIdx = currentOrders.findIndex(o => o.id === orderId);
+                if (existingIdx === -1) {
+                    useERPStore.getState().setOrders([orderPayload as any, ...currentOrders]);
+                }
+                broadcastSync({ action: 'POS_DIRECT_SALE', id: orderId });
+            } catch (syncErr) {
+                console.warn('[POS Sync] Error al actualizar estado local:', syncErr);
+            }
 
             // ─── RESGUARDO DE TICKET (COPIA CLIENTE + COPIA VENDEDOR) ───
             const savedTicket = saveDigitalTicket(
@@ -595,19 +676,26 @@ export default function SalesDashboard() {
             );
             setCurrentTicket(savedTicket);
 
-            // Impresión nativa ESC/POS por Web Serial si está configurado
+            // Impresión ESC/POS por Web Serial con respaldo por navegador. Nunca bloquea la venta.
             if (posConfig.autoPrintReceipt) {
-                try {
-                    await printReceiptWithWebSerial({
-                        businessName: siteConfig?.businessName || posConfig.cajaName || 'BUNKKER POS',
-                        orderId: orderId,
-                        items: posCart.map(i => ({ name: i.name, quantity: i.quantity, price: i.price })),
-                        total: posTotal,
-                        date: new Date(),
-                        customerName: cName as string
-                    });
-                } catch (e) {
-                    console.warn('Impresora serial no conectada, mostrando visor de ticket digital.');
+                const printResult = await printReceipt({
+                    businessName: siteConfig?.businessName || posConfig.cajaName || 'BUNKKER POS',
+                    orderId: orderId,
+                    items: posCart.map(i => ({ name: i.name, quantity: i.quantity, price: i.price })),
+                    total: posTotal,
+                    date: new Date(),
+                    customerName: cName as string
+                });
+                if (!printResult.ok) {
+                    showToast(`🖨️ ${printResult.message} El ticket digital está disponible en pantalla.`);
+                    logAudit({
+                        type: 'PRINT_FAILED',
+                        userId: profile?.uid || 'POS',
+                        userName: profile?.displayName || 'Cajero',
+                        userRole: profile?.role || 'sales',
+                        description: `[POS] Fallo de impresión en ${orderId}: ${printResult.code}`,
+                        metadata: { orderId, code: printResult.code },
+                    }).catch(() => { });
                 }
             }
 
@@ -641,7 +729,7 @@ export default function SalesDashboard() {
             setCancelPinError('PIN de autorización incorrecto.');
             return;
         }
-        
+
         try {
             await cancelOrder(orderToCancel as string);
             await logAudit({
@@ -714,25 +802,102 @@ export default function SalesDashboard() {
         'pending_payment',
         'pending_confirmation',
         'pending',
+        'paid',
+        'PREPARANDO',
         'READY_TO_SHIP',
         'READY_FOR_PICKUP',
+        'READY_FOR_PICKUP_PAID',
         'pending_delivery',
-        'NIGHT_QUEUE'
+        'NIGHT_QUEUE',
+        'cancelled',
+        'refunded'
     ];
 
-    const pendingOrders = orders.filter(o => PENDING_CASHIER_STATUSES.includes(o.status) && !isTestOrder(o));
+    const isStoreOrder = (o: any) => o.deliveryType !== 'DELIVERY' && o.deliveryMethod !== 'repartidor';
+
+    const pendingOrders = orders.filter(o => isStoreOrder(o) && PENDING_CASHIER_STATUSES.includes(o.status) && !isTestOrder(o));
+
+    const pendingPrepOrders = orders.filter(o => isStoreOrder(o) && !o.isLoaded && !['DELIVERED', 'COMPLETED', 'cancelled', 'refunded'].includes(o.status) && !isTestOrder(o));
+    const readyToPayOrders = orders.filter(o => isStoreOrder(o) && (o.isLoaded || ['READY_TO_SHIP', 'READY_FOR_PICKUP'].includes(o.status)) && !o.confirmedAt && o.status !== 'paid' && o.status !== 'READY_FOR_PICKUP_PAID' && !['DELIVERED', 'COMPLETED', 'cancelled', 'refunded'].includes(o.status) && !isTestOrder(o));
+    const cancelledOrders = orders.filter(o => isStoreOrder(o) && (o.status === 'cancelled' || o.status === 'refunded') && !isTestOrder(o));
+    const cancelledReacomodoOrders = cancelledOrders.filter(o => o.rejectionReason !== 'CANCELADA_STOCK_RESTITUIDO');
+
+    const filterBySearch = (o: any) => {
+        if (!onlineSearch.trim()) return true;
+        const term = onlineSearch.toLowerCase().trim();
+        const matchesId = (o.id || '').toLowerCase().includes(term);
+        const matchesCustomer = (o.customer?.name || '').toLowerCase().includes(term);
+        const matchesPhone = (o.customer?.phone || '').includes(term);
+        const matchesItems = (o.items || []).some((it: any) =>
+            (it.name || it.productName || it.productId || '').toLowerCase().includes(term)
+        );
+        return matchesId || matchesCustomer || matchesPhone || matchesItems;
+    };
+
+    // 🟢 VERDE: "Los que pueden tomar" (pedidos libres sin asignar o no tomados por mí)
+    const greenCanClaimOrders = orders.filter(o => {
+        if (!isStoreOrder(o) || isTestOrder(o)) return false;
+        const isUnpaid = !o.confirmedAt && o.status !== 'paid' && o.status !== 'READY_FOR_PICKUP_PAID';
+        const isNotLoaded = !Boolean(o.isLoaded) && !['READY_TO_SHIP', 'READY_FOR_PICKUP'].includes(o.status);
+        const isTerminal = ['DELIVERED', 'COMPLETED', 'cancelled', 'refunded'].includes(o.status);
+        if (!isUnpaid || !isNotLoaded || isTerminal) return false;
+        // Libre para tomar si no tiene cajero asignado o fue iniciado por otro usuario
+        const canTake = !o.vendedorId || o.vendedorId !== profile?.uid;
+        return canTake;
+    }).filter(filterBySearch);
+
+    // 🟡 AMARILLO: "Los que tienes que preparar" (en almacén / mostrador pendientes de surtido)
+    const yellowNeedPrepOrders = orders.filter(o => {
+        if (!isStoreOrder(o) || isTestOrder(o)) return false;
+        const isUnpaid = !o.confirmedAt && o.status !== 'paid' && o.status !== 'READY_FOR_PICKUP_PAID';
+        const isNotLoaded = !Boolean(o.isLoaded) && !['READY_TO_SHIP', 'READY_FOR_PICKUP'].includes(o.status);
+        const isTerminal = ['DELIVERED', 'COMPLETED', 'cancelled', 'refunded'].includes(o.status);
+        if (!isUnpaid || !isNotLoaded || isTerminal) return false;
+        if (onlyMyOrders && o.vendedorId !== profile?.uid) return false;
+        return true;
+    }).filter(filterBySearch);
+
+    // 🔵 AZUL: "Los que ya puedes cobrar" (surtidos listos para cobrar)
+    // REGLA CRUCIAL DEL USUARIO: "caja cobra todos asi que ahi aparacen los de todos y el cobra ok"
+    const blueReadyToPayOrders = orders.filter(o => {
+        if (!isStoreOrder(o) || isTestOrder(o)) return false;
+        const isReady = (Boolean(o.isLoaded) || ['READY_TO_SHIP', 'READY_FOR_PICKUP'].includes(o.status));
+        const isUnpaid = !o.confirmedAt && o.status !== 'paid' && o.status !== 'READY_FOR_PICKUP_PAID';
+        const isTerminal = ['DELIVERED', 'COMPLETED', 'cancelled', 'refunded'].includes(o.status);
+        // ¡NO se aplica onlyMyOrders aquí! Caja cobra absolutamente todos los pedidos listos.
+        return isReady && isUnpaid && !isTerminal;
+    }).filter(filterBySearch);
+
+    // 📦 LISTOS ENTREGA: Surtidos y cobrados listos para entregar físicamente al cliente con firma y foto (PoD)
+    const readyToDeliverOrders = orders.filter(o => {
+        if (!isStoreOrder(o) || isTestOrder(o)) return false;
+        const isReady = ['READY_TO_SHIP', 'READY_FOR_PICKUP_PAID'].includes(o.status) || (Boolean(o.isLoaded) && (Boolean(o.confirmedAt) || o.status === 'paid')) || o.status === 'READY_FOR_PICKUP';
+        const isTerminal = ['DELIVERED', 'COMPLETED', 'cancelled', 'refunded'].includes(o.status);
+        const isPaid = Boolean(o.confirmedAt) || o.status === 'paid' || o.status === 'READY_FOR_PICKUP_PAID';
+        if (onlyMyOrders && o.vendedorId && o.vendedorId !== profile?.uid) return false;
+        return isReady && isPaid && !isTerminal;
+    }).filter(filterBySearch);
+
+    const totalBlueReadyCash = blueReadyToPayOrders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
 
     const displayedOrders = pendingOrders.filter(o => {
+        if (onlyMyOrders) {
+            const isMine = o.vendedorId === profile?.uid || o.loadedByUid === profile?.uid || o.vendedorName === profile?.displayName;
+            if (!isMine) return false;
+        }
         if (orderFilter === 'pending') {
-            return ['pending_payment', 'pending_confirmation', 'pending', 'NIGHT_QUEUE'].includes(o.status);
+            const isUnpaid = !o.confirmedAt && o.status !== 'paid' && o.status !== 'READY_FOR_PICKUP_PAID';
+            if (!isUnpaid || !['pending_payment', 'pending_confirmation', 'pending', 'NIGHT_QUEUE', 'READY_FOR_PICKUP'].includes(o.status)) return false;
+        } else if (orderFilter === 'ready') {
+            const isReady = ['READY_TO_SHIP', 'READY_FOR_PICKUP_PAID'].includes(o.status) || (Boolean(o.isLoaded) && (Boolean(o.confirmedAt) || o.status === 'paid')) || o.status === 'READY_FOR_PICKUP';
+            if (!isReady) return false;
+        } else if (orderFilter === 'delivery') {
+            if (o.status !== 'pending_delivery') return false;
+        } else if (orderFilter === 'cancelled') {
+            if (o.status !== 'cancelled' && o.status !== 'refunded') return false;
         }
-        if (orderFilter === 'ready') {
-            return ['READY_TO_SHIP', 'READY_FOR_PICKUP'].includes(o.status);
-        }
-        if (orderFilter === 'delivery') {
-            return o.status === 'pending_delivery';
-        }
-        return true;
+
+        return filterBySearch(o);
     });
 
     return (
@@ -756,24 +921,32 @@ export default function SalesDashboard() {
                     </div>
                 </div>
 
-                {/* Central Tabs for POS and Online */}
-                <div className="flex bg-black/40 p-1 rounded-xl border border-white/5 mx-2 sm:mx-4 shadow-inner">
-                    <button 
+                {/* Central Tabs for POS and Online - Botones Grandes y Táctiles */}
+                <div className="flex bg-black/50 p-1.5 rounded-2xl border border-white/10 mx-2 sm:mx-4 shadow-inner gap-1.5">
+                    <button
                         onClick={() => setActiveTab('pos')}
-                        className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all ${activeTab === 'pos' ? 'bg-white/10 text-white shadow-md' : 'text-zinc-500 hover:text-zinc-300'}`}
+                        className={`flex items-center gap-2 px-4 sm:px-7 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-black transition-all active:scale-95 ${
+                            activeTab === 'pos' 
+                                ? 'bg-white/15 text-white shadow-lg border border-white/20' 
+                                : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/5'
+                        }`}
                     >
-                        <Store className="w-4 h-4" /> <span className="hidden xs:inline">PUNTO DE</span> VENTA
+                        <Store className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400" /> <span className="hidden xs:inline">PUNTO DE</span> VENTA
                     </button>
-                    <button 
+                    <button
                         onClick={() => setActiveTab('online')}
-                        className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all relative ${activeTab === 'online' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30 shadow-md' : 'text-zinc-500 hover:text-zinc-300'}`}
+                        className={`flex items-center gap-2 px-4 sm:px-7 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-black transition-all active:scale-95 relative ${
+                            activeTab === 'online' 
+                                ? 'bg-blue-600/30 text-blue-300 border border-blue-500/40 shadow-lg' 
+                                : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/5'
+                        }`}
                     >
-                        <Globe className="w-4 h-4" /> COLA ({pendingOrders.length})
+                        <Globe className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" /> COLA ({pendingOrders.length})
                         {pendingOrders.length > 0 && (
-                            <span className="absolute top-1 right-2 w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
+                            <span className="absolute top-1 right-2 w-2.5 h-2.5 rounded-full bg-red-500 animate-ping"></span>
                         )}
                         {pendingOrders.length > 0 && (
-                            <span className="absolute top-1 right-2 w-2 h-2 rounded-full bg-red-500"></span>
+                            <span className="absolute top-1 right-2 w-2.5 h-2.5 rounded-full bg-red-500"></span>
                         )}
                     </button>
                 </div>
@@ -782,77 +955,79 @@ export default function SalesDashboard() {
                     <ThemeToggle className="text-zinc-300" />
 
                     {/* Botón Báscula Bluetooth / Serial */}
-                    <button 
+                    <button
                         onClick={() => setIsScaleOpen(true)}
-                        className={`transition-all flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg border text-xs font-bold ${
-                            scale.isConnected 
-                                ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40 shadow-[0_0_12px_rgba(6,182,212,0.3)]' 
+                        className={`transition-all flex items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border text-xs sm:text-sm font-bold active:scale-95 ${
+                            scale.isConnected
+                                ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40 shadow-[0_0_12px_rgba(6,182,212,0.3)]'
                                 : 'bg-white/5 hover:text-white border-white/10'
                         }`}
                         title="Báscula de Pesaje BLE / Serial (F3)"
                     >
-                        <Scale className="h-4 w-4 text-cyan-400" />
+                        <Scale className="h-4 w-4 sm:h-5 sm:w-5 text-cyan-400 shrink-0" />
                         <span className="hidden md:inline font-mono">
                             {scale.isConnected ? `${scale.weight.toFixed(3)} ${scale.unit}` : 'BÁSCULA'}
                         </span>
                     </button>
 
                     {/* Botón Bitácora / Historial de Tickets */}
-                    <button 
+                    <button
                         onClick={() => setIsHistoryOpen(true)}
-                        className="hover:text-white transition-colors flex items-center gap-1 bg-white/5 px-2.5 sm:px-3 py-1.5 rounded-lg border border-white/10 text-xs font-bold"
+                        className="hover:text-white transition-all active:scale-95 flex items-center gap-1.5 bg-white/5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border border-white/10 text-xs sm:text-sm font-bold shadow-sm"
                         title="Historial de Tickets y Reimpresión (F8)"
                     >
-                        <History className="h-4 w-4 text-amber-400" />
+                        <History className="h-4 w-4 sm:h-5 sm:w-5 text-amber-400 shrink-0" />
                         <span className="hidden sm:inline">TICKETS</span>
                     </button>
 
                     {/* Botón Configuración de Caja */}
-                    <button 
+                    <button
                         onClick={() => setIsSettingsOpen(true)}
-                        className="hover:text-white transition-colors flex items-center gap-1 bg-white/5 px-2 sm:px-2.5 py-1.5 rounded-lg border border-white/10 text-xs font-bold"
+                        className="hover:text-white transition-all active:scale-95 flex items-center gap-1 bg-white/5 p-2 sm:p-2.5 rounded-xl border border-white/10 text-xs sm:text-sm font-bold shadow-sm"
                         title="Configuración de Caja y Panel"
                     >
-                        <Settings className="h-4 w-4 text-zinc-400 hover:text-cyan-300" />
+                        <Settings className="h-4 w-4 sm:h-5 sm:w-5 text-zinc-400 hover:text-cyan-300 shrink-0" />
                     </button>
 
                     {hasStockIssues && (
                         <button
                             onClick={() => setIsStockAlertOpen(true)}
-                            className="px-3 py-1.5 rounded-lg bg-red-600/30 border-2 border-red-500/80 text-red-300 hover:bg-red-600/40 text-xs font-black tracking-wider flex items-center gap-1.5 shadow-[0_0_15px_rgba(239,68,68,0.5)] animate-pulse"
+                            className="px-3.5 py-2 rounded-xl bg-red-600/30 border-2 border-red-500/80 text-red-300 hover:bg-red-600/40 text-xs sm:text-sm font-black tracking-wider flex items-center gap-2 shadow-[0_0_15px_rgba(239,68,68,0.5)] animate-pulse active:scale-95"
                             title="Venta bloqueada: Clic para resolver faltantes de stock"
                         >
-                            <span className="w-2 h-2 rounded-full bg-red-400 animate-ping"></span>
+                            <span className="w-2.5 h-2.5 rounded-full bg-red-400 animate-ping"></span>
                             STOCK INSUFICIENTE ({stockIssues.length})
                         </button>
                     )}
-                    <div className="hidden lg:flex items-center gap-1.5 text-xs bg-black/40 border border-white/5 py-1.5 px-3 rounded-full">
-                        <Clock className="h-3.5 w-3.5 text-zinc-400" />
+                    <div className="hidden lg:flex items-center gap-1.5 text-xs sm:text-sm bg-black/40 border border-white/5 py-2 px-3.5 rounded-full">
+                        <Clock className="h-4 w-4 text-zinc-400" />
                         <span className="font-mono">{currentTime}</span>
                     </div>
-                    <button 
-                        className={`transition-colors flex items-center gap-1 px-3 py-1.5 rounded-lg border ${isKioskMode ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-white/5 hover:text-white border-white/10'}`}
+                    <button
+                        className={`transition-all active:scale-95 flex items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border text-xs sm:text-sm font-bold ${
+                            isKioskMode ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-white/5 hover:text-white border-white/10'
+                        }`}
                         onClick={() => setIsKioskMode(!isKioskMode)}
                         title="Modo Kiosco (Bloquear Pantalla)"
                     >
-                        {isKioskMode ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
-                        <span className="text-xs font-bold hidden xl:block">{isKioskMode ? 'KIOSCO ACTIVO' : 'FIJAR'}</span>
+                        {isKioskMode ? <Lock className="h-4 w-4 sm:h-5 sm:w-5" /> : <Unlock className="h-4 w-4 sm:h-5 sm:w-5" />}
+                        <span className="hidden xl:block">{isKioskMode ? 'KIOSCO ACTIVO' : 'FIJAR'}</span>
                     </button>
-                    <button 
-                        className="hover:text-white transition-colors flex items-center gap-1 bg-white/5 px-3 py-1.5 rounded-lg border border-white/10"
+                    <button
+                        className="hover:text-white transition-all active:scale-95 flex items-center gap-1.5 bg-white/5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border border-white/10 text-xs sm:text-sm font-bold shadow-sm"
                         onClick={() => setShowCorteCaja(true)}
                     >
-                        <ShieldAlert className="h-4 w-4" />
-                        <span className="text-xs font-bold hidden sm:block">CORTE</span>
+                        <ShieldAlert className="h-4 w-4 sm:h-5 sm:w-5 text-rose-400" />
+                        <span className="hidden sm:block">CORTE</span>
                     </button>
 
                     {/* Botón Salir al Dashboard */}
                     <button
                         onClick={() => router.push('/dashboard')}
-                        className="hover:text-white transition-colors flex items-center gap-1.5 bg-cyan-950/60 hover:bg-cyan-900/80 text-cyan-300 px-3 py-1.5 rounded-lg border border-cyan-800 text-xs font-bold"
+                        className="hover:text-white transition-all active:scale-95 flex items-center gap-1.5 bg-cyan-950/70 hover:bg-cyan-900/90 text-cyan-200 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl border border-cyan-700/60 text-xs sm:text-sm font-black shadow-sm"
                         title="Volver al Menú Principal del Dashboard"
                     >
-                        <LayoutDashboard className="h-4 w-4" />
+                        <LayoutDashboard className="h-4 w-4 sm:h-5 sm:w-5" />
                         <span className="hidden sm:inline">DASHBOARD</span>
                     </button>
 
@@ -865,10 +1040,10 @@ export default function SalesDashboard() {
                             await signOut();
                             window.location.href = '/login';
                         }}
-                        className="hover:text-red-300 transition-colors flex items-center gap-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 px-3 py-1.5 rounded-lg border border-red-500/30 text-xs font-bold"
+                        className="hover:text-red-300 transition-all active:scale-95 flex items-center gap-1.5 bg-red-500/15 hover:bg-red-500/25 text-red-300 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border border-red-500/40 text-xs sm:text-sm font-black shadow-sm"
                         title="Cerrar sesión del cajero"
                     >
-                        <LogOut className="h-4 w-4" />
+                        <LogOut className="h-4 w-4 sm:h-5 sm:w-5" />
                         <span className="hidden sm:inline">SALIR</span>
                     </button>
 
@@ -909,12 +1084,12 @@ export default function SalesDashboard() {
 
             {/* Main Content Workspace */}
             <main className="flex-1 flex flex-col md:flex-row overflow-hidden relative w-full h-full z-10">
-                
+
                 {activeTab === 'pos' ? (
                     <>
                         {/* Left Side: Catalog */}
                         <div className="flex-[3] md:flex-[2] lg:flex-[3] h-full overflow-hidden border-r border-white/10 bg-white/[0.02]">
-                            <Catalog 
+                            <Catalog
                                 products={products}
                                 cartItems={posCart}
                                 onAddProduct={handleAddProduct}
@@ -928,7 +1103,7 @@ export default function SalesDashboard() {
 
                         {/* Right Side: Cart / POS */}
                         <div className={`flex-[2] md:flex-1 h-[45vh] md:h-full transition-transform duration-300 ease-in-out border-t border-white/10 md:border-t-0 md:relative absolute bottom-0 left-0 right-0 md:translate-y-0 ${posCart.length > 0 ? 'translate-y-0 z-20 shadow-[0_-10px_30px_rgba(0,0,0,0.5)] md:shadow-none' : 'translate-y-full md:translate-y-0 z-0'}`}>
-                            <Cart 
+                            <Cart
                                 items={posCart}
                                 products={products}
                                 orderType={orderType}
@@ -943,55 +1118,200 @@ export default function SalesDashboard() {
                 ) : (
                     /* COLA ONLINE */
                     <div className="flex-1 overflow-y-auto p-4 sm:p-[8px] bg-transparent custom-scrollbar space-y-6">
-                        {/* Selector de Filtros de Cola */}
-                        <div className="flex flex-wrap gap-2 max-w-7xl mx-auto items-center justify-between">
-                            <div className="flex flex-wrap gap-2">
-                                <button
-                                    onClick={() => setOrderFilter('all')}
-                                    className={`px-4 py-2 rounded-xl text-xs font-bold uppercase transition-all ${
-                                        orderFilter === 'all'
-                                            ? 'bg-blue-600 text-white shadow-md'
-                                            : 'bg-zinc-900/60 text-zinc-400 hover:text-white border border-white/5'
-                                    }`}
-                                >
-                                    Todos ({pendingOrders.length})
-                                </button>
-                                <button
-                                    onClick={() => setOrderFilter('pending')}
-                                    className={`px-4 py-2 rounded-xl text-xs font-bold uppercase transition-all ${
-                                        orderFilter === 'pending'
-                                            ? 'bg-amber-600 text-white shadow-md'
-                                            : 'bg-zinc-900/60 text-zinc-400 hover:text-white border border-white/5'
-                                    }`}
-                                >
-                                    Por Cobrar ({pendingOrders.filter(o => ['pending_payment', 'pending_confirmation', 'pending', 'NIGHT_QUEUE'].includes(o.status)).length})
-                                </button>
-                                <button
-                                    onClick={() => setOrderFilter('ready')}
-                                    className={`px-4 py-2 rounded-xl text-xs font-bold uppercase transition-all ${
-                                        orderFilter === 'ready'
-                                            ? 'bg-emerald-600 text-white shadow-md'
-                                            : 'bg-zinc-900/60 text-zinc-400 hover:text-white border border-white/5'
-                                    }`}
-                                >
-                                    Listos Entrega ({pendingOrders.filter(o => ['READY_TO_SHIP', 'READY_FOR_PICKUP'].includes(o.status)).length})
-                                </button>
-                                <button
-                                    onClick={() => setOrderFilter('delivery')}
-                                    className={`px-4 py-2 rounded-xl text-xs font-bold uppercase transition-all ${
-                                        orderFilter === 'delivery'
-                                            ? 'bg-indigo-600 text-white shadow-md'
-                                            : 'bg-zinc-900/60 text-zinc-400 hover:text-white border border-white/5'
-                                    }`}
-                                >
-                                    Repartos ({pendingOrders.filter(o => o.status === 'pending_delivery').length})
-                                </button>
+                        {/* Barra de Búsqueda Táctil de Pedidos Online */}
+                        <div className="max-w-7xl mx-auto space-y-3">
+                            <div className="relative flex-1">
+                                <Search className="w-5 h-5 text-zinc-400 absolute left-4 top-3.5" />
+                                <input
+                                    type="text"
+                                    placeholder="Buscar pedido por folio, cliente, teléfono o nombre de producto..."
+                                    value={onlineSearch}
+                                    onChange={(e) => setOnlineSearch(e.target.value)}
+                                    className="w-full pl-12 pr-12 py-3 bg-zinc-900/90 border border-white/10 rounded-2xl text-sm sm:text-base font-medium text-white placeholder-zinc-500 focus:outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-500/30 transition-all shadow-md backdrop-blur-md"
+                                />
+                                {onlineSearch && (
+                                    <button
+                                        onClick={() => setOnlineSearch('')}
+                                        className="absolute right-3.5 top-3 p-1.5 text-zinc-400 hover:text-white rounded-xl hover:bg-white/10 transition-colors"
+                                        title="Limpiar búsqueda de pedidos"
+                                    >
+                                        <XCircle size={20} />
+                                    </button>
+                                )}
                             </div>
-                            <span className="text-[11px] text-zinc-500 font-mono">
-                                Actualización en tiempo real
-                            </span>
+
+                            {/* Selector de Filtros de Cola - Botones Grandes y Táctiles */}
+                            <div className="flex flex-wrap gap-2.5 items-center justify-between">
+                                <div className="flex flex-wrap gap-2 sm:gap-2.5">
+                                    <button
+                                        onClick={() => setOrderFilter('all')}
+                                        className={`px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl text-xs sm:text-sm font-black uppercase tracking-wider transition-all active:scale-95 shadow-sm ${orderFilter === 'all'
+                                                ? 'bg-blue-600 text-white shadow-blue-600/30 shadow-lg'
+                                                : 'bg-zinc-900/80 text-zinc-300 hover:text-white border border-white/10 hover:bg-zinc-800'
+                                            }`}
+                                    >
+                                        Todos ({pendingOrders.length})
+                                    </button>
+                                    <button
+                                        onClick={() => setOrderFilter('pending')}
+                                        className={`px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl text-xs sm:text-sm font-black uppercase tracking-wider transition-all active:scale-95 shadow-sm ${orderFilter === 'pending'
+                                                ? 'bg-amber-600 text-white shadow-amber-600/30 shadow-lg'
+                                                : 'bg-zinc-900/80 text-zinc-300 hover:text-white border border-white/10 hover:bg-zinc-800'
+                                            }`}
+                                    >
+                                        Por Cobrar ({pendingOrders.filter(o => ['pending_payment', 'pending_confirmation', 'pending', 'NIGHT_QUEUE', 'READY_FOR_PICKUP'].includes(o.status) && !o.confirmedAt && o.status !== 'paid' && o.status !== 'READY_FOR_PICKUP_PAID').length})
+                                    </button>
+                                    <button
+                                        onClick={() => setOrderFilter('ready')}
+                                        className={`px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl text-xs sm:text-sm font-black uppercase tracking-wider transition-all active:scale-95 shadow-sm ${orderFilter === 'ready'
+                                                ? 'bg-emerald-600 text-white shadow-emerald-600/30 shadow-lg'
+                                                : 'bg-zinc-900/80 text-zinc-300 hover:text-white border border-white/10 hover:bg-zinc-800'
+                                            }`}
+                                    >
+                                        Listos Entrega ({pendingOrders.filter(o => ['READY_TO_SHIP', 'READY_FOR_PICKUP_PAID'].includes(o.status) || (Boolean(o.isLoaded) && (Boolean(o.confirmedAt) || o.status === 'paid')) || o.status === 'READY_FOR_PICKUP').length})
+                                    </button>
+                                    <button
+                                        onClick={() => setOrderFilter('delivery')}
+                                        className={`px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl text-xs sm:text-sm font-black uppercase tracking-wider transition-all active:scale-95 shadow-sm ${orderFilter === 'delivery'
+                                                ? 'bg-indigo-600 text-white shadow-indigo-600/30 shadow-lg'
+                                                : 'bg-zinc-900/80 text-zinc-300 hover:text-white border border-white/10 hover:bg-zinc-800'
+                                            }`}
+                                    >
+                                        Repartos ({pendingOrders.filter(o => o.status === 'pending_delivery').length})
+                                    </button>
+                                    <button
+                                        onClick={() => setOrderFilter('cancelled')}
+                                        className={`px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl text-xs sm:text-sm font-black uppercase tracking-wider transition-all active:scale-95 shadow-sm ${orderFilter === 'cancelled'
+                                                ? 'bg-rose-600 text-white shadow-rose-600/30 shadow-lg'
+                                                : 'bg-zinc-900/80 text-rose-300 hover:text-white border border-rose-500/20 hover:bg-rose-950/20'
+                                            }`}
+                                    >
+                                        Cancelados ({cancelledOrders.length})
+                                    </button>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={() => setColaViewMode('board')}
+                                        className={`px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center gap-1.5 border active:scale-95 ${colaViewMode === 'board'
+                                                ? 'bg-gradient-to-r from-emerald-600 via-amber-600 to-sky-600 text-white border-cyan-400 shadow-md shadow-cyan-500/20'
+                                                : 'bg-zinc-900/80 text-zinc-400 hover:text-white border-white/10'
+                                            }`}
+                                        title="Vista Tablero 3 Colores (Verde: Por Tomar, Amarillo: Por Preparar, Azul: Listos p/ Cobro)"
+                                    >
+                                        <Columns size={16} /> Tablero 3 Colores
+                                    </button>
+                                    <button
+                                        onClick={() => setColaViewMode('list')}
+                                        className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border active:scale-95 ${colaViewMode === 'list'
+                                                ? 'bg-zinc-800 text-white border-white/20'
+                                                : 'bg-zinc-900/80 text-zinc-400 hover:text-white border-white/10'
+                                            }`}
+                                        title="Vista Lista Clásica"
+                                    >
+                                        Lista
+                                    </button>
+                                    <button
+                                        onClick={() => setOnlyMyOrders(prev => !prev)}
+                                        className={`px-3.5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 border active:scale-95 ${onlyMyOrders
+                                                ? 'bg-sky-500 text-white border-sky-400 shadow-md shadow-sky-500/20'
+                                                : 'bg-zinc-900/80 text-zinc-300 hover:text-white border-white/10'
+                                            }`}
+                                        title="Filtrar solo pedidos atendidos o surtidos por mí"
+                                    >
+                                        <span>👤</span> {onlyMyOrders ? 'Mis Pedidos' : 'Todos'}
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
+                        {/* 🦁 LION Guía Conversacional en Caja con Respuestas Sugeridas Rápidas */}
+                        <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border border-sky-500/30 rounded-2xl p-4 shadow-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4 max-w-7xl mx-auto">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-2xl bg-sky-500/20 border border-sky-500/40 flex items-center justify-center text-xl shrink-0 shadow-sm">
+                                    🦁
+                                </div>
+                                <div>
+                                    <h4 className="text-xs font-black uppercase tracking-wider text-sky-400 flex items-center gap-2">
+                                        LION Asistente en Caja
+                                        <span className="text-[10px] bg-sky-500/20 text-sky-300 px-2 py-0.5 rounded-full font-mono font-bold">
+                                            IA OPERATIVA
+                                        </span>
+                                    </h4>
+                                    <p className="text-sm text-slate-200 mt-0.5">
+                                        Bien, tienes <strong className="text-amber-400">{pendingPrepOrders.length} pedido(s) pendientes</strong> en espera del designado o prepáralos tú mismo, y <strong className="text-emerald-400">{readyToPayOrders.length} listo(s) para cobrar</strong> en caja.
+                                        {cancelledReacomodoOrders.length > 0 && (
+                                            <span className="text-rose-400 block sm:inline sm:ml-2 font-medium">
+                                                • ⚠️ {cancelledReacomodoOrders.length} cancelado(s) pendiente(s) de reacomodo.
+                                            </span>
+                                        )}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Botones sugeridos rápidos sin necesidad de escribir */}
+                            <div className="flex flex-wrap items-center gap-2 shrink-0">
+                                {pendingPrepOrders.length > 0 && (
+                                    <button
+                                        onClick={() => setPickingOrder(pendingPrepOrders[0])}
+                                        className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs flex items-center gap-1.5 shadow-md shadow-amber-500/20 active:scale-95 transition-all"
+                                    >
+                                        <Zap size={14} />
+                                        <span>⚡ Preparar #{pendingPrepOrders[0].id.slice(0, 6)}</span>
+                                    </button>
+                                )}
+                                {readyToPayOrders.length > 0 && (
+                                    <button
+                                        onClick={() => setCashTenderOrder(readyToPayOrders[0])}
+                                        className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400 text-slate-950 font-black text-xs flex items-center gap-1.5 shadow-md shadow-emerald-500/20 active:scale-95 transition-all"
+                                    >
+                                        <CheckCircle2 size={14} />
+                                        <span>💰 Cobrar #{readyToPayOrders[0].id.slice(0, 6)}</span>
+                                    </button>
+                                )}
+                                {cancelledReacomodoOrders.length > 0 && (
+                                    <button
+                                        onClick={() => setOrderFilter('cancelled')}
+                                        className="px-3 py-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 font-bold text-xs flex items-center gap-1.5 transition-colors"
+                                    >
+                                        <RefreshCw size={12} />
+                                        <span>Reacomodar ({cancelledReacomodoOrders.length})</span>
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+
+                        {colaViewMode === 'board' ? (
+                            <TriColorOrdersBoard
+                                greenOrders={greenCanClaimOrders}
+                                yellowOrders={yellowNeedPrepOrders}
+                                blueOrders={blueReadyToPayOrders}
+                                readyOrders={readyToDeliverOrders}
+                                onClaimOrder={handleClaimOrder}
+                                onLoadToPos={(order) => {
+                                    if (order.items && order.items.length > 0) {
+                                        const converted = order.items.map((it: any) => ({
+                                            id: it.productId || it.id,
+                                            name: it.name || it.productName || 'Producto',
+                                            price: it.price || 0,
+                                            stock: 99,
+                                            quantity: it.quantity || 1
+                                        }));
+                                        setPosCart(converted);
+                                        setActiveTab('pos');
+                                        showToast(`Pedido ${order.id} cargado en Punto de Venta.`);
+                                    }
+                                }}
+                                onPicking={(order) => setPickingOrder(order)}
+                                onTender={(order) => setCashTenderOrder(order)}
+                                onDeliveryProof={(order) => setOrderForDeliveryProof(order)}
+                                onCancel={(orderId) => setOrderToCancel(orderId)}
+                                onDelete={(orderId) => handleDeleteOrder(orderId)}
+                                onOpenHistory={() => setIsHistoryOpen(true)}
+                                onOpenCorte={() => setShowCorteCaja(true)}
+                                formatCurrency={formatCurrency}
+                                claimingOrderId={claimingOrderId}
+                            />
+                        ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[8px] max-w-7xl mx-auto">
                             {displayedOrders.length === 0 ? (
                                 <div className="col-span-full py-20 text-center bg-zinc-900/40 backdrop-blur-md rounded-[32px] border border-white/10 shadow-lg">
@@ -1006,7 +1326,7 @@ export default function SalesDashboard() {
                                     const isPendingAlmacen = !isLoadedByAlmacen;
                                     const isReadyForCashierPayment = isLoadedByAlmacen && !isPaid;
                                     const isReadyToDeliver = isLoadedByAlmacen && isPaid && !['DELIVERED', 'COMPLETED'].includes(order.status);
-                                    
+
                                     return (
                                         <div key={order.id} className="bg-zinc-900/60 backdrop-blur-md rounded-[5px] p-[8px] sm:p-[8px] border border-white/10 shadow-lg flex flex-col justify-between">
                                             <div>
@@ -1016,13 +1336,12 @@ export default function SalesDashboard() {
                                                         <p className="text-base font-black text-white font-mono">{order.id}</p>
                                                     </div>
                                                     <div className="flex items-center gap-2">
-                                                        <span className={`text-[10px] font-bold uppercase px-2.5 py-1 rounded-full border ${
-                                                            isPendingAlmacen ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' :
-                                                            isReadyForCashierPayment ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30 animate-pulse' :
-                                                            isReadyToDeliver ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30' :
-                                                            order.status === 'DELIVERED' ? 'bg-green-500/20 text-green-400 border-green-500/30' :
-                                                            'bg-indigo-500/20 text-indigo-400 border-indigo-500/30'
-                                                        }`}>
+                                                        <span className={`text-[10px] font-bold uppercase px-2.5 py-1 rounded-full border ${isPendingAlmacen ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' :
+                                                                isReadyForCashierPayment ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30 animate-pulse' :
+                                                                    isReadyToDeliver ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30' :
+                                                                        order.status === 'DELIVERED' ? 'bg-green-500/20 text-green-400 border-green-500/30' :
+                                                                            'bg-indigo-500/20 text-indigo-400 border-indigo-500/30'
+                                                            }`}>
                                                             {isPendingAlmacen ? '⏳ EN ALMACÉN' : isReadyForCashierPayment ? '✓ LISTO P/ COBRO' : isReadyToDeliver ? '📦 LISTO ENTREGA' : order.status}
                                                         </span>
                                                         <button
@@ -1037,11 +1356,11 @@ export default function SalesDashboard() {
 
                                                 <div className="space-y-1.5 mb-3 text-xs">
                                                     <p className="font-medium text-zinc-200 flex items-center gap-2">
-                                                        <User size={13} className="text-blue-400 shrink-0"/> {order.customer?.name || 'Cliente Mostrador'}
+                                                        <User size={13} className="text-blue-400 shrink-0" /> {order.customer?.name || 'Cliente Mostrador'}
                                                     </p>
                                                     {order.customer?.phone && (
                                                         <p className="font-medium text-zinc-400 flex items-center gap-2">
-                                                            <Phone size={13} className="text-blue-400 shrink-0"/> {order.customer?.phone}
+                                                            <Phone size={13} className="text-blue-400 shrink-0" /> {order.customer?.phone}
                                                         </p>
                                                     )}
                                                 </div>
@@ -1078,16 +1397,16 @@ export default function SalesDashboard() {
                                                 {/* Botones Tomar y Cargar al POS */}
                                                 <div className="flex gap-2">
                                                     {(!order.vendedorId || order.vendedorId !== profile?.uid) && (
-                                                        <button 
+                                                        <button
                                                             onClick={() => handleClaimOrder(order.id)}
                                                             disabled={claimingOrderId === order.id}
-                                                            className="flex-1 py-2 px-2 bg-blue-600/20 border border-blue-500/30 text-blue-300 font-bold rounded-xl hover:bg-blue-600/30 text-xs transition-colors flex items-center justify-center gap-1.5"
+                                                            className="flex-1 py-3 px-3 bg-blue-600/30 border border-blue-500/40 text-blue-200 font-black rounded-xl hover:bg-blue-600/40 text-xs sm:text-sm transition-all flex items-center justify-center gap-2 active:scale-95 shadow-sm"
                                                             title="Asignar este pedido a mi caja"
                                                         >
-                                                            <UserCheck size={14} /> Tomar
+                                                            <UserCheck size={16} /> Tomar
                                                         </button>
                                                     )}
-                                                    <button 
+                                                    <button
                                                         onClick={() => {
                                                             if (order.items && order.items.length > 0) {
                                                                 const converted = order.items.map((it: any) => ({
@@ -1102,104 +1421,171 @@ export default function SalesDashboard() {
                                                                 showToast(`Pedido ${order.id} cargado en Punto de Venta.`);
                                                             }
                                                         }}
-                                                        className="flex-1 py-2 px-2 bg-purple-600/20 border border-purple-500/30 text-purple-300 font-bold rounded-xl hover:bg-purple-600/30 text-xs transition-colors flex items-center justify-center gap-1.5"
+                                                        className="flex-1 py-3 px-3 bg-purple-600/30 border border-purple-500/40 text-purple-200 font-black rounded-xl hover:bg-purple-600/40 text-xs sm:text-sm transition-all flex items-center justify-center gap-2 active:scale-95 shadow-sm"
                                                         title="Cargar artículos al POS para modificar o cobrar"
                                                     >
-                                                        <ShoppingCart size={14} /> Cargar POS
+                                                        <ShoppingCart size={16} /> Cargar POS
                                                     </button>
                                                 </div>
 
                                                 {isPendingAlmacen ? (
-                                                    <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-2.5 text-center space-y-1.5">
-                                                        <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-amber-400">
-                                                            <Clock size={13} className="animate-spin text-amber-400" />
-                                                            <span>En Almacén — Surtido en Curso</span>
+                                                    <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-2.5 text-center space-y-2">
+                                                        <div className="flex items-center justify-between text-xs font-bold text-amber-400">
+                                                            <div className="flex items-center gap-1.5">
+                                                                <Clock size={14} className="animate-spin text-amber-400" />
+                                                                <span>En Almacén</span>
+                                                            </div>
+                                                            <span className="text-[10px] bg-amber-500/20 px-2 py-0.5 rounded text-amber-300 font-mono">
+                                                                Operador Único Disponible
+                                                            </span>
                                                         </div>
-                                                        <p className="text-[10px] text-zinc-400 leading-tight">
-                                                            Almacén debe confirmar y marcar listo el pedido antes de que Caja pueda cobrar.
-                                                        </p>
-                                                        <button
-                                                            disabled
-                                                            title="Cobro bloqueado hasta que almacén confirme que el producto está listo"
-                                                            className="w-full py-2 bg-zinc-800/80 text-zinc-500 font-bold rounded-xl text-xs cursor-not-allowed flex items-center justify-center gap-1.5 opacity-60"
-                                                        >
-                                                            <Lock size={13} /> Cobro Bloqueado (Almacén Pendiente)
-                                                        </button>
+                                                        <div className="grid grid-cols-2 gap-2">
+                                                            <button
+                                                                onClick={() => setPickingOrder(order)}
+                                                                className="py-3 px-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black rounded-xl text-xs shadow-md flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer"
+                                                                title="Recolectar producto por producto con asistencia de IA LION"
+                                                            >
+                                                                <Package size={15} /> Recolectar IA
+                                                            </button>
+                                                            <button
+                                                                onClick={() => setCashTenderOrder(order)}
+                                                                className="py-3 px-2 bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-300 border border-emerald-500/40 font-black rounded-xl text-xs shadow-md flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer"
+                                                                title="Auto-surtir en mostrador y cobrar de inmediato"
+                                                            >
+                                                                <Zap size={15} /> Surtir y Cobrar
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 ) : isReadyForCashierPayment ? (
                                                     <div className="space-y-2">
-                                                        <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-2 text-center text-[11px] font-bold text-emerald-400 flex flex-col items-center justify-center gap-1">
+                                                        <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-2 text-center text-xs font-bold text-emerald-400 flex flex-col items-center justify-center gap-1">
                                                             <div className="flex items-center gap-1.5">
-                                                                <CheckCircle2 size={13} /> Surtido listo por {order.loadedBy || 'Almacén'}.
+                                                                <CheckCircle2 size={14} /> Surtido listo por {order.loadedBy || 'Almacén'}.
                                                             </div>
                                                             {order.deliveryType === 'PATIO' ? (
-                                                                <span className="text-[10px] font-black uppercase text-amber-300 bg-amber-500/20 border border-amber-500/40 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                                                                <span className="text-[11px] font-black uppercase text-amber-300 bg-amber-500/20 border border-amber-500/40 px-2.5 py-0.5 rounded-full inline-flex items-center gap-1">
                                                                     🏗️ Ubicación: BAHÍA DE CARGA / PATIO
                                                                 </span>
                                                             ) : (
-                                                                <span className="text-[10px] font-black uppercase text-emerald-300 bg-emerald-500/20 border border-emerald-500/40 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                                                                <span className="text-[11px] font-black uppercase text-emerald-300 bg-emerald-500/20 border border-emerald-500/40 px-2.5 py-0.5 rounded-full inline-flex items-center gap-1">
                                                                     📦 Ubicación: CAJA / MOSTRADOR
                                                                 </span>
                                                             )}
                                                         </div>
                                                         <button
                                                             onClick={() => setCashTenderOrder(order)}
-                                                            className="w-full py-2.5 bg-gradient-to-r from-emerald-600 to-green-600 text-white font-black rounded-xl hover:from-emerald-500 hover:to-green-500 uppercase tracking-widest text-xs shadow-[0_0_20px_rgba(16,185,129,0.3)] flex justify-center items-center gap-2 transition-all active:scale-95 cursor-pointer"
+                                                            className="w-full py-3.5 sm:py-4 bg-gradient-to-r from-emerald-600 to-green-600 text-white font-black rounded-2xl hover:from-emerald-500 hover:to-green-500 uppercase tracking-widest text-xs sm:text-sm shadow-[0_0_20px_rgba(16,185,129,0.35)] flex justify-center items-center gap-2 transition-all active:scale-95 cursor-pointer"
                                                         >
-                                                            <CheckCircle2 size={15} /> Cobrar en Caja (${Number(order.total).toFixed(2)})
+                                                            <CheckCircle2 size={18} /> Cobrar en Caja (${Number(order.total).toFixed(2)})
                                                         </button>
                                                     </div>
                                                 ) : isReadyToDeliver ? (
                                                     <div className="space-y-2">
-                                                        <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-xl p-2 text-center text-[11px] font-bold text-cyan-400 flex flex-col items-center justify-center gap-1">
+                                                        <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-xl p-2 text-center text-xs font-bold text-cyan-400 flex flex-col items-center justify-center gap-1">
                                                             <div className="flex items-center gap-1.5">
-                                                                <ShieldAlert size={13} /> Cobro verificado. Listo para entrega al cliente.
+                                                                <ShieldAlert size={14} /> Cobro verificado. Listo para entrega al cliente.
                                                             </div>
                                                             {order.deliveryType === 'PATIO' ? (
-                                                                <span className="text-[10px] font-black uppercase text-amber-300 bg-amber-500/20 border border-amber-500/40 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                                                                <span className="text-[11px] font-black uppercase text-amber-300 bg-amber-500/20 border border-amber-500/40 px-2.5 py-0.5 rounded-full inline-flex items-center gap-1">
                                                                     🏗️ Entrega asignada a: BAHÍA DE CARGA (Patio)
                                                                 </span>
                                                             ) : (
-                                                                <span className="text-[10px] font-black uppercase text-emerald-300 bg-emerald-500/20 border border-emerald-500/40 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                                                                <span className="text-[11px] font-black uppercase text-emerald-300 bg-emerald-500/20 border border-emerald-500/40 px-2.5 py-0.5 rounded-full inline-flex items-center gap-1">
                                                                     📦 Entrega asignada a: CAJA (Mostrador)
                                                                 </span>
                                                             )}
                                                         </div>
                                                         <button
                                                             onClick={() => setOrderForDeliveryProof(order)}
-                                                            className="w-full py-2.5 bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-black rounded-xl hover:from-cyan-500 hover:to-blue-500 uppercase tracking-widest text-xs shadow-[0_0_20px_rgba(6,182,212,0.3)] flex justify-center items-center gap-2 transition-all active:scale-95"
+                                                            className="w-full py-3.5 sm:py-4 bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-black rounded-2xl hover:from-cyan-500 hover:to-blue-500 uppercase tracking-widest text-xs sm:text-sm shadow-[0_0_20px_rgba(6,182,212,0.35)] flex justify-center items-center gap-2 transition-all active:scale-95"
                                                         >
-                                                            <PenTool size={15} /> Validar Entrega (Foto + Firma PoD)
+                                                            <PenTool size={18} /> Validar Entrega (Foto + Firma PoD)
                                                         </button>
                                                     </div>
                                                 ) : order.status === 'DELIVERED' ? (
-                                                    <div className="bg-zinc-800/80 border border-white/5 rounded-xl p-2 text-center text-xs text-zinc-300">
-                                                        <span className="text-emerald-400 font-bold flex items-center justify-center gap-1">
-                                                            <CheckCircle2 size={14} /> Entregado con Foto y Firma
+                                                    <div className="bg-zinc-800/80 border border-white/5 rounded-xl p-2.5 text-center text-xs sm:text-sm text-zinc-300">
+                                                        <span className="text-emerald-400 font-bold flex items-center justify-center gap-1.5">
+                                                            <CheckCircle2 size={16} /> Entregado con Foto y Firma
                                                         </span>
                                                     </div>
                                                 ) : (
                                                     <button
                                                         onClick={() => setOrderForDeliveryProof(order)}
-                                                        className="w-full py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-bold rounded-xl text-xs flex justify-center items-center gap-1.5"
+                                                        className="w-full py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-bold rounded-xl text-xs sm:text-sm flex justify-center items-center gap-2 active:scale-95 transition-all"
                                                     >
-                                                        <PenTool size={14} /> Entrega de Pedido
+                                                        <PenTool size={16} /> Entrega de Pedido
                                                     </button>
                                                 )}
 
+                                                {/* Estado y Acciones de Cancelación / Deconstrucción */}
+                                                {(order.status === 'cancelled' || order.status === 'refunded') && (
+                                                    <div className="space-y-1.5 pt-1">
+                                                        {order.rejectionReason === 'CANCELADA_STOCK_RESTITUIDO' ? (
+                                                             <div className="bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 rounded-xl p-2.5 text-center text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5">
+                                                                <CheckCircle2 size={15} className="text-emerald-400" />
+                                                                <span>Cancelada — Stock de vuelta en anaquel</span>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="space-y-1.5">
+                                                                <div className="bg-rose-500/15 border border-rose-500/30 text-rose-300 rounded-xl p-2 text-center text-xs font-bold flex items-center justify-center gap-1.5">
+                                                                    <AlertCircle size={14} className="text-rose-400" />
+                                                                    <span>Cancelado — Pendiente de reacomodo</span>
+                                                                </div>
+                                                                <button
+                                                                    onClick={() => setDeconstructingOrder(order)}
+                                                                    className="w-full py-3 bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white font-black rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-md active:scale-95 cursor-pointer"
+                                                                >
+                                                                    <RefreshCw size={15} /> Deconstrucción: Devolver a Anaquel
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+
+                                                {/* Botón de Devolución Administrativa para el Dueño (Ingreso nuevo a stock sin alterar contabilidad) */}
+                                                {(order.status === 'DELIVERED' || order.status === 'COMPLETED' || order.status === 'paid') &&
+                                                    (profile?.role === 'superadmin' || profile?.role === 'admin') && (
+                                                        <button
+                                                            onClick={async () => {
+                                                                if (confirm(`¿Registrar devolución de venta #${order.id}? El stock entrará a almacén como nuevo ingreso sin alterar el histórico contable.`)) {
+                                                                    try {
+                                                                        const res = await fetch('/api/orders', {
+                                                                            method: 'PATCH',
+                                                                            headers: { 'Content-Type': 'application/json' },
+                                                                            body: JSON.stringify({ id: order.id, action: 'admin_return_as_new_intake' })
+                                                                        });
+                                                                        const data = await res.json();
+                                                                        if (data.success) {
+                                                                            showToast('✅ Devolución registrada como dato del dueño. Stock reingresado.');
+                                                                            broadcastSync();
+                                                                        } else {
+                                                                            toast.error(data.error || 'Error al procesar devolución');
+                                                                        }
+                                                                    } catch {
+                                                                        toast.error('Error de red al registrar devolución.');
+                                                                    }
+                                                                }
+                                                            }}
+                                                            className="w-full py-2 sm:py-2.5 bg-zinc-800/80 hover:bg-rose-950/40 text-zinc-400 hover:text-rose-300 border border-white/5 hover:border-rose-500/30 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95"
+                                                            title="Registrar devolución como dato del dueño y dar ingreso nuevo a stock"
+                                                        >
+                                                            <RefreshCw size={14} /> Devolución Dueño (Ingreso Nuevo a Almacén)
+                                                        </button>
+                                                    )}
+
                                                 {/* Botones Rechazar / Cancelar y Eliminar */}
                                                 <div className="flex gap-2 pt-1">
-                                                    <button 
+                                                    <button
                                                         onClick={() => setOrderToCancel(order.id)}
-                                                        className="flex-1 py-2 bg-amber-500/10 border border-amber-500/20 text-amber-400 font-bold rounded-xl hover:bg-amber-500/20 text-xs transition-colors flex items-center justify-center gap-1"
+                                                        className="flex-1 py-2.5 sm:py-3 bg-amber-500/10 border border-amber-500/25 text-amber-300 font-bold rounded-xl hover:bg-amber-500/20 text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 active:scale-95"
                                                     >
-                                                        <XCircle size={13} /> Cancelar
+                                                        <XCircle size={15} /> Cancelar
                                                     </button>
-                                                    <button 
+                                                    <button
                                                         onClick={() => handleDeleteOrder(order.id)}
-                                                        className="flex-1 py-2 bg-red-500/10 border border-red-500/20 text-red-400 font-bold rounded-xl hover:bg-red-500/20 text-xs transition-colors flex items-center justify-center gap-1"
+                                                        className="flex-1 py-2.5 sm:py-3 bg-red-500/10 border border-red-500/25 text-red-300 font-bold rounded-xl hover:bg-red-500/20 text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 active:scale-95"
                                                     >
-                                                        <Trash2 size={13} /> Eliminar
+                                                        <Trash2 size={15} /> Eliminar
                                                     </button>
                                                 </div>
                                             </div>
@@ -1208,6 +1594,7 @@ export default function SalesDashboard() {
                                 })
                             )}
                         </div>
+                        )}
                     </div>
                 )}
             </main>
@@ -1218,7 +1605,7 @@ export default function SalesDashboard() {
                 onConfirm={handleDeliveryConfirm}
             />
 
-            <PaymentModal 
+            <PaymentModal
                 isOpen={isPaymentOpen}
                 onClose={() => setIsPaymentOpen(false)}
                 total={posTotal}
@@ -1240,9 +1627,9 @@ export default function SalesDashboard() {
             />
 
             {showCameraScanner && (
-                <BarcodeScanner 
-                    isOpen={showCameraScanner} 
-                    onClose={() => setShowCameraScanner(false)} 
+                <BarcodeScanner
+                    isOpen={showCameraScanner}
+                    onClose={() => setShowCameraScanner(false)}
                     continuousModeDefault={true}
                     onScanSuccess={(decodedText) => {
                         const code = decodedText.trim().toLowerCase();
@@ -1255,7 +1642,7 @@ export default function SalesDashboard() {
                             if (posConfig.soundEnabled) playErrorBeep(posConfig.soundVolume);
                             showToast('❌ Producto no encontrado: ' + decodedText);
                         }
-                    }} 
+                    }}
                 />
             )}
 
@@ -1341,12 +1728,12 @@ export default function SalesDashboard() {
                     setPosConfig(newConfig);
                     try {
                         localStorage.setItem('_bunkker_pos_config', JSON.stringify(newConfig));
-                    } catch {}
+                    } catch { }
                 }}
             />
 
             {/* Modal Corte de Caja Ciego */}
-            <CorteCajaCiego 
+            <CorteCajaCiego
                 isOpen={showCorteCaja && !corteResult}
                 onClose={() => setShowCorteCaja(false)}
                 onConfirm={async (montoDeclarado) => {
@@ -1370,7 +1757,7 @@ export default function SalesDashboard() {
                                 description: `Corte Ciego Procesado. Declarado: $${montoDeclarado.toFixed(2)}, Descuadre: $${result.data.discrepancy.toFixed(2)}`,
                                 metadata: { montoDeclarado, discrepancy: result.data.discrepancy }
                             });
-                            
+
                             if (result.data.discrepancy < 0) {
                                 setCorteResult({ type: 'mismatch', data: result.data });
                             } else {
@@ -1394,7 +1781,7 @@ export default function SalesDashboard() {
                                 <CheckCircle2 size={80} className="text-emerald-500 mx-auto mb-6" />
                                 <h2 className="text-3xl font-black text-white mb-2">¡Corte Perfecto!</h2>
                                 <p className="text-emerald-400 font-medium mb-8">El efectivo físico coincide o excede el esperado. Turno cerrado con éxito.</p>
-                                <button onClick={() => { setCorteResult(null); setShowCorteCaja(false); window.location.href='/dashboard'; }} className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition-all shadow-[0_0_20px_rgba(16,185,129,0.4)]">
+                                <button onClick={() => { setCorteResult(null); setShowCorteCaja(false); window.location.href = '/dashboard'; }} className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition-all shadow-[0_0_20px_rgba(16,185,129,0.4)]">
                                     Finalizar y Salir
                                 </button>
                             </>
@@ -1414,7 +1801,7 @@ export default function SalesDashboard() {
                                     <button onClick={() => window.open(`/dashboard/sales/my-day`, '_blank')} className="flex-1 py-4 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl transition-all border border-slate-600">
                                         Ver Historial
                                     </button>
-                                    <button onClick={() => { setCorteResult(null); setShowCorteCaja(false); window.location.href='/dashboard'; }} className="flex-1 py-4 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl transition-all shadow-[0_0_20px_rgba(220,38,38,0.4)]">
+                                    <button onClick={() => { setCorteResult(null); setShowCorteCaja(false); window.location.href = '/dashboard'; }} className="flex-1 py-4 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl transition-all shadow-[0_0_20px_rgba(220,38,38,0.4)]">
                                         Aceptar y Salir
                                     </button>
                                 </div>
@@ -1428,10 +1815,10 @@ export default function SalesDashboard() {
             {orderToCancel && (
                 <div className="fixed inset-0 z-[4000] bg-black/80 flex items-center justify-center p-4">
                     <div className="bg-zinc-900 border border-white/10 p-[8px] rounded-[5px] w-full max-w-sm">
-                        <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2"><AlertCircle className="text-red-500"/> Autorización Requerida</h3>
+                        <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2"><AlertCircle className="text-red-500" /> Autorización Requerida</h3>
                         <p className="text-sm text-zinc-400 mb-6">Ingresa tu PIN de 6 dígitos para autorizar la cancelación de esta orden.</p>
-                        
-                        <input 
+
+                        <input
                             type="password"
                             inputMode="numeric"
                             maxLength={6}
@@ -1444,7 +1831,7 @@ export default function SalesDashboard() {
                             placeholder="••••••"
                         />
                         {cancelPinError && <p className="text-red-500 text-xs text-center font-bold mb-4">{cancelPinError}</p>}
-                        
+
                         <div className="flex gap-3 mt-6">
                             <button onClick={() => { setOrderToCancel(null); setCancelPinInput(''); }} className="flex-1 py-3 text-zinc-400 hover:text-white font-bold text-sm">Cancelar</button>
                             <button onClick={handleConfirmCancel} className="flex-1 py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-sm shadow-[0_0_15px_rgba(220,38,38,0.4)]">Rechazar Orden</button>
@@ -1453,10 +1840,50 @@ export default function SalesDashboard() {
                 </div>
             )}
 
+            {/* Asistente de Recolección IA (Picking) */}
+            {pickingOrder && (
+                <OrderPickingAssistant
+                    order={pickingOrder}
+                    role="sales"
+                    mode="picking"
+                    onClose={() => setPickingOrder(null)}
+                    onComplete={handlePickingComplete}
+                    onDelegate={async (id, target) => {
+                        try {
+                            const res = await fetch('/api/orders', {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ id, action: 'delegate_order', targetRole: target })
+                            });
+                            if (!res.ok) {
+                                const err = await res.json().catch(() => ({}));
+                                throw new Error(err.error || 'Error al delegar pedido');
+                            }
+                            setPickingOrder(null);
+                            broadcastSync();
+                            showToast(`📦 Pedido delegado exitosamente a ${target.toUpperCase()}`);
+                        } catch (err: any) {
+                            showToast(`❌ ${err.message || 'Error al delegar'}`);
+                        }
+                    }}
+                />
+            )}
+
+            {/* Asistente de Deconstrucción IA (Devolución a Anaqueles) */}
+            {deconstructingOrder && (
+                <OrderPickingAssistant
+                    order={deconstructingOrder}
+                    role="inventory"
+                    mode="deconstruction"
+                    onClose={() => setDeconstructingOrder(null)}
+                    onComplete={handleDeconstructComplete}
+                />
+            )}
+
             {/* Toast Notification */}
             <AnimatePresence>
                 {bannerMessage && (
-                    <motion.div 
+                    <motion.div
                         initial={{ opacity: 0, y: 50 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 50 }}

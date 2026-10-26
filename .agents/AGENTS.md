@@ -1,36 +1,17 @@
-.
-├── .github/
-│   └── agente-instructions.md    # Master system instructions (N3 Protocol)
-├── manifesto/                     # Core principles & system boundaries
-├── learning/                      # Confidence metrics, penalties & validated rewards
-├── logs/                          # ADRs, failure autopsies & simulations
-└── memory/                        # Causal, procedural & immutable vault data
+.agents/
+├── AGENTS.md                     # Master system guidelines (N3 Protocol)
+├── VISION_Y_METAS.md             # Vision and system goals
+├── manifesto/                    # Core engineering axioms and boundaries
+├── learning/                     # Confidence metrics, penalties, and validated patterns
+├── legacy/                       # Archived approaches and historical versions
+├── diaries/                      # Session journals
+├── discoveries/                  # Technical snippets and findings
+├── lessons/                      # Post-mortem bug resolutions
+├── theories/                     # Architectural hypotheses
+├── logs/                         # ADRs, failure autopsies, and simulations
+└── memory/                       # Causal, episodic, procedural, and vault data
 
-
-# N3-Protocol & Persistent Memory Layer
-
-A template repository providing a deterministic first-principles workflow and a persistent Markdown memory layer for AI coding assistants.
-
-## Overview
-
-AI coding assistants frequently suffer from context amnesia between sessions, lack structured architectural review processes, and accumulate technical debt. This repository establishes a framework to solve these issues using two mechanisms:
-
-1. **The N3 Protocol:** A strict 4-phase engineering workflow (Understand, Diagnose, Design, Execute) with mandatory verifiable deliverables.
-2. **Persistent Document Cache:** A structured folder tree of Markdown files acting as the assistant's long-term memory (logs, decisions, penalties, and procedural guides) entirely decoupled from source code execution.
-
-## Repository Layout
-.
-├── .github/
-│   └── copilot-instructions.md       # Master system prompt and rules for the AI assistant
-├── manifesto/                        # Core engineering axioms and boundaries
-├── learning/                         # Confidence metrics, penalties, and validated patterns
-├── legacy/                           # Archived approaches and historical versions
-├── diaries/                          # Session journals
-├── discoveries/                      # Technical snippets and findings
-├── lessons/                          # Post-mortem bug resolutions
-├── theories/                         # Architectural hypotheses
-├── logs/                             # ADRs, failure autopsies, and simulations
-└── memory/                           # Causal, episodic, procedural, and vault data# N3-Protocol & Persistent Memory Layer for AI Assistants
+# N3-Protocol & Persistent Memory Layer for AI Assistants
 
  **Overview:** A deterministic first-principles engineering workflow and structured local memory layer for AI coding assistants. Designed to eliminate context amnesia, enforce rigorous debugging, and maintain a zero-bloat codebase.
 
@@ -103,20 +84,63 @@ Execute strictly in order. Each phase must produce a verifiable deliverable; if 
 
 ## 3. Persistent Memory & Document Cache Structure
 
-The repository maintains an external Markdown-based document cache so the assistant retains context across sessions without bloating source code:
+The repository maintains an external Markdown-based document cache inside `.agents/` so the assistant retains context across sessions without bloating source code:
 
-* `manifesto/`: Core principles, axioms, and master rules.
-* `learning/`: Technical growth blocks (confidence metrics, logic penalties, validated rewards, uncertainty zones).
-* `legacy/`: Historical versions or discarded approaches.
-* `diaries/`: Session logs.
-* `discoveries/`: Innovative snippets and technical findings.
-* `lessons/`: Bug resolution learnings.
-* `theories/`: Architecture hypotheses to test.
-* `logs/`: Structured logs (decisions/ADRs, discoveries, failures/autopsies, simulations).
-* `memory/`: Structured agent memory (causal, episodic, identity, long-term, procedural, short-term, procedures, trash, vault).
+* `.agents/manifesto/`: Core principles, axioms, and master rules.
+* `.agents/learning/`: Technical growth blocks (confidence metrics, logic penalties, validated rewards, uncertainty zones).
+* `.agents/legacy/`: Historical versions or discarded approaches.
+* `.agents/diaries/`: Session logs.
+* `.agents/discoveries/`: Innovative snippets and technical findings.
+* `.agents/lessons/`: Bug resolution learnings.
+* `.agents/theories/`: Architecture hypotheses to test.
+* `.agents/logs/`: Structured logs (decisions/ADRs, discoveries, failures/autopsies, simulations).
+* `.agents/memory/`: Structured agent memory (causal, episodic, identity, long-term, procedural, short-term, procedures, trash, vault).
 
 ### Autonomous Management Rules for the Assistant
-1. **Asynchronous Logging:** Upon resolving complex tasks, record execution summaries in `logs/decisions/` or `diaries/` (`Problem → Root Cause → Solution`).
-2. **Skill Updates:** When discovering reusable patterns, update or create Markdown files under `learning/rewards/` or `memory/procedural/`.
-3. **Failure Tracking:** If an approach fails, log the evidence in `learning/penalties/` and `logs/failures/` to prevent recurrence.
-4. **Zero Code Pollution:** Markdown files act exclusively as external disk memory and never interfere with software compilation or runtime execution.
+1. **Asynchronous Logging:** Upon resolving complex tasks, record execution summaries in `.agents/logs/decisions/` or `.agents/diaries/` (`Problem → Root Cause → Solution`).
+2. **Skill Updates:** When discovering reusable patterns, update or create Markdown files under `.agents/learning/rewards/` or `.agents/memory/procedural/`.
+3. **Failure Tracking:** If an approach fails, log the evidence in `.agents/learning/penalties/` and `.agents/logs/failures/` to prevent recurrence.
+4. **Zero Code Pollution:** Markdown files act exclusively as external disk memory inside `.agents/` and never interfere with software compilation or runtime execution.
+
+---
+
+## 4. Protocolo de Fontanería Sistémica & Reglas de Trabajo End-to-End
+
+### 4.1 Principio del Fontanero de Tuberías
+No analizar archivos ni funciones de forma aislada. Entrar en las tuberías del sistema para rastrear el flujo circulatorio completo:
+`Evento Iniciador → Entrada de Datos → Validaciones/Compuertas Lógicas → Mutación de Estado → Propagación (DB/Sockets/Store) → Consumo por otros Actores → Resultado Observable`.
+
+### 4.2 Cuestionario Obligatorio por Cada Compuerta
+En cada bifurcación o paso de un flujo, responder explícitamente:
+1. ¿Qué acción ocurre y qué condición permite que ocurra?
+2. ¿De qué dato, estado, usuario, rol o acción previa depende?
+3. ¿Qué camino sigue si la condición se cumple y cuál si es rechazada?
+4. ¿Qué dato crea, modifica, elimina o transmite (DB, memoria, sockets)?
+5. ¿Qué otras partes del sistema o terminales de rol afecta?
+6. ¿Qué ocurre después y quién recibe ese resultado?
+7. ¿Qué podría fallar, quedar pendiente o duplicarse por fallas de red Wi-Fi?
+8. ¿Cómo se recupera el sistema ante el error (idempotencia y fail-closed)?
+
+### 4.3 Mapa Vivo del Sistema Circulatorio
+Mantener y contrastar visualmente el sistema bajo esta taxonomía:
+- **Raíces:** Entradas (cliente catálogo, terminal caja, tablet patio, escáner almacén, app repartidor).
+- **Tronco/Corazón:** Servidor central / Base de datos autoridad única (SQLite WAL / Next.js API / Socket Radio).
+- **Ramas/Arterias:** Llamadas API, eventos de orden (`OrderEvent`), sincronizadores (`BroadcastChannel`, `Socket.IO`, `IndexedDB`).
+- **Compuertas:** Estados de validación (`pending_payment` → `paid` → `isLoaded` → `DELIVERED`).
+- **Órganos:** Pizarras públicas por rol (Caja, Almacén, Patio, Reparto, Auditoría).
+- **Salidas:** Ticket digital, comprobante PoD (firma/foto), cierre contable, inventario físico deducido.
+
+### 4.4 Estados del Mapa de Tuberías
+Todo nodo o conexión auditada debe clasificarse con rigor:
+- **`[IMPLEMENTADO]`**: Existe, comprobado con evidencia de código y conectado E2E.
+- **`[PARCIAL]`**: Existe una parte, pero el recorrido se corta o no actualiza al siguiente actor.
+- **`[PENDIENTE]`**: Diseñado o requerido, pero aún no existe en el código.
+- **`[ROTO/DUDOSO]`**: Conexión fallida, estado desfasado o riesgo de desincronización detectado.
+
+### 4.5 Regla de Implementación No-Aislada
+Antes de modificar código:
+1. Declarar el flujo completo a intervenir, sus compuertas lógicas y los actores afectados.
+2. Describir caminos de éxito, rechazo y recuperación.
+3. Prohibido escribir parches cosméticos o funciones aisladas que dejen desconectada la circulación entre pantallas y base de datos.
+
+

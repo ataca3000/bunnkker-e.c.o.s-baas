@@ -9,6 +9,8 @@ export async function GET(request: NextRequest) {
     try {
         // S2.3 FIX: Filtrar clientes por tenantId para aislar datos entre negocios.
         const tenantId = getTenantId(request);
+        const includeMedia = new URL(request.url).searchParams.get('includeMedia') === 'true';
+
         const customers = await prisma.customer.findMany({
             where: { tenantId },
             include: {
@@ -24,8 +26,7 @@ export async function GET(request: NextRequest) {
                         completedAt: true,
                         loadedBy: true,
                         vendedorName: true,
-                        signatureData: true,
-                        photoData: true,
+                        ...(includeMedia ? { signatureData: true, photoData: true } : {}),
                         items: {
                             select: {
                                 id: true,
@@ -68,7 +69,7 @@ export async function GET(request: NextRequest) {
                 totalOrders,
                 totalSpent,
                 createdAt: c.createdAt.toISOString(),
-                orders: c.orders.map(o => ({
+                orders: c.orders.map((o: any) => ({
                     id: o.id,
                     date: o.date ? new Date(o.date).toISOString() : new Date().toISOString(),
                     total: o.total,
@@ -79,9 +80,9 @@ export async function GET(request: NextRequest) {
                     completedAt: o.completedAt ? new Date(o.completedAt).toISOString() : null,
                     loadedBy: o.loadedBy || null,
                     vendedorName: o.vendedorName || null,
-                    signatureData: o.signatureData || null,
-                    photoData: o.photoData || null,
-                    items: o.items.map(it => ({
+                    signatureData: includeMedia ? (o.signatureData || null) : null,
+                    photoData: includeMedia ? (o.photoData || null) : null,
+                    items: o.items.map((it: any) => ({
                         id: it.id,
                         productId: it.productId,
                         name: it.product?.name || it.productId,
@@ -113,11 +114,23 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ success: false, error: 'Name and phone are required.' }, { status: 400 });
         }
 
-        const newCustomer = await prisma.customer.create({
-            data: {
+        const cleanPhone = String(phone).trim();
+        const newCustomer = await prisma.customer.upsert({
+            where: {
+                tenantId_phone: {
+                    tenantId,
+                    phone: cleanPhone,
+                }
+            },
+            update: {
+                name: String(name).trim(),
+                ...(email !== undefined ? { email: email || null } : {}),
+                ...(address !== undefined ? { address: address || null } : {}),
+            },
+            create: {
                 tenantId,
-                name,
-                phone,
+                name: String(name).trim(),
+                phone: cleanPhone,
                 email: email || null,
                 address: address || null,
             }

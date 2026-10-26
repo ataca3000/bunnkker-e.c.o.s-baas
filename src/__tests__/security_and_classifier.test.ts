@@ -1,8 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { classifyLocalProduct } from '../lib/ai/productClassifier';
 
-// En entorno CI no existe la base de datos local ni el modelo de clasificador entrenado
-const isCI = process.env.CI === 'true' || !!process.env.GITHUB_ACTIONS;
+import fs from 'fs';
+import path from 'path';
+
+// En entorno CI o sin modelo local descargado, se omiten las pruebas que dependen de archivos externos
+const hasTopicsModel = fs.existsSync(path.join(process.cwd(), 'unsupervised_topic_modeling-master'));
+const isCI = process.env.CI === 'true' || !!process.env.GITHUB_ACTIONS || !hasTopicsModel;
 
 describe('Security & Local Classifier Validation', () => {
   describe('Unsupervised Topics Classifier', () => {

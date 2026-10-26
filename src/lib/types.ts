@@ -119,7 +119,15 @@ export interface Driver {
   [key: string]: any;
 }
 
-export type ViewState = 'pool' | 'map' | 'routes' | 'history' | 'route' | 'delivery';
+export interface DeliveryZone {
+  enabled: boolean;
+  center: [number, number]; // [lat, lng]
+  radiusKm: number;
+  address?: string;
+  updatedAt?: string;
+}
+
+export type ViewState = 'pool' | 'map' | 'routes' | 'history' | 'route' | 'delivery' | 'cockpit' | 'zone';
 
 export interface BillingInfo {
   name: string;
@@ -140,6 +148,7 @@ export interface ProductData {
 
 export interface SiteConfig {
   businessName?: string;
+  deliveryZone?: DeliveryZone;
   [key: string]: any;
 }
 

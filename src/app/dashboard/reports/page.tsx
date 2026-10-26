@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { motion } from 'framer-motion';
 import { 
     FileDown, Database, ShieldCheck, HardDrive, RefreshCcw, CheckCircle, 
@@ -15,6 +16,35 @@ interface SalesMetric {
     total: number;
     orders: number;
 }
+
+
+const CustomReportsTooltip = ({ active, payload, label, formatCurrency }: any) => {
+    if (!active || !payload || !payload.length) return null;
+    const item = payload[0];
+    return (
+        <div style={{
+            background: 'rgba(15, 23, 42, 0.95)',
+            backdropFilter: 'blur(16px)',
+            border: '1.5px solid rgba(14, 165, 233, 0.4)',
+            borderRadius: '14px',
+            padding: '12px 16px',
+            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.7), 0 0 15px rgba(14, 165, 233, 0.25)',
+            color: '#fff',
+            minWidth: '180px'
+        }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', marginBottom: '4px' }}>
+                {label || item.payload?.month}
+            </div>
+            <div style={{ fontSize: '1.3rem', fontWeight: '900', color: '#38BDF8', letterSpacing: '-0.02em', marginBottom: '4px' }}>
+                {formatCurrency(Number(item.value || 0))}
+            </div>
+            <div style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#38BDF8' }} />
+                <span>{item.payload?.orders || 0} órdenes completadas</span>
+            </div>
+        </div>
+    );
+};
 
 export default function ReportsAndBackups() {
     const { siteConfig, formatCurrency, orders, products } = useCart();
@@ -31,7 +61,7 @@ export default function ReportsAndBackups() {
     }, []);
 
     // Compute metrics from live orders data
-    const VALID_SALES_STATUSES = ['paid', 'COMPLETED', 'READY_TO_SHIP', 'OUT_FOR_DELIVERY', 'DELIVERED'];
+    const VALID_SALES_STATUSES = ['paid', 'COMPLETED', 'READY_TO_SHIP', 'OUT_FOR_DELIVERY', 'DELIVERED', 'READY_FOR_PICKUP_PAID'];
 
     useEffect(() => {
         if (!orders.length) return;
@@ -285,25 +315,89 @@ export default function ReportsAndBackups() {
                             </div>
                         </div>
 
-                        {/* Sales chart (bar) */}
-                        {metrics.length > 0 && (
-                            <div className="bunkker-card">
-                                <h3 style={{ color: '#0ea5e9', marginBottom: '1.5rem', fontSize: '1rem', fontWeight: '900' }}>VENTAS POR MES</h3>
-                                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '12px', height: '120px' }}>
-                                    {metrics.map((m, i) => (
-                                        <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-                                            <motion.div
-                                                initial={{ height: 0 }}
-                                                animate={{ height: `${Math.round((m.total / maxMetric) * 100)}px` }}
-                                                transition={{ delay: i * 0.1, type: 'spring' }}
-                                                style={{ width: '100%', backgroundColor: '#0ea5e9', borderRadius: '4px 4px 0 0', minHeight: '4px' }}
-                                            />
-                                            <span style={{ fontSize: '0.65rem', color: '#888', textAlign: 'center' }}>{m.month}</span>
+                        {/* Sales chart (recharts) */}
+                        <div className="relative overflow-hidden backdrop-blur-2xl bg-gradient-to-br from-slate-900/90 via-slate-900/70 to-slate-950/90 border border-white/10 shadow-[0_12px_40px_rgba(0,0,0,0.5)] rounded-3xl p-5 sm:p-6 mb-6">
+                            <div className="absolute -top-20 -left-20 w-64 h-64 rounded-full bg-sky-500/15 blur-[90px] pointer-events-none mix-blend-screen" />
+                            <div className="absolute -bottom-20 -right-20 w-64 h-64 rounded-full bg-indigo-500/15 blur-[90px] pointer-events-none mix-blend-screen" />
+
+                            <div className="relative z-10 flex flex-wrap items-center justify-between gap-4 mb-5 pb-4 border-b border-white/10">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2.5 rounded-2xl bg-sky-500/20 border border-sky-500/30 text-sky-400 shadow-[0_0_15px_rgba(14,165,233,0.3)]">
+                                        <TrendingUp size={22} />
+                                    </div>
+                                    <div>
+                                        <div className="flex items-center gap-2">
+                                            <h3 className="m-0 text-base sm:text-lg font-black text-white tracking-tight uppercase">
+                                                Histórico de Ventas Mensuales
+                                            </h3>
+                                            <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-sky-500/20 text-sky-300 border border-sky-500/30">
+                                                ANALÍTICA
+                                            </span>
                                         </div>
-                                    ))}
+                                        <p className="m-0 text-xs text-slate-400 mt-0.5">
+                                            Comportamiento de facturación y volumen de órdenes por período mensual
+                                        </p>
+                                    </div>
                                 </div>
+
+                                {metrics.length > 0 && (
+                                    <div className="flex items-center gap-4 bg-slate-950/60 px-4 py-2 rounded-2xl border border-white/10">
+                                        <div>
+                                            <span className="text-[10px] font-black uppercase text-slate-500 block">Total Período</span>
+                                            <span className="text-sm font-black text-sky-400 font-mono">
+                                                {formatCurrency(metrics.reduce((acc, m) => acc + m.total, 0))}
+                                            </span>
+                                        </div>
+                                        <div className="w-px h-6 bg-white/10" />
+                                        <div>
+                                            <span className="text-[10px] font-black uppercase text-slate-500 block">Total Órdenes</span>
+                                            <span className="text-sm font-black text-white font-mono">
+                                                {metrics.reduce((acc, m) => acc + m.orders, 0)}
+                                            </span>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
-                        )}
+
+                            <div className="relative z-10 w-full h-[260px]">
+                                {metrics.length > 0 ? (
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <AreaChart data={metrics} margin={{ top: 15, right: 25, left: 0, bottom: 5 }}>
+                                            <defs>
+                                                <linearGradient id="reportsSalesGradient" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="0%" stopColor="#0EA5E9" stopOpacity={0.6} />
+                                                    <stop offset="60%" stopColor="#6366F1" stopOpacity={0.2} />
+                                                    <stop offset="100%" stopColor="#6366F1" stopOpacity={0} />
+                                                </linearGradient>
+                                            </defs>
+                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255, 255, 255, 0.06)" />
+                                            <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 700 }} dy={10} />
+                                            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} tickFormatter={(val) => `$${val >= 1000 ? (val/1000).toFixed(0) + 'k' : val}`} />
+                                            <Tooltip content={<CustomReportsTooltip formatCurrency={formatCurrency} />} />
+                                            <Area 
+                                                type="monotone" 
+                                                dataKey="total" 
+                                                stroke="#38BDF8" 
+                                                strokeWidth={3} 
+                                                fillOpacity={1} 
+                                                fill="url(#reportsSalesGradient)" 
+                                                activeDot={{ r: 6, fill: '#0EA5E9', stroke: '#fff', strokeWidth: 2, style: { filter: 'drop-shadow(0px 0px 8px rgba(14,165,233,0.9))' } }} 
+                                            />
+                                        </AreaChart>
+                                    </ResponsiveContainer>
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center h-full text-center py-8">
+                                        <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-500 mb-2">
+                                            <TrendingUp size={24} />
+                                        </div>
+                                        <h4 className="text-sm font-bold text-slate-300 m-0">Aún no hay ventas mensuales registradas</h4>
+                                        <p className="text-xs text-slate-500 m-0 mt-1 max-w-sm">
+                                            Las ventas cobradas en caja se proyectarán automáticamente en esta gráfica con métricas y comparativas mensuales.
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
 
                         {/* Local SQLite Backup Card */}
                         <div className="bunkker-card" style={{ background: '#111827', color: 'white', borderColor: '#374151' }}>

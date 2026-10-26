@@ -157,15 +157,23 @@ export default function MarketCatalog({ initialCategory, hideHeader }: { initial
             {/* Banners promocionales */}
             <PromoBanners banners={catalogBanners} activeFilter={filter} />
 
-            {/* Grid del catálogo */}
-            <div className="bg-black -mx-4 sm:-mx-8 px-4 sm:px-8 py-16 mt-8 border-t border-b border-white/10">
-                <div className="flex items-center gap-4 mb-10 border-l-8 border-blue-500 pl-4">
-                    <h2 className="text-4xl md:text-5xl font-black text-white italic uppercase tracking-tighter">
-                        <span className="text-blue-400 italic">CATÁLOGO</span>
-                    </h2>
+            {/* Grid del catálogo estilo Shopify */}
+            <div className="mt-6 mb-12">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 pb-4 border-b border-slate-200/80 dark:border-slate-800">
+                    <div>
+                        <span className="text-xs font-bold uppercase tracking-wider text-[#008060] flex items-center gap-1.5 mb-1">
+                            Colección Disponible
+                        </span>
+                        <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                            {filter === 'Todos' ? 'Todos los Productos' : filter}
+                        </h2>
+                    </div>
+                    <span className="text-xs font-semibold text-slate-500 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-full self-start sm:self-auto">
+                        {filtered.length} {filtered.length === 1 ? 'producto' : 'productos'}
+                    </span>
                 </div>
 
-                <motion.div layout className="grid grid-cols-1 sm:grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-6 auto-rows-auto">
+                <motion.div layout className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 auto-rows-auto">
                     {filtered.length > 0 ? (
                         filtered.slice(0, visibleCount).map((p, index) => (
                             <ProductCard
@@ -176,8 +184,8 @@ export default function MarketCatalog({ initialCategory, hideHeader }: { initial
                             />
                         ))
                     ) : (
-                        <div className="col-span-full text-center py-16 text-slate-500 bg-slate-900/50 rounded-2xl border-2 border-dashed border-slate-700/50 font-bold italic">
-                            No se encontraron productos en esta sección.
+                        <div className="col-span-full text-center py-16 text-slate-400 bg-white dark:bg-slate-900 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 font-medium">
+                            No se encontraron productos disponibles en esta categoría.
                         </div>
                     )}
                 </motion.div>
@@ -185,12 +193,12 @@ export default function MarketCatalog({ initialCategory, hideHeader }: { initial
 
             {/* Cargar más */}
             {visibleCount < filtered.length && (
-                <div className="flex justify-center py-12">
+                <div className="flex justify-center py-8">
                     <button
                         onClick={() => setVisibleCount(prev => Math.min(prev + 12, filtered.length))}
-                        className="px-8 py-3 bg-white/10 hover:bg-white/20 border border-slate-700/50 text-slate-300 font-bold rounded-xl transition-all shadow-lg hover:-translate-y-1"
+                        className="px-6 py-2.5 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs rounded-xl transition-all shadow-xs hover:shadow-sm"
                     >
-                        Cargar más productos
+                        Cargar más productos ({filtered.length - visibleCount} restantes)
                     </button>
                 </div>
             )}

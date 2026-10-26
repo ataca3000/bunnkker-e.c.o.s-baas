@@ -8,6 +8,7 @@ import {
   CheckCircle, Copy, RefreshCw, Share2,
   Apple, Globe
 } from 'lucide-react';
+import Link from 'next/link';
 
 export default function ConectarPage() {
   const [serverUrl, setServerUrl]   = useState('');
@@ -270,12 +271,12 @@ bunkker.local:3000/login
           </div>
 
           {/* Link rápido al login */}
-          <a
+          <Link
             href="/login"
             className="w-full flex items-center justify-center gap-2 bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/50 text-slate-300 hover:text-white font-bold py-3 rounded-2xl text-sm transition-all"
           >
             Ir al Login del ERP →
-          </a>
+          </Link>
         </motion.div>
       </div>
 

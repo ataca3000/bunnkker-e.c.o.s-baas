@@ -57,6 +57,7 @@ obsoleto/
 
 # Exclude compiled Electron apps and installers
 dist-build-win/
+.electron-dist/
 build-resources/
 clon/
 check-stock.js

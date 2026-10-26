@@ -1,14 +1,17 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Settings, Key, Landmark, MapPin, CheckCircle2, User, Lock, 
-    CreditCard, HardDrive, Loader2, Sparkles, RefreshCw, Check, ArrowRight
+    CreditCard, HardDrive, Loader2, Sparkles, RefreshCw, Check, ArrowRight,
+    Printer
 } from 'lucide-react';
 import APIKeyManager from '@/components/admin/APIKeyManager';
 import InteractiveTerraMap from '@/components/admin/InteractiveTerraMap';
 import CloudBackupConfigWidget from '@/components/admin/CloudBackupConfigWidget';
+import HardwareSettingsModal from '@/components/hardware/HardwareSettingsModal';
 import { db } from '@/lib/firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { useAuth } from '@/context/AuthContext';
@@ -16,9 +19,11 @@ import { useCart } from '@/context/CartContext';
 import { toast } from '@/lib/toast';
 
 export default function SetupWizard() {
+    const searchParams = useSearchParams();
+    const urlStep = searchParams?.get('step') ? Number(searchParams.get('step')) : 1;
     const { isPremium, profile } = useAuth();
     const { siteConfig, updateSiteConfig } = useCart();
-    const [step, setStep] = useState(1);
+    const [step, setStep] = useState(urlStep);
     const [isSaving, setIsSaving] = useState(false);
     const [isScanning, setIsScanning] = useState(false);
     const [scanResult, setScanResult] = useState<{success: boolean, message: string} | null>(null);
@@ -195,6 +200,7 @@ export default function SetupWizard() {
                             { id: 3, label: 'Pasarelas de Pago', icon: <CreditCard size={18} /> },
                             { id: 4, label: 'Contacto y Ubicación', icon: <MapPin size={18} /> },
                             { id: 5, label: 'Bóveda Local', icon: <HardDrive size={18} /> },
+                            { id: 7, label: 'Impresoras y Hardware', icon: <Printer size={18} /> },
                             { id: 6, label: 'Operar Sistema', icon: <CheckCircle2 size={18} /> }
                         ].map((s) => (
                             <button
@@ -455,6 +461,12 @@ export default function SetupWizard() {
                                 )}
 
 
+                                {step === 7 && (
+                                    <div className="space-y-4">
+                                        <HardwareSettingsModal isInline />
+                                    </div>
+                                )}
+
                                 {step === 6 && (
                                     <div className="space-y-6 text-center py-6">
                                         <CheckCircle2 size={56} className="text-green-500 mx-auto animate-bounce" />
@@ -474,10 +486,10 @@ export default function SetupWizard() {
                             </motion.div>
                         </AnimatePresence>
 
-                        {step < 6 && (
+                        {step !== 6 && (
                             <div className="mt-8 pt-4 border-t border-slate-800/80 flex justify-end">
                                 <button
-                                    onClick={() => setStep(step + 1)}
+                                    onClick={() => setStep(step === 5 ? 7 : step === 7 ? 6 : step + 1)}
                                     className="bg-cyan-500 hover:bg-cyan-600 text-black px-6 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-colors flex items-center gap-2"
                                 >
                                     Siguiente Paso <ArrowRight size={14} />

@@ -1,95 +1,68 @@
+if (process.env.DATABASE_URL && !process.env.DIRECT_URL) {
+  process.env.DIRECT_URL = process.env.DATABASE_URL;
+}
+
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const prisma = new PrismaClient();
 
-const demoUsers = [
-  ['SUPERADMIN', 'superadmin', '0000'],
-  ['Administrador', 'admin', '1111'],
-  ['Ventas', 'sales', '2222'],
-  ['Inventario', 'inventory', '3333'],
-  ['Marketing', 'marketing', '4444'],
-  ['Repartidor', 'driver', '5555'],
+const initialStaffUsers = [
+  ['Dueño (Superadmin)', 'superadmin', '0000', 'superadmin@bunnkker.local'],
+  ['Gerente (Admin)', 'admin', '1111', 'admin@bunnkker.local'],
+  ['Cajero / Ventas', 'sales', '2222', 'sales@bunnkker.local'],
+  ['Bodeguero / Inventario', 'inventory', '3333', 'inventory@bunnkker.local'],
+  ['Diseñador / Marketing', 'marketing', '4444', 'marketing@bunnkker.local'],
+  ['Chofer / Repartidor', 'driver', '5555', 'driver@bunnkker.local'],
+  ['Patio / Carga y Descarga', 'carga_descarga', '6666', 'patio@bunnkker.local'],
+  ['Mostrador / Pick Up', 'pickup', '7777', 'pickup@bunnkker.local'],
 ];
 
 async function main() {
-  const products = [
-    {
-      id: "PROD-101",
-      name: "Kit de Herramientas Básico",
-      price: 499.99,
-      stock: 50,
-      category: "Herramientas",
-      image: "https://images.unsplash.com/photo-1530124566582-a618bc2615dc?w=800",
-      description: "Kit básico de herramientas para hogar y taller."
-    },
-    {
-      id: "PROD-102",
-      name: "Taladro Inalámbrico 20V",
-      price: 1299.50,
-      stock: 15,
-      category: "Eléctricas",
-      image: "https://images.unsplash.com/photo-1504148455328-c376907d081c?w=800",
-      description: "Taladro inalámbrico con batería de larga duración."
-    },
-    {
-      id: "PROD-103",
-      name: "Set de Llaves Combinadas",
-      price: 850.00,
-      stock: 30,
-      category: "Herramientas",
-      image: "https://images.unsplash.com/photo-1581092334651-ddf26d9a09d0?w=800",
-      description: "Llaves métricas e imperiales de alta resistencia."
-    },
-    {
-      id: "PROD-104",
-      name: "Cinta Métrica 8m",
-      price: 120.00,
-      stock: 100,
-      category: "Medición",
-      image: "https://images.unsplash.com/photo-1580870059865-fb18e8093db4?w=800",
-      description: "Cinta métrica resistente a impactos."
-    },
-    {
-      id: "PROD-105",
-      name: "Cemento Portland 50kg",
-      price: 210.00,
-      stock: 200,
-      category: "Materiales",
-      image: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800",
-      description: "Saco de cemento Portland tipo compuesto."
-    }
-  ];
+  console.log('🌱 [Seed] Inicializando sistema limpio (tablas en blanco + PINs iniciales)...');
 
-  for (const product of products) {
-    await prisma.product.upsert({
-      where: { id: product.id },
-      update: product,
-      create: product,
-    });
-  }
-  if (process.env.NODE_ENV === 'production' && process.env.ALLOW_DEMO_SEED !== 'true') {
-    console.log('Production detected: demo users were not seeded.');
+  // 1. Limpiar productos demo heredados si existieran para garantizar catálogo en blanco al iniciar como nuevo
+  await prisma.product.deleteMany({
+    where: {
+      id: { in: ['PROD-101', 'PROD-102', 'PROD-103', 'PROD-104', 'PROD-105'] },
+    },
+  }).catch(() => {});
+
+  // 2. Licencia y configuración inicial
+  await prisma.appConfig.upsert({
+    where: { id: 'global' },
+    update: { licenseType: 'TRIAL', tenantId: 'default' },
+    create: { id: 'global', licenseType: 'TRIAL', tenantId: 'default' },
+  });
+  console.log('✅ Configuración AppConfig lista (Licencia TRIAL activa).');
+
+  // 3. Usuarios iniciales por rol (PINs 0000–7777)
+  if (process.env.ALLOW_DEMO_SEED === 'false') {
+    console.log('ℹ️ ALLOW_DEMO_SEED=false detectado: se omitió la creación de PINs iniciales.');
   } else {
-    for (const [name, role, plainPin] of demoUsers) {
+    for (const [name, role, plainPin, email] of initialStaffUsers) {
       const pinHash = await bcrypt.hash(plainPin, 10);
       const pin = crypto.createHash('sha256').update(plainPin).digest('hex');
-      const email = `${role}@bunnkker.local`;
       await prisma.user.upsert({
-        where: { email },
+        where: {
+          tenantId_email: {
+            tenantId: 'default',
+            email,
+          },
+        },
         update: { name, role, pin, pinHash, active: true },
-        create: { name, role, email, pin, pinHash, active: true },
+        create: { tenantId: 'default', name, role, email, pin, pinHash, active: true },
       });
     }
-    console.log('6 demo users seeded with PINs 0000–5555. Change them before production.');
+    console.log('✅ 8 usuarios iniciales configurados con PINs 0000–7777 (tablas operativas en blanco).');
   }
 
-  console.log("5 demo products seeded successfully.");
+  console.log('🎉 Inicialización completada con éxito.');
 }
 
 main()
   .catch((e) => {
-    console.error(e);
+    console.error('❌ Error en seed:', e);
     process.exit(1);
   })
   .finally(async () => {

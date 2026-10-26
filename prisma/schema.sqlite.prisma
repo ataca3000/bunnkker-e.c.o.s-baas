@@ -48,6 +48,9 @@ model Product {
   orderIndex    Int         @default(0)
   deletedAt     DateTime?
   orderItems    OrderItem[]
+
+  @@index([tenantId, deletedAt])
+  @@index([tenantId, barcode])
 }
 
 model Order {
@@ -86,6 +89,8 @@ model Order {
   customer      Customer?   @relation(fields: [customerId], references: [id])
   items         OrderItem[]
   events        OrderEvent[]
+
+  @@index([tenantId, status, date])
 }
 
 model OrderItem {
@@ -179,6 +184,8 @@ model CashRegisterLog {
   discrepancy    Float
   createdAt      DateTime @default(now())
   synced         Boolean  @default(false)
+
+  @@index([tenantId, createdAt])
 }
 
 model User {
