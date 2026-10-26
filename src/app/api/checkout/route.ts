@@ -3,9 +3,14 @@ import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { auth } from '@/lib/firebase-admin';
 import { isConfiguredPriceId } from '@/lib/products';
+import { membershipCheckoutEnabled } from '@/flags';
 
 export async function POST(req: Request) {
   try {
+    if (!(await membershipCheckoutEnabled())) {
+      return NextResponse.json({ error: 'El checkout de membresías está pausado.' }, { status: 403 });
+    }
+
     const secretKey = process.env.STRIPE_SECRET_KEY;
     if (!secretKey) return NextResponse.json({ error: 'Stripe no está configurado.' }, { status: 503 });
 

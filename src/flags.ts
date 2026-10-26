@@ -4,7 +4,7 @@ import { vercelAdapter } from '@flags-sdk/vercel'
 export const membershipCheckoutEnabled = flag<boolean>({
   key: 'membership-checkout-enabled',
   description: 'Permite iniciar nuevas suscripciones de membresía con Stripe.',
-  defaultValue: true,
+  defaultValue: false,
   options: [
     { value: true, label: 'Activo' },
     { value: false, label: 'Pausado' },
@@ -15,7 +15,7 @@ export const membershipCheckoutEnabled = flag<boolean>({
 export const customerBillingPortalEnabled = flag<boolean>({
   key: 'customer-billing-portal-enabled',
   description: 'Muestra el portal de facturación de Stripe al cliente.',
-  defaultValue: true,
+  defaultValue: false,
   options: [
     { value: true, label: 'Activo' },
     { value: false, label: 'Oculto' },
@@ -30,7 +30,7 @@ export const membershipPlanVisibility = flag<'all' | 'local-hybrid' | 'enterpris
   options: [
     { value: 'all', label: 'Todos' },
     { value: 'local-hybrid', label: 'Local e Híbrido' },
-    { value: 'enterprise-only', label: 'Enterprise' },
+    { value: 'enterprise-only', label: 'Solo Enterprise' },
   ],
   adapter: vercelAdapter,
 })

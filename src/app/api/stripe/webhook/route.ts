@@ -43,10 +43,11 @@ export async function POST(req: NextRequest) {
       const session = event.data.object as Stripe.Checkout.Session;
       
       const customerEmail = session.customer_details?.email || session.customer_email;
+      const userId = session.metadata?.userId;
       const customerId = session.customer as string;
       const subscriptionId = session.subscription as string;
       
-      console.log(`[Stripe Webhook] Pago exitoso detectado para: ${customerEmail}`);
+      console.log(`[Stripe Webhook] Pago exitoso detectado para la sesión: ${session.id}`);
 
       // 1. Generate the 6-digit Serial
       const code = crypto.randomInt(100000, 999999).toString();
@@ -56,7 +57,8 @@ export async function POST(req: NextRequest) {
 
       // 3. Provision the Tenant in Firebase
       await adminDb.collection('tenants').doc(tenantId).set({
-        email: customerEmail,
+        ...(customerEmail ? { email: customerEmail.toLowerCase() } : {}),
+        ...(userId ? { userId } : {}),
         stripeCustomerId: customerId,
         stripeSubscriptionId: subscriptionId,
         status: 'active',
