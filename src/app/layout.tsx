@@ -141,6 +141,8 @@ export default async function RootLayout({
           rel="preload"
           as="image"
           href="https://images.unsplash.com/photo-1497366216548-37526070297c?w=1920&auto=format&fit=crop"
+          imageSrcSet="https://images.unsplash.com/photo-1497366216548-37526070297c?w=640&auto=format&fit=crop 640w, https://images.unsplash.com/photo-1497366216548-37526070297c?w=1080&auto=format&fit=crop 1080w, https://images.unsplash.com/photo-1497366216548-37526070297c?w=1920&auto=format&fit=crop 1920w"
+          imageSizes="100vw"
           fetchPriority="high"
         />
         <Script

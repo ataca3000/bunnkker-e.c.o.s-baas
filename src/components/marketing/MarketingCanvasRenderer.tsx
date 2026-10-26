@@ -576,6 +576,13 @@ export default function MarketingCanvasRenderer({ pageId }: { pageId: string }) 
                         className="absolute inset-0 z-0 w-full h-full object-cover scale-105 transform"
                         style={{ filter: 'brightness(0.4) contrast(1.1)' }}
                         fetchPriority="high"
+                        decoding="async"
+                        sizes="100vw"
+                        srcSet={heroImage.includes('unsplash.com') ? `
+                            ${heroImage.replace(/w=\d+/, 'w=640')} 640w,
+                            ${heroImage.replace(/w=\d+/, 'w=1080')} 1080w,
+                            ${heroImage} 1920w
+                        ` : undefined}
                     />
                 )}
 
