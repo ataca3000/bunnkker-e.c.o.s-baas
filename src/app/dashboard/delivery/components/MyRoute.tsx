@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { DeliveryOrder } from './types';
-import { Map, Zap, ChevronRight, User, MapPin, Navigation, CloudOff } from 'lucide-react';
+import { Map, Zap, ChevronRight, User, MapPin, Navigation, CloudOff, FileText, Package } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { isNube } from '@/lib/envConfig';
 import AdvancedMap from '@/components/AdvancedMap';
@@ -12,11 +12,13 @@ import OrderPickingAssistant from '@/components/orders/OrderPickingAssistant';
 export default function MyRoute({ 
   orders, 
   onStartDelivery, 
-  onBackToPool
+  onBackToPool,
+  onViewNote
 }: { 
   orders: DeliveryOrder[]; 
   onStartDelivery: (id: string) => void;
   onBackToPool: () => void;
+  onViewNote?: (order: DeliveryOrder) => void;
 }) {
   const [localOrders, setLocalOrders] = useState<DeliveryOrder[]>([]);
   const [auditOrder, setAuditOrder] = useState<DeliveryOrder | null>(null);
@@ -170,19 +172,31 @@ export default function MyRoute({
                  </p>
               </div>
               <div className="flex items-center gap-2">
+                {onViewNote && (
+                  <button 
+                    onClick={() => onViewNote(order)}
+                    className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95"
+                    title="Ver nota completa de pedido"
+                  >
+                    <FileText size={14} />
+                    <span>Nota</span>
+                  </button>
+                )}
                 <button 
                   onClick={() => setAuditOrder(order)}
-                  className="px-3 py-2 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-500/40 text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95"
-                  title="Auditar carga con lista y asistente IA"
+                  className="px-3 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95"
+                  title="Auditar y recolectar productos del pedido"
                 >
-                  📦 Auditar Carga
+                  <Package size={14} />
+                  <span>Recolectar</span>
                 </button>
                 <button 
                   onClick={() => onStartDelivery(order.id)}
-                  className="w-12 h-12 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-sky-500/30 border border-white/10 hover:border-sky-500/50 transition-all active:scale-95"
+                  className="w-10 h-10 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-slate-950 flex items-center justify-center hover:from-emerald-400 hover:to-teal-500 shadow-md transition-all active:scale-95"
                   aria-label="Ir a entrega"
+                  title="Iniciar entrega"
                 >
-                  <ChevronRight size={24} />
+                  <ChevronRight size={20} />
                 </button>
               </div>
             </div>

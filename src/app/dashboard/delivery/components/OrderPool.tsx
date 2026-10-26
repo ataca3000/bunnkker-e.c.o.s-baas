@@ -1,6 +1,6 @@
 import React from 'react';
 import type { DeliveryOrder } from './types';
-import { Plus, User, MapPin, Radar } from 'lucide-react';
+import { Plus, User, MapPin, Radar, FileText, PackageSearch } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 // Acoustic feedback
@@ -25,9 +25,11 @@ interface OrderPoolProps {
   onClaim: (id: string) => void;
   loading: boolean;
   driverLocation?: { lat: number; lng: number } | null;
+  onViewNote?: (order: DeliveryOrder) => void;
+  onStartPicking?: (order: DeliveryOrder) => void;
 }
 
-export default function OrderPool({ orders, onClaim, loading, driverLocation }: OrderPoolProps) {
+export default function OrderPool({ orders, onClaim, loading, driverLocation, onViewNote, onStartPicking }: OrderPoolProps) {
   
   const mapCenter = driverLocation ? `${driverLocation.lat},${driverLocation.lng}` : 'Ciudad+de+Mexico';
 
@@ -95,9 +97,29 @@ export default function OrderPool({ orders, onClaim, loading, driverLocation }: 
                   Tomar
                 </button>
               </div>
-              <div className="flex items-start gap-2 text-sm text-slate-300">
+              <div className="flex items-start gap-2 text-sm text-slate-300 mb-3">
                 <MapPin size={16} className="text-sky-400 mt-0.5 shrink-0" />
                 <span className="line-clamp-2">{order.address}</span>
+              </div>
+              <div className="flex items-center gap-2 pt-2 border-t border-slate-800/80">
+                {onViewNote && (
+                  <button
+                    onClick={() => onViewNote(order)}
+                    className="flex-1 py-1.5 px-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-sky-300 text-xs font-bold flex items-center justify-center gap-1 border border-slate-700 transition-colors"
+                  >
+                    <FileText size={12} />
+                    <span>Ver Nota</span>
+                  </button>
+                )}
+                {onStartPicking && (
+                  <button
+                    onClick={() => onStartPicking(order)}
+                    className="flex-1 py-1.5 px-2 rounded-lg bg-amber-950/60 hover:bg-amber-900/60 text-amber-300 text-xs font-bold flex items-center justify-center gap-1 border border-amber-500/30 transition-colors"
+                  >
+                    <PackageSearch size={12} />
+                    <span>Recolectar</span>
+                  </button>
+                )}
               </div>
             </motion.div>
           ))}

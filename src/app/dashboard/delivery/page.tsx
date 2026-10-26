@@ -12,6 +12,8 @@ import Navigation from './components/Navigation';
 import OrderPool from './components/OrderPool';
 import MyRoute from './components/MyRoute';
 import DeliveryView from './components/DeliveryView';
+import OrderNoteModal from './components/OrderNoteModal';
+import OrderPickingAssistant from '@/components/orders/OrderPickingAssistant';
 import { 
     AlertCircle, 
     User, 
@@ -25,13 +27,17 @@ import {
     ChevronDown, 
     ChevronUp, 
     ExternalLink, 
-    Radar,
-    Plus,
-    Crosshair,
-    Download,
-    Save,
-    LocateFixed,
-    ShieldCheck
+    Radar, 
+    Plus, 
+    Crosshair, 
+    Download, 
+    Save, 
+    LocateFixed, 
+    ShieldCheck,
+    FileText,
+    X,
+    Maximize2,
+    Minimize2
 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -90,6 +96,10 @@ export default function DeliveryDashboard() {
     const [panicLoading, setPanicLoading] = useState(false);
     const [driverLocation, setDriverLocation] = useState<{lat: number, lng: number} | null>(null);
     const [showMap, setShowMap] = useState<boolean>(true);
+    const [mapExpanded, setMapExpanded] = useState<boolean>(false);
+    const [selectedOrder, setSelectedOrder] = useState<DeliveryOrder | null>(null);
+    const [selectedOrderForNote, setSelectedOrderForNote] = useState<DeliveryOrder | null>(null);
+    const [pickingOrder, setPickingOrder] = useState<DeliveryOrder | null>(null);
     
     const lastGpsUpdate = useRef<number>(0);
     const GPS_THROTTLE_MS = 15000;
@@ -394,7 +404,13 @@ export default function DeliveryDashboard() {
         );
     };
 
-    const mapCenter = driverLocation ? `${driverLocation.lat},${driverLocation.lng}` : 'Ciudad+de+Mexico';
+    const activeMapCenter = selectedOrder
+        ? (selectedOrder.lat && selectedOrder.lng 
+            ? `${selectedOrder.lat},${selectedOrder.lng}` 
+            : encodeURIComponent(selectedOrder.address || ''))
+        : (driverLocation ? `${driverLocation.lat},${driverLocation.lng}` : 'Ciudad+de+Mexico');
+
+    const mapCenter = activeMapCenter;
 
     return (
         <div className="flex flex-col min-h-screen bg-slate-950 text-white font-sans relative overflow-x-hidden pb-32">
@@ -451,16 +467,25 @@ export default function DeliveryDashboard() {
             {/* ── MAIN CONTENT AREA ────────────────────────────────────────────── */}
             <main className="flex-1 w-full max-w-7xl mx-auto p-3 md:p-6 z-10 flex flex-col space-y-4">
                 
-                {/* ── MAP CONTAINER (COLLAPSIBLE / EXPANDABLE) ───────────────────── */}
+                {/* ── MAP CONTAINER (COLLAPSIBLE / EXPANDABLE / FOCUSED) ─────────────── */}
                 {currentView !== 'map' && (
-                    <div className="w-full bg-slate-900/90 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl backdrop-blur-md relative">
-                        <div className="flex items-center justify-between px-4 py-2.5 bg-slate-950/80 border-b border-slate-800">
-                            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-300">
+                    <div className="w-full bg-slate-900/90 border border-cyan-500/20 rounded-2xl overflow-hidden shadow-2xl backdrop-blur-md relative transition-all duration-200">
+                        <div className="flex items-center justify-between px-4 py-2.5 bg-slate-950/90 border-b border-slate-800 flex-wrap gap-2">
+                            <div className="flex items-center gap-2.5 text-xs font-bold uppercase tracking-wider text-slate-300">
                                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                                <span>Radar GPS:</span>
-                                <span className="text-cyan-400 font-mono">
-                                    {driverLocation ? `${driverLocation.lat.toFixed(4)}, ${driverLocation.lng.toFixed(4)}` : 'Ciudad de México, CDMX'}
-                                </span>
+                                {selectedOrder ? (
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-amber-400 font-black">Destino Seleccionado:</span>
+                                        <span className="text-cyan-300 font-mono">#{selectedOrder.id.slice(-6)} · {selectedOrder.customerName}</span>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center gap-2">
+                                        <span>Radar GPS:</span>
+                                        <span className="text-cyan-400 font-mono">
+                                            {driverLocation ? `${driverLocation.lat.toFixed(4)}, ${driverLocation.lng.toFixed(4)}` : 'En espera de señal'}
+                                        </span>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="flex items-center gap-2">
@@ -473,6 +498,13 @@ export default function DeliveryDashboard() {
                                     <ExternalLink size={12} /> Open in Maps
                                 </a>
                                 <button
+                                    onClick={() => setMapExpanded(!mapExpanded)}
+                                    className="p-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors border border-slate-700"
+                                    title={mapExpanded ? 'Vista compacta' : 'Expandir mapa'}
+                                >
+                                    {mapExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+                                </button>
+                                <button
                                     onClick={() => setShowMap(!showMap)}
                                     className="p-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors border border-slate-700"
                                     title={showMap ? 'Ocultar Mapa' : 'Mostrar Mapa'}
@@ -482,8 +514,90 @@ export default function DeliveryDashboard() {
                             </div>
                         </div>
 
+                        {/* Selected Order Quick Action Bar */}
+                        {selectedOrder && (
+                            <div className="bg-gradient-to-r from-slate-900 via-slate-950 to-slate-900 border-b border-cyan-500/30 p-2.5 px-4 flex flex-wrap items-center justify-between gap-3 text-xs backdrop-blur-xl">
+                                <div className="flex items-center gap-2.5 min-w-[200px]">
+                                    <div className="w-8 h-8 rounded-xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 flex items-center justify-center font-black shrink-0">
+                                        <Truck size={16} />
+                                    </div>
+                                    <div>
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-mono font-bold text-cyan-400">#{selectedOrder.id.slice(-6)}</span>
+                                            <span className="font-bold text-white truncate max-w-[140px] sm:max-w-[220px]">{selectedOrder.customerName}</span>
+                                            <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 font-black">
+                                                ${selectedOrder.total?.toLocaleString('es-MX')}
+                                            </span>
+                                        </div>
+                                        <div className="text-[11px] text-slate-400 flex items-center gap-1 line-clamp-1 mt-0.5">
+                                            <MapPin size={11} className="text-rose-400 shrink-0" />
+                                            <span className="truncate">{selectedOrder.address}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <button
+                                        onClick={() => setSelectedOrderForNote(selectedOrder)}
+                                        className="px-3 py-1.5 rounded-lg bg-sky-600/30 hover:bg-sky-600/50 text-sky-200 border border-sky-400/40 font-bold flex items-center gap-1.5 transition-all text-xs"
+                                        title="Ver la nota completa del pedido"
+                                    >
+                                        <FileText size={13} />
+                                        <span>Ver Nota</span>
+                                    </button>
+
+                                    <button
+                                        onClick={() => setPickingOrder(selectedOrder)}
+                                        className="px-3 py-1.5 rounded-lg bg-amber-500/30 hover:bg-amber-500/50 text-amber-200 border border-amber-400/40 font-bold flex items-center gap-1.5 transition-all text-xs"
+                                        title="Recolectar / cargar mercancía en la camioneta"
+                                    >
+                                        <PackageSearch size={13} />
+                                        <span>Recolectar</span>
+                                    </button>
+
+                                    {selectedOrder.status === 'claimed' && (
+                                        <button
+                                            onClick={() => startDelivery(selectedOrder.id)}
+                                            className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-black flex items-center gap-1.5 transition-all shadow-md text-xs"
+                                        >
+                                            <NavIcon size={13} />
+                                            <span>Iniciar Entrega</span>
+                                        </button>
+                                    )}
+
+                                    {selectedOrder.status === 'available' && (
+                                        <button
+                                            onClick={() => handleClaim(selectedOrder.id)}
+                                            className="px-3.5 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-black flex items-center gap-1.5 transition-all shadow-md text-xs"
+                                        >
+                                            <Plus size={13} />
+                                            <span>Tomar Pedido</span>
+                                        </button>
+                                    )}
+
+                                    <a
+                                        href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(selectedOrder.address || '')}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700"
+                                        title="Abrir Ruta en Google Maps"
+                                    >
+                                        <ExternalLink size={14} />
+                                    </a>
+
+                                    <button
+                                        onClick={() => setSelectedOrder(null)}
+                                        className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white border border-slate-700"
+                                        title="Cerrar selección"
+                                    >
+                                        <X size={14} />
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
                         {showMap && (
-                            <div className="w-full h-48 md:h-64 relative">
+                            <div className={`w-full relative transition-all duration-300 ${mapExpanded ? 'h-96 md:h-[460px]' : 'h-52 md:h-72'}`}>
                                 <iframe 
                                     width="100%" 
                                     height="100%" 
@@ -540,41 +654,77 @@ export default function DeliveryDashboard() {
                                         </p>
                                     </div>
                                 ) : (
-                                    availableOrders.map((order) => (
-                                        <motion.div
-                                            key={order.id}
-                                            initial={{ opacity: 0, y: 8 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            className="bg-slate-950/90 border border-slate-800 rounded-xl p-3 hover:border-sky-500/40 transition-colors shadow-sm"
-                                        >
-                                            <div className="flex justify-between items-start mb-2">
-                                                <div>
-                                                    <span className="font-mono text-[11px] font-bold text-sky-400 uppercase">
-                                                        {order.id.slice(-6)}
-                                                    </span>
-                                                    <div className="text-xs font-bold text-white flex items-center gap-1.5 mt-0.5">
-                                                        <User size={13} className="text-slate-400" />
-                                                        <span>{order.customerName}</span>
-                                                    </div>
-                                                </div>
-                                                <span className="text-xs font-black text-emerald-400">
-                                                    ${order.total?.toLocaleString('es-MX') || 0}
-                                                </span>
-                                            </div>
-
-                                            <div className="text-[11px] text-slate-400 flex items-start gap-1.5 mb-3 leading-snug">
-                                                <MapPin size={13} className="text-slate-500 shrink-0 mt-0.5" />
-                                                <span className="line-clamp-2">{order.address}</span>
-                                            </div>
-
-                                            <button
-                                                onClick={() => handleClaim(order.id)}
-                                                className="w-full py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-md shadow-sky-950"
+                                    availableOrders.map((order) => {
+                                        const isSelected = selectedOrder?.id === order.id;
+                                        return (
+                                            <motion.div
+                                                key={order.id}
+                                                initial={{ opacity: 0, y: 8 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                onClick={() => setSelectedOrder(order)}
+                                                className={`cursor-pointer rounded-xl p-3 transition-all shadow-sm ${
+                                                    isSelected 
+                                                        ? 'bg-slate-900 border-2 border-sky-400 ring-2 ring-sky-500/20' 
+                                                        : 'bg-slate-950/90 border border-slate-800 hover:border-sky-500/40'
+                                                }`}
                                             >
-                                                <Plus size={14} /> Tomar Pedido
-                                            </button>
-                                        </motion.div>
-                                    ))
+                                                <div className="flex justify-between items-start mb-2">
+                                                    <div>
+                                                        <span className="font-mono text-[11px] font-bold text-sky-400 uppercase">
+                                                            {order.id.slice(-6)}
+                                                        </span>
+                                                        <div className="text-xs font-bold text-white flex items-center gap-1.5 mt-0.5">
+                                                            <User size={13} className="text-slate-400" />
+                                                            <span>{order.customerName}</span>
+                                                        </div>
+                                                    </div>
+                                                    <span className="text-xs font-black text-emerald-400">
+                                                        ${order.total?.toLocaleString('es-MX') || 0}
+                                                    </span>
+                                                </div>
+
+                                                <div className="text-[11px] text-slate-400 flex items-start gap-1.5 mb-2.5 leading-snug">
+                                                    <MapPin size={13} className="text-slate-500 shrink-0 mt-0.5" />
+                                                    <span className="line-clamp-2">{order.address}</span>
+                                                </div>
+
+                                                {/* Action buttons */}
+                                                <div className="flex items-center gap-1.5 pt-2 border-t border-slate-800/80">
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setSelectedOrderForNote(order);
+                                                        }}
+                                                        className="px-2.5 py-1.5 rounded-lg bg-sky-950/80 hover:bg-sky-900/60 text-sky-300 border border-sky-500/30 text-[11px] font-bold flex items-center gap-1 transition-colors"
+                                                        title="Ver nota completa del pedido"
+                                                    >
+                                                        <FileText size={12} />
+                                                        <span>Nota</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setPickingOrder(order);
+                                                        }}
+                                                        className="px-2.5 py-1.5 rounded-lg bg-amber-950/80 hover:bg-amber-900/60 text-amber-300 border border-amber-500/30 text-[11px] font-bold flex items-center gap-1 transition-colors"
+                                                        title="Recolectar / cargar mercancía"
+                                                    >
+                                                        <PackageSearch size={12} />
+                                                        <span>Recolectar</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleClaim(order.id);
+                                                        }}
+                                                        className="flex-1 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1 transition-all shadow-md shadow-sky-950"
+                                                    >
+                                                        <Plus size={13} /> Tomar
+                                                    </button>
+                                                </div>
+                                            </motion.div>
+                                        );
+                                    })
                                 )}
                             </div>
                         </div>
@@ -607,52 +757,86 @@ export default function DeliveryDashboard() {
                                         </p>
                                     </div>
                                 ) : (
-                                    currentRoute.map((order) => (
-                                        <motion.div
-                                            key={order.id}
-                                            initial={{ opacity: 0, y: 8 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            className="bg-slate-950/90 border border-amber-500/40 rounded-xl p-3 shadow-md shadow-amber-950/20"
-                                        >
-                                            <div className="flex justify-between items-start mb-2">
-                                                <div>
-                                                    <span className="font-mono text-[11px] font-bold text-amber-400 uppercase">
-                                                        {order.id.slice(-6)}
-                                                    </span>
-                                                    <div className="text-xs font-bold text-white flex items-center gap-1.5 mt-0.5">
-                                                        <User size={13} className="text-slate-400" />
-                                                        <span>{order.customerName}</span>
+                                    currentRoute.map((order) => {
+                                        const isSelected = selectedOrder?.id === order.id;
+                                        return (
+                                            <motion.div
+                                                key={order.id}
+                                                initial={{ opacity: 0, y: 8 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                onClick={() => setSelectedOrder(order)}
+                                                className={`cursor-pointer rounded-xl p-3 shadow-md transition-all ${
+                                                    isSelected 
+                                                        ? 'bg-slate-900 border-2 border-amber-400 ring-2 ring-amber-500/20' 
+                                                        : 'bg-slate-950/90 border border-amber-500/40 hover:border-amber-400'
+                                                }`}
+                                            >
+                                                <div className="flex justify-between items-start mb-2">
+                                                    <div>
+                                                        <span className="font-mono text-[11px] font-bold text-amber-400 uppercase">
+                                                            {order.id.slice(-6)}
+                                                        </span>
+                                                        <div className="text-xs font-bold text-white flex items-center gap-1.5 mt-0.5">
+                                                            <User size={13} className="text-slate-400" />
+                                                            <span>{order.customerName}</span>
+                                                        </div>
                                                     </div>
+                                                    <span className="text-xs font-black text-emerald-400">
+                                                        ${order.total?.toLocaleString('es-MX') || 0}
+                                                    </span>
                                                 </div>
-                                                <span className="text-xs font-black text-emerald-400">
-                                                    ${order.total?.toLocaleString('es-MX') || 0}
-                                                </span>
-                                            </div>
 
-                                            <div className="text-[11px] text-slate-400 flex items-start gap-1.5 mb-2 leading-snug">
-                                                <MapPin size={13} className="text-slate-500 shrink-0 mt-0.5" />
-                                                <span className="line-clamp-2">{order.address}</span>
-                                            </div>
+                                                <div className="text-[11px] text-slate-400 flex items-start gap-1.5 mb-2.5 leading-snug">
+                                                    <MapPin size={13} className="text-slate-500 shrink-0 mt-0.5" />
+                                                    <span className="line-clamp-2">{order.address}</span>
+                                                </div>
 
-                                            <div className="flex items-center gap-2">
-                                                <button
-                                                    onClick={() => startDelivery(order.id)}
-                                                    className="flex-1 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 rounded-lg text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-md"
-                                                >
-                                                    <NavIcon size={13} /> Iniciar Entrega
-                                                </button>
-                                                <a
-                                                    href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(order.address || '')}`}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg border border-slate-700 transition-colors"
-                                                    title="Navegar en Google Maps"
-                                                >
-                                                    <ExternalLink size={14} />
-                                                </a>
-                                            </div>
-                                        </motion.div>
-                                    ))
+                                                <div className="flex items-center gap-1.5 pt-2 border-t border-slate-800/80">
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setSelectedOrderForNote(order);
+                                                        }}
+                                                        className="px-2.5 py-1.5 rounded-lg bg-sky-950/80 hover:bg-sky-900/60 text-sky-300 border border-sky-500/30 text-[11px] font-bold flex items-center gap-1 transition-colors"
+                                                        title="Ver nota completa del pedido"
+                                                    >
+                                                        <FileText size={12} />
+                                                        <span>Nota</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setPickingOrder(order);
+                                                        }}
+                                                        className="px-2.5 py-1.5 rounded-lg bg-amber-950/80 hover:bg-amber-900/60 text-amber-300 border border-amber-500/30 text-[11px] font-bold flex items-center gap-1 transition-colors"
+                                                        title="Recolectar / cargar mercancía"
+                                                    >
+                                                        <PackageSearch size={12} />
+                                                        <span>Recolectar</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            startDelivery(order.id);
+                                                        }}
+                                                        className="flex-1 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 rounded-lg text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1 transition-all shadow-md"
+                                                    >
+                                                        <NavIcon size={12} /> Iniciar
+                                                    </button>
+                                                    <a
+                                                        href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(order.address || '')}`}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        onClick={(e) => e.stopPropagation()}
+                                                        className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg border border-slate-700 transition-colors"
+                                                        title="Navegar en Google Maps"
+                                                    >
+                                                        <ExternalLink size={13} />
+                                                    </a>
+                                                </div>
+                                            </motion.div>
+                                        );
+                                    })
                                 )}
                             </div>
                         </div>
@@ -685,33 +869,57 @@ export default function DeliveryDashboard() {
                                         </p>
                                     </div>
                                 ) : (
-                                    history.map((order) => (
-                                        <div
-                                            key={order.id}
-                                            className="bg-slate-950/90 border border-slate-800 rounded-xl p-3 shadow-sm"
-                                        >
-                                            <div className="flex justify-between items-center mb-1.5">
-                                                <span className="font-mono text-[11px] font-bold text-sky-400 uppercase">
-                                                    {order.id.slice(-6)}
-                                                </span>
-                                                <span className={`text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1 ${
-                                                    order.status === 'completed'
-                                                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                                                        : 'bg-red-500/20 text-red-400 border border-red-500/30'
-                                                }`}>
-                                                    {order.status === 'completed' ? <CheckCircle2 size={11} /> : <XCircle size={11} />}
-                                                    {order.status === 'completed' ? 'Entregado' : 'Fallida'}
-                                                </span>
-                                            </div>
+                                    history.map((order) => {
+                                        const isSelected = selectedOrder?.id === order.id;
+                                        return (
+                                            <div
+                                                key={order.id}
+                                                onClick={() => setSelectedOrder(order)}
+                                                className={`cursor-pointer rounded-xl p-3 shadow-sm transition-all ${
+                                                    isSelected 
+                                                        ? 'bg-slate-900 border-2 border-purple-400' 
+                                                        : 'bg-slate-950/90 border border-slate-800 hover:border-purple-500/40'
+                                                }`}
+                                            >
+                                                <div className="flex justify-between items-center mb-1.5">
+                                                    <span className="font-mono text-[11px] font-bold text-sky-400 uppercase">
+                                                        {order.id.slice(-6)}
+                                                    </span>
+                                                    <span className={`text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1 ${
+                                                        order.status === 'completed'
+                                                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                                                            : 'bg-red-500/20 text-red-400 border border-red-500/30'
+                                                    }`}>
+                                                        {order.status === 'completed' ? <CheckCircle2 size={11} /> : <XCircle size={11} />}
+                                                        {order.status === 'completed' ? 'Entregado' : 'Fallida'}
+                                                    </span>
+                                                </div>
 
-                                            <div className="text-xs font-bold text-white mb-1">
-                                                {order.customerName}
+                                                <div className="text-xs font-bold text-white mb-1">
+                                                    {order.customerName}
+                                                </div>
+                                                <div className="text-[11px] text-slate-400 line-clamp-1 mb-2">
+                                                    {order.address}
+                                                </div>
+
+                                                <div className="flex items-center justify-between pt-1.5 border-t border-slate-800/80">
+                                                    <span className="text-xs font-black text-emerald-400">
+                                                        Total: ${order.total?.toLocaleString('es-MX') || 0}
+                                                    </span>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setSelectedOrderForNote(order);
+                                                        }}
+                                                        className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-purple-300 hover:text-white text-[10px] font-bold flex items-center gap-1 border border-slate-700 transition-colors"
+                                                    >
+                                                        <FileText size={11} />
+                                                        <span>Ver Nota</span>
+                                                    </button>
+                                                </div>
                                             </div>
-                                            <div className="text-[11px] text-slate-400 line-clamp-1">
-                                                {order.address}
-                                            </div>
-                                        </div>
-                                    ))
+                                        );
+                                    })
                                 )}
                             </div>
                         </div>
@@ -725,6 +933,8 @@ export default function DeliveryDashboard() {
                         onClaim={handleClaim} 
                         loading={false} 
                         driverLocation={driverLocation} 
+                        onViewNote={(order) => setSelectedOrderForNote(order)}
+                        onStartPicking={(order) => setPickingOrder(order)}
                     />
                 )}
 
@@ -733,6 +943,7 @@ export default function DeliveryDashboard() {
                         orders={currentRoute} 
                         onStartDelivery={startDelivery} 
                         onBackToPool={() => setCurrentView('cockpit')} 
+                        onViewNote={(order) => setSelectedOrderForNote(order)}
                     />
                 )}
 
@@ -766,7 +977,10 @@ export default function DeliveryDashboard() {
                                                 radiusKm: zoneRadiusKm,
                                                 enabled: true
                                             }}
-                                            onMarkerClick={(m: any) => startDelivery(m.id)}
+                                            onMarkerClick={(m: any) => {
+                                                const ord = orders.find(o => o.id === m.id);
+                                                if (ord) setSelectedOrder(ord);
+                                            }}
                                         />
                                     );
                                 })()}
@@ -977,6 +1191,40 @@ export default function DeliveryDashboard() {
                         onFinish={() => {
                             setActiveDeliveryId(null);
                             setCurrentView('cockpit');
+                        }}
+                    />
+                )}
+
+                {/* ── MODAL: NOTA DE PEDIDO DETALLADA (CONTACTO, DIRECCIÓN, PIN, ITEMS) ── */}
+                {selectedOrderForNote && (
+                    <OrderNoteModal
+                        order={selectedOrderForNote}
+                        onClose={() => setSelectedOrderForNote(null)}
+                        onStartPicking={(order) => {
+                            setSelectedOrderForNote(null);
+                            setPickingOrder(order);
+                        }}
+                        onStartDelivery={(orderId) => {
+                            setSelectedOrderForNote(null);
+                            startDelivery(orderId);
+                        }}
+                        onClaim={(orderId) => {
+                            handleClaim(orderId);
+                            setSelectedOrderForNote(null);
+                        }}
+                    />
+                )}
+
+                {/* ── ASISTENTE DE RECOLECCIÓN (PICKING DE INCISOS EN BODEGA/CAMIONETA) ── */}
+                {pickingOrder && (
+                    <OrderPickingAssistant
+                        order={pickingOrder}
+                        role="driver"
+                        mode="picking"
+                        onClose={() => setPickingOrder(null)}
+                        onComplete={async (orderId) => {
+                            toast.success(`🎉 Pedido #${orderId.slice(-6)} recolectado y verificado en tu unidad.`);
+                            setPickingOrder(null);
                         }}
                     />
                 )}
