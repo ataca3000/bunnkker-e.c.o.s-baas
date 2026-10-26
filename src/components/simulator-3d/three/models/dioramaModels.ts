@@ -3497,6 +3497,137 @@ export function createNeonDataArcBeam(
   return { group, curve, pulseBead };
 }
 
+/**
+ * 35. GLOBOS DE ETIQUETAS FLOTANTES Y ANIMADAS (Exact Match to User Reference Diagram)
+ * Animated neon balloon badges with glowing borders and sinusoidal vertical levitation.
+ */
+export interface FloatingBalloonBadge {
+  group: THREE.Group;
+  sprite: THREE.Sprite;
+  baseY: number;
+  floatSpeed: number;
+  floatAmp: number;
+  floatPhase: number;
+}
+
+export function createFloatingBalloonBadge(
+  title: string,
+  colorHex: string = '#00f0ff',
+  baseY: number = 4.5,
+  scaleWidth: number = 3.8,
+  scaleHeight: number = 1.15
+): FloatingBalloonBadge {
+  const group = new THREE.Group();
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 640;
+  canvas.height = 180;
+  const ctx = canvas.getContext('2d')!;
+
+  // 1. Semi-transparent high-tech dark background
+  const grad = ctx.createLinearGradient(0, 0, 640, 180);
+  grad.addColorStop(0, 'rgba(4, 9, 20, 0.90)');
+  grad.addColorStop(0.5, 'rgba(8, 17, 36, 0.94)');
+  grad.addColorStop(1, 'rgba(4, 9, 20, 0.90)');
+  ctx.fillStyle = grad;
+
+  const radius = 28;
+  const paddingX = 16;
+  const paddingY = 16;
+  const boxW = 640 - paddingX * 2;
+  const boxH = 180 - paddingY * 2 - 18; // Leave room for bottom pointer
+
+  ctx.beginPath();
+  if (ctx.roundRect) {
+    ctx.roundRect(paddingX, paddingY, boxW, boxH, radius);
+  } else {
+    ctx.rect(paddingX, paddingY, boxW, boxH);
+  }
+  ctx.fill();
+
+  // 2. Multi-layered neon glow border
+  ctx.shadowColor = colorHex;
+  ctx.shadowBlur = 24;
+  ctx.strokeStyle = colorHex;
+  ctx.lineWidth = 6;
+  ctx.beginPath();
+  if (ctx.roundRect) {
+    ctx.roundRect(paddingX, paddingY, boxW, boxH, radius);
+  } else {
+    ctx.strokeRect(paddingX, paddingY, boxW, boxH);
+  }
+  ctx.stroke();
+
+  // 3. Pointer tail at bottom
+  ctx.beginPath();
+  const midX = 640 / 2;
+  const tailTop = paddingY + boxH;
+  ctx.moveTo(midX - 18, tailTop - 2);
+  ctx.lineTo(midX, tailTop + 16);
+  ctx.lineTo(midX + 18, tailTop - 2);
+  ctx.fillStyle = 'rgba(8, 17, 36, 0.95)';
+  ctx.fill();
+  ctx.stroke();
+
+  // 4. Inner subtle border
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  if (ctx.roundRect) {
+    ctx.roundRect(paddingX + 6, paddingY + 6, boxW - 12, boxH - 12, radius - 4);
+  }
+  ctx.stroke();
+
+  // 5. Glowing neon text
+  ctx.shadowColor = colorHex;
+  ctx.shadowBlur = 16;
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 34px "Plus Jakarta Sans", system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(title, midX, paddingY + boxH / 2);
+
+  // 6. Three.js Sprite
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  const spriteMat = new THREE.SpriteMaterial({
+    map: texture,
+    transparent: true,
+    depthTest: false,
+    depthWrite: false,
+  });
+  const sprite = new THREE.Sprite(spriteMat);
+  sprite.scale.set(scaleWidth, scaleHeight, 1.0);
+  sprite.position.y = 0;
+  group.add(sprite);
+
+  // 7. Ground pulsing ring beacon
+  const ringGeo = new THREE.RingGeometry(0.25, 0.45, 24);
+  const ringMat = new THREE.MeshBasicMaterial({
+    color: new THREE.Color(colorHex),
+    transparent: true,
+    opacity: 0.55,
+    side: THREE.DoubleSide,
+  });
+  const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+  ringMesh.rotation.x = -Math.PI / 2;
+  ringMesh.position.y = -baseY + 0.05;
+  group.add(ringMesh);
+
+  group.position.y = baseY;
+
+  return {
+    group,
+    sprite,
+    baseY,
+    floatSpeed: 1.8 + Math.random() * 0.5,
+    floatAmp: 0.16 + Math.random() * 0.06,
+    floatPhase: Math.random() * Math.PI * 2,
+  };
+}
+
+
 
 
 

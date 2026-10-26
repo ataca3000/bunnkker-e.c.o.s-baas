@@ -62,7 +62,7 @@ export default function FerreflujoSimulator3D({ embedded = false, className = ''
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
   const [currentPerspective, setCurrentPerspective] = useState<PerspectiveType>('alejada_panoramica');
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
-  const [hudVisible, setHudVisible] = useState<boolean>(true);
+  const [hudVisible, setHudVisible] = useState<boolean>(false);
   const [activeStepText, setActiveStepText] = useState<string>('Sistema Bunkker E.C.O.S. en reposo');
 
   // Pedidos activos del simulador sincronizados con el flujo Bunkker (puro, sin Date.now en render)
@@ -256,23 +256,16 @@ export default function FerreflujoSimulator3D({ embedded = false, className = ''
           </Link>
         )}
 
-        {/* Badge de Estado del Gemelo Digital */}
-        <div className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-slate-950/80 backdrop-blur-md border border-cyan-500/40 text-white shadow-lg">
+        {/* Badge Compacto del Gemelo Digital */}
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-950/80 backdrop-blur-md border border-cyan-500/40 text-white shadow-lg">
           <div className="relative flex items-center justify-center">
             <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping absolute"></span>
             <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
           </div>
-          <div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs font-black tracking-tight text-white uppercase">FerreFlujo 3D</span>
-              <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                GEMELO DIGITAL
-              </span>
-            </div>
-            <p className="text-[10px] text-cyan-400/90 font-mono truncate max-w-[200px]">
-              {activeStepText}
-            </p>
-          </div>
+          <span className="text-xs font-black tracking-tight text-white uppercase">FerreFlujo 3D</span>
+          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+            CIRCULATORIO E.C.O.S.
+          </span>
         </div>
       </div>
 

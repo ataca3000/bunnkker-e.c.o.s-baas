@@ -22,6 +22,8 @@ import {
   createShockwaveMesh,
   createModularPodium,
   createNeonZoneBadge,
+  createFloatingBalloonBadge,
+  type FloatingBalloonBadge,
   createLogisticsControlRoom,
   createSurtidoWorkstations,
   createEntregasDock,
@@ -113,6 +115,7 @@ export class HardwareDioramaScene {
   public activeBoxes: ActiveBox[] = [];
   public maxBoxes: number = 9;
   private floatingBadges: FloatingBadge[] = [];
+  public floatingZoneBadges: FloatingBalloonBadge[] = [];
 
   // 3D Visual Route Guides, Beacons & Shockwaves
   private routeGuides: {
@@ -514,11 +517,6 @@ export class HardwareDioramaScene {
     miniForkliftDriver.rotation.y = -Math.PI / 2;
     almacenGroup.add(miniForkliftDriver);
 
-    // 3D Neon Badge: ALMACÉN / SPA
-    const signAlmacen = createNeonZoneBadge('ALMACÉN', 'SPA', 4.4);
-    signAlmacen.position.set(0, 0.58, 3.8);
-    almacenGroup.add(signAlmacen);
-
     this.scene.add(almacenGroup);
 
     // ─────────────────────────────────────────────────────────────
@@ -533,10 +531,6 @@ export class HardwareDioramaScene {
     const deskTop = createAtencionDesk(this.materials);
     deskTop.position.set(0, 0.58, -0.2);
     atencionTopGroup.add(deskTop);
-
-    const signAtencionTop = createNeonZoneBadge('ATENCIÓN', 'SPA', 3.8);
-    signAtencionTop.position.set(0, 0.58, 2.0);
-    atencionTopGroup.add(signAtencionTop);
 
     this.scene.add(atencionTopGroup);
 
@@ -560,10 +554,6 @@ export class HardwareDioramaScene {
     logisticaGroup.add(bunkkerBoard);
     this.bunkkerControlBoard = bunkkerBoard;
 
-    const signLogistica = createNeonZoneBadge('LOGÍSTICA', 'SPA', 4.4);
-    signLogistica.position.set(0, 0.58, 3.2);
-    logisticaGroup.add(signLogistica);
-
     this.scene.add(logisticaGroup);
 
     // ─────────────────────────────────────────────────────────────
@@ -578,10 +568,6 @@ export class HardwareDioramaScene {
     const surtidoStations = createSurtidoWorkstations(this.materials);
     surtidoStations.position.set(0, 0.78, 0);
     surtidoGroup.add(surtidoStations);
-
-    const signSurtido = createNeonZoneBadge('SURTIDO', 'SPA', 4.0);
-    signSurtido.position.set(0, 0.78, 3.0);
-    surtidoGroup.add(signSurtido);
 
     this.scene.add(surtidoGroup);
 
@@ -608,10 +594,6 @@ export class HardwareDioramaScene {
       }
     });
 
-    const signCaja = createNeonZoneBadge('CAJA DE COBRO', 'SPA', 3.8);
-    signCaja.position.set(0, 0.58, 2.6);
-    cajaGroup.add(signCaja);
-
     this.scene.add(cajaGroup);
 
     // ─────────────────────────────────────────────────────────────
@@ -632,10 +614,6 @@ export class HardwareDioramaScene {
     this.clientPhoneFigure.position.set(1.4, 0.58, 0.8);
     this.clientPhoneFigure.rotation.y = -Math.PI / 3;
     atencionBtmGroup.add(this.clientPhoneFigure);
-
-    const signAtencionBtm = createNeonZoneBadge('ATENCIÓN', 'SPA', 3.8);
-    signAtencionBtm.position.set(0, 0.58, 2.2);
-    atencionBtmGroup.add(signAtencionBtm);
 
     this.scene.add(atencionBtmGroup);
 
@@ -658,10 +636,6 @@ export class HardwareDioramaScene {
     this.cargoOperator.rotation.y = Math.PI / 4;
     entregasGroup.add(this.cargoOperator);
 
-    const signEntregas = createNeonZoneBadge('ENTREGAS', 'SPA', 4.4);
-    signEntregas.position.set(0, 0.58, 3.8);
-    entregasGroup.add(signEntregas);
-
     this.scene.add(entregasGroup);
 
     // ─────────────────────────────────────────────────────────────
@@ -671,6 +645,28 @@ export class HardwareDioramaScene {
     domicilioGroup.position.set(25.5, 0, 9.5);
     this.client4_home = (domicilioGroup.userData.clientHome as THREE.Group) || null;
     this.scene.add(domicilioGroup);
+
+    // ─────────────────────────────────────────────────────────────
+    // 9. GLOBOS DE ETIQUETAS FLOTANTES Y ANIMADOS (Diagrama de Flujo Bunkker)
+    // ─────────────────────────────────────────────────────────────
+    const balloonConfigs = [
+      { title: 'almacén / inventariado', color: '#00f0ff', x: -14.0, y: 5.8, z: -10.0, sw: 4.6, sh: 1.3 },
+      { title: 'entrada stok', color: '#facc15', x: -19.5, y: 4.2, z: -4.5, sw: 3.2, sh: 0.95 },
+      { title: 'catalogo virtual', color: '#06b6d4', x: -15.0, y: 5.0, z: 8.5, sw: 3.8, sh: 1.15 },
+      { title: 'CAJA DE COBRO', color: '#10b981', x: -4.5, y: 5.0, z: 10.5, sw: 3.8, sh: 1.15 },
+      { title: 'cobro entrega', color: '#2dd4bf', x: -1.0, y: 3.8, z: 5.5, sw: 3.0, sh: 0.95 },
+      { title: 'pedido y recoleccion', color: '#38bdf8', x: 0.0, y: 5.4, z: -0.5, sw: 4.5, sh: 1.25 },
+      { title: 'CARGA / pick-up', color: '#00f2fe', x: 13.0, y: 5.2, z: 9.5, sw: 4.2, sh: 1.2 },
+      { title: 'entrega', color: '#0284c7', x: 8.5, y: 3.8, z: 7.0, sw: 2.6, sh: 0.85 },
+      { title: 'recoleccion repartidores', color: '#818cf8', x: 15.5, y: 5.6, z: -9.5, sw: 4.8, sh: 1.3 },
+    ];
+
+    balloonConfigs.forEach((cfg) => {
+      const badge = createFloatingBalloonBadge(cfg.title, cfg.color, cfg.y, cfg.sw, cfg.sh);
+      badge.group.position.set(cfg.x, cfg.y, cfg.z);
+      this.scene.add(badge.group);
+      this.floatingZoneBadges.push(badge);
+    });
   }
 
   private setupSplines() {
@@ -1036,19 +1032,28 @@ export class HardwareDioramaScene {
     const almacenPos = new THREE.Vector3(-14.0, 3.2, -11.0);
     const surtidoPos = new THREE.Vector3(0.0, 2.2, -0.5);
     const cajaPos = new THREE.Vector3(-4.5, 2.2, 10.5);
-    const cargaPos = new THREE.Vector3(-14.0, 2.2, -10.5);
+    const cargaPos = new THREE.Vector3(13.0, 2.2, 9.5);
     const domicilioPos = new THREE.Vector3(25.0, 2.0, 9.5);
+    const stockInPos = new THREE.Vector3(-19.5, 2.0, -4.5);
+    const cobroEntregaPos = new THREE.Vector3(-1.0, 2.0, 5.5);
 
-    // Conexiones de alta diferenciación cromática según los estratos del sistema Bunkker
+    // Conexiones de alta diferenciación cromática según los 4 flujos circulatorios del diagrama
     const arcsConfig = [
-      { id: 'cli-bunkker', start: clientePos, end: bunkkerPos, height: 7.2, color: 0x84cc16, label: '📱 1. AUTO-PEDIDO QR' },
-      { id: 'bunkker-caja', start: bunkkerPos, end: cajaPos, height: 6.4, color: 0x00f0ff, label: '💳 2. BLOQUEO WAL & COBRO' },
-      { id: 'bunkker-alm', start: bunkkerPos, end: almacenPos, height: 6.5, color: 0x06b6d4, label: '📦 3. SURTIDO EN ESTANTES' },
-      { id: 'alm-surtido', start: almacenPos, end: surtidoPos, height: 4.8, color: 0xd946ef, label: '🏷️ 4. CONTROL & ETIQUETADO' },
-      { id: 'surtido-carga', start: surtidoPos, end: cargaPos, height: 5.2, color: 0xf97316, label: '🚜 5A. PATIO & MONTACARGAS' },
-      { id: 'surtido-dom', start: surtidoPos, end: domicilioPos, height: 5.8, color: 0x8b5cf6, label: '🚛 5B. RUTA REPARTO' },
-      { id: 'dom-bunkker', start: domicilioPos, end: bunkkerPos, height: 6.8, color: 0x10b981, label: '✍️ 6. FIRMA PoD / CIERRE' },
-      { id: 'caja-carga', start: cajaPos, end: cargaPos, height: 5.6, color: 0xfbbf24, label: '🧾 TICKET DIGITAL VALIDADO' },
+      // 1. Entrada de Stock (Amarillo Neón)
+      { id: 'stock-alm', start: stockInPos, end: almacenPos, height: 4.8, color: 0xfacc15, label: '📦 ENTRADA STOCK' },
+      // 2. Rutas Púrpuras: Catálogo -> Almacén -> Logística / Repartidores -> Ruta
+      { id: 'cli-alm-purple', start: clientePos, end: almacenPos, height: 7.2, color: 0xa855f7, label: '🌐 CATÁLOGO VIRTUAL' },
+      { id: 'alm-bunkker-purple', start: almacenPos, end: bunkkerPos, height: 7.8, color: 0x8b5cf6, label: '📊 LOGÍSTICA & TELEMETRÍA' },
+      { id: 'bunkker-dom-purple', start: bunkkerPos, end: domicilioPos, height: 6.8, color: 0x7c3aed, label: '🛵 RECOLECCIÓN REPARTIDORES' },
+      // 3. Rutas Rojas: Pedido, recolección y transferencia a Carga / Pick-up
+      { id: 'caja-alm-red', start: cajaPos, end: almacenPos, height: 6.5, color: 0xef4444, label: '⚡ AUTORIZACIÓN & ORDEN' },
+      { id: 'alm-surtido-red', start: almacenPos, end: surtidoPos, height: 5.2, color: 0xf43f5e, label: '🛒 PEDIDO Y RECOLECCIÓN' },
+      { id: 'surtido-carga-red', start: surtidoPos, end: cargaPos, height: 5.5, color: 0xe11d48, label: '🚚 CARGA / PICK-UP' },
+      { id: 'bunkker-carga-red', start: bunkkerPos, end: cargaPos, height: 6.8, color: 0xd946ef, label: '📋 AUTORIZACIÓN DESPACHO' },
+      // 4. Rutas Verdes: Pago en caja, transferencia y entrega final
+      { id: 'cli-caja-green', start: clientePos, end: cajaPos, height: 3.8, color: 0x10b981, label: '💳 CAJA DE COBRO' },
+      { id: 'caja-surtido-green', start: cajaPos, end: cobroEntregaPos, height: 4.2, color: 0x22c55e, label: '💵 COBRO ENTREGA' },
+      { id: 'surtido-carga-green', start: cobroEntregaPos, end: cargaPos, height: 4.6, color: 0x14b8a6, label: '📦 ENTREGA LISTA' },
     ];
 
     arcsConfig.forEach((cfg) => {
@@ -2011,6 +2016,12 @@ export class HardwareDioramaScene {
         const targetLift = needsDoor ? 1.0 : 0.35 + Math.sin(elapsedTime * 0.8) * 0.25;
         this.dockGroup.userData.setDoorOpen(targetLift);
       }
+    }
+
+    // 2B. Animate 3D Floating Zone Balloon Badges (Levitación senoidal continua)
+    for (const badge of this.floatingZoneBadges) {
+      badge.group.position.y =
+        badge.baseY + Math.sin(elapsedTime * badge.floatSpeed + badge.floatPhase) * badge.floatAmp;
     }
 
     // 3. Animate 3D Floating Stock Badges & Milestone Sprites
