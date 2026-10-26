@@ -42,6 +42,7 @@ export default function EsquemaPoligono3D() {
     const [zoom, setZoom] = useState<number>(0.95);
     const [selectedLayerIndex, setSelectedLayerIndex] = useState<number | null>(null);
     const [selectedNode, setSelectedNode] = useState<PolygonNode | null>(null);
+    const [showTelemetryBar, setShowTelemetryBar] = useState<boolean>(false); // Barra de descripción/datos oculta por defecto para dejar puro visual 3D
 
     // ── Estado de Arrastre Orbital con Mouse ──
     const isDraggingRef = useRef(false);
@@ -156,43 +157,56 @@ export default function EsquemaPoligono3D() {
                             </button>
                         );
                     })}
+                    <button
+                        onClick={() => setShowTelemetryBar(!showTelemetryBar)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border ${
+                            showTelemetryBar 
+                                ? 'bg-cyan-500 text-slate-950 border-cyan-400 font-bold' 
+                                : 'bg-slate-950/80 text-cyan-300 border-cyan-500/40 hover:bg-cyan-500/20'
+                        }`}
+                        title="Ocultar o mostrar barra de descripción sobre el gemelo 3D"
+                    >
+                        {showTelemetryBar ? 'Puro Visual 3D' : 'Ver Barra de Datos'}
+                    </button>
                 </div>
             </header>
 
-            {/* ── BARRA DE TELEMETRÍA DEL PASO ACTIVO ── */}
-            <div className="interactive-control relative z-20 px-6 py-2.5 bg-cyan-950/40 border-b border-cyan-500/20 flex items-center justify-between gap-4 text-xs font-mono">
-                <div className="flex items-center gap-3 overflow-hidden">
-                    <button
-                        onClick={() => setIsPlaying(!isPlaying)}
-                        className="p-1.5 rounded-lg bg-cyan-500/20 text-cyan-300 hover:bg-cyan-500/40 transition border border-cyan-500/30"
-                        title={isPlaying ? "Pausar" : "Reanudar"}
-                    >
-                        {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 fill-current" />}
-                    </button>
-                    <div className="flex items-center gap-2 truncate">
-                        <span className="text-cyan-400 font-bold">
-                            PASO {currentStepIndex + 1}/{activeFlow.steps.length}:
-                        </span>
-                        <span className="text-slate-200 truncate">
-                            {activeFlow.steps[currentStepIndex]?.actionLabel}
-                        </span>
-                        <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] border border-slate-700">
-                            Capa: {activeFlow.steps[currentStepIndex]?.layerName}
-                        </span>
+            {/* ── BARRA DE TELEMETRÍA DEL PASO ACTIVO (OPCIONAL / RETIRADA POR DEFECTO PARA DEJAR PURO VISUAL 3D) ── */}
+            {showTelemetryBar && (
+                <div className="interactive-control relative z-20 px-6 py-2.5 bg-cyan-950/40 border-b border-cyan-500/20 flex items-center justify-between gap-4 text-xs font-mono">
+                    <div className="flex items-center gap-3 overflow-hidden">
+                        <button
+                            onClick={() => setIsPlaying(!isPlaying)}
+                            className="p-1.5 rounded-lg bg-cyan-500/20 text-cyan-300 hover:bg-cyan-500/40 transition border border-cyan-500/30"
+                            title={isPlaying ? "Pausar" : "Reanudar"}
+                        >
+                            {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 fill-current" />}
+                        </button>
+                        <div className="flex items-center gap-2 truncate">
+                            <span className="text-cyan-400 font-bold">
+                                PASO {currentStepIndex + 1}/{activeFlow.steps.length}:
+                            </span>
+                            <span className="text-slate-200 truncate">
+                                {activeFlow.steps[currentStepIndex]?.actionLabel}
+                            </span>
+                            <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] border border-slate-700">
+                                Capa: {activeFlow.steps[currentStepIndex]?.layerName}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div className="hidden lg:flex items-center gap-2 text-slate-400">
+                        <span className="text-[11px]">Arrastra para orbitar en 3D libre</span>
+                        <button
+                            onClick={resetView}
+                            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition flex items-center gap-1 text-[11px]"
+                            title="Restablecer Cámara"
+                        >
+                            <RotateCcw className="w-3.5 h-3.5" /> Reset
+                        </button>
                     </div>
                 </div>
-
-                <div className="hidden lg:flex items-center gap-2 text-slate-400">
-                    <span className="text-[11px]">Arrastra para orbitar en 3D libre</span>
-                    <button
-                        onClick={resetView}
-                        className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition flex items-center gap-1 text-[11px]"
-                        title="Restablecer Cámara"
-                    >
-                        <RotateCcw className="w-3.5 h-3.5" /> Reset
-                    </button>
-                </div>
-            </div>
+            )}
 
             {/* ── ÁREA PRINCIPAL 3D CANVAS ISOMÉTRICO ── */}
             <div 
