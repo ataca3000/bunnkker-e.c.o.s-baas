@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { SignJWT } from 'jose';
 import { signRole, getTenantId } from '@/lib/apiAuth';
 import bcrypt from 'bcryptjs';
+import { queueCloudSync, processCloudSyncQueue } from '@/lib/cloudSyncWorker';
 
 const JWT_SECRET = new TextEncoder().encode(
     process.env.JWT_SECRET || process.env.INTERNAL_API_SECRET || 'bunkker-ecos-default-local-dev-secret-key-2026'
@@ -94,6 +95,26 @@ export async function POST(req: NextRequest) {
                 }
             });
         }
+
+        // Replicación silenciosa en segundo plano a la nube / Supabase sin bloquear la respuesta local
+        queueCloudSync({
+            tenantId,
+            collection: 'customers',
+            documentId: customer.id,
+            action: 'CREATE',
+            payload: {
+                id: customer.id,
+                tenantId,
+                name: customer.name,
+                email: customer.email,
+                phone: customer.phone,
+                address: customer.address,
+                rfc: customer.rfc,
+                createdAt: customer.createdAt,
+            }
+        }).then(() => {
+            processCloudSyncQueue({ batchSize: 5 }).catch(() => {});
+        }).catch(() => {});
 
         const isHttps =
             req.url.startsWith('https://') ||

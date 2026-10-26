@@ -122,6 +122,35 @@ describe('Anti-Impersonation & Systemic Sync Plumbing', () => {
     expect((globalThis as any).window.dispatchEvent).toHaveBeenCalled();
   });
 
+  it('debe registrar un cliente nuevo y encolarlo en SyncQueue para sincronización silenciosa con la nube', async () => {
+    const newEmail = `cloud_sync_${Date.now()}@test.com`;
+    const newReq = new NextRequest('http://localhost:3000/api/auth/register-client', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: 'Cliente Para Nube',
+        email: newEmail,
+        password: 'cloud_pass_8888',
+        phone: '5599887766'
+      })
+    });
+
+    const response = await registerClientHandler(newReq);
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.success).toBe(true);
+
+    // Verificar que se haya encolado en SyncQueue
+    const queueItems = await prisma.syncQueue.findMany({
+      where: { collection: 'customers' }
+    });
+    expect(queueItems.length).toBeGreaterThan(0);
+    const lastItem = queueItems[queueItems.length - 1];
+    expect(lastItem.collection).toBe('customers');
+    expect(lastItem.payload).toContain('Cliente Para Nube');
+  });
+
   it('DELETE /api/auth/session debe limpiar cookies de staff y la cookie admincom_session del cliente', async () => {
     const req = new NextRequest('http://localhost:3000/api/auth/session', {
       method: 'DELETE'
@@ -139,3 +168,4 @@ describe('Anti-Impersonation & Systemic Sync Plumbing', () => {
     expect(cookieNames).toContain('admincom_session');
   });
 });
+

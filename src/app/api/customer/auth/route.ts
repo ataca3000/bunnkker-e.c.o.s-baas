@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { SignJWT } from 'jose';
 import { signRole, getTenantId } from '@/lib/apiAuth';
 import bcrypt from 'bcryptjs';
+import { queueCloudSync, processCloudSyncQueue } from '@/lib/cloudSyncWorker';
 
 const JWT_SECRET = new TextEncoder().encode(
     process.env.JWT_SECRET || process.env.INTERNAL_API_SECRET || 'bunkker-ecos-default-local-dev-secret-key-2026'
@@ -51,6 +52,24 @@ export async function POST(req: NextRequest) {
                     name
                 }
             });
+
+            // Replicación silenciosa a la nube en segundo plano
+            queueCloudSync({
+                tenantId,
+                collection: 'customers',
+                documentId: newCustomer.id,
+                action: 'CREATE',
+                payload: {
+                    id: newCustomer.id,
+                    tenantId,
+                    name: newCustomer.name,
+                    email: newCustomer.email,
+                    phone: newCustomer.phone,
+                    createdAt: newCustomer.createdAt,
+                }
+            }).then(() => {
+                processCloudSyncQueue({ batchSize: 5 }).catch(() => {});
+            }).catch(() => {});
 
             const token = await new SignJWT({ 
                 uid: newCustomer.id, 
