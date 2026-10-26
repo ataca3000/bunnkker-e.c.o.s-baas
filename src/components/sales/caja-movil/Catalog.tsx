@@ -161,7 +161,7 @@ export function Catalog({
 
           {/* Botón de Escaneo con Cámara */}
           <button 
-            className="flex items-center justify-center px-3 py-2 sm:py-2.5 border border-cyan-500/30 rounded-xl text-cyan-200 bg-cyan-600/20 hover:bg-cyan-600/30 transition-all text-xs font-bold active:scale-95 shrink-0 gap-1.5"
+            className="flex min-h-12 shrink-0 items-center justify-center gap-2 px-4 py-3 sm:px-5 border border-cyan-400/30 rounded-xl text-white bg-cyan-500/15 hover:bg-cyan-500/30 backdrop-blur-md transition-colors shadow-[0_0_18px_rgba(34,211,238,0.12)] hover:border-cyan-400/60 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-sm font-bold"
             onClick={onOpenScanner}
             title="Escanear con Cámara (F5)"
           >

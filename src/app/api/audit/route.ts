@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
 
     try {
         const body = await request.json();
-        const { action, details, userId } = body;
+        const { action, details } = body;
 
         if (!action || typeof action !== 'string' || !action.trim()) {
             return NextResponse.json({ success: false, error: 'El campo action es requerido' }, { status: 400 });
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
                 tenantId,
                 action: action.trim(),
                 details: details ? (typeof details === 'string' ? details : JSON.stringify(details)) : '',
-                userId: userId || auth.uid,
+                userId: auth.uid,
             }
         });
 

@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import createWithVercelToolbar from '@vercel/toolbar/plugins/next';
 import path from "path";
 
 const isDesktopBuild = (process.env.BUILD_TARGET === 'desktop' || process.env.NEXT_PUBLIC_APP_ENV === 'local') && !process.env.VERCEL;
@@ -47,4 +48,6 @@ const nextConfig: NextConfig = {
   }
 };
 
-export default nextConfig;
+const withVercelToolbar = createWithVercelToolbar();
+
+export default withVercelToolbar(nextConfig);

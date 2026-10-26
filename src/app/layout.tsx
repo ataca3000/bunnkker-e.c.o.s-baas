@@ -1,3 +1,5 @@
+import { VercelToolbar } from '@vercel/toolbar/next';
+import CookieConsent from '@/components/CookieConsent';
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import "./globals.css";
@@ -122,6 +124,7 @@ export default async function RootLayout({
 }>) {
   const headersList = await headers();
   const tenantId = headersList.get('x-tenant-id') || 'default';
+  const shouldInjectToolbar = process.env.NODE_ENV === 'development';
 
   return (
     <html lang="es" suppressHydrationWarning className="dark bg-[var(--bunkker-surface)]">
@@ -157,6 +160,8 @@ export default async function RootLayout({
             </ThemeProvider>
           </LanguageProvider>
         </div>
+        <CookieConsent />
+        {shouldInjectToolbar ? <VercelToolbar /> : null}
       </body>
     </html>
   );
