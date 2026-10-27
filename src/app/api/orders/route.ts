@@ -387,12 +387,13 @@ export async function POST(request: NextRequest) {
                 // Solo personal con rol de ventas/caja/admin puede aplicar precios especiales.
                 // REGLA PISO DE PRECIO: Ni caja ni ventas pueden vender por debajo del precio oficial sellado por el SuperAdmin.
                 const isStaffWithDiscountPermission = staffSession.ok && ['superadmin', 'admin', 'sales', 'caja'].includes(staffSession.role);
+                const isSuperAdminOrAdmin = staffSession.ok && ['superadmin', 'admin'].includes(staffSession.role);
                 const officialPrice = roundMoney(Number(current.price ?? 0));
                 const resolvedPrice = (isStaffWithDiscountPermission && (item.price !== undefined || item.precio !== undefined))
                     ? roundMoney(Number(item.price ?? item.precio ?? officialPrice))
                     : officialPrice;
 
-                if (resolvedPrice < officialPrice && !['superadmin', 'admin'].includes(staffSession.role)) {
+                if (resolvedPrice < officialPrice && !isSuperAdminOrAdmin) {
                     throw new Error(`PRICE_FLOOR_VIOLATION: No se permite vender "${current.name || prodId}" por debajo del precio oficial ($${officialPrice}) fijado por el SuperAdmin.`);
                 }
 
