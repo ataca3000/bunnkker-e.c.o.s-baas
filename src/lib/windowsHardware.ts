@@ -74,12 +74,30 @@ function getWindowsBiosUuid(): string {
   return 'bios-uuid-unavailable';
 }
 
+// Caché en memoria para evitar llamadas redundantes al sistema operativo
+let cachedIdentity: WindowsHardwareIdentity | null = null;
+
 /**
  * Extrae la identidad de hardware de bajo nivel de Windows.
+ * Utiliza machineIdSync nativo + atributos del sistema y cachea el resultado en memoria.
  */
-export function getLowLevelHardwareIdentity(): WindowsHardwareIdentity {
+export function getLowLevelHardwareIdentity(forceRefresh: boolean = false): WindowsHardwareIdentity {
+  if (cachedIdentity && !forceRefresh) {
+    return cachedIdentity;
+  }
+
   const isWin = typeof window === 'undefined' && process.platform === 'win32';
-  const machineGuid = isWin ? getWindowsRegistryMachineGuid() : 'virtual-or-web-client';
+  let machineGuid = 'virtual-or-web-client';
+
+  if (isWin) {
+    try {
+      const { machineIdSync } = require('node-machine-id');
+      machineGuid = machineIdSync({ original: true }) || getWindowsRegistryMachineGuid();
+    } catch {
+      machineGuid = getWindowsRegistryMachineGuid();
+    }
+  }
+
   const biosUuid = isWin ? getWindowsBiosUuid() : 'virtual-bios';
   const volumeSerial = isWin ? (process.env.SystemDrive || 'C:') : 'root';
 
@@ -90,7 +108,7 @@ export function getLowLevelHardwareIdentity(): WindowsHardwareIdentity {
     .update(rawIdentity)
     .digest('hex');
 
-  return {
+  cachedIdentity = {
     machineGuid,
     biosUuid,
     volumeSerial,
@@ -98,6 +116,8 @@ export function getLowLevelHardwareIdentity(): WindowsHardwareIdentity {
     platform: typeof process !== 'undefined' ? process.platform : 'browser',
     isWindowsNative: isWin,
   };
+
+  return cachedIdentity;
 }
 
 /**
