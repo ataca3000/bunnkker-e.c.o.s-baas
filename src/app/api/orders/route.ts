@@ -718,44 +718,58 @@ export async function PATCH(request: NextRequest) {
 
         if (action === 'claim_loading' || action === 'claim_order') {
             if (!loadingRoles.includes(actorRole)) return NextResponse.json({ success: false, error: 'Rol sin permiso para preparar pedidos.' }, { status: 403 });
-            const current = await prisma.order.findUnique({ where: { id } });
-            if (!current) return NextResponse.json({ success: false, error: 'Pedido no encontrado.' }, { status: 404 });
-            
-            // REGLA AISLAMIENTO DELIVERY:
-            if (current.deliveryType === 'DELIVERY' && actorRole !== 'driver' && !['admin', 'superadmin'].includes(actorRole)) {
-                return NextResponse.json({ success: false, error: 'Los pedidos a domicilio son exclusivos para repartidores.' }, { status: 403 });
-            }
 
-            const loadingStatuses = ['pending', 'pending_payment', 'pending_confirmation', 'paid', 'PREPARANDO', 'NIGHT_QUEUE', 'PENDIENTE_LLEGADA'];
-            if (!loadingStatuses.includes(current.status) || current.isLoaded) {
-                return NextResponse.json({ success: false, error: 'El pedido ya no está disponible para preparación.' }, { status: 409 });
-            }
-            if (current.loadedByUid && current.loadedByUid !== auth.uid) {
-                return NextResponse.json({ success: false, error: `Este pedido ya fue tomado por ${current.loadedBy || 'otro operador'}.` }, { status: 409 });
-            }
-            if (current.loadedByUid === auth.uid) {
-                return NextResponse.json({ success: true, data: current, alreadyClaimed: true });
-            }
-            const claimed = await prisma.order.updateMany({
-                where: { id, status: current.status, isLoaded: false, loadedByUid: null },
-                data: { 
-                    loadedBy: actorName, 
-                    loadedByUid: auth.uid, 
-                    loadingStartedAt: new Date(),
-                    status: current.status === 'paid' ? 'paid' : 'PREPARANDO'
+            // ATOMICIDAD: el claim (updateMany) y su OrderEvent se confirman o revierten juntos.
+            // Si el proceso cae entre ambos, no puede quedar un pedido tomado sin historial.
+            const result = await prisma.$transaction(async (tx) => {
+                const current = await tx.order.findUnique({ where: { id } });
+                if (!current) return { httpStatus: 404, error: 'Pedido no encontrado.' };
+
+                // REGLA AISLAMIENTO DELIVERY:
+                if (current.deliveryType === 'DELIVERY' && actorRole !== 'driver' && !['admin', 'superadmin'].includes(actorRole)) {
+                    return { httpStatus: 403, error: 'Los pedidos a domicilio son exclusivos para repartidores.' };
                 }
+
+                const loadingStatuses = ['pending', 'pending_payment', 'pending_confirmation', 'paid', 'PREPARANDO', 'NIGHT_QUEUE', 'PENDIENTE_LLEGADA'];
+                if (!loadingStatuses.includes(current.status) || current.isLoaded) {
+                    return { httpStatus: 409, error: 'El pedido ya no está disponible para preparación.' };
+                }
+                if (current.loadedByUid && current.loadedByUid !== auth.uid) {
+                    return { httpStatus: 409, error: `Este pedido ya fue tomado por ${current.loadedBy || 'otro operador'}.` };
+                }
+                if (current.loadedByUid === auth.uid) {
+                    return { order: current, alreadyClaimed: true };
+                }
+
+                const toStatus = current.status === 'paid' ? 'paid' : 'PREPARANDO';
+                const claimed = await tx.order.updateMany({
+                    where: { id, status: current.status, isLoaded: false, loadedByUid: null },
+                    data: {
+                        loadedBy: actorName,
+                        loadedByUid: auth.uid,
+                        loadingStartedAt: new Date(),
+                        status: toStatus
+                    }
+                });
+                if (claimed.count !== 1) return { httpStatus: 409, error: 'Otro operador tomó este pedido.' };
+
+                await writeOrderEvent(tx, { orderId: id, eventType: 'LOADING_CLAIMED', fromStatus: current.status, toStatus, actorId: auth.uid, actorName, actorRole });
+                return { order: await tx.order.findUnique({ where: { id } }) };
             });
-            if (claimed.count !== 1) return NextResponse.json({ success: false, error: 'Otro operador tomó este pedido.' }, { status: 409 });
-            await prisma.orderEvent.create({ data: { orderId: id, eventType: 'LOADING_CLAIMED', fromStatus: current.status, toStatus: current.status === 'paid' ? 'paid' : 'PREPARANDO', actorId: auth.uid, actorName, actorRole } });
-            const order = await prisma.order.findUnique({ where: { id } });
-            return NextResponse.json({ success: true, data: order });
+
+            if ('error' in result) return NextResponse.json({ success: false, error: result.error }, { status: result.httpStatus });
+            if (result.alreadyClaimed) return NextResponse.json({ success: true, data: result.order, alreadyClaimed: true });
+            return NextResponse.json({ success: true, data: result.order });
         }
 
         if (action === 'complete_loading') {
             if (!loadingRoles.includes(actorRole)) return NextResponse.json({ success: false, error: 'Rol sin permiso para finalizar la preparación.' }, { status: 403 });
-            const current = await prisma.order.findUnique({ where: { id } });
+
+            // ATOMICIDAD: cambio de estado + OrderEvent en una sola transacción.
+            const result = await prisma.$transaction(async (tx) => {
+            const current = await tx.order.findUnique({ where: { id } });
             if (!current || current.isLoaded || (current.loadedByUid && current.loadedByUid !== auth.uid && !['superadmin', 'admin', 'sales'].includes(actorRole))) {
-                return NextResponse.json({ success: false, error: 'El pedido no está asignado a este operador.' }, { status: 409 });
+                return { httpStatus: 409, error: 'El pedido no está asignado a este operador.' };
             }
             
             // Si el operador especifica dónde queda listo: 'caja' (PICKUP/MOSTRADOR) o 'carga' (PATIO/BAHÍA DE CARGA)
@@ -779,7 +793,7 @@ export async function PATCH(request: NextRequest) {
                 : isDelivery
                     ? isPaid ? 'OUT_FOR_DELIVERY' : 'READY_TO_SHIP'
                     : 'COMPLETED';
-            const updated = await prisma.order.updateMany({
+            const updated = await tx.order.updateMany({
                 where: { id, status: current.status, isLoaded: false },
                 data: { 
                     isLoaded: true, 
@@ -790,24 +804,26 @@ export async function PATCH(request: NextRequest) {
                     deliveryType: effectiveDeliveryType
                 }
             });
-            if (updated.count !== 1) return NextResponse.json({ success: false, error: 'El pedido cambió de estado; actualiza la lista.' }, { status: 409 });
-            await prisma.orderEvent.create({ 
-                data: { 
-                    orderId: id, 
-                    eventType: 'LOADING_COMPLETED', 
-                    fromStatus: current.status, 
-                    toStatus: nextStatus, 
-                    actorId: auth.uid, 
-                    actorName, 
-                    actorRole,
-                    details: JSON.stringify({
-                        targetLocation: targetLocation || (effectiveDeliveryType === 'PATIO' ? 'carga' : 'caja'),
-                        deliveryType: effectiveDeliveryType,
-                        role: actorRole
-                    })
-                } 
+            if (updated.count !== 1) return { httpStatus: 409, error: 'El pedido cambió de estado; actualiza la lista.' };
+            await writeOrderEvent(tx, {
+                orderId: id,
+                eventType: 'LOADING_COMPLETED',
+                fromStatus: current.status,
+                toStatus: nextStatus,
+                actorId: auth.uid,
+                actorName,
+                actorRole,
+                details: {
+                    targetLocation: targetLocation || (effectiveDeliveryType === 'PATIO' ? 'carga' : 'caja'),
+                    deliveryType: effectiveDeliveryType,
+                    role: actorRole
+                }
             });
-            return NextResponse.json({ success: true, data: await prisma.order.findUnique({ where: { id } }) });
+            return { order: await tx.order.findUnique({ where: { id } }) };
+            });
+
+            if ('error' in result) return NextResponse.json({ success: false, error: result.error }, { status: result.httpStatus });
+            return NextResponse.json({ success: true, data: result.order });
         }
 
         if (action === 'delegate_order') {
@@ -1036,13 +1052,18 @@ export async function PATCH(request: NextRequest) {
 
         if (action === 'claim_delivery') {
             if (!deliveryRoles.includes(actorRole)) return NextResponse.json({ success: false, error: 'Rol sin permiso para tomar rutas.' }, { status: 403 });
-            const claimed = await prisma.order.updateMany({
-                where: { id, status: 'OUT_FOR_DELIVERY', assignedDriverId: null },
-                data: { status: 'claimed', assignedDriverId: auth.uid }
+            // ATOMICIDAD: toma de ruta + OrderEvent en una sola transacción.
+            const order = await prisma.$transaction(async (tx) => {
+                const claimed = await tx.order.updateMany({
+                    where: { id, status: 'OUT_FOR_DELIVERY', assignedDriverId: null },
+                    data: { status: 'claimed', assignedDriverId: auth.uid }
+                });
+                if (claimed.count !== 1) return null;
+                await writeOrderEvent(tx, { orderId: id, eventType: 'DRIVER_CLAIMED', fromStatus: 'OUT_FOR_DELIVERY', toStatus: 'claimed', actorId: auth.uid, actorName, actorRole });
+                return tx.order.findUnique({ where: { id } });
             });
-            if (claimed.count !== 1) return NextResponse.json({ success: false, error: 'Otro repartidor tomó este pedido o aún no está liberado a ruta.' }, { status: 409 });
-            await prisma.orderEvent.create({ data: { orderId: id, eventType: 'DRIVER_CLAIMED', fromStatus: 'OUT_FOR_DELIVERY', toStatus: 'claimed', actorId: auth.uid, actorName, actorRole } });
-            return NextResponse.json({ success: true, data: await prisma.order.findUnique({ where: { id } }) });
+            if (!order) return NextResponse.json({ success: false, error: 'Otro repartidor tomó este pedido o aún no está liberado a ruta.' }, { status: 409 });
+            return NextResponse.json({ success: true, data: order });
         }
 
         if (action === 'confirm_pickup_receipt') {
