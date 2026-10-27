@@ -63,8 +63,12 @@ export function verifyRoleSignature(role: string, uid: string, signature: string
   return false;
 }
 
+import { SentinelGuardAgent } from './sentinelGuard';
+
 /**
  * Valida que la petición tenga una sesión activa y una firma de rol válida.
+ * Si se detecta falsificación de firma o sesión manipulada, el Agente Centinela
+ * expulsa al intruso inmediatamente ("Bota la puerta").
  */
 export function validateApiSession(request: NextRequest): ApiAuthResult {
   const session = request.cookies.get('msj-session')?.value;
@@ -72,7 +76,21 @@ export function validateApiSession(request: NextRequest): ApiAuthResult {
   const sig     = request.cookies.get('msj-role-sig')?.value;
   const tenantId = getTenantId(request);
 
-  if (!session || !role || !sig || session === '' || !verifyRoleSignature(role, session, sig, tenantId)) {
+  // 1. Verificar si la entidad ya está en cuarentena activa
+  const clientIp = SentinelGuardAgent.extractClientIp(request);
+  if (SentinelGuardAgent.isQuarantined(clientIp) || (session && SentinelGuardAgent.isQuarantined(session))) {
+    const eviction = SentinelGuardAgent.botarLaPuerta(request, {
+      violationType: 'TAMPERED_SESSION_TOKEN',
+      actorId: session || 'quarantined-intruder',
+      actorRole: role || 'unknown',
+      tenantId,
+      details: { reason: 'Entidad bajo cuarentena activa por intrusión previa' },
+    });
+    return { ok: false, response: eviction };
+  }
+
+  // 2. Visitante anónimo sin credenciales (flujo normal no autenticado)
+  if (!session && !role && !sig) {
     return {
       ok: false,
       response: NextResponse.json(
@@ -80,6 +98,22 @@ export function validateApiSession(request: NextRequest): ApiAuthResult {
         { status: 401 }
       ),
     };
+  }
+
+  // 3. Intento de falsificación: Existen credenciales pero la firma HMAC no coincide o falta
+  if (!session || !role || !sig || !verifyRoleSignature(role, session, sig, tenantId)) {
+    const eviction = SentinelGuardAgent.botarLaPuerta(request, {
+      violationType: 'FORGED_ROLE_SIGNATURE',
+      actorId: session || 'tampered-session',
+      actorRole: role || 'forged-role',
+      tenantId,
+      details: {
+        providedRole: role,
+        providedSig: sig ? `${sig.substring(0, 10)}...` : 'MISSING',
+        tamperingDetected: true,
+      },
+    });
+    return { ok: false, response: eviction };
   }
 
   return { ok: true, uid: session, role, tenantId };
