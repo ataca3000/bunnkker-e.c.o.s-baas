@@ -13,7 +13,7 @@ const FerreflujoSimulator3D = dynamic(
         <Loader2 className="w-10 h-10 animate-spin text-cyan-400" />
         <div className="text-center">
           <p className="text-base font-black uppercase tracking-wider text-white">
-            Cargando Gemelo Digital FerreFlujo 3D...
+            Cargando Flujo Operativo FerreFlujo 3D...
           </p>
           <p className="text-xs text-slate-400 mt-1">
             Inicializando WebGL, Racks de Almacén, Haces Neón y Malla de Radio Local

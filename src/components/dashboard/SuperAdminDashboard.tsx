@@ -272,7 +272,7 @@ export default function SuperAdminDashboard({
     ].filter(m => isModuleActive(m.id));
 
     const categoryOpLog = [
-        { id: 'simulator',  title: 'Simulador 3D FerreFlujo', icon: <Boxes size={26} />, color: '#06b6d4', href: '/dashboard/simulator', desc: 'Gemelo digital interactivo: Almacén, racks, patio, montacargas y mostrador.' },
+        { id: 'simulator',  title: 'Flujo Operativo 3D', icon: <Boxes size={26} />, color: '#06b6d4', href: '/dashboard/simulator', desc: 'Flujo operativo interactivo: Almacén, racks, patio, montacargas y mostrador.' },
         { id: 'inventory',  title: 'Control de Inventario',  icon: <Package size={26} />,      color: '#ef4444', href: '/dashboard/inventory', desc: 'Catálogo, estantes, stock, importaciones y merma.' },
         { id: 'patio',      title: 'Patio Carga y Descarga', icon: <Truck size={26} />,        color: '#f59e0b', href: '/dashboard/patio',     desc: 'Surtido, verificación y despacho de material pesado.' },
         { id: 'pickup',     title: 'Mostrador y Pickup',     icon: <Store size={26} />,        color: '#8b5cf6', href: '/dashboard/pickup',    desc: 'Entrega rápida en mostrador y pedidos de tienda.' },
@@ -475,7 +475,7 @@ export default function SuperAdminDashboard({
             {/* ⚖️ Algoritmo Efecto Balanza: Rotación vs. Margen Puro (IA SuperAdmin) */}
             <BalanceEffectWidget />
 
-            {/* 🌐 Gemelo Digital 3D: FerreFlujo Logístico y Económico */}
+            {/* 🌐 Flujo Operativo 3D: FerreFlujo Logístico y Económico */}
             <div className="bunkker-translucent-card p-4 sm:p-5 mb-8 border border-cyan-500/30 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.7)] relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20"></div>
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4 relative z-10">
@@ -485,7 +485,7 @@ export default function SuperAdminDashboard({
                         </div>
                         <div>
                             <h2 className="text-lg font-black text-white uppercase tracking-tight flex items-center gap-2">
-                                FerreFlujo 3D <span className="text-cyan-400 font-mono text-xs">GEMELO DIGITAL</span>
+                                FerreFlujo 3D <span className="text-cyan-400 font-mono text-xs">FLUJO OPERATIVO</span>
                             </h2>
                         </div>
                     </div>

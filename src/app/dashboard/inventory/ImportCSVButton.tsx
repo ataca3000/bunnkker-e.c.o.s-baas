@@ -79,9 +79,10 @@ export default function ImportCSVButton({ onSuccess }: { onSuccess?: () => void 
         <>
             <button
                 onClick={() => fileInputRef.current?.click()}
-                className="bg-blue-600/20 text-blue-400 px-5 py-3 rounded-sm font-bold uppercase text-xs tracking-widest flex items-center gap-2 hover:bg-blue-600/30 transition-all shadow-[0_0_15px_rgba(59,130,246,0.2)] border border-blue-500/50 active:scale-95 flex-1 md:flex-none justify-center"
+                className="bg-cyan-600/20 text-cyan-300 px-3.5 py-2 rounded-lg font-bold uppercase text-xs tracking-wider flex items-center gap-1.5 hover:bg-cyan-600/30 transition-all border border-cyan-500/40 active:scale-95 shadow-sm"
+                title="Importar CSV/Excel"
             >
-                <Upload size={16} />
+                <Upload size={14} />
                 <span>Importar CSV/Excel</span>
             </button>
             

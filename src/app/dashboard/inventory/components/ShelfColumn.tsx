@@ -121,50 +121,55 @@ export default function ShelfColumn({
             : 'bg-slate-800/80 border-slate-800'
         }`}
       >
-        <div className="min-w-0 flex-1 pr-2">
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onSelectShelf?.(shelfName);
-              }}
-              className="text-left group flex items-center gap-1.5 focus:outline-none"
-              title={isHighlighted ? 'Quitar enfoque de este estante' : 'Enfocar este estante físicamente'}
-            >
-              <MapPin
-                size={15}
-                className={`shrink-0 transition-colors ${
-                  isHighlighted
-                    ? 'text-sky-400'
-                    : 'text-slate-500 group-hover:text-sky-400'
-                }`}
-              />
-              <h2 className="text-base font-black text-white uppercase tracking-tight truncate group-hover:text-sky-300 transition-colors">
-                {displayShelfName}
-              </h2>
-            </button>
+        <div className="flex items-center gap-3 min-w-0 flex-1 pr-2">
+          <div className="w-8 h-8 rounded-lg bg-cyan-500/20 border border-cyan-400 text-cyan-300 font-mono font-black text-sm flex items-center justify-center shrink-0 shadow-[0_0_12px_rgba(6,182,212,0.3)]">
+            {chunkIndex + 1}
           </div>
-          <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-mono tabular-nums mt-0.5">
-            <span>Chunk X:{chunkIndex}</span>
-            <span aria-hidden="true">·</span>
-            <span>{sortedLevels.length} {sortedLevels.length === 1 ? 'capa Y' : 'capas Y'}</span>
-            <span aria-hidden="true">·</span>
-            <span>{totalPhysicalUnits} u.</span>
-            {isDirtyChunk && (
-              <>
-                <span aria-hidden="true">·</span>
-                <span className="text-amber-400 font-semibold inline-flex items-center gap-1" title="Chunk modificado en memoria (pendiente de volcado por lote a BD)">
-                  <Layers size={11} /> Dirty ({dirtySlotsCount})
-                </span>
-              </>
-            )}
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSelectShelf?.(shelfName);
+                }}
+                className="text-left group flex items-center gap-1.5 focus:outline-none"
+                title={isHighlighted ? 'Quitar enfoque de este estante' : 'Enfocar este estante físicamente'}
+              >
+                <MapPin
+                  size={15}
+                  className={`shrink-0 transition-colors ${
+                    isHighlighted
+                      ? 'text-sky-400'
+                      : 'text-slate-500 group-hover:text-sky-400'
+                  }`}
+                />
+                <h2 className="text-base font-black text-white uppercase tracking-tight truncate group-hover:text-sky-300 transition-colors">
+                  {displayShelfName}
+                </h2>
+              </button>
+            </div>
+            <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-mono tabular-nums mt-0.5">
+              <span>Estante #{chunkIndex + 1}</span>
+              <span aria-hidden="true">·</span>
+              <span>{sortedLevels.length} {sortedLevels.length === 1 ? 'nivel' : 'niveles'}</span>
+              <span aria-hidden="true">·</span>
+              <span>{totalPhysicalUnits} u.</span>
+              {isDirtyChunk && (
+                <>
+                  <span aria-hidden="true">·</span>
+                  <span className="text-amber-400 font-semibold inline-flex items-center gap-1" title="Cambios pendientes de guardar en base de datos">
+                    <Layers size={11} /> Pendiente ({dirtySlotsCount})
+                  </span>
+                </>
+              )}
+            </div>
           </div>
         </div>
 
         <div className="flex items-center gap-2.5 shrink-0">
           <span className="text-xs font-mono tabular-nums text-sky-400 font-bold whitespace-nowrap">
-            {products.length} {products.length === 1 ? 'slot' : 'slots'}
+            {products.length} {products.length === 1 ? 'prod' : 'prods'}
           </span>
           {onAddProductClick && (
             <button
@@ -201,7 +206,7 @@ export default function ShelfColumn({
             <div className="px-3 py-2 rounded border border-slate-800 bg-slate-950/60 flex items-center justify-between text-[11px] font-mono tabular-nums text-slate-400">
               <span className="inline-flex items-center gap-1.5">
                 <Cpu size={13} className="text-slate-500" />
-                Chunk en Mock RAM (Fuera de vista)
+                En espera (Fuera de vista)
               </span>
               <button
                 type="button"

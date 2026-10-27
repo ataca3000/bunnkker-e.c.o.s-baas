@@ -256,7 +256,7 @@ export default function FerreflujoSimulator3D({ embedded = false, className = ''
           </Link>
         )}
 
-        {/* Badge Compacto del Gemelo Digital */}
+        {/* Badge Compacto del Flujo Operativo */}
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-950/80 backdrop-blur-md border border-cyan-500/40 text-white shadow-lg">
           <div className="relative flex items-center justify-center">
             <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping absolute"></span>

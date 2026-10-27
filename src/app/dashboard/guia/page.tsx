@@ -195,7 +195,7 @@ export default function GuiaPage() {
               href="/dashboard/simulator"
               className="inline-flex items-center justify-center gap-2 rounded-xl border border-cyan-500/40 bg-cyan-500/15 px-4 py-2.5 text-sm font-semibold text-cyan-300 hover:bg-cyan-500/25 transition shadow-lg"
             >
-              <Boxes size={16} /> Ver en Gemelo 3D
+              <Boxes size={16} /> Ver en Flujo Operativo
             </Link>
             <button 
               type="button" 

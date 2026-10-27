@@ -40,7 +40,7 @@ export default function EsquemaPoligonoPage() {
                     <div>
                         <div className="flex items-center gap-2">
                             <h1 className="text-xl md:text-2xl font-black text-white tracking-tight uppercase">
-                                Gemelo Isométrico & Esquema Poligonal
+                                Flujo Operativo & Esquema Poligonal
                             </h1>
                             <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
                                 v2.0 FREE / TIER OPEN

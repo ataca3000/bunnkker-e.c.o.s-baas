@@ -164,7 +164,7 @@ export default function EsquemaPoligono3D() {
                                 ? 'bg-cyan-500 text-slate-950 border-cyan-400 font-bold' 
                                 : 'bg-slate-950/80 text-cyan-300 border-cyan-500/40 hover:bg-cyan-500/20'
                         }`}
-                        title="Ocultar o mostrar barra de descripción sobre el gemelo 3D"
+                        title="Ocultar o mostrar barra de descripción sobre el flujo operativo"
                     >
                         {showTelemetryBar ? 'Puro Visual 3D' : 'Ver Barra de Datos'}
                     </button>

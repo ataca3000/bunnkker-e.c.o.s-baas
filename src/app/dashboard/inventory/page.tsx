@@ -24,7 +24,6 @@ import Link from 'next/link';
 import ShelfColumn from './components/ShelfColumn';
 import ProductCard from './components/ProductCard';
 import TrashDropZone from './components/TrashDropZone';
-import ChunkArchitectureMap from './components/ChunkArchitectureMap';
 import ImportCSVButton from './ImportCSVButton';
 import { arrayMove } from '@dnd-kit/sortable';
 import { toast } from '@/lib/toast';
@@ -61,7 +60,7 @@ export default function InventoryDashboard() {
     }, [products]);
 
     // Tabs
-    const [activeTab, setActiveTab] = useState<'catalog' | 'shelves' | 'chunks_map' | 'transfer' | 'backup' | 'shrinkage' | 'trash' | 'orders'>('catalog');
+    const [activeTab, setActiveTab] = useState<'catalog' | 'shelves' | 'transfer' | 'backup' | 'shrinkage' | 'trash' | 'orders'>('catalog');
     const [hydratedChunksMap, setHydratedChunksMap] = useState<Record<string, boolean>>({});
     const [trashedProducts, setTrashedProducts] = useState<Product[]>([]);
     const [trashLoading, setTrashLoading] = useState(false);
@@ -165,21 +164,21 @@ export default function InventoryDashboard() {
             });
             const result = await response.json().catch(() => null);
             if (!response.ok || !result?.success) {
-                throw new Error(result?.error || 'No se pudo sincronizar el chunk de estantes.');
+                throw new Error(result?.error || 'No se pudo sincronizar el lote de estantes.');
             }
 
             if (typeof window !== 'undefined' && (window as any).__inventorySocket) {
                 (window as any).__inventorySocket.emit('sync_db_event', {
-                    action: 'INVENTORY_CHUNK_FLUSHED',
+                    action: 'INVENTORY_FLUSHED',
                     slotsUpdated: batchUpdates.length,
                 });
             }
             if (manual) {
-                toast.success(`Chunk sincronizado: ${batchUpdates.length} ubicaciones guardadas en 1 sola escritura a BD.`, ' Guardado por Chunks');
+                toast.success(`Estantes sincronizados: ${batchUpdates.length} ubicaciones guardadas en BD.`, ' Guardado');
             }
         } catch (error) {
-            console.error('Error en volcado de Chunks:', error);
-            toast.error(error instanceof Error ? error.message : 'Error al sincronizar chunk de inventario.');
+            console.error('Error en sincronización de estantes:', error);
+            toast.error(error instanceof Error ? error.message : 'Error al sincronizar estantes de inventario.');
         } finally {
             setIsFlushingChunks(false);
             mutationInFlight.current = Math.max(0, mutationInFlight.current - 1);
@@ -1403,13 +1402,14 @@ export default function InventoryDashboard() {
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                         >
-                            {/* TAB NAVIGATION: Compact Single-Row Toolbar */}
-                            <div className="flex items-center gap-1.5 mb-5 bg-slate-900/70 p-1.5 rounded-xl border border-slate-700/60 overflow-x-auto hide-scrollbar">
+                            {/* TAB NAVIGATION: Compact Single-Row Toolbar with Colored Indicators */}
+                            <div className="flex items-center gap-1.5 mb-5 bg-slate-900/80 p-1.5 rounded-xl border border-cyan-500/30 overflow-x-auto hide-scrollbar backdrop-blur-md shadow-lg">
                                 <button
                                     type="button"
                                     onClick={() => setActiveTab('orders')}
-                                    className={`py-1.5 px-3.5 font-bold text-xs rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap ${activeTab === 'orders' ? 'bg-amber-400 text-slate-950 font-black shadow-sm' : 'text-amber-300 hover:text-white hover:bg-white/5'}`}
+                                    className={`py-1.5 px-3.5 font-bold text-xs rounded-lg transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'orders' ? 'bg-amber-400 text-slate-950 font-black shadow-sm' : 'text-slate-300 hover:text-white hover:bg-white/5'}`}
                                 >
+                                    <span className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.9)] shrink-0"></span>
                                     <Clock size={14} /> Surtido
                                     {pendingPrepOrders.length > 0 && (
                                         <span className="bg-red-500 text-white text-[10px] font-black px-1.5 py-0.2 rounded-full animate-pulse">
@@ -1420,50 +1420,49 @@ export default function InventoryDashboard() {
                                 <button
                                     type="button"
                                     onClick={() => setActiveTab('catalog')}
-                                    className={`py-1.5 px-3.5 font-bold text-xs rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap ${activeTab === 'catalog' ? 'bg-[#0ea5e9] text-white shadow-sm' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                                    className={`py-1.5 px-3.5 font-bold text-xs rounded-lg transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'catalog' ? 'bg-yellow-400 text-slate-950 font-black shadow-sm' : 'text-slate-300 hover:text-white hover:bg-white/5'}`}
                                 >
+                                    <span className="w-2.5 h-2.5 rounded-full bg-yellow-400 shadow-[0_0_8px_rgba(250,204,21,0.9)] shrink-0"></span>
                                     <Package size={14} /> Productos ({filteredProducts.length})
                                 </button>
                                 <button 
                                     type="button"
                                     onClick={() => setActiveTab('shelves')}
-                                    className={`py-1.5 px-3.5 font-bold text-xs rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap ${activeTab === 'shelves' ? 'bg-[#0ea5e9] text-white shadow-sm' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                                    className={`py-1.5 px-3.5 font-bold text-xs rounded-lg transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'shelves' ? 'bg-emerald-400 text-slate-950 font-black shadow-sm' : 'text-slate-300 hover:text-white hover:bg-white/5'}`}
                                 >
+                                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)] shrink-0"></span>
                                     <Layers size={14} /> Estantes ({allEstantes.length})
                                 </button>
                                 <button 
                                     type="button"
-                                    onClick={() => setActiveTab('chunks_map')}
-                                    className={`py-1.5 px-3.5 font-bold text-xs rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap ${activeTab === 'chunks_map' ? 'bg-[#0ea5e9] text-white shadow-sm' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
-                                >
-                                    <Database size={14} /> Flujo Chunks
-                                </button>
-                                <button 
-                                    type="button"
                                     onClick={() => setActiveTab('transfer')}
-                                    className={`py-1.5 px-3.5 font-bold text-xs rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap ${activeTab === 'transfer' ? 'bg-[#0ea5e9] text-white shadow-sm' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                                    className={`py-1.5 px-3.5 font-bold text-xs rounded-lg transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'transfer' ? 'bg-indigo-500 text-white font-black shadow-sm' : 'text-slate-300 hover:text-white hover:bg-white/5'}`}
                                 >
+                                    <span className="w-2.5 h-2.5 rounded-full bg-indigo-400 shadow-[0_0_8px_rgba(129,140,248,0.9)] shrink-0"></span>
                                     <Upload size={14} /> Import/Export
                                 </button>
                                 <button 
                                     type="button"
                                     onClick={() => setActiveTab('backup')}
-                                    className={`py-1.5 px-3.5 font-bold text-xs rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap ${activeTab === 'backup' ? 'bg-[#0ea5e9] text-white shadow-sm' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                                    className={`py-1.5 px-3.5 font-bold text-xs rounded-lg transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'backup' ? 'bg-cyan-500 text-slate-950 font-black shadow-sm' : 'text-slate-300 hover:text-white hover:bg-white/5'}`}
                                 >
+                                    <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.9)] shrink-0"></span>
                                     <Database size={14} /> Respaldos USB
                                 </button>
                                 <button 
                                     type="button"
                                     onClick={() => setActiveTab('shrinkage')}
-                                    className={`py-1.5 px-3.5 font-bold text-xs rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap ${activeTab === 'shrinkage' ? 'bg-red-500 text-white shadow-sm' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                                    className={`py-1.5 px-3.5 font-bold text-xs rounded-lg transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'shrinkage' ? 'bg-slate-100 text-slate-950 font-black shadow-sm' : 'text-slate-300 hover:text-white hover:bg-white/5'}`}
                                 >
+                                    <span className="w-2.5 h-2.5 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.9)] shrink-0"></span>
                                     <AlertTriangle size={14} /> Merma
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => setActiveTab('trash')}
-                                    className={`py-1.5 px-3.5 font-bold text-xs rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap ${activeTab === 'trash' ? 'bg-red-600 text-white shadow-sm' : 'text-slate-400 hover:text-red-300 hover:bg-white/5'}`}
+                                    className={`py-1.5 px-3.5 font-bold text-xs rounded-lg transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'trash' ? 'bg-red-600 text-white font-black shadow-sm' : 'text-slate-300 hover:text-red-300 hover:bg-white/5'}`}
                                 >
+                                    <span className="w-2.5 h-2.5 rounded-full bg-red-600 shadow-[0_0_8px_rgba(220,38,38,0.9)] shrink-0"></span>
                                     <Trash2 size={14} /> Papelera {trashedProducts.length > 0 && `(${trashedProducts.length})`}
                                 </button>
                             </div>
@@ -1855,16 +1854,16 @@ export default function InventoryDashboard() {
                                             </div>
 
                                             <div className="flex items-center gap-2">
-                                                {/* Estado del Motor de Chunks (Minecraft-style Write Batching) */}
+                                                {/* Estado de Sincronización de Estantes */}
                                                 <div className="flex items-center gap-2 px-3.5 py-2.5 bg-slate-900/90 border border-slate-700/70 rounded-[5px] text-xs font-mono tabular-nums">
                                                     <Layers size={15} className={Object.keys(dirtyChunksMap).length > 0 ? 'text-amber-400' : 'text-emerald-400'} />
                                                     <div className="flex flex-col">
                                                         <span className="text-[11px] font-bold text-slate-200 whitespace-nowrap">
                                                             { isFlushingChunks
-                                                                ? 'Volcando Chunks a BD...'
+                                                                ? 'Guardando en BD...'
                                                                 : Object.keys(dirtyChunksMap).length > 0
-                                                                ? `${Object.keys(dirtyChunksMap).length} Chunk(s) en RAM`
-                                                                : 'Chunks Sincronizados' }
+                                                                ? `${Object.keys(dirtyChunksMap).length} cambio(s) pendiente(s)`
+                                                                : 'Estantes Sincronizados' }
                                                         </span>
                                                         <span className="text-[10px] text-slate-400 whitespace-nowrap">
                                                             {totalSavedWrites} escrituras BD ahorradas
@@ -1876,7 +1875,7 @@ export default function InventoryDashboard() {
                                                             onClick={() => flushDirtyChunks(true)}
                                                             disabled={isFlushingChunks}
                                                             className="ml-2 px-2.5 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black uppercase text-[10px] rounded transition-colors whitespace-nowrap shrink-0"
-                                                            title="Forzar volcado inmediato del Chunk a la base de datos"
+                                                            title="Guardar cambios de estantes inmediatamente en la base de datos"
                                                         >
                                                             Guardar ya
                                                         </button>
@@ -1925,7 +1924,7 @@ export default function InventoryDashboard() {
                                                     </div>
                                                     <span>+ Estante</span>
                                                 </button>
-                                                {allEstantes.map((estante) => {
+                                                {allEstantes.map((estante, idx) => {
                                                     const count = (estantesMap[estante] || []).length;
                                                     const isSelected = activeEstante === estante;
                                                     const dirtyCount = dirtyChunksMap[estante] || 0;
@@ -1934,16 +1933,23 @@ export default function InventoryDashboard() {
                                                             key={estante}
                                                             type="button"
                                                             onClick={() => focusAndScrollToShelf(estante)}
-                                                            className={`px-3 py-1.5 text-xs font-bold rounded transition-colors whitespace-nowrap shrink-0 flex items-center gap-1.5 font-mono tabular-nums ${
+                                                            className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors whitespace-nowrap shrink-0 flex items-center gap-2 font-mono tabular-nums ${
                                                                 isSelected
-                                                                    ? 'bg-sky-500 text-white shadow-sm ring-1 ring-sky-300'
-                                                                    : 'bg-slate-800/60 text-slate-300 hover:text-white hover:bg-slate-800'
+                                                                    ? 'bg-cyan-500 text-slate-950 font-black shadow-md shadow-cyan-500/20'
+                                                                    : 'bg-slate-900/80 text-slate-300 hover:text-white hover:bg-slate-800 border border-slate-700/60'
                                                             }`}
                                                         >
+                                                            <span className={`w-5 h-5 rounded text-[10px] font-black flex items-center justify-center shrink-0 ${
+                                                                isSelected 
+                                                                    ? 'bg-slate-950 text-cyan-300' 
+                                                                    : 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/30'
+                                                            }`}>
+                                                                {idx + 1}
+                                                            </span>
                                                             <span>{estante === 'Sin Asignar' ? 'BODEGA GENERAL' : estante}</span>
-                                                            <span className={isSelected ? 'text-sky-100' : 'text-slate-500'}>({count})</span>
+                                                            <span className={isSelected ? 'text-slate-800' : 'text-slate-400'}>({count})</span>
                                                             {dirtyCount > 0 && (
-                                                                <span className="text-amber-300 font-bold" title={`${dirtyCount} slots modificados en este chunk`}>
+                                                                <span className="text-amber-400 font-bold" title={`${dirtyCount} pendientes de guardar`}>
                                                                     *
                                                                 </span>
                                                             )}
@@ -2044,23 +2050,6 @@ export default function InventoryDashboard() {
                                         </DndContext>
                                     </div>
                                 </>
-                            )}
-
-                            {activeTab === 'chunks_map' && (
-                                <ChunkArchitectureMap
-                                    products={localProducts}
-                                    allEstantes={allEstantes}
-                                    estantesMap={estantesMap}
-                                    dirtyChunksMap={dirtyChunksMap}
-                                    hydratedChunksMap={hydratedChunksMap}
-                                    totalSavedWrites={totalSavedWrites}
-                                    activeEstante={activeEstante}
-                                    onSelectShelf={(shelfName) => {
-                                        setActiveEstante(shelfName);
-                                    }}
-                                    onFlushChunks={() => flushDirtyChunks(true)}
-                                    isFlushingChunks={isFlushingChunks}
-                                />
                             )}
 
                             {activeTab === 'transfer' && (
