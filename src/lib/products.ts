@@ -1,4 +1,4 @@
-export type SubscriptionPlanId = 'starter' | 'pro' | 'terminal_addon' | 'enterprise' | 'local' | 'hybrid';
+export type SubscriptionPlanId = 'free_starter' | 'starter' | 'pro' | 'terminal_addon' | 'enterprise' | 'local' | 'hybrid';
 
 export type SubscriptionPlan = {
   id: SubscriptionPlanId;
@@ -16,6 +16,24 @@ export type SubscriptionPlan = {
 };
 
 export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
+  {
+    id: 'free_starter',
+    name: 'Emprendedor (1 Terminal / Móvil)',
+    subtitle: '$0 MXN / Para Siempre',
+    description: 'Acompañamiento inicial para nuevos emprendedores: 1 usuario en caja o móvil, catálogo y cobro 100% offline.',
+    priceMonthly: 0,
+    priceAnnual: 0,
+    maxMachines: 1,
+    usersPerRole: 1,
+    popular: false,
+    limits: [
+      '1 Terminal o Celular vinculado (HWID)',
+      '1 Usuario (Dueño con lógica simplificada)',
+      'Catálogo de productos 100% offline',
+      'Arqueo de caja y cobro con tickets',
+      'Cero tarjetas ni costos ocultos',
+    ],
+  },
   {
     id: 'starter',
     name: 'Starter (3 Terminales)',
@@ -80,9 +98,9 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
   },
   {
     id: 'enterprise',
-    name: 'Empresarial Multi-Sucursal',
-    subtitle: 'A la Medida',
-    description: 'Red B2B Colmena con multi-sucursal, CEDIS centralizado y despliegue dedicado.',
+    name: 'Combo Super Power (Monitoreo Global)',
+    subtitle: 'Nivel Business',
+    description: 'Despliegue dedicado en la Nube con Monitoreo Global en tiempo real desde China o cualquier parte del mundo con internet, agentes de administración y multi-sucursal.',
     priceMonthly: 2499,
     priceAnnual: 24990,
     maxMachines: 999,
@@ -91,12 +109,13 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
     monthlyPriceId: process.env.STRIPE_PRICE_ENTERPRISE,
     annualPriceId: process.env.STRIPE_ANNUAL_PRICE_ENTERPRISE,
     limits: [
+      'Monitoreo remoto en tiempo real (desde China o cualquier país)',
+      'Agentes de administración y auditoría continua',
       'Máquinas y terminales ilimitadas',
-      'Roles y usuarios ilimitados',
+      'Roles con interruptores de habilidad para el dueño',
       'Multi-tenant con Red B2B Colmena',
-      'Base de datos SQLite WAL + Cloud',
-      'API REST para ERP corporativo',
-      'SLA garantizado 99.9% y soporte 24/7',
+      'Base de datos SQLite WAL + Réplica Cloud',
+      'SLA garantizado 99.9% y soporte prioritario',
     ],
   },
 ];

@@ -35,3 +35,39 @@ export const membershipPlanVisibility = flag<'all' | 'monthly' | 'local' | 'ente
   ],
   adapter: vercelAdapter,
 })
+
+// ─── Banderas de Vercel: Acompañamiento y Crecimiento de Emprendedores ───────
+
+export const freeTierEnabled = flag<boolean>({
+  key: 'free-tier-enabled',
+  description: 'Nivel 1 Gratis: Permite a un emprendedor operar 100% gratis en 1 máquina / terminal móvil con catálogo local.',
+  defaultValue: true,
+  options: [
+    { value: true, label: 'Activo (Gratis 1 Máquina / Móvil)' },
+    { value: false, label: 'Desactivado' },
+  ],
+  adapter: vercelAdapter,
+})
+
+export const roleCapabilitySwitchesEnabled = flag<boolean>({
+  key: 'role-capability-switches-enabled',
+  description: 'Permite al dueño activar/desactivar habilidades (repartidor, almacén, pickup, carga) en su propio usuario con lógica simplificada.',
+  defaultValue: true,
+  options: [
+    { value: true, label: 'Habilitado' },
+    { value: false, label: 'Deshabilitado' },
+  ],
+  adapter: vercelAdapter,
+})
+
+export const enterpriseRemoteMonitoringEnabled = flag<boolean>({
+  key: 'enterprise-remote-monitoring-enabled',
+  description: 'Nivel Enterprise: Despliegue personalizado que permite monitoreo global en tiempo real desde China o cualquier parte del mundo.',
+  defaultValue: true,
+  options: [
+    { value: true, label: 'Monitoreo Global Activo' },
+    { value: false, label: 'Solo Local' },
+  ],
+  adapter: vercelAdapter,
+})
+

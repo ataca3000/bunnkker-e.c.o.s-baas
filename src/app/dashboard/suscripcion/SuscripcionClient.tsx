@@ -29,6 +29,7 @@ import { auth } from '@/lib/firebase';
 import { toast } from '@/lib/toast';
 import { getMachineId, checkLicenseStatus, activateLicenseOffline, type LicenseState } from '@/lib/license';
 import { SUBSCRIPTION_PLANS, type SubscriptionPlan } from '@/lib/products';
+import OwnerCapabilitySwitches from '@/components/admin/OwnerCapabilitySwitches';
 
 // ── Stripe Price IDs ─────────────────────────────────────────────────────────
 const STRIPE_PRICE_IDS = {
@@ -228,15 +229,15 @@ export default function PricingPage({ flags }: { flags: MembershipFlags }) {
                     transition={{ delay: 0.1 }}
                     className="text-3xl md:text-5xl font-black text-white tracking-tight mb-3"
                 >
-                    Suscripción & Capacidad de Máquinas
+                    Acompañamiento y Crecimiento para Emprendedores
                 </motion.h1>
                 <motion.p
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.2 }}
-                    className="text-slate-400 text-sm md:text-base"
+                    className="text-slate-400 text-sm md:text-base max-w-3xl mx-auto"
                 >
-                    Plataforma E.C.O.S. modular: cobra por máquina instalada, roles operativos y sincronización continua en red Wi-Fi LAN o Nube.
+                    Comienza 100% gratis con 1 terminal en caja o celular. Conforme tu negocio crezca, desbloquea repartidores, almacén, facturación y monitoreo global en tiempo real desde cualquier parte del mundo.
                 </motion.p>
             </div>
 
@@ -334,6 +335,11 @@ export default function PricingPage({ flags }: { flags: MembershipFlags }) {
                     </div>
                 </div>
             </motion.div>
+
+            {/* Interruptores de Habilidad del Dueño (Modo Omni-Rol) */}
+            <div className="w-full max-w-5xl z-10 mb-8">
+                <OwnerCapabilitySwitches />
+            </div>
 
             {/* Billing Period Toggle */}
             {flags.planVisibility === 'monthly' ? (
