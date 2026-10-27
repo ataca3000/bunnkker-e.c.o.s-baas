@@ -381,14 +381,19 @@ export async function POST(request: NextRequest) {
                     throw new Error(`INSUFFICIENT_STOCK: Inventario insuficiente para el producto "${current.name || prodId}". Disponible: ${availableStock}, solicitado: ${qty}.`);
                 }
 
-                // SEGURIDAD DE PRECIOS EN EL SERVIDOR (ANTI-TAMPERING):
+                // SEGURIDAD DE PRECIOS EN EL SERVIDOR (ANTI-TAMPERING & PISO DE PRECIO):
                 // Para órdenes de mostrador/catálogo de cliente, se impone el precio oficial de la base de datos.
-                // Solo personal con rol de ventas/caja/admin puede aplicar descuentos o precios acordados.
+                // Solo personal con rol de ventas/caja/admin puede aplicar precios especiales.
+                // REGLA PISO DE PRECIO: Ni caja ni ventas pueden vender por debajo del precio oficial sellado por el SuperAdmin.
                 const isStaffWithDiscountPermission = staffSession.ok && ['superadmin', 'admin', 'sales', 'caja'].includes(staffSession.role);
                 const officialPrice = roundMoney(Number(current.price ?? 0));
                 const resolvedPrice = (isStaffWithDiscountPermission && (item.price !== undefined || item.precio !== undefined))
                     ? roundMoney(Number(item.price ?? item.precio ?? officialPrice))
                     : officialPrice;
+
+                if (resolvedPrice < officialPrice && !['superadmin', 'admin'].includes(staffSession.role)) {
+                    throw new Error(`PRICE_FLOOR_VIOLATION: No se permite vender "${current.name || prodId}" por debajo del precio oficial ($${officialPrice}) fijado por el SuperAdmin.`);
+                }
 
                 // El stock físico NO se descuenta aquí en la creación.
                 // Se apartará en reservedStock al confirmar pago, y se descontará físicamente al validar entrega (PoD).

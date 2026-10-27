@@ -234,14 +234,15 @@ export default function InventoryDashboard() {
         }
     };
 
-    // Formulario de Nuevo Producto
+    // Formulario de Nuevo Producto con Doble Confirmación de Precio (Anti-Dedos)
     const [formData, setFormData] = useState({
         name: '', category: '', description: '',
         barcode: '', image: '',
         estante: '', fila: '',
-        price: '', stock: '',
+        price: '', confirmPrice: '', stock: '',
         warranty: '', unitType: 'PZA', isBulk: false
     });
+    const [priceMismatchCount, setPriceMismatchCount] = useState(0);
 
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { delay: 250, tolerance: 5 } }),
@@ -660,16 +661,18 @@ export default function InventoryDashboard() {
             barcode: '', image: '',
             estante: shelfName === 'Sin Asignar' ? '' : shelfName,
             fila: levelName,
-            price: '', stock: '',
+            price: '', confirmPrice: '', stock: '',
             warranty: '', unitType: 'PZA',
             isBulk: false
         });
+        setPriceMismatchCount(0);
         setIsCreating(true);
         setStep(1);
     };
 
     const handleEditProduct = (p: Product) => {
         setEditingProductId(p.id);
+        setPriceMismatchCount(0);
         setFormData({
             name: p.name,
             category: p.category || '',
@@ -679,6 +682,7 @@ export default function InventoryDashboard() {
             estante: p.location?.estante || '',
             fila: p.location?.fila || '',
             price: String(p.price),
+            confirmPrice: String(p.price),
             stock: String(p.stock),
             warranty: (p as any).warranty || '',
             unitType: p.unitType || 'PZA',
@@ -698,6 +702,27 @@ export default function InventoryDashboard() {
             toast.warning('Nombre, Precio y Stock son obligatorios.');
             return;
         }
+
+        // DOBLE CONFIRMACIÓN DE PRECIO PARA SUPERADMIN / ADMIN:
+        // Evita el dedo chueco (ej. poner 134 en lugar de 184).
+        // Error 1: aviso. Error 2: aviso. Al 3er intento o cuando sea correcto: sigue como si nada.
+        if (profile?.role !== 'inventory') {
+            const pVal = parseFloat(formData.price);
+            const cVal = parseFloat((formData as any).confirmPrice);
+            if (!Number.isFinite(cVal) || Math.abs(pVal - cVal) > 0.001) {
+                const fails = priceMismatchCount + 1;
+                setPriceMismatchCount(fails);
+                if (fails === 1) {
+                    toast.error(`Error 1: Los precios no coinciden ($${formData.price || '0'} vs $${(formData as any).confirmPrice || '0'}). Escríbelo idéntico dos veces.`, '🛑 Validador Anti-Dedos');
+                } else if (fails === 2) {
+                    toast.error(`Error 2: Siguen sin coincidir ($${formData.price} vs ${(formData as any).confirmPrice}). Verifica el precio oficial antes de guardar.`, '🛑 Validador Anti-Dedos');
+                } else {
+                    toast.warning(`Intento #${fails}: Cuando ingreses el precio idéntico en ambas casillas, el sistema continuará normalmente.`, '⚠️ Atención de Precios');
+                }
+                return;
+            }
+        }
+        setPriceMismatchCount(0);
 
         if (profile?.role === 'inventory' && (!formData.estante || !formData.fila)) {
             toast.warning('Es obligatorio asignar Estante y Nivel/Fila para el producto.', '📦 Almacenista');
@@ -732,6 +757,7 @@ export default function InventoryDashboard() {
         try {
             const dataToSave: any = {
                 ...newProduct,
+                confirmPrice: (formData as any).confirmPrice,
                 updatedAt: new Date().toISOString()
             };
             if (!editingProductId) {
@@ -1219,9 +1245,65 @@ export default function InventoryDashboard() {
                             {step === 3 && (
                                 <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8">
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-[8px]">
-                                        <div className="bg-emerald-900/20 border border-emerald-500/20 p-[8px] rounded-[5px]">
-                                            <label className="text-xs font-black text-emerald-400 uppercase tracking-widest mb-2 block">Precio (MXN) *</label>
-                                            <input type="number" step="0.01" disabled={profile?.role === 'inventory' && !!editingProductId} value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} className="w-full bg-slate-900 border border-emerald-500/30 p-4 rounded-xl font-black text-2xl text-emerald-400 placeholder-emerald-900/50 outline-none transition-all disabled:opacity-50" placeholder="0.00" />
+                                        <div className="bg-emerald-900/20 border border-emerald-500/20 p-4 rounded-xl space-y-3">
+                                            <div className="flex items-center justify-between">
+                                                <label className="text-xs font-black text-emerald-400 uppercase tracking-widest block">
+                                                    {profile?.role === 'inventory' ? 'Precio Oficial (SuperAdmin)' : 'Precio de Venta (MXN) *'}
+                                                </label>
+                                                {profile?.role === 'inventory' && (
+                                                    <span className="text-[10px] font-bold text-slate-400 bg-slate-800 px-2 py-0.5 rounded">Solo Lectura</span>
+                                                )}
+                                            </div>
+                                            <input 
+                                                type="number" 
+                                                step="0.01" 
+                                                disabled={profile?.role === 'inventory'} 
+                                                value={formData.price} 
+                                                onChange={e => setFormData({...formData, price: e.target.value})} 
+                                                className="w-full bg-slate-900 border border-emerald-500/30 p-3 rounded-lg font-black text-2xl text-emerald-400 placeholder-emerald-900/50 outline-none transition-all disabled:opacity-50" 
+                                                placeholder="0.00" 
+                                            />
+
+                                            {/* DOBLE CONFIRMACIÓN PARA SUPERADMIN / ADMIN */}
+                                            {profile?.role !== 'inventory' && (
+                                                <div className="pt-2 border-t border-emerald-500/20">
+                                                    <label className="text-[11px] font-black text-emerald-300 uppercase tracking-wider mb-1 flex items-center justify-between">
+                                                        <span>Repetir Precio *</span>
+                                                        {formData.price && (formData as any).confirmPrice && (
+                                                            formData.price === (formData as any).confirmPrice ? (
+                                                                <span className="text-emerald-400 flex items-center gap-1 text-[10px] font-bold">
+                                                                    <CheckCircle2 size={12} /> Coincide
+                                                                </span>
+                                                            ) : (
+                                                                <span className="text-rose-400 flex items-center gap-1 text-[10px] font-bold">
+                                                                    <AlertTriangle size={12} /> Difieren
+                                                                </span>
+                                                            )
+                                                        )}
+                                                    </label>
+                                                    <input 
+                                                        type="number" 
+                                                        step="0.01" 
+                                                        value={(formData as any).confirmPrice || ''} 
+                                                        onChange={e => setFormData({...formData, confirmPrice: e.target.value})} 
+                                                        className={`w-full bg-slate-900 border p-3 rounded-lg font-black text-xl placeholder-emerald-900/50 outline-none transition-all ${
+                                                            !(formData as any).confirmPrice 
+                                                                ? 'border-emerald-500/30 text-emerald-400' 
+                                                                : (formData as any).confirmPrice === formData.price 
+                                                                    ? 'border-emerald-500 text-emerald-300 ring-2 ring-emerald-500/20' 
+                                                                    : 'border-rose-500 text-rose-300 ring-2 ring-rose-500/20'
+                                                        }`}
+                                                        placeholder="Repetir precio exacto" 
+                                                    />
+                                                    {priceMismatchCount > 0 && formData.price !== (formData as any).confirmPrice && (
+                                                        <p className="text-[10px] font-bold text-rose-400 mt-1">
+                                                            {priceMismatchCount === 1 && "Error 1: Los precios no coinciden. Escribe el mismo precio."}
+                                                            {priceMismatchCount === 2 && "Error 2: Siguen sin coincidir. Verifica el valor oficial."}
+                                                            {priceMismatchCount >= 3 && "Intento fallido. Cuando el valor sea idéntico, guardará normalmente."}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
                                         <div className="bg-blue-900/20 border border-blue-500/20 p-[8px] rounded-[5px]">
                                             <label className="text-xs font-black text-blue-400 uppercase tracking-widest mb-2 block">Unidad de Medida *</label>

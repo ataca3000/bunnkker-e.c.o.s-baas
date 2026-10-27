@@ -61,6 +61,26 @@ export async function POST(request: NextRequest) {
         }
         if (typeof body.orderIndex === 'number') data.orderIndex = body.orderIndex;
 
+        // REGLA DOBLE CIEGO: Almacén solo cuenta materia física (stock/ubicación).
+        // El precio solo puede ser asignado y sellado por SuperAdmin / Admin.
+        if (auth.role === 'inventory' && data.price !== undefined) {
+            return NextResponse.json({ 
+                success: false, 
+                error: 'El personal de almacén solo registra conteo físico. El precio debe ser asignado y sellado por el SuperAdmin.' 
+            }, { status: 403 });
+        }
+
+        // DOBLE CONFIRMACIÓN ANTI-DEDO CHUECO: Si se envía confirmPrice, debe coincidir exactamente con price.
+        if (body.confirmPrice !== undefined && data.price !== undefined) {
+            const confirmVal = Number(body.confirmPrice);
+            if (!Number.isFinite(confirmVal) || Math.abs(confirmVal - (data.price as number)) > 0.001) {
+                return NextResponse.json({ 
+                    success: false, 
+                    error: 'Los precios no coinciden. Debes confirmar el precio exactamente dos veces para evitar errores de dedo.' 
+                }, { status: 400 });
+            }
+        }
+
         if (data.price !== undefined && (!Number.isFinite(data.price as number) || (data.price as number) < 0)) {
             return NextResponse.json({ success: false, error: 'Precio inválido' }, { status: 400 });
         }
