@@ -8,67 +8,93 @@ import { Plus, Layers } from 'lucide-react';
 interface LevelDropZoneProps {
   shelfName: string;
   levelName: string; // Ej. "Nivel 1", "Nivel 2", "Nivel 3", "GENERAL"
+  levelIndex?: number;
   products: Product[];
   onProductClick?: (product: Product) => void;
   onAddProductClick?: (shelfName: string, levelName: string) => void;
 }
 
-// Subtítulos e insignias descriptivas de cada nivel para organización física
-function getLevelDetails(name: string) {
+// Paleta cíclica de 8 colores vibrantes para niveles en scroll infinito hacia abajo
+const LEVEL_PALETTES = [
+  {
+    // Nivel 1 (Cian neón)
+    badgeColor: 'bg-cyan-500/20 text-cyan-300 border-cyan-400/50',
+    numBadge: 'bg-cyan-500 text-slate-950 font-black border border-cyan-300 shadow-[0_0_14px_rgba(6,182,212,0.6)]',
+    borderAccent: 'border-l-cyan-400',
+    subtitle: 'Nivel 1 / Suelo / Planta Baja',
+  },
+  {
+    // Nivel 2 (Amarillo neón)
+    badgeColor: 'bg-yellow-500/20 text-yellow-300 border-yellow-400/50',
+    numBadge: 'bg-yellow-400 text-slate-950 font-black border border-yellow-200 shadow-[0_0_14px_rgba(250,204,21,0.6)]',
+    borderAccent: 'border-l-yellow-400',
+    subtitle: 'Nivel 2 / Altura Media / Carga Manual',
+  },
+  {
+    // Nivel 3 (Blanco / Plateado neón)
+    badgeColor: 'bg-slate-200/20 text-white border-slate-300/60',
+    numBadge: 'bg-white text-slate-950 font-black border border-slate-200 shadow-[0_0_14px_rgba(255,255,255,0.6)]',
+    borderAccent: 'border-l-white',
+    subtitle: 'Nivel 3 / Altura Alta / Estiba Ligera',
+  },
+  {
+    // Nivel 4 (Rojo / Coral neón)
+    badgeColor: 'bg-red-500/20 text-red-300 border-red-500/50',
+    numBadge: 'bg-red-500 text-white font-black border border-red-300 shadow-[0_0_14px_rgba(239,68,68,0.6)]',
+    borderAccent: 'border-l-red-500',
+    subtitle: 'Nivel 4 / Rack Superior / Sobrestiba',
+  },
+  {
+    // Nivel 5 (Verde Esmeralda)
+    badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-400/50',
+    numBadge: 'bg-emerald-400 text-slate-950 font-black border border-emerald-200 shadow-[0_0_14px_rgba(52,211,153,0.6)]',
+    borderAccent: 'border-l-emerald-400',
+    subtitle: 'Nivel 5 / Reserva Superior',
+  },
+  {
+    // Nivel 6 (Azul Eléctrico)
+    badgeColor: 'bg-blue-500/20 text-blue-300 border-blue-400/50',
+    numBadge: 'bg-blue-500 text-white font-black border border-blue-300 shadow-[0_0_14px_rgba(59,130,246,0.6)]',
+    borderAccent: 'border-l-blue-400',
+    subtitle: 'Nivel 6 / Estiba Pesada',
+  },
+  {
+    // Nivel 7 (Morado / Violeta)
+    badgeColor: 'bg-purple-500/20 text-purple-300 border-purple-400/50',
+    numBadge: 'bg-purple-500 text-white font-black border border-purple-300 shadow-[0_0_14px_rgba(168,85,247,0.6)]',
+    borderAccent: 'border-l-purple-400',
+    subtitle: 'Nivel 7 / Copete de Almacén',
+  },
+  {
+    // Nivel 8 (Gris Carbón / Pizarra)
+    badgeColor: 'bg-slate-700/40 text-slate-200 border-slate-500/50',
+    numBadge: 'bg-slate-700 text-white font-black border border-slate-400 shadow-[0_0_14px_rgba(100,116,139,0.6)]',
+    borderAccent: 'border-l-slate-400',
+    subtitle: 'Nivel 8 / Techo / Tarima',
+  },
+];
+
+function getLevelDetails(name: string, index = 0) {
   const norm = name.toUpperCase().trim();
-  if (norm.includes('1') || norm === 'NIVEL 1') {
-    return {
-      num: '1',
-      title: 'NIVEL 1',
-      subtitle: 'Planta Baja / Suelo',
-      badgeColor: 'bg-cyan-500/20 text-cyan-300 border-cyan-400/40',
-      numBadge: 'bg-cyan-500/25 text-cyan-300 border border-cyan-400/60 shadow-[0_0_12px_rgba(6,182,212,0.35)]',
-      borderAccent: 'border-l-cyan-400',
-    };
-  }
-  if (norm.includes('2') || norm === 'NIVEL 2') {
-    return {
-      num: '2',
-      title: 'NIVEL 2',
-      subtitle: 'Altura Media / Carga Manual',
-      badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-400/40',
-      numBadge: 'bg-amber-500/25 text-amber-300 border border-amber-400/60 shadow-[0_0_12px_rgba(245,158,11,0.35)]',
-      borderAccent: 'border-l-amber-400',
-    };
-  }
-  if (norm.includes('3') || norm === 'NIVEL 3') {
-    return {
-      num: '3',
-      title: 'NIVEL 3',
-      subtitle: 'Parte Alta / Estiba Ligera',
-      badgeColor: 'bg-slate-200/20 text-slate-100 border-slate-300/40',
-      numBadge: 'bg-slate-200/25 text-white border border-slate-300/60 shadow-[0_0_12px_rgba(255,255,255,0.25)]',
-      borderAccent: 'border-l-slate-300',
-    };
-  }
-  if (norm.includes('4') || norm === 'NIVEL 4') {
-    return {
-      num: '4',
-      title: 'NIVEL 4',
-      subtitle: 'Rack Superior / Reserva',
-      badgeColor: 'bg-purple-500/20 text-purple-300 border-purple-400/40',
-      numBadge: 'bg-purple-500/25 text-purple-300 border border-purple-400/60 shadow-[0_0_12px_rgba(168,85,247,0.35)]',
-      borderAccent: 'border-l-purple-400',
-    };
-  }
+  const match = norm.match(/\d+/);
+  const numValue = match ? parseInt(match[0], 10) : index + 1;
+  const paletteIndex = Math.max(0, (numValue - 1) % LEVEL_PALETTES.length);
+  const palette = LEVEL_PALETTES[paletteIndex];
+
   return {
-    num: '•',
-    title: name.toUpperCase(),
-    subtitle: 'Nivel General / Base',
-    badgeColor: 'bg-sky-500/20 text-sky-400 border-sky-500/30',
-    numBadge: 'bg-sky-500/25 text-sky-300 border border-sky-400/50',
-    borderAccent: 'border-l-sky-500',
+    num: String(numValue),
+    title: norm.startsWith('NIVEL') ? norm : `NIVEL ${numValue}: ${norm}`,
+    subtitle: palette.subtitle,
+    badgeColor: palette.badgeColor,
+    numBadge: palette.numBadge,
+    borderAccent: palette.borderAccent,
   };
 }
 
 export default function LevelDropZone({
   shelfName,
   levelName,
+  levelIndex = 0,
   products,
   onProductClick,
   onAddProductClick,
@@ -79,7 +105,7 @@ export default function LevelDropZone({
     data: { type: 'Level', shelfName, levelName },
   });
 
-  const { num, title, subtitle, badgeColor, numBadge, borderAccent } = getLevelDetails(levelName);
+  const { num, title, subtitle, badgeColor, numBadge, borderAccent } = getLevelDetails(levelName, levelIndex);
   const totalUnits = products.reduce((acc, p) => acc + Math.max(0, Number(p.stock || 0)), 0);
 
   return (

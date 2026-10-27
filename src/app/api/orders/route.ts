@@ -124,6 +124,8 @@ async function ensureDbColumns() {
 export async function POST(request: NextRequest) {
     let body: any = {};
     let orderId: string | undefined = undefined;
+    let staffSession: Awaited<ReturnType<typeof validateActiveDbUser>> | null = null;
+    const tenantId = request.headers.get('x-tenant-id') || 'default';
     try {
         await ensureDbColumns();
         body = await request.json().catch(() => ({}));
@@ -142,7 +144,7 @@ export async function POST(request: NextRequest) {
         const paymentMethod = body.paymentMethod;
 
         // SEGURIDAD FAIL-CLOSED: Validar sesión activa directamente en SQLite (no solo la firma HMAC)
-        const staffSession = await validateActiveDbUser(request);
+        staffSession = await validateActiveDbUser(request);
         let authenticatedCustomerId: string | null = null;
         let staffUser: { name: string } | null = null;
 
@@ -252,9 +254,15 @@ export async function POST(request: NextRequest) {
         }
 
         // staffUser ya fue cargado previamente para derivar tenantId
-        const actorId = authenticatedCustomerId || (staffSession.ok ? staffSession.uid : 'SYSTEM');
+        const staffIsOk = staffSession?.ok === true;
+        const staffRole = staffSession?.ok ? staffSession.role : null;
+        const staffUid = staffSession?.ok ? staffSession.uid : null;
+        const isStaffWithDiscountPermission = staffIsOk && staffRole !== null && ['superadmin', 'admin', 'sales', 'caja'].includes(staffRole);
+        const isSuperAdminOrAdmin = staffIsOk && staffRole !== null && ['superadmin', 'admin'].includes(staffRole);
+
+        const actorId = authenticatedCustomerId || (staffUid || 'SYSTEM');
         const actorName = authenticatedCustomerId ? (clientData.name || 'Cliente') : (staffUser?.name || 'Personal');
-        const actorRole = authenticatedCustomerId ? 'customer' : (staffSession.ok ? staffSession.role : 'system');
+        const actorRole = authenticatedCustomerId ? 'customer' : (staffRole || 'system');
 
         // Pending orders reserve availability; payment confirmation performs the stock deduction.
         const orderResult = await prisma.$transaction(async (tx) => {
@@ -315,7 +323,7 @@ export async function POST(request: NextRequest) {
                                 : null
                         }
                     });
-                } else if (deliveryType === 'DELIVERY' && clientData.address && (staffSession.ok || !customer.pin)) {
+                } else if (deliveryType === 'DELIVERY' && clientData.address && (staffIsOk || !customer.pin)) {
                     // Solo actualizar el perfil maestro si es staff en caja o cuenta de mostrador sin contraseña
                     customer = await tx.customer.update({
                         where: { id: customer.id },
@@ -386,8 +394,6 @@ export async function POST(request: NextRequest) {
                 // Para órdenes de mostrador/catálogo de cliente, se impone el precio oficial de la base de datos.
                 // Solo personal con rol de ventas/caja/admin puede aplicar precios especiales.
                 // REGLA PISO DE PRECIO: Ni caja ni ventas pueden vender por debajo del precio oficial sellado por el SuperAdmin.
-                const isStaffWithDiscountPermission = staffSession.ok && ['superadmin', 'admin', 'sales', 'caja'].includes(staffSession.role);
-                const isSuperAdminOrAdmin = staffSession.ok && ['superadmin', 'admin'].includes(staffSession.role);
                 const officialPrice = roundMoney(Number(current.price ?? 0));
                 const resolvedPrice = (isStaffWithDiscountPermission && (item.price !== undefined || item.precio !== undefined))
                     ? roundMoney(Number(item.price ?? item.precio ?? officialPrice))
@@ -407,7 +413,7 @@ export async function POST(request: NextRequest) {
                 });
             }
 
-            const isClientOrder = Boolean(authenticatedCustomerId || body.asRequest || !staffSession.ok || paymentMethod === 'pago_caja');
+            const isClientOrder = Boolean(authenticatedCustomerId || body.asRequest || !staffIsOk || paymentMethod === 'pago_caja');
             const allowedInitialStatuses = ['paid', 'pending_payment', 'pending_confirmation', 'READY_TO_SHIP'];
             const initialStatus = isClientOrder
                 ? 'pending_payment'
@@ -419,7 +425,6 @@ export async function POST(request: NextRequest) {
             const expectedTotal = roundMoney(calculatedItemsTotal + shippingCost);
 
             // Si es pedido de cliente o mostrador, se impone el total recalculado por el servidor
-            const isStaffWithDiscountPermission = staffSession.ok && ['superadmin', 'admin', 'sales', 'caja'].includes(staffSession.role);
             let finalTotal = expectedTotal;
             if (!isClientOrder && isStaffWithDiscountPermission && !Number.isNaN(numTotal) && numTotal > 0) {
                 finalTotal = numTotal;
@@ -454,7 +459,7 @@ export async function POST(request: NextRequest) {
                             deliveryType: deliveryType || (deliveryMethod === 'repartidor' ? 'DELIVERY' : (['pickup', 'piso', 'tienda'].includes(deliveryMethod) ? 'PICKUP' : 'LOCAL')),
                             paymentMethod: isCashierRequest ? 'pago_caja' : paymentMethod || 'CASH',
                             status: initialStatus,
-                            vendedorId: isCashierRequest ? null : (staffSession.ok ? staffSession.uid : null),
+                            vendedorId: isCashierRequest ? null : staffUid,
                             vendedorName: isCashierRequest ? null : (staffUser?.name || body.vendedorName || null),
                             confirmedAt: isCashierRequest ? null : new Date(),
                             expiresAt: body.expiresAt ? new Date(body.expiresAt) : null,

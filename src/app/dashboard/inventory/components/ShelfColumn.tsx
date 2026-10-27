@@ -188,13 +188,14 @@ export default function ShelfColumn({
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-[8px] hide-scrollbar relative bg-slate-900/40">
+      <div className="flex-1 overflow-y-auto p-3.5 flex flex-col gap-3 relative bg-slate-900/40 custom-scrollbar scroll-smooth">
         {isInRenderDistance ? (
-          sortedLevels.map((level) => (
+          sortedLevels.map((level, levelIdx) => (
             <LevelDropZone
               key={level}
               shelfName={shelfName}
               levelName={level}
+              levelIndex={levelIdx}
               products={levelsMap[level]}
               onProductClick={onProductClick}
               onAddProductClick={onAddProductClick}

@@ -814,7 +814,7 @@ export default function InventoryDashboard() {
             setIsCreating(false);
             setEditingProductId(null);
             setStep(1);
-            setFormData({ name: '', category: '', description: '', barcode: '', image: '', estante: '', fila: '', price: '', stock: '', warranty: '', unitType: 'PZA', isBulk: false });
+            setFormData({ name: '', category: '', description: '', barcode: '', image: '', estante: '', fila: '', price: '', confirmPrice: '', stock: '', warranty: '', unitType: 'PZA', isBulk: false });
         } catch (error: any) {
             console.error(error);
             toast.error('Error al guardar el producto: ' + (error.message || 'Error desconocido'), 'Error');
@@ -965,7 +965,7 @@ export default function InventoryDashboard() {
                 name: '', category: '', description: '',
                 barcode: code, image: '',
                 estante: '', fila: '',
-                price: '', stock: '', warranty: '', unitType: 'PZA', isBulk: false
+                price: '', confirmPrice: '', stock: '', warranty: '', unitType: 'PZA', isBulk: false
             });
             setIsCreating(true);
             setStep(1);
