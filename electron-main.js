@@ -310,26 +310,68 @@ const createWindow = (urlHost = 'localhost') => {
     console.log(`[Electron] Cargando: ${targetUrl} (modo ${useOnline ? 'ONLINE' : 'LOCAL'})`);
     mainWindow.loadURL(targetUrl);
 
+    let isReconnecting = false;
     mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
         // Ignorar ERR_ABORTED (-3), que ocurre normalmente al hacer clic rápido en enlaces o redirecciones
         if (errorCode === -3) return;
 
-        console.log(`[Electron] Error cargando ${validatedURL}: ${errorDescription}. Reintentando...`);
+        console.log(`[Electron] Error cargando ${validatedURL}: ${errorDescription}. Activando radar de reconexión...`);
 
-        // Si falla el servidor local, hacer fallback a Firebase Hosting (modo online)
-        const ONLINE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://admin-erp-pro-1.web.app';
-        const isLocalUrl = validatedURL.includes('localhost') || validatedURL.includes('127.0.0.1');
+        // Si ya estamos en bucle de reconexión, no reinicializar la pantalla
+        if (isReconnecting) return;
+        isReconnecting = true;
 
-        if (isLocalUrl) {
-            console.log('[Electron] Servidor local no disponible. Intentando de nuevo en 3s...');
-            setTimeout(() => {
-                if (mainWindow) mainWindow.loadURL(validatedURL);
-            }, 3000);
-        } else {
-            setTimeout(() => {
-                if (mainWindow) mainWindow.loadURL(validatedURL);
-            }, 2000);
+        const reconnectHtml = `data:text/html;charset=utf-8,${encodeURIComponent(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="utf-8">
+                <title>BUNKKER E.C.O.S. — Reconectando Nodo</title>
+                <style>
+                    body { background: #07090e; color: #f3f4f6; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; user-select: none; }
+                    .radar { width: 56px; height: 56px; border: 3px solid rgba(59, 130, 246, 0.15); border-top-color: #3b82f6; border-radius: 50%; animation: spin 0.9s cubic-bezier(0.4, 0, 0.2, 1) infinite; margin-bottom: 24px; }
+                    @keyframes spin { to { transform: rotate(360deg); } }
+                    h1 { font-size: 1.2rem; font-weight: 700; margin: 0 0 8px; letter-spacing: -0.01em; color: #f9fafb; }
+                    p { color: #9ca3af; font-size: 0.85rem; margin: 0 0 20px; max-width: 320px; text-align: center; line-height: 1.4; }
+                    .badge { background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.25); color: #93c5fd; padding: 6px 14px; border-radius: 9999px; font-size: 0.72rem; font-family: monospace; letter-spacing: 0.05em; font-weight: 600; }
+                </style>
+            </head>
+            <body>
+                <div class="radar"></div>
+                <h1>Buscando Servidor Maestro en Red LAN...</h1>
+                <p>Verificando enlace con la terminal central. Al restablecerse la señal, la pantalla se cargará sola.</p>
+                <div class="badge">MODO NODO &bull; RECONEXIÓN AUTOMÁTICA ACTIVA</div>
+            </body>
+            </html>
+        `)}`;
+
+        if (mainWindow) {
+            mainWindow.loadURL(reconnectHtml).catch(() => {});
         }
+
+        // Sondeo en segundo plano cada 2 segundos hasta que el servidor maestro responda
+        const httpModule = require('http');
+        const probeInterval = setInterval(() => {
+            if (!mainWindow) {
+                clearInterval(probeInterval);
+                return;
+            }
+
+            try {
+                const req = httpModule.get(validatedURL, { timeout: 1500 }, (res) => {
+                    if (res.statusCode && res.statusCode < 500) {
+                        clearInterval(probeInterval);
+                        isReconnecting = false;
+                        console.log(`[Electron] Enlace restablecido con ${validatedURL}. Recargando terminal...`);
+                        mainWindow.loadURL(validatedURL);
+                    }
+                });
+                req.on('error', () => { /* Servidor aún apagado o no alcanzable */ });
+                req.on('timeout', () => { req.destroy(); });
+            } catch {
+                /* Error transitorio en la llamada */
+            }
+        }, 2000);
     });
 
     mainWindow.webContents.setWindowOpenHandler(({ url }) => {

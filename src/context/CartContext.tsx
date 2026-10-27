@@ -302,7 +302,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             });
             
             newSocket.on("connect", () => {
-                console.log("🟢 Conectado al Sync Server de Inventario");
+                console.log("🟢 Conectado al Sync Server de Inventario (Reconexión activa)");
+                try {
+                    broadcastSync({ action: 'SOCKET_RECONNECTED' });
+                } catch {}
             });
 
             newSocket.on("floating_stock_update", (floatingMap: Record<string, number>) => {
