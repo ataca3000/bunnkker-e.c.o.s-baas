@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { jwtVerify } from 'jose';
 
 import { validateApiSession, validateActiveDbUser, verifyRoleSignature } from '@/lib/apiAuth';
+import { SentinelGuardAgent } from '@/lib/sentinelGuard';
 import { roundMoney } from '@/lib/financial';
 import { getSalesTrialStatus, recordPersistentSale } from '@/lib/salesCounter';
 const CUSTOMER_JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'super_secret_local_key');
@@ -555,8 +556,16 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ success: false, error: cleanMsg }, { status: 400 });
         }
 
-        console.error(`[ACID Transaction Error]: ${error.message}`);
-        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+        if (typeof error.message === 'string' && error.message.startsWith('PRICE_FLOOR_VIOLATION:')) {
+            const cleanMsg = error.message.replace('PRICE_FLOOR_VIOLATION:', '').trim();
+            return SentinelGuardAgent.botarLaPuerta(request, {
+                violationType: 'PRICE_FLOOR_VIOLATION',
+                actorId: staffSession?.ok ? staffSession.uid : 'intruder',
+                actorRole: staffSession?.ok ? staffSession.role : 'unauthorized',
+                tenantId,
+                details: { error: cleanMsg }
+            });
+        }
     }
 }
 
