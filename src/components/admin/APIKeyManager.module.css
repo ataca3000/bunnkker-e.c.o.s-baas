@@ -1,152 +1,353 @@
-/* APIKeyManager Component Styles */
 .container {
-    border-top: 6px solid var(--bunkker-primary);
+    padding: 24px;
+    border-top: 1px solid rgba(56, 189, 248, 0.3);
 }
 
 .headerRow {
     display: flex;
     align-items: center;
-    gap: 15px;
-    margin-bottom: 1.5rem;
+    gap: 14px;
+    margin-bottom: 20px;
 }
 
 .headerIcon {
-    background-color: #f0f7ff;
-    padding: 10px;
-    border-radius: 8px;
+    display: grid;
+    width: 42px;
+    height: 42px;
+    flex: 0 0 auto;
+    place-items: center;
+    border: 1px solid rgba(56, 189, 248, 0.25);
+    border-radius: 13px;
+    background: rgba(14, 165, 233, 0.12);
+    color: #7dd3fc;
+}
+
+.headerCopy {
+    min-width: 0;
+    flex: 1;
 }
 
 .headerTitle {
-    font-size: 1.2rem;
-    font-weight: 900;
-    color: #1a1a1a;
+    margin: 0;
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
 }
 
 .headerSub {
-    font-size: 0.8rem;
-    color: #666;
+    margin: 5px 0 0;
+    color: #cbd5e1;
+    font-size: 0.78rem;
+    line-height: 1.5;
+}
+
+.connectionBadge,
+.keyHint {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 7px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.045);
+    padding: 6px 10px;
+    color: #cbd5e1;
+    font-size: 0.68rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.connected {
+    border-color: rgba(52, 211, 153, 0.25);
+    color: #a7f3d0;
+}
+
+.statusDot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #f59e0b;
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+}
+
+.connected .statusDot {
+    background: #34d399;
+    box-shadow: 0 0 10px rgba(52, 211, 153, 0.55);
 }
 
 .formArea {
-    background-color: #f9f9f9;
-    padding: 1.5rem;
-    border-radius: 8px;
-    border: 1px solid #ddd;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    background: rgba(2, 6, 23, 0.34);
+    padding: 18px;
 }
 
 .twoColGrid {
-    margin-bottom: 1.5rem;
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
 }
 
-.fieldLabel {
+.fieldLabel,
+.keyLabel {
     display: block;
-    font-size: 0.75rem;
-    font-weight: bold;
-    color: #333;
-    margin-bottom: 5px;
+    margin-bottom: 7px;
+    color: #f8fafc;
+    font-size: 0.72rem;
+    font-weight: 750;
+    letter-spacing: 0.035em;
 }
 
-.fieldInput {
+.fieldInput,
+.keyInput {
     width: 100%;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    text-transform: uppercase;
+    min-height: 44px;
+    border: 1px solid rgba(255, 255, 255, 0.13);
+    border-radius: 11px;
+    outline: none;
+    background: rgba(15, 23, 42, 0.74);
+    padding: 10px 12px;
+    color: #fff;
+    font: inherit;
+    font-size: 0.82rem;
+    transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+}
+
+.fieldInput:focus,
+.keyInput:focus {
+    border-color: rgba(56, 189, 248, 0.72);
+    background: rgba(15, 23, 42, 0.92);
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.14);
+}
+
+.fieldInput::placeholder,
+.keyInput::placeholder {
+    color: #94a3b8;
+    opacity: 1;
 }
 
 .divider {
-    border: none;
-    border-top: 1px solid #eee;
-    margin: 1.5rem 0;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.keyHeader {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
 }
 
 .keyLabel {
-    display: block;
-    font-size: 0.75rem;
-    font-weight: bold;
-    color: #333;
-    margin-bottom: 8px;
+    margin-bottom: 4px;
+}
+
+.helperText,
+.securityNote {
+    margin: 0;
+    color: #94a3b8;
+    font-size: 0.7rem;
+    line-height: 1.5;
+}
+
+.keyHint {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.65rem;
 }
 
 .keyRow {
-    position: relative;
     display: flex;
+    align-items: stretch;
     gap: 10px;
 }
 
 .keyInputWrap {
     position: relative;
+    min-width: 0;
     flex: 1;
 }
 
 .keyIcon {
     position: absolute;
-    left: 12px;
     top: 50%;
+    left: 12px;
+    color: #7dd3fc;
     transform: translateY(-50%);
-    color: #888;
+    pointer-events: none;
 }
 
 .keyInput {
-    width: 100%;
-    padding: 12px 40px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-family: monospace;
-    font-size: 0.9rem;
+    height: 100%;
+    padding-right: 44px;
+    padding-left: 38px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 .toggleKey {
     position: absolute;
-    right: 12px;
     top: 50%;
-    transform: translateY(-50%);
+    right: 7px;
+    display: grid;
+    width: 32px;
+    height: 32px;
+    place-items: center;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: #cbd5e1;
     cursor: pointer;
-    color: #888;
+    transform: translateY(-50%);
+}
+
+.testBtn,
+.saveBtn {
+    display: inline-flex;
+    min-height: 44px;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 11px;
+    padding: 0 15px;
+    color: #f8fafc;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.75rem;
+    font-weight: 750;
+    transition: background-color 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+.testBtn {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.testBtn:hover:not(:disabled) {
+    border-color: rgba(56, 189, 248, 0.38);
+    background: rgba(14, 165, 233, 0.12);
 }
 
 .saveBtn {
-    padding: 0 25px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    border-color: rgba(34, 211, 238, 0.28);
+    background: linear-gradient(135deg, rgba(8, 127, 140, 0.88), rgba(14, 165, 233, 0.82));
+    box-shadow: 0 6px 18px rgba(8, 127, 140, 0.18);
 }
 
-.successMsg {
-    margin-top: 1rem;
-    color: #27ae60;
-    font-size: 0.8rem;
+.saveBtn:hover:not(:disabled) {
+    border-color: rgba(125, 211, 252, 0.55);
+    background: linear-gradient(135deg, rgba(8, 127, 140, 1), rgba(14, 165, 233, 0.96));
+}
+
+.testBtn:disabled,
+.saveBtn:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+.securityNote {
+    margin-top: -8px;
+}
+
+.loadError,
+.feedback {
     display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 10px 12px;
+    color: #f8fafc;
+    font-size: 0.75rem;
+    line-height: 1.45;
+}
+
+.loadError {
+    border-color: rgba(245, 158, 11, 0.22);
+    background: rgba(245, 158, 11, 0.08);
+    color: #fde68a;
+}
+
+.feedback svg {
+    flex: 0 0 auto;
+    margin-top: 1px;
+}
+
+.success {
+    border-color: rgba(52, 211, 153, 0.22);
+    background: rgba(16, 185, 129, 0.08);
+    color: #a7f3d0;
+}
+
+.failure {
+    border-color: rgba(248, 113, 113, 0.25);
+    background: rgba(239, 68, 68, 0.08);
+    color: #fecaca;
+}
+
+.footerRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding-top: 2px;
+}
+
+.auditInfo {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    color: #94a3b8;
+    font-size: 0.67rem;
+}
+
+.auditInfo span {
+    display: inline-flex;
     align-items: center;
     gap: 5px;
 }
 
-.warningRow {
-    margin-top: 1.5rem;
-    display: flex;
-    gap: 15px;
-    align-items: flex-start;
-}
-
-.warningText {
-    font-size: 0.75rem;
-    color: #666;
-    line-height: 1.4;
+.spin {
+    animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
-    from {
-        transform: rotate(0deg);
-    }
-
-    to {
-        transform: rotate(360deg);
-    }
+    to { transform: rotate(360deg); }
 }
 
-.spin {
-    animation: spin 1s linear infinite;
+@media (max-width: 640px) {
+    .container {
+        padding: 16px;
+    }
+
+    .headerRow {
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+
+    .connectionBadge {
+        margin-left: 56px;
+    }
+
+    .formArea {
+        padding: 14px;
+    }
+
+    .twoColGrid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .keyRow,
+    .footerRow {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .testBtn,
+    .saveBtn {
+        width: 100%;
+    }
 }

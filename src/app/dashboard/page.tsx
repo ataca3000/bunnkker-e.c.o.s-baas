@@ -85,9 +85,6 @@ export default function DashboardRouter() {
             ownerBalance={ownerBalance}
             siteConfig={siteConfig}
             formatCurrency={formatCurrency}
-            isScannerOpen={false}
-            setIsScannerOpen={() => {}}
-            handleAdminScan={() => {}}
         />
     );
 }

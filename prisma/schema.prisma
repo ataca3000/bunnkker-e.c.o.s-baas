@@ -244,4 +244,21 @@ model SwarmTransaction {
   commissionEarned Float    @default(0)
 }
 
+model IntegrationConfig {
+  id             String    @id @default(uuid())
+  tenantId       String    @default("default")
+  provider       String
+  encryptedSecret String?
+  keyLastFour    String?
+  settings       String    @default("{}")
+  status         String    @default("disconnected")
+  lastCheckedAt  DateTime?
+  updatedBy      String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@unique([tenantId, provider])
+  @@index([tenantId])
+}
+
 

@@ -53,8 +53,6 @@
 
 * {
   box-sizing: border-box;
-  padding: 0;
-  margin: 0;
 }
 
 body {
@@ -275,7 +273,7 @@ button:disabled {
 .bunkker-shell aside a { color: rgba(255,255,255,0.78) !important; }
 .bunkker-shell aside a:hover { background: rgba(255,255,255,0.08) !important; color: var(--bunkker-paper) !important; }
 .bunkker-shell aside a[style*="rgba(0,242,255"] { background: rgba(8,127,140,0.28) !important; color: var(--bunkker-paper) !important; border-left-color: var(--bunkker-teal) !important; text-shadow: none !important; }
-.bunkker-shell main, .bunkker-shell section { color: var(--bunkker-ink); }
+.bunkker-shell main, .bunkker-shell section { color: #f8fafc; }
 .bunkker-shell h1, .bunkker-shell h2, .bunkker-shell h3 { letter-spacing: -0.025em; }
 
 /* ─── SISTEMA VISUAL CAPA 4: CONTENEDORES TRANSLÚCIDOS NEGROS Y CIBER-AZUL ─── */
@@ -493,4 +491,16 @@ button:disabled {
 ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.5); border-radius: 10px; }
 ::-webkit-scrollbar-thumb { background: rgba(56, 189, 248, 0.4); border-radius: 10px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(56, 189, 248, 0.8); }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-pulse-slow,
+  .animate-float,
+  .neon-border-pulse,
+  .liquid-glass,
+  .tornasol-text,
+  .tornasol-btn,
+  .mystique-scales {
+    animation: none !important;
+  }
+}
 

@@ -3,25 +3,24 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import {
     Users,
     Package,
     FileText,
     LayoutDashboard,
-    ShoppingCart,
     ShieldCheck,
     LogOut,
-    Truck,
     BookOpen,
     History,
-    Share2,
-    Palette,
     CreditCard,
     Lock,
-    ChevronLeft,
+    QrCode,
+    Route,
+    Warehouse,
+    Megaphone,
+    PackageCheck,
     ChevronRight,
-    Play,
     Wifi,
     WifiOff,
     Info,
@@ -35,85 +34,62 @@ import {
     Save,
     RefreshCw as Refresh,
     Activity,
-    Sparkles,
     Boxes,
-    Printer
+    Settings,
+    Store
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
-import { db } from '@/lib/firebase';
-import { doc, updateDoc, onSnapshot, getDoc } from 'firebase/firestore';
 import { toast } from '@/lib/toast';
 import ThemeToggle from '@/components/ThemeToggle';
 import LanguageSelector from '@/components/LanguageSelector';
+import AdminDock, { type AdminDockItem } from './AdminDock';
 import { useTranslation } from '@/context/LanguageContext';
-import IconCarouselNav from '@/components/admin/IconCarouselNav';
-
-
-const rolePaths: Record<string, string[]> = {
-    superadmin: [
-        '/dashboard', '/dashboard/sales', '/dashboard/admin/sales', '/dashboard/admin/users', '/dashboard/users',
-        '/dashboard/admin/customers', '/dashboard/crm', '/dashboard/team', '/dashboard/purchases', '/dashboard/reports',
-        '/dashboard/soporte', '/dashboard/setup', '/dashboard/pro-sync', '/dashboard/profile', '/dashboard/guia',
-        '/dashboard/inventory', '/dashboard/delivery', '/dashboard/pickup', '/dashboard/patio', '/dashboard/design',
-        '/dashboard/qr', '/dashboard/verificador',
-        '/dashboard/migracion', '/dashboard/link', '/dashboard/simulator'
-    ],
-    admin: [
-        '/dashboard', '/dashboard/sales', '/dashboard/admin/sales', '/dashboard/admin/users', '/dashboard/users',
-        '/dashboard/admin/customers', '/dashboard/crm', '/dashboard/team', '/dashboard/purchases', '/dashboard/reports',
-        '/dashboard/soporte', '/dashboard/setup', '/dashboard/pro-sync', '/dashboard/profile', '/dashboard/guia',
-        '/dashboard/inventory', '/dashboard/delivery', '/dashboard/pickup', '/dashboard/patio', '/dashboard/design',
-        '/dashboard/marketing', '/dashboard/omnipulse', '/dashboard/billing', '/dashboard/audit', '/dashboard/suscripcion',
-        '/dashboard/qr', '/dashboard/simulator'
-    ],
-    sales: ['/dashboard', '/dashboard/sales', '/dashboard/admin/sales', '/dashboard/admin/customers', '/dashboard/crm', '/dashboard/qr', '/dashboard/profile', '/dashboard/guia'],
-    caja: ['/dashboard', '/dashboard/sales', '/dashboard/admin/sales', '/dashboard/admin/customers', '/dashboard/crm', '/dashboard/qr', '/dashboard/profile', '/dashboard/guia'],
-    billing: ['/dashboard', '/dashboard/sales', '/dashboard/billing', '/dashboard/audit', '/dashboard/profile', '/dashboard/guia'],
-    inventory: ['/dashboard', '/dashboard/inventory', '/dashboard/pickup', '/dashboard/patio', '/dashboard/profile', '/dashboard/guia'],
-    almacen: ['/dashboard', '/dashboard/inventory', '/dashboard/pickup', '/dashboard/patio', '/dashboard/profile', '/dashboard/guia'],
-    carga_descarga: ['/dashboard', '/dashboard/pickup', '/dashboard/patio', '/dashboard/delivery', '/dashboard/profile', '/dashboard/guia'],
-    driver: ['/dashboard', '/dashboard/delivery', '/dashboard/patio', '/dashboard/pickup', '/dashboard/profile', '/dashboard/guia'],
-    delivery: ['/dashboard', '/dashboard/delivery', '/dashboard/patio', '/dashboard/pickup', '/dashboard/profile', '/dashboard/guia'],
-    marketing: ['/dashboard', '/dashboard/marketing', '/dashboard/design', '/dashboard/omnipulse', '/dashboard/qr', '/dashboard/profile', '/dashboard/guia'],
-    client: ['/cuenta']
+/* ─── Navegación canónica del dashboard ───────────────────────────────────── */
+type DashboardMenuItem = {
+    id: string;
+    title: string;
+    icon: React.ReactNode;
+    href: string;
+    premium?: boolean;
+    roles?: string[];
 };
 
-/* ─── Sidebar menu groups ─────────────────────────────────────────────────── */
-const menuGroups = [
+const menuGroups: { label: string; items: DashboardMenuItem[] }[] = [
     {
-        label: 'Administración y Ventas',
+        label: 'Panel y administración',
         items: [
-            { id: 'dashboard',  title: 'Dashboard General',  icon: <LayoutDashboard size={20} />, href: '/dashboard',             premium: false },
-            { id: 'pos',        title: 'Punto de Venta (POS)', icon: <Calculator size={20} />,    href: '/dashboard/sales',       premium: false },
-            { id: 'team',       title: 'Control de Roles',   icon: <Users size={20} />,           href: '/dashboard/team',        premium: false },
-            { id: 'users',      title: 'Usuarios y Roles',   icon: <Users size={20} />,           href: '/dashboard/admin/users', premium: false },
-            { id: 'crm',        title: 'CRM y Clientes',     icon: <User size={20} />,            href: '/dashboard/crm',         premium: false },
-            { id: 'customers',  title: 'Gestión de Clientes',icon: <User size={20} />,            href: '/dashboard/admin/customers', premium: false },
-            { id: 'billing',    title: 'CFDI y Facturas',    icon: <FileText size={20} />,        href: '/dashboard/billing',     premium: false },
-            { id: 'qr',         title: 'Vincular por QR',    icon: <Share2 size={20} />,          href: '/dashboard/qr',          premium: false },
-            { id: 'guide',      title: 'Guía / Manual',      icon: <BookOpen size={20} />,        href: '/dashboard/guia',        premium: false },
-            { id: 'demo',       title: 'Test ISO / Demo',    icon: <Activity size={20} />,        href: '/dashboard/demo',        premium: false },
+            { id: 'dashboard', title: 'Resumen ejecutivo', icon: <LayoutDashboard size={19} />, href: '/dashboard' },
+            { id: 'pos', title: 'Punto de venta', icon: <Calculator size={19} />, href: '/dashboard/sales' },
+            { id: 'team', title: 'Equipo y permisos', icon: <Users size={19} />, href: '/dashboard/team' },
+            { id: 'users', title: 'Cuentas de acceso', icon: <Key size={19} />, href: '/dashboard/admin/users' },
+            { id: 'crm', title: 'CRM comercial', icon: <User size={19} />, href: '/dashboard/crm' },
+            { id: 'customers', title: 'Historial y tickets', icon: <History size={19} />, href: '/dashboard/admin/customers' },
+            { id: 'billing', title: 'Facturación CFDI', icon: <FileText size={19} />, href: '/dashboard/billing' },
+            { id: 'qr', title: 'Vinculación QR', icon: <QrCode size={19} />, href: '/dashboard/qr' },
+            { id: 'setup', title: 'Configuración', icon: <Settings size={19} />, href: '/dashboard/setup' },
+            { id: 'guide', title: 'Guía de uso', icon: <BookOpen size={19} />, href: '/dashboard/guia' },
+            { id: 'demo', title: 'Entorno de pruebas', icon: <Activity size={19} />, href: '/dashboard/demo', roles: ['superadmin'] },
         ],
     },
     {
-        label: 'Operaciones y Logística',
+        label: 'Operación y logística',
         items: [
-            { id: 'inventory', title: 'Control de Inventario', icon: <Package size={20} />, href: '/dashboard/inventory', premium: false },
-            { id: 'patio',     title: 'Patio de Carga',        icon: <Truck size={20} />,   href: '/dashboard/patio',     premium: false },
-            { id: 'pickup',    title: 'Mostrador / Tienda',    icon: <Package size={20} />, href: '/dashboard/pickup',    premium: false },
-            { id: 'delivery',  title: 'Logística y Reparto',   icon: <Truck size={20} />,   href: '/dashboard/delivery',  premium: false },
-            { id: 'simulator', title: 'Simulador 3D FerreFlujo', icon: <Boxes size={20} />, href: '/dashboard/simulator', premium: false },
+            { id: 'inventory', title: 'Inventario', icon: <Package size={19} />, href: '/dashboard/inventory' },
+            { id: 'patio', title: 'Patio de carga', icon: <Warehouse size={19} />, href: '/dashboard/patio' },
+            { id: 'pickup', title: 'Mostrador y pickup', icon: <PackageCheck size={19} />, href: '/dashboard/pickup' },
+            { id: 'delivery', title: 'Reparto', icon: <Route size={19} />, href: '/dashboard/delivery' },
+            { id: 'simulator', title: 'Simulador operativo', icon: <Boxes size={19} />, href: '/dashboard/simulator' },
         ],
     },
     {
-        label: 'Diseño y Marketing',
+        label: 'Control del negocio',
         items: [
-            { id: 'marketing', title: 'Marketing y QR',  icon: <Share2 size={20} />,  href: '/dashboard/marketing',  premium: false },
-            { id: 'design',    title: 'Diseño de Marca', icon: <Palette size={20} />, href: '/dashboard/design',     premium: false },
-            { id: 'audit',     title: 'Registro Auditoría', icon: <History size={20} />, href: '/dashboard/audit',    premium: false },
-            { id: 'subscription', title: 'Mi Suscripción', icon: <CreditCard size={20} />, href: '/dashboard/suscripcion', premium: false },
+            { id: 'marketing', title: 'Marketing y marca', icon: <Megaphone size={19} />, href: '/dashboard/marketing' },
+            { id: 'audit', title: 'Auditoría', icon: <ShieldCheck size={19} />, href: '/dashboard/audit' },
+            { id: 'subscription', title: 'Suscripción', icon: <CreditCard size={19} />, href: '/dashboard/suscripcion', roles: ['superadmin'] },
+            { id: 'store', title: 'Tienda pública', icon: <Store size={19} />, href: '/' },
         ],
     },
 ];
@@ -135,9 +111,9 @@ function ConnectionTooltip({ isOpen, firebaseStatus }: { isOpen: boolean; fireba
                         top:             'calc(100% + 10px)',
                         right:           0,
                         zIndex:          9999,
-                        background:      'rgba(255,255,255,0.97)',
-                        backdropFilter:  'blur(12px)',
-                        border:          '1px solid #e2e8f0',
+                        background:      'rgba(5, 10, 20, 0.94)',
+                        backdropFilter:  'blur(18px) saturate(140%)',
+                        border:          '1px solid rgba(56, 189, 248, 0.2)',
                         borderRadius:    '14px',
                         padding:         '16px 18px',
                         boxShadow:       '0 12px 40px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06)',
@@ -149,7 +125,7 @@ function ConnectionTooltip({ isOpen, firebaseStatus }: { isOpen: boolean; fireba
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                         <div style={{
                             width: '32px', height: '32px', borderRadius: '10px',
-                            background: isOnline ? '#ecfdf5' : '#fff7ed',
+                            background: isOnline ? 'rgba(16,185,129,0.14)' : 'rgba(249,115,22,0.14)',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                         }}>
                             {isOnline
@@ -157,7 +133,7 @@ function ConnectionTooltip({ isOpen, firebaseStatus }: { isOpen: boolean; fireba
                                 : <WifiOff size={16} color="#ea580c" />}
                         </div>
                         <div>
-                            <p style={{ margin: 0, fontSize: '0.78rem', fontWeight: '800', color: '#1e293b' }}>
+                            <p style={{ margin: 0, fontSize: '0.78rem', fontWeight: '800', color: '#f8fafc' }}>
                                 {isOnline ? 'Sistema en Línea' : 'Modo Local / Offline'}
                             </p>
                             <p style={{ margin: 0, fontSize: '0.65rem', color: '#94a3b8' }}>
@@ -183,7 +159,7 @@ function ConnectionTooltip({ isOpen, firebaseStatus }: { isOpen: boolean; fireba
                     ].map((item, i) => (
                         <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', marginBottom: '8px' }}>
                             <span style={{ flexShrink: 0, marginTop: '1px' }}>{item.icon}</span>
-                            <span style={{ fontSize: '0.7rem', color: '#475569', lineHeight: '1.4' }}>{item.text}</span>
+                            <span style={{ fontSize: '0.7rem', color: '#cbd5e1', lineHeight: '1.4' }}>{item.text}</span>
                         </div>
                     ))}
                 </motion.div>
@@ -223,6 +199,10 @@ function ProfileSetupScreen({ uid }: { uid: string }) {
 
         setLoading(true);
         try {
+            const [{ db }, { doc, updateDoc }] = await Promise.all([
+                import('@/lib/firebase'),
+                import('firebase/firestore'),
+            ]);
             const userRef = doc(db, 'users', uid);
             await updateDoc(userRef, {
                 displayName:   name.trim(),
@@ -324,58 +304,13 @@ function ProfileSetupScreen({ uid }: { uid: string }) {
 /* ─── Main Layout ─────────────────────────────────────────────────────────── */
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
-    const router = useRouter();
-    const [isCollapsed, setIsCollapsed]         = useState(false);
-    const [navMode, setNavMode]                 = useState<'carousel' | 'sidebar'>('carousel');
     const [connTooltipOpen, setConnTooltipOpen] = useState(false);
-    const tooltipRef                            = useRef<HTMLDivElement>(null);
-    const [activeModules, setActiveModules]     = useState<string[] | null>(null);
-    const [siteConfig, setSiteConfig]           = useState<any>(null);
+    const tooltipRef = useRef<HTMLDivElement>(null);
 
-    const isDashboard = pathname?.startsWith('/dashboard');
-    const { isReadOnly, isPremium, profile, signOut, loading: authLoading } = useAuth();
-    const { firebaseStatus } = useCart();
+    const isDashboard = pathname === '/dashboard' || pathname?.startsWith('/dashboard/');
+    const { isReadOnly, isPremium, profile, signOut } = useAuth();
+    const { firebaseStatus, siteConfig } = useCart();
     const { t } = useTranslation();
-
-    /* persist sidebar and navigation mode preferences */
-    useEffect(() => {
-        try {
-            const saved = localStorage.getItem('_admincom_sidebar_collapsed');
-            if (saved === 'true') setIsCollapsed(true);
-            const savedNav = localStorage.getItem('_admincom_nav_mode');
-            if (savedNav === 'sidebar' || savedNav === 'carousel') {
-                setNavMode(savedNav);
-            } else {
-                // Default to carousel mode as requested by user
-                setNavMode('carousel');
-            }
-        } catch {}
-    }, []);
-
-    // Fetch site config from local API (evitando errores de Firestore offline)
-    useEffect(() => {
-        if (authLoading) return;
-        const defaultModules = ['sales', 'pos', 'users', 'customers', 'qr', 'demo', 'inventory', 'delivery', 'pickup', 'design', 'marketing', 'billing', 'audit', 'dashboard', 'tests', 'subscription'];
-
-        const fetchSiteConfig = async () => {
-            try {
-                const res = await fetch('/api/settings').catch(() => null);
-                if (res && res.ok) {
-                    const json = await res.json().catch(() => null);
-                    const data = json?.data || json;
-                    if (data && typeof data === 'object') {
-                        setSiteConfig(data);
-                        if (Array.isArray(data.activeModules) && data.activeModules.length > 0) {
-                            setActiveModules(data.activeModules);
-                            return;
-                        }
-                    }
-                }
-            } catch {}
-            setActiveModules(defaultModules);
-        };
-        fetchSiteConfig();
-    }, [authLoading]);
 
     /* close tooltip on outside click */
     useEffect(() => {
@@ -388,22 +323,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         return () => document.removeEventListener('mousedown', handler);
     }, []);
 
-    /* RBAC Enforcement (sin recargas forzadas ni desconexiones en falso) */
-    useEffect(() => {
-        if (authLoading || !profile?.uid || profile.uid === 'local_owner') return;
-
-        const isAdminRole = profile.role === 'superadmin' || profile.role === 'admin';
-        if (!isAdminRole && isDashboard) {
-            const currentRole = profile.role || '';
-            const paths = rolePaths[currentRole] || [];
-            const isAllowed = paths.some((p: string) => pathname === p || pathname?.startsWith(p + '/'));
-            if (!isAllowed) {
-                router.replace('/dashboard');
-                return;
-            }
-        }
-    }, [authLoading, profile?.uid, pathname, isDashboard, profile?.role, router]);
-
     useEffect(() => {
         if (firebaseStatus === 'online') {
             const hasSeenPrompt = sessionStorage.getItem('bunkker_update_prompt');
@@ -413,20 +332,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         }
     }, [firebaseStatus]);
 
-    const toggleSidebar = (e?: React.MouseEvent) => {
-        if (e) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
-        setIsCollapsed(prev => {
-            const next = !prev;
-            try {
-                localStorage.setItem('_admincom_sidebar_collapsed', String(next));
-            } catch {}
-            return next;
-        });
-    };
-
     if (profile?.needsSetup) {
         return <ProfileSetupScreen uid={profile.uid} />;
     }
@@ -435,10 +340,26 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         return <>{children}</>;
     }
 
-    // Mostrar la barra lateral para superadmin y admin (y mantenerla estable durante la hidratación inicial de sesión)
     const isPOSFullscreen = pathname === '/dashboard/sales';
-    const showAdminSidebar = !isPOSFullscreen && (profile?.role === 'superadmin' || profile?.role === 'admin');
-    const sidebarWidth  = isCollapsed ? '72px' : '260px';
+    const showAdminDock = !isPOSFullscreen && (profile?.role === 'superadmin' || profile?.role === 'admin');
+    const currentRole = profile?.role || 'admin';
+    const shortLabels: Record<string, string> = {
+        dashboard: 'Panel', pos: 'POS', team: 'Equipo', users: 'Accesos', crm: 'CRM',
+        customers: 'Clientes', billing: 'CFDI', qr: 'QR', setup: 'Ajustes', guide: 'Guía',
+        demo: 'Pruebas', inventory: 'Stock', patio: 'Patio', pickup: 'Pickup', delivery: 'Rutas',
+        simulator: 'Simulador', marketing: 'Marketing', audit: 'Auditoría', subscription: 'Plan', store: 'Tienda',
+    };
+    const dockItems: AdminDockItem[] = menuGroups
+        .flatMap((group) => group.items)
+        .filter((item) => !item.roles || item.roles.includes(currentRole))
+        .map((item) => ({
+            id: item.id,
+            title: item.title,
+            shortLabel: shortLabels[item.id] || item.title,
+            icon: item.icon,
+            href: item.href,
+            premium: item.premium,
+        }));
 
     /* ── Breadcrumbs helper ───────────────────────────────────── */
     const labelsMap: Record<string, string> = {
@@ -459,173 +380,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return (
         <div className="bunkker-shell" style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'transparent', color: '#f8fafc' }}>
 
-            {/* ── Sidebar (Layer 4 Translucent Container) ─────────────────────────────────────────── */}
-            {showAdminSidebar && (
-                <aside className="admin-sidebar hidden md:flex" style={{
-                    width: sidebarWidth,
-                    color: 'white',
-                    padding: isCollapsed ? '1.5rem 0.5rem' : '1.5rem 1.25rem',
-                    position: 'fixed',
-                    height: '100vh',
-                    overflowY: 'auto',
-                    zIndex: 100,
-                    transition: 'width 0.3s cubic-bezier(0.4,0,0.2,1), padding 0.3s cubic-bezier(0.4,0,0.2,1)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    background: 'rgba(8, 12, 22, 0.85)',
-                    backdropFilter: 'blur(24px) saturate(140%)',
-                    WebkitBackdropFilter: 'blur(24px) saturate(140%)',
-                    borderRight: '1px solid rgba(56, 189, 248, 0.18)',
-                    boxShadow: '10px 0 35px rgba(0,0,0,0.7)',
-                }}>
-                    {/* Header + Toggle */}
-                    <div style={{
-                        marginBottom: '2rem', display: 'flex', alignItems: 'center',
-                        justifyContent: isCollapsed ? 'center' : 'space-between', gap: '10px',
-                    }}>
-                        {!isCollapsed ? (
-                            <div className="flex items-center gap-2.5 min-w-0">
-                                <img 
-                                    src="/bunkker-logo-hero.png" 
-                                    alt="BUNKKER" 
-                                    className="w-8 h-8 object-contain rounded-lg border border-cyan-500/40 shadow-[0_0_12px_rgba(56,189,248,0.5)] shrink-0" 
-                                />
-                                <div className="min-w-0">
-                                    <h2 className="font-black text-white text-sm tracking-wider flex items-center gap-1 leading-none">
-                                        BUNKKER <span className="text-cyan-400 font-mono text-[10px]">ERP</span>
-                                    </h2>
-                                    <span className="text-[8px] uppercase tracking-widest text-cyan-400/80 block font-semibold truncate mt-1">
-                                        {siteConfig?.businessName || 'SISTEMA E.C.O.S.'}
-                                    </span>
-                                </div>
-                            </div>
-                        ) : (
-                            <img 
-                                src="/bunkker-logo-hero.png" 
-                                alt="BUNKKER" 
-                                className="w-8 h-8 object-contain rounded-lg border border-cyan-500/40 shadow-[0_0_12px_rgba(56,189,248,0.5)]" 
-                            />
-                        )}
-                        <button
-                            type="button"
-                            onClick={toggleSidebar}
-                            style={{
-                                background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.2)', color: '#38bdf8',
-                                padding: '6px', borderRadius: '8px', cursor: 'pointer',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                transition: 'all 0.2s',
-                            }}
-                            title={isCollapsed ? 'Expandir Panel' : 'Colapsar Panel'}
-                        >
-                            {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-                        </button>
-                    </div>
-
-                    {/* Nav groups */}
-                    <nav className="admin-sidebar-nav" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1, overflowY: 'auto', paddingRight: '4px' }}>
-                        {menuGroups.map((group, groupIdx) => {
-                            const userRole = profile?.role || 'superadmin';
-                            const allowedRoutes = rolePaths[userRole] || rolePaths['superadmin'];
-                            const visibleItems = group.items.filter(item => 
-                                userRole === 'superadmin' || userRole === 'admin' || allowedRoutes.includes(item.href)
-                            );
-
-                            if (visibleItems.length === 0) return null;
-
-                            return (
-                                <div key={groupIdx} style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                                    {!isCollapsed ? (
-                                        <div style={{
-                                            fontSize: '0.65rem', fontWeight: '900', textTransform: 'uppercase',
-                                            color: 'rgba(255,255,255,0.65)', letterSpacing: '0.08em',
-                                            paddingLeft: '12px',
-                                            marginTop: groupIdx === 0 ? '0px' : '1.2rem',
-                                            marginBottom: '0.4rem',
-                                        }}>
-                                            {group.label}
-                                        </div>
-                                    ) : (
-                                        groupIdx > 0 && (
-                                            <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', margin: '0.8rem 0' }} />
-                                        )
-                                    )}
-
-                                    {visibleItems.map((item) => {
-                                        const active = pathname === item.href;
-                                        const locked = item.premium && !isPremium;
-
-                                        return (
-                                            <Link
-                                                className="admin-sidebar-link"
-                                                key={item.id}
-                                                id={`tour-sidebar-${item.id}`}
-                                                href={locked ? '#' : item.href}
-                                                onClick={(e) => {
-                                                    if (locked) {
-                                                        e.preventDefault();
-                                                        toast.info('Esta característica es exclusiva de la versión PRO. Adquiere la actualización para desbloquearla.', '🔒 Premium');
-                                                    }
-                                                }}
-                                                style={{
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: isCollapsed ? 'center' : 'flex-start',
-                                                    gap: '12px',
-                                                    padding: '12px',
-                                                    borderRadius: '12px',
-                                                    textDecoration: 'none',
-                                                    color: locked ? 'rgba(255,255,255,0.4)' : active ? 'var(--neon-yellow)' : 'white',
-                                                    background: active ? 'rgba(0,242,255,0.1)' : 'transparent',
-                                                    borderLeft: active ? '4px solid var(--neon-yellow)' : '4px solid transparent',
-                                                    boxShadow: active ? 'inset 20px 0 20px -20px rgba(0,242,255,0.4)' : 'none',
-                                                    textShadow: active ? '0 0 10px rgba(212,255,0,0.5)' : 'none',
-                                                    transition: 'all 0.2s',
-                                                    cursor: locked ? 'not-allowed' : 'pointer',
-                                                }}
-                                                title={isCollapsed ? item.title : undefined}
-                                            >
-                                                <div style={{ flexShrink: 0 }}>{item.icon}</div>
-                                                {!isCollapsed && (
-                                                    <span style={{ fontSize: '0.85rem', fontWeight: 'bold' }}>{item.title}</span>
-                                                )}
-                                                {!isCollapsed && locked && <Lock size={14} style={{ marginLeft: 'auto', color: '#FFCB05' }} />}
-                                            </Link>
-                                        );
-                                    })}
-                                </div>
-                            );
-                        })}
-
-                        <div style={{ margin: '1.5rem 0', borderTop: '1px solid rgba(255,255,255,0.1)' }} />
-
-                        <Link
-                            href="/dashboard/guia"
-                            style={{ display: 'flex', alignItems: 'center', justifyContent: isCollapsed ? 'center' : 'flex-start', gap: '12px', padding: '12px', borderRadius: '12px', color: '#FFCB05', textDecoration: 'none' }}
-                            title={isCollapsed ? 'Guía del Dueño' : undefined}
-                        >
-                            <div style={{ flexShrink: 0 }}><BookOpen size={20} /></div>
-                            {!isCollapsed && <span style={{ fontSize: '0.85rem', fontWeight: 'bold' }}>Guía del Dueño</span>}
-                        </Link>
-
-                        <Link
-                            href="/"
-                            style={{ display: 'flex', alignItems: 'center', justifyContent: isCollapsed ? 'center' : 'flex-start', gap: '12px', padding: '12px', borderRadius: '12px', color: '#FFCB05', textDecoration: 'none', marginTop: 'auto' }}
-                            title={isCollapsed ? 'Salir al Market' : undefined}
-                        >
-                            <div style={{ flexShrink: 0 }}><LogOut size={20} /></div>
-                            {!isCollapsed && <span style={{ fontSize: '0.85rem', fontWeight: 'bold' }}>Salir al Market</span>}
-                        </Link>
-                    </nav>
-                </aside>
-            )}
-
             {/* ── Main content (Layer 4) ────────────────────────────────────── */}
             <div
-                className={`admin-main-viewport flex-1 flex flex-col min-h-screen relative z-10 transition-all duration-300 ${isPOSFullscreen ? 'pb-0' : 'pb-28'} w-full`}
-                style={{
-                    marginLeft: showAdminSidebar ? sidebarWidth : '0px',
-                    transition: 'margin-left 0.3s cubic-bezier(0.4,0,0.2,1)',
-                }}
+                className={`admin-main-viewport min-w-0 flex-1 flex flex-col min-h-screen relative z-10 transition-all duration-300 ${isPOSFullscreen ? 'pb-0' : showAdminDock ? 'pb-28' : 'pb-6'} w-full`}
+                style={{ transition: 'padding-bottom 0.3s ease' }}
             >
                 {/* ── Top header bar (Layer 4 Translucent Container) ─────────────────────────────── */}
                 {!isPOSFullscreen && (
@@ -634,12 +392,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     backdropFilter: 'blur(20px) saturate(140%)',
                     WebkitBackdropFilter: 'blur(20px) saturate(140%)',
                     borderBottom: '1px solid rgba(56, 189, 248, 0.2)',
-                    padding: '0.75rem 2rem',
+                    padding: '0.65rem 1rem',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
                     flexWrap: 'wrap',
-                    gap: '1rem',
+                    gap: '0.5rem',
                     position: 'sticky',
                     top: 0,
                     zIndex: 50,
@@ -648,7 +406,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     {/* Breadcrumbs */}
                     <nav style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.72rem', fontWeight: '700', color: '#94a3b8' }}>
                         <Link
-                            href="/dashboard"
+                            href={profile?.role === 'marketing' ? '/dashboard/marketing' : '/dashboard'}
                             style={crumbLinkBase}
                             onMouseEnter={e => (e.currentTarget.style.color = '#0284c7')}
                             onMouseLeave={e => (e.currentTarget.style.color = '#0ea5e9')}
@@ -665,7 +423,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                     const label   = labelsMap[segment] || segment.toUpperCase();
 
                                     return isLast ? (
-                                        <span key={segment} style={{ color: '#1e293b', padding: '2px 4px' }}>{label}</span>
+                                        <span key={segment} style={{ color: '#e2e8f0', padding: '2px 4px' }}>{label}</span>
                                     ) : (
                                         <div key={segment} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                             <Link
@@ -685,25 +443,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     </nav>
 
                     {/* Status Indicators & Profile */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         {/* Selector de Idioma (Español, Inglés, Francés, Chino) */}
                         <LanguageSelector />
 
                         {/* Selector de Tema */}
                         <ThemeToggle />
-
-                        {/* Premium badge */}
-                        <div style={{
-                            display: 'flex', alignItems: 'center', gap: '6px',
-                            fontSize: '0.68rem', fontWeight: '900', letterSpacing: '0.05em',
-                            backgroundColor: isPremium ? 'rgba(245,158,11,0.1)' : 'rgba(255,255,255,0.05)',
-                            color: isPremium ? '#fbbf24' : '#94a3b8',
-                            padding: '5px 12px', borderRadius: '8px',
-                            border: isPremium ? '1px solid rgba(245,158,11,0.2)' : '1px solid rgba(255,255,255,0.1)',
-                        }}>
-                            <ShieldCheck size={13} />
-                            <span className="hidden sm:inline">{isPremium ? t('status.premium_active', 'PREMIUM ACTIVE') : t('status.basic', 'BÁSICO')}</span>
-                        </div>
 
                         {/* Connection badge */}
                         <div ref={tooltipRef} style={{ position: 'relative' }}>
@@ -711,6 +456,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                 type="button"
                                 onClick={() => setConnTooltipOpen(!connTooltipOpen)}
                                 title="Ver estado de conexión"
+                                aria-label={firebaseStatus === 'online' ? 'Sistema en línea' : 'Sistema en modo local u offline'}
                                 style={{
                                     display: 'flex', alignItems: 'center', gap: '6px',
                                     fontSize: '0.68rem', fontWeight: '900', letterSpacing: '0.05em',
@@ -736,77 +482,47 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                         }} />
                                     )}
                                 </span>
-                                <span className="hidden sm:inline">{firebaseStatus === 'online' ? t('status.online', 'SISTEMA ONLINE') : t('status.offline', 'SIN CONEXIÓN')}</span>
+                                <span className="sr-only">{firebaseStatus === 'online' ? t('status.online', 'SISTEMA ONLINE') : t('status.offline', 'SIN CONEXIÓN')}</span>
                             </button>
 
                             <ConnectionTooltip isOpen={connTooltipOpen} firebaseStatus={firebaseStatus} />
                         </div>
 
-                        {/* Atrás */}
-                        {pathname !== '/dashboard' && (
-                            <button
-                                onClick={() => router.back()}
-                                style={{
-                                    display: 'flex', alignItems: 'center', gap: '6px',
-                                    fontSize: '0.75rem', fontWeight: '900', color: '#cbd5e1',
-                                    backgroundColor: 'rgba(255,255,255,0.05)', padding: '6px 12px',
-                                    borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)',
-                                    cursor: 'pointer', transition: 'all 0.2s',
-                                }}
-                                title="Volver a la vista anterior"
+                        <details className="relative">
+                            <summary
+                                className="inline-flex list-none cursor-pointer items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-2 text-white transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+                                aria-label="Abrir menú de perfil"
+                                title={profile?.displayName || 'Perfil'}
                             >
-                                <ChevronLeft size={14} />
-                                <span className="hidden sm:inline">{t('nav.back', 'ATRÁS')}</span>
-                            </button>
-                        )}
-
-                        {/* Configuración de Impresora y Hardware en Dashboard */}
-                        <Link
-                            href="/dashboard/setup?step=7"
-                            style={{
-                                display: 'flex', alignItems: 'center', gap: '6px',
-                                fontSize: '0.75rem', fontWeight: '900', color: '#0ea5e9',
-                                backgroundColor: 'rgba(14,165,233,0.1)', padding: '6px 12px',
-                                borderRadius: '8px', border: '1px solid rgba(14,165,233,0.25)',
-                                textDecoration: 'none', transition: 'all 0.2s',
-                            }}
-                            title="Ir al Dashboard de Impresoras y Hardware"
-                        >
-                            <Printer size={14} />
-                            <span className="hidden sm:inline">IMPRESORA</span>
-                        </Link>
-
-                        {/* Mi Perfil */}
-                        <Link
-                            href="/dashboard/profile"
-                            style={{
-                                display: 'flex', alignItems: 'center', gap: '6px',
-                                fontSize: '0.75rem', fontWeight: '900', color: '#38bdf8',
-                                backgroundColor: 'rgba(56,189,248,0.1)', padding: '6px 12px',
-                                borderRadius: '8px', border: '1px solid rgba(56,189,248,0.2)',
-                                textDecoration: 'none', transition: 'all 0.2s',
-                            }}
-                            title="Ir a Mi Perfil"
-                        >
-                            <User size={14} />
-                            <span className="hidden sm:inline">{t('nav.profile', 'PERFIL')}</span>
-                        </Link>
-
-                        {/* Cerrar Sesión */}
-                        <button
-                            onClick={signOut}
-                            style={{
-                                display: 'flex', alignItems: 'center', gap: '6px',
-                                fontSize: '0.75rem', fontWeight: '900', color: '#ef4444',
-                                backgroundColor: 'rgba(239,68,68,0.1)', padding: '6px 12px',
-                                borderRadius: '8px', border: '1px solid rgba(239,68,68,0.2)',
-                                cursor: 'pointer', transition: 'all 0.2s',
-                            }}
-                            title="Cerrar Sesión"
-                        >
-                            <LogOut size={14} />
-                            <span className="hidden sm:inline">{t('nav.logout', 'SALIR')}</span>
-                        </button>
+                                <User size={15} aria-hidden="true" />
+                                <span className="hidden max-w-28 truncate text-xs font-semibold xl:inline">
+                                    {profile?.displayName || t('nav.profile', 'PERFIL')}
+                                </span>
+                            </summary>
+                            <div className="absolute right-0 top-full z-50 mt-2 w-56 rounded-2xl border border-white/10 bg-slate-950/90 p-2 text-white shadow-2xl backdrop-blur-2xl">
+                                <div className="border-b border-white/10 px-3 py-2">
+                                    <p className="truncate text-sm font-semibold text-white">{profile?.displayName || 'Personal'}</p>
+                                    <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                        {profile?.role || 'usuario'} · {isPremium ? 'PREMIUM' : 'BÁSICO'}
+                                    </p>
+                                </div>
+                                <Link
+                                    href="/dashboard/profile"
+                                    className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-200 transition-colors hover:bg-white/10 hover:text-white"
+                                >
+                                    <User size={15} aria-hidden="true" />
+                                    Mi perfil
+                                </Link>
+                                <button
+                                    type="button"
+                                    onClick={signOut}
+                                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-rose-300 transition-colors hover:bg-rose-500/10 hover:text-rose-200"
+                                >
+                                    <LogOut size={15} aria-hidden="true" />
+                                    Cerrar sesión
+                                </button>
+                            </div>
+                        </details>
                     </div>
                 </div>
                 )}
@@ -815,7 +531,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 {isReadOnly && (
                     <div style={{
                         backgroundColor: '#FFF4E5', color: '#663C00',
-                        padding: '10px 2rem',
+                        padding: '10px 1rem',
                         display: 'flex', alignItems: 'center', gap: '10px',
                         fontSize: '0.78rem', fontWeight: 'bold',
                         borderBottom: '1px solid #FFCB05',
@@ -830,6 +546,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     {children}
                 </div>
             </div>
+            {showAdminDock && <AdminDock items={dockItems} isPremium={isPremium} />}
         </div>
     );
 }

@@ -2,16 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { validateApiSession } from '@/lib/apiAuth';
 import Facturapi from 'facturapi';
 import { auth } from '@/lib/firebase-admin';
-
-import { db } from '@/lib/firebase-admin';
-
-async function getFacturapiKey() {
-    const secretSnap = await db.collection('secrets').doc('billing').get();
-    if (secretSnap.exists) {
-        return (secretSnap.data() as any)?.facturapi_key;
-    }
-    return null;
-}
+import { getFacturapiApiKey } from '@/lib/facturapi-config';
 
 export async function GET(req: NextRequest) {
     const sessionAuth = validateApiSession(req);
@@ -36,7 +27,7 @@ export async function GET(req: NextRequest) {
         }
 
         // 3. Obtener archivo de Facturapi
-        const apiKey = await getFacturapiKey();
+        const apiKey = await getFacturapiApiKey(sessionAuth.tenantId || 'default');
         if (!apiKey) {
             return NextResponse.json({ error: 'Facturapi no configurado' }, { status: 503 });
         }

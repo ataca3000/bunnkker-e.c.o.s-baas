@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import middleware from '../middleware';
 import { signRole } from '../lib/apiAuth';
 
@@ -22,51 +22,37 @@ describe('RBAC Login & Redirection Flow', () => {
     return req;
   };
 
-  describe('Worker Redirections from /dashboard', () => {
-    
-    it('should redirect inventory worker to /dashboard/inventory', async () => {
-      const req = buildRequestWithRole('/dashboard', 'inventory', 'inv-123');
-      const res = await middleware(req);
-      
-      expect(res).toBeDefined();
-      expect(res.status).toBe(307); // Temporary redirect status
-      expect(res.headers.get('location')).toBe('http://localhost:3000/dashboard/inventory');
-    });
+  describe('Unified worker dashboard entry', () => {
+    it.each(['inventory', 'sales', 'billing', 'driver', 'pickup', 'mostrador', 'repartidor'])(
+      'keeps %s in the role-aware mirror dashboard',
+      async (role) => {
+        const res = await middleware(buildRequestWithRole('/dashboard', role, `${role}-123`));
 
-    it('should redirect sales worker to /dashboard/sales', async () => {
-      const req = buildRequestWithRole('/dashboard', 'sales', 'sales-123');
-      const res = await middleware(req);
-      
-      expect(res).toBeDefined();
-      expect(res.status).toBe(307);
-      expect(res.headers.get('location')).toBe('http://localhost:3000/dashboard/sales');
-    });
+        expect(res.status).toBe(200);
+        expect(res.headers.get('x-tenant-id')).toBe('default');
+        expect(res.headers.get('location')).toBeNull();
+      },
+    );
 
-    it('should redirect billing worker to /dashboard/audit', async () => {
-      const req = buildRequestWithRole('/dashboard', 'billing', 'bill-123');
-      const res = await middleware(req);
-      
-      expect(res).toBeDefined();
-      expect(res.status).toBe(307);
-      expect(res.headers.get('location')).toBe('http://localhost:3000/dashboard/audit');
-    });
+    it('sends marketing directly to its canonical module', async () => {
+      const res = await middleware(buildRequestWithRole('/dashboard', 'marketing', 'mkt-123'));
 
-    it('should redirect delivery driver to /dashboard/patio', async () => {
-      const req = buildRequestWithRole('/dashboard', 'driver', 'driver-123');
-      const res = await middleware(req);
-      
-      expect(res).toBeDefined();
-      expect(res.status).toBe(307);
-      expect(res.headers.get('location')).toBe('http://localhost:3000/dashboard/patio');
-    });
-
-    it('should redirect marketing worker to /dashboard/marketing', async () => {
-      const req = buildRequestWithRole('/dashboard', 'marketing', 'mkt-123');
-      const res = await middleware(req);
-      
-      expect(res).toBeDefined();
       expect(res.status).toBe(307);
       expect(res.headers.get('location')).toBe('http://localhost:3000/dashboard/marketing');
+    });
+
+    it('sends customer sessions to their own portal, not the staff dashboard', async () => {
+      const res = await middleware(buildRequestWithRole('/dashboard', 'client', 'client-123'));
+
+      expect(res.status).toBe(307);
+      expect(res.headers.get('location')).toBe('http://localhost:3000/cuenta');
+    });
+
+    it('fails closed for roles without a dashboard assignment', async () => {
+      const res = await middleware(buildRequestWithRole('/dashboard', 'unassigned', 'unknown-123'));
+
+      expect(res.status).toBe(307);
+      expect(res.headers.get('location')).toContain('/login?error=unauthorized');
     });
   });
 
@@ -93,11 +79,18 @@ describe('RBAC Login & Redirection Flow', () => {
     });
 
     it('should block worker trying to access an unrelated dashboard section', async () => {
-      // Sales worker trying to access billing audit
       const req = buildRequestWithRole('/dashboard/audit', 'sales', 'sales-123');
       const res = await middleware(req);
-      
+
       expect(res).toBeDefined();
+      expect(res.status).toBe(307);
+      expect(res.headers.get('location')).toContain('/login?error=unauthorized');
+    });
+
+    it('does not grant access to routes that only share a path prefix', async () => {
+      const req = buildRequestWithRole('/dashboard/sales-history', 'sales', 'sales-456');
+      const res = await middleware(req);
+
       expect(res.status).toBe(307);
       expect(res.headers.get('location')).toContain('/login?error=unauthorized');
     });

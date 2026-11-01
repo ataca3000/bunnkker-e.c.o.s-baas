@@ -52,6 +52,7 @@ const initialMemoryStore: Record<string, any[]> = {
   shrinkageLog: [],
   appConfig: [{ id: 'global', licenseType: 'TRIAL', tenantId: 'default', updatedAt: new Date() }],
   swarmTransaction: [],
+  integrationConfig: [],
 };
 
 function matchesWhere(record: any, where?: any): boolean {
