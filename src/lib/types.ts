@@ -92,7 +92,6 @@ export interface UserProfile {
   isReadOnly?: boolean;
   isPremium?: boolean;
   tenantId?: string;
-  facturapi_key?: string;
   [key: string]: any;
 }
 
@@ -102,7 +101,6 @@ export interface UserSession {
   email?: string;
   displayName?: string;
   isPremium?: boolean;
-  facturapi_key?: string;
   [key: string]: any;
 }
 

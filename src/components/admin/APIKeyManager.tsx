@@ -1,218 +1,250 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import useSWR from 'swr';
 import { motion } from 'framer-motion';
-import { Key, ShieldCheck, Lock, RefreshCw, AlertCircle, Eye, EyeOff, CheckCircle, Clock, User } from 'lucide-react';
-import { db } from '@/lib/firebase';
-import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
-import { useAuth } from '@/context/AuthContext';
-import { logAudit } from '@/lib/audit';
-import styles from './APIKeyManager.module.css';
+import {
+    Activity,
+    AlertCircle,
+    CheckCircle,
+    Clock,
+    Eye,
+    EyeOff,
+    Key,
+    Lock,
+    RefreshCw,
+    ShieldCheck,
+    User,
+} from 'lucide-react';
 import { toast } from '@/lib/toast';
+import styles from './APIKeyManager.module.css';
 
-/**
- * NODO DE ACTIVACIÓN DE LLAVES SAT
- * Permite que el cliente final configure su propia API Key de Facturapi
- * de forma privada y segura, sin que el desarrollador la vea.
- */
+type FacturapiConfig = {
+    configured: boolean;
+    source: 'managed' | 'environment' | 'none';
+    keyLastFour: string | null;
+    status: string;
+    rfc: string;
+    legalName: string;
+    lastCheckedAt: string | null;
+    updatedAt: string | null;
+};
+
+type FacturapiResponse = {
+    success: boolean;
+    message?: string;
+    error?: string;
+    data: FacturapiConfig;
+};
+
+async function fetchFacturapiConfig(url: string): Promise<FacturapiResponse> {
+    const response = await fetch(url, { cache: 'no-store' });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok || !payload?.success) {
+        throw new Error(payload?.error || 'No se pudo cargar la configuración.');
+    }
+    return payload as FacturapiResponse;
+}
+
+function formatDate(value: string | null | undefined): string | null {
+    if (!value) return null;
+    const date = new Date(value);
+    if (!Number.isFinite(date.getTime())) return null;
+    return new Intl.DateTimeFormat('es-MX', { dateStyle: 'medium', timeStyle: 'short' }).format(date);
+}
+
 export default function APIKeyManager() {
     const [apiKey, setApiKey] = useState('');
-    const [rfc, setRfc] = useState('');
-    const [storeName, setStoreName] = useState('');
+    const [rfcInput, setRfcInput] = useState<string | null>(null);
+    const [legalNameInput, setLegalNameInput] = useState<string | null>(null);
     const [showKey, setShowKey] = useState(false);
-    const [isSaving, setIsSaving] = useState(false);
-    const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
-    const [lastUpdateInfo, setLastUpdateInfo] = useState<{ date: Date | null, user: string }>({ date: null, user: '' });
-    const { profile } = useAuth();
+    const [busyAction, setBusyAction] = useState<'test' | 'save' | null>(null);
+    const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+    const { data, error, isLoading, mutate } = useSWR<FacturapiResponse>('/api/facturapi', fetchFacturapiConfig, {
+        revalidateOnFocus: false,
+        shouldRetryOnError: false,
+    });
+    const config = data?.data;
+    const rfc = rfcInput ?? config?.rfc ?? '';
+    const legalName = legalNameInput ?? config?.legalName ?? '';
 
-    useEffect(() => {
-        async function loadKey() {
-            try {
-                const docRef = doc(db, 'settings', 'facturacion');
-                const snap = await getDoc(docRef);
-                if (snap.exists()) {
-                    const data = snap.data();
-                    setRfc(data.rfc_emisor || '');
-                    setStoreName(data.razon_social || '');
-                    if (data.last_updated) {
-                        setLastUpdateInfo({
-                            date: data.last_updated.toDate(),
-                            user: data.updated_by || 'Admin'
-                        });
-                    }
-                }
-                try {
-                    const secSnap = await getDoc(doc(db, 'secrets', 'billing'));
-                    if (secSnap.exists() && secSnap.data().facturapi_key) {
-                        setApiKey(secSnap.data().facturapi_key);
-                    }
-                } catch(e){}
-            } catch (e) {
-                console.log("Esperando...");
-            }
-        }
-        loadKey();
-    }, []);
+    const runAction = async (action: 'test' | 'save') => {
+        setBusyAction(action);
+        setFeedback(null);
 
-    const handleSaveKey = async () => {
-        if (!apiKey.startsWith('sk_')) {
-            toast.warning('Ingresa una Secret Key válida de Facturapi (debe empezar con sk_).', 'API Key');
-            return;
-        }
-        if (rfc.length < 12) {
-            toast.warning('RFC inválido. Debe tener 12 o 13 caracteres.', 'RFC');
-            return;
-        }
-
-        setIsSaving(true);
         try {
-            // Guardar config pública
-            const docRef = doc(db, 'settings', 'facturacion');
-            await setDoc(docRef, {
-                rfc_emisor: rfc,
-                razon_social: storeName,
-                last_updated: serverTimestamp(),
-                updated_by: profile?.displayName || 'Admin'
-            }, { merge: true });
-
-            // Guardar en la bóveda secreta
-            await setDoc(doc(db, 'secrets', 'billing'), {
-                facturapi_key: apiKey
-            }, { merge: true });
-
-            // Registro de auditoría para trazabilidad total
-            await logAudit({
-                type: 'CONFIG_UPDATE',
-                userId: profile?.uid || 'unknown',
-                userName: profile?.displayName || 'Admin',
-                userRole: profile?.role || 'admin',
-                description: `Actualización de llaves Facturapi para la razón social: ${storeName}`,
-                metadata: { rfc_emisor: rfc }
+            const response = await fetch('/api/facturapi', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action,
+                    apiKey: apiKey.trim() || undefined,
+                    ...(action === 'save' ? { rfc, legalName } : {}),
+                }),
             });
+            const payload = await response.json().catch(() => null);
+            if (!response.ok || !payload?.success) {
+                throw new Error(payload?.error || 'No se pudo completar la operación.');
+            }
 
-            setLastUpdateInfo({
-                date: new Date(), // Actualización optimista local
-                user: profile?.displayName || 'Admin'
-            });
-
-            setStatus('success');
-            // Simulate waiting
-            await new Promise(r => setTimeout(r, 1500));
-            setStatus('idle');
-        } catch {
-            setStatus('error');
+            const message = payload.message || (action === 'test' ? 'Conexión verificada.' : 'Configuración guardada.');
+            setFeedback({ type: 'success', message });
+            if (action === 'save') {
+                setApiKey('');
+                await mutate(payload as FacturapiResponse);
+            }
+            toast.success(message, action === 'test' ? 'Conexión verificada' : 'Facturapi');
+        } catch (actionError) {
+            const message = actionError instanceof Error ? actionError.message : 'No se pudo completar la operación.';
+            setFeedback({ type: 'error', message });
+            toast.error(message, 'Facturapi');
         } finally {
-            setIsSaving(false);
+            setBusyAction(null);
         }
     };
 
+    const handleSave = (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        void runAction('save');
+    };
+
+    const lastUpdated = formatDate(config?.updatedAt);
+    const lastChecked = formatDate(config?.lastCheckedAt);
+    const isConnected = config?.status === 'connected';
+
     return (
-        <div className={`bunkker-card ${styles.container}`}>
+        <section className={`bunkker-card ${styles.container}`} aria-labelledby="facturapi-heading">
             <div className={styles.headerRow}>
-                <div className={styles.headerIcon}>
-                    <ShieldCheck color="#0ea5e9" size={24} />
+                <div className={styles.headerIcon} aria-hidden="true">
+                    <ShieldCheck size={22} />
                 </div>
-                <div>
-                    <h3 className={styles.headerTitle}>VINCULACIÓN FISCAL (SAT)</h3>
-                    <p className={styles.headerSub}>Configura los datos del EMISOR (Tu Tienda) para facturar.</p>
+                <div className={styles.headerCopy}>
+                    <h3 id="facturapi-heading" className={styles.headerTitle}>Vinculación fiscal · Facturapi</h3>
+                    <p className={styles.headerSub}>Configura la cuenta emisora y valida la conexión antes de timbrar CFDI.</p>
                 </div>
+                <span className={`${styles.connectionBadge} ${isConnected ? styles.connected : ''}`}>
+                    <span className={styles.statusDot} aria-hidden="true" />
+                    {isLoading ? 'Cargando' : isConnected ? 'Conectada' : config?.configured ? 'Configurada' : 'Pendiente'}
+                </span>
             </div>
 
-            <div className={styles.formArea}>
-
-                {/* Datos del Emisor */}
+            <form onSubmit={handleSave} className={styles.formArea}>
                 <div className={styles.twoColGrid}>
                     <div>
-                        <label className={styles.fieldLabel}>
-                            RFC DE LA TIENDA (EMISOR)
-                        </label>
+                        <label className={styles.fieldLabel} htmlFor="facturapi-rfc">RFC del emisor</label>
                         <input
+                            id="facturapi-rfc"
                             type="text"
                             value={rfc}
-                            onChange={(e) => setRfc(e.target.value.toUpperCase())}
+                            onChange={(event) => setRfcInput(event.target.value.toUpperCase())}
                             placeholder="XAXX010101000"
+                            maxLength={13}
+                            autoCapitalize="characters"
+                            autoComplete="organization"
                             className={styles.fieldInput}
+                            required
                         />
                     </div>
                     <div>
-                        <label className={styles.fieldLabel}>
-                            RAZÓN SOCIAL (NOMBRE)
-                        </label>
+                        <label className={styles.fieldLabel} htmlFor="facturapi-legal-name">Razón social</label>
                         <input
+                            id="facturapi-legal-name"
                             type="text"
-                            value={storeName}
-                            onChange={(e) => setStoreName(e.target.value.toUpperCase())}
-                            placeholder="ADMIN ERP S.A. DE C.V."
+                            value={legalName}
+                            onChange={(event) => setLegalNameInput(event.target.value)}
+                            placeholder="Nombre fiscal de la empresa"
+                            maxLength={160}
+                            autoComplete="organization"
                             className={styles.fieldInput}
+                            required
                         />
                     </div>
                 </div>
 
-                <hr className={styles.divider} />
+                <div className={styles.divider} />
 
-                <label className={styles.keyLabel}>
-                    FACTURAPI SECRET KEY (LLAVE PRIVADA)
-                </label>
+                <div className={styles.keyHeader}>
+                    <div>
+                        <label className={styles.keyLabel} htmlFor="facturapi-secret">Secret Key de Facturapi</label>
+                        <p className={styles.helperText}>La llave existente nunca se vuelve a mostrar.</p>
+                    </div>
+                    {config?.configured && (
+                        <span className={styles.keyHint}>
+                            <Lock size={12} aria-hidden="true" />
+                            {config.source === 'environment' ? 'Variable del servidor' : `Terminación ····${config.keyLastFour || '••••'}`}
+                        </span>
+                    )}
+                </div>
 
                 <div className={styles.keyRow}>
                     <div className={styles.keyInputWrap}>
-                        <Key size={18} className={styles.keyIcon} />
+                        <Key size={16} className={styles.keyIcon} aria-hidden="true" />
                         <input
-                            type={showKey ? "text" : "password"}
+                            id="facturapi-secret"
+                            type={showKey ? 'text' : 'password'}
                             value={apiKey}
-                            onChange={(e) => setApiKey(e.target.value)}
-                            placeholder="sk_live_..."
+                            onChange={(event) => setApiKey(event.target.value)}
+                            placeholder={config?.configured ? 'Deja vacío para conservar la llave actual' : 'sk_live_…'}
+                            autoComplete="new-password"
+                            spellCheck={false}
                             className={styles.keyInput}
+                            aria-describedby="facturapi-key-safety"
                         />
-                        <div
-                            onClick={() => setShowKey(!showKey)}
+                        <button
+                            type="button"
+                            onClick={() => setShowKey((visible) => !visible)}
                             className={styles.toggleKey}
+                            aria-label={showKey ? 'Ocultar Secret Key' : 'Mostrar Secret Key'}
+                            aria-pressed={showKey}
                         >
-                            {showKey ? <EyeOff size={18} /> : <Eye size={18} />}
-                        </div>
+                            {showKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                        </button>
                     </div>
-
                     <button
-                        onClick={handleSaveKey}
-                        disabled={isSaving}
-                        className={`bunkker-btn ${styles.saveBtn}`}
+                        type="button"
+                        onClick={() => void runAction('test')}
+                        disabled={busyAction !== null || (!apiKey.trim() && !config?.configured)}
+                        className={styles.testBtn}
                     >
-                        {isSaving ? <RefreshCw size={18} className={styles.spin} /> : <Lock size={18} />}
-                        {isSaving ? 'VALIDANDO...' : 'VINCULAR TIENDA'}
+                        {busyAction === 'test' ? <RefreshCw size={16} className={styles.spin} /> : <Activity size={16} />}
+                        Probar conexión
                     </button>
                 </div>
 
-                {status === 'success' && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className={styles.successMsg}>
-                        <CheckCircle size={14} color="#27ae60" />
-                        <b>VINCULACIÓN EXITOSA:</b> Tu tienda {storeName} ahora está conectada al SAT.
+                <p id="facturapi-key-safety" className={styles.securityNote}>
+                    Se guarda cifrada en el servidor y no se incluye en las respuestas del navegador.
+                </p>
+
+                {error && (
+                    <div className={styles.loadError} role="status">
+                        No se pudo leer el estado de conexión. Aún puedes guardar una llave nueva.
+                    </div>
+                )}
+
+                {feedback && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className={`${styles.feedback} ${feedback.type === 'success' ? styles.success : styles.failure}`}
+                        role="status"
+                        aria-live="polite"
+                    >
+                        {feedback.type === 'success' ? <CheckCircle size={15} /> : <AlertCircle size={15} />}
+                        <span>{feedback.message}</span>
                     </motion.div>
                 )}
-            </div>
 
-            {lastUpdateInfo.date && (
-                <div style={{ marginTop: '1rem', padding: '0.6rem 1rem', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', gap: '20px', alignItems: 'center', fontSize: '0.75rem', color: '#64748b' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <Clock size={14} className="text-[#0ea5e9]" /> <b>Último cambio:</b> {lastUpdateInfo.date.toLocaleString()}
+                <div className={styles.footerRow}>
+                    <div className={styles.auditInfo}>
+                        {lastUpdated && <span><Clock size={13} aria-hidden="true" /> Actualizada: {lastUpdated}</span>}
+                        {lastChecked && <span><User size={13} aria-hidden="true" /> Validada: {lastChecked}</span>}
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <User size={14} className="text-[#0ea5e9]" /> <b>Por:</b> {lastUpdateInfo.user}
-                    </div>
+                    <button type="submit" disabled={busyAction !== null} className={styles.saveBtn}>
+                        {busyAction === 'save' ? <RefreshCw size={16} className={styles.spin} /> : <Lock size={16} />}
+                        {busyAction === 'save' ? 'Guardando…' : 'Guardar configuración'}
+                    </button>
                 </div>
-            )}
-
-            <div className={styles.warningRow}>
-                <AlertCircle size={32} color="#FFCB05" style={{ flexShrink: 0 }} />
-                <p className={styles.warningText}>
-                    <b>Seguridad de Datos:</b> Al guardar, confirmas que <b>{storeName || 'TU TIENDA'}</b> es el emisor legítimo.
-                    El sistema usará estos datos para sellar todas las facturas solicitadas por tus clientes.
-                </p>
-            </div>
-
-            <style jsx>{`
-        .spin { animation: spin 1s linear infinite; }
-      `}</style>
-        </div>
+            </form>
+        </section>
     );
 }
-

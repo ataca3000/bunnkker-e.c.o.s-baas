@@ -9,8 +9,6 @@ import {
     CreditCard, HardDrive, Loader2, ArrowRight,
     Printer
 } from 'lucide-react';
-import { db } from '@/lib/firebase';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
 import { toast } from '@/lib/toast';
@@ -32,7 +30,6 @@ export default function SetupWizard() {
 
 
     const [config, setConfig] = useState({
-        api_key: '',
         businessName: '',
         bank_clabe: '',
         slogan: '',
@@ -44,9 +41,7 @@ export default function SetupWizard() {
         supportPhone: '',
         facebookUrl: '',
         instagramUrl: '',
-        mp_access_token: '',
         mp_public_key: '',
-        stripe_secret_key: '',
         stripe_publishable_key: '',
         activeModules: ['sales', 'users', 'crm', 'inventory', 'delivery', 'design', 'marketing', 'billing', 'audit'],
         operationRange: 'local' as 'local' | 'regional' | 'nacional' | 'global',
@@ -79,19 +74,10 @@ export default function SetupWizard() {
                 // CartContext provides the local-first fallback when the settings API is offline.
             }
 
-            let secretData = {};
-            try {
-                const secretSnap = await getDoc(doc(db, 'secrets', 'billing'));
-                if (secretSnap.exists()) secretData = secretSnap.data();
-            } catch {
-                // Secret settings remain optional while the device is offline.
-            }
-
             setConfig((previous) => ({
                 ...previous,
                 ...baseData,
                 ...publicData,
-                ...secretData,
             }));
         };
 
@@ -101,23 +87,8 @@ export default function SetupWizard() {
     const handleSave = async () => {
         setIsSaving(true);
         try {
-            const configWithSecrets = config as typeof config & {
-                facturapi_key?: string;
-                stripe_webhook_secret?: string;
-            };
-            const { stripe_secret_key, facturapi_key, stripe_webhook_secret, ...publicConfig } = configWithSecrets;
-
-            const secretConfig = {
-                ...(stripe_secret_key && { stripe_secret_key }),
-                ...(facturapi_key && { facturapi_key }),
-                ...(stripe_webhook_secret && { stripe_webhook_secret })
-            };
-            if (Object.keys(secretConfig).length > 0) {
-                await setDoc(doc(db, 'secrets', 'billing'), secretConfig, { merge: true });
-            }
-
             await updateSiteConfig({
-                ...publicConfig,
+                ...config,
                 businessName: config.businessName,
                 businessPhone: config.whatsapp,
                 businessAddress: config.location,

@@ -19,99 +19,113 @@ export default function BunkkerLayeredBackground() {
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
-        let animationFrameId: number;
-        let width = (canvas.width = window.innerWidth);
-        let height = (canvas.height = window.innerHeight);
-
-        const handleResize = () => {
-            if (!canvas) return;
-            width = canvas.width = window.innerWidth;
-            height = canvas.height = window.innerHeight;
-        };
-        window.addEventListener('resize', handleResize);
-
-        // Partículas ultra-ligeras (sin shadowBlur para evitar consumo de CPU)
-        const particleCount = 20;
-        const particles: Array<{
-            x: number;
-            y: number;
-            radius: number;
-            speedX: number;
-            speedY: number;
-            alpha: number;
-            alphaDelta: number;
-            color: string;
-        }> = [];
-
+        const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
+        let reducedMotion = motionPreference.matches;
+        let isVisible = !document.hidden;
+        let animationFrameId = 0;
+        let lastFrameTime = 0;
+        let width = 0;
+        let height = 0;
+        const fpsInterval = 1000 / 30;
         const colors = [
-            'rgba(56, 189, 248, ', // sky-400
-            'rgba(14, 165, 233, ', // cyan-500
-            'rgba(224, 242, 254, '  // sky-100
+            'rgba(56, 189, 248, ',
+            'rgba(14, 165, 233, ',
+            'rgba(224, 242, 254, ',
         ];
+        const particleCount = window.innerWidth < 640 ? 14 : 32;
+        const particles = Array.from({ length: particleCount }, () => ({
+            x: Math.random() * window.innerWidth,
+            y: Math.random() * window.innerHeight,
+            radius: Math.random() * 1.5 + 0.8,
+            speedX: (Math.random() - 0.5) * 0.3,
+            speedY: -Math.random() * 0.4 - 0.1,
+            alpha: Math.random() * 0.5 + 0.2,
+            alphaDelta: (Math.random() * 0.008 + 0.002) * (Math.random() > 0.5 ? 1 : -1),
+            color: colors[Math.floor(Math.random() * colors.length)],
+        }));
 
-        for (let i = 0; i < particleCount; i++) {
-            particles.push({
-                x: Math.random() * width,
-                y: Math.random() * height,
-                radius: Math.random() * 1.5 + 0.8,
-                speedX: (Math.random() - 0.5) * 0.3,
-                speedY: -Math.random() * 0.4 - 0.1,
-                alpha: Math.random() * 0.5 + 0.2,
-                alphaDelta: (Math.random() * 0.008 + 0.002) * (Math.random() > 0.5 ? 1 : -1),
-                color: colors[Math.floor(Math.random() * colors.length)],
-            });
-        }
-
-        let isVisible = true;
-        let lastTime = 0;
-        const fpsInterval = 1000 / 30; // Limitar a 30 FPS para máximo rendimiento de GPU/CPU
-
-        const handleVisibilityChange = () => {
-            isVisible = !document.hidden;
-            if (isVisible) {
-                lastTime = performance.now();
-                animationFrameId = requestAnimationFrame(render);
-            }
-        };
-        document.addEventListener('visibilitychange', handleVisibilityChange);
-
-        const render = (currentTime: number = 0) => {
-            if (!isVisible) return;
-            animationFrameId = requestAnimationFrame(render);
-
-            const elapsed = currentTime - lastTime;
-            if (elapsed < fpsInterval) return;
-            lastTime = currentTime - (elapsed % fpsInterval);
-
+        const drawParticles = () => {
             ctx.clearRect(0, 0, width, height);
-
-            for (let i = 0; i < particles.length; i++) {
-                const p = particles[i];
-                p.x += p.speedX;
-                p.y += p.speedY;
-                p.alpha += p.alphaDelta;
-
-                if (p.alpha <= 0.1 || p.alpha >= 0.7) {
-                    p.alphaDelta = -p.alphaDelta;
-                }
-
-                if (p.y < -10) p.y = height + 10;
-                if (p.x < -10) p.x = width + 10;
-                if (p.x > width + 10) p.x = -10;
-
+            for (const particle of particles) {
                 ctx.beginPath();
-                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-                ctx.fillStyle = `${p.color}${Math.max(0.1, Math.min(0.7, p.alpha))})`;
+                ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
+                ctx.fillStyle = `${particle.color}${Math.max(0.1, Math.min(0.7, particle.alpha))})`;
                 ctx.fill();
             }
         };
 
-        animationFrameId = requestAnimationFrame(render);
+        const resizeCanvas = () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            drawParticles();
+        };
+
+        const advanceParticles = () => {
+            for (const particle of particles) {
+                particle.x += particle.speedX;
+                particle.y += particle.speedY;
+                particle.alpha += particle.alphaDelta;
+
+                if (particle.alpha <= 0.1 || particle.alpha >= 0.7) {
+                    particle.alphaDelta = -particle.alphaDelta;
+                }
+                if (particle.y < -10) particle.y = height + 10;
+                if (particle.x < -10) particle.x = width + 10;
+                if (particle.x > width + 10) particle.x = -10;
+            }
+            drawParticles();
+        };
+
+        const scheduleFrame = () => {
+            if (isVisible && !reducedMotion && animationFrameId === 0) {
+                animationFrameId = requestAnimationFrame(render);
+            }
+        };
+
+        const render = (currentTime: number) => {
+            animationFrameId = 0;
+            if (!isVisible || reducedMotion) return;
+
+            if (currentTime - lastFrameTime >= fpsInterval) {
+                advanceParticles();
+                lastFrameTime = currentTime;
+            }
+            scheduleFrame();
+        };
+
+        const handleVisibilityChange = () => {
+            isVisible = !document.hidden;
+            if (!isVisible && animationFrameId !== 0) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = 0;
+            } else {
+                lastFrameTime = performance.now();
+                scheduleFrame();
+            }
+        };
+
+        const handleMotionPreferenceChange = () => {
+            reducedMotion = motionPreference.matches;
+            if (reducedMotion && animationFrameId !== 0) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = 0;
+                drawParticles();
+            } else {
+                scheduleFrame();
+            }
+        };
+
+        resizeCanvas();
+        scheduleFrame();
+        window.addEventListener('resize', resizeCanvas);
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        motionPreference.addEventListener('change', handleMotionPreferenceChange);
 
         return () => {
-            window.removeEventListener('resize', handleResize);
+            window.removeEventListener('resize', resizeCanvas);
             document.removeEventListener('visibilitychange', handleVisibilityChange);
-            cancelAnimationFrame(animationFrameId);
+            motionPreference.removeEventListener('change', handleMotionPreferenceChange);
+            if (animationFrameId !== 0) cancelAnimationFrame(animationFrameId);
         };
     }, []);
 
@@ -132,8 +146,9 @@ export default function BunkkerLayeredBackground() {
             <div className="absolute inset-0 bg-gradient-to-b from-[#050811]/70 via-transparent to-[#050811]/90" />
 
             {/* ── Capa 2: Partículas Flotantes Cuánticas ── */}
-            <canvas 
-                ref={canvasRef} 
+            <canvas
+                ref={canvasRef}
+                aria-hidden="true"
                 className="absolute inset-0 w-full h-full opacity-70"
             />
 

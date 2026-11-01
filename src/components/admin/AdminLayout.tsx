@@ -3,22 +3,23 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import {
     Users,
     Package,
     FileText,
     LayoutDashboard,
-    ShoppingCart,
     ShieldCheck,
     LogOut,
-    Truck,
     BookOpen,
     History,
-    Share2,
     CreditCard,
     Lock,
-    ChevronLeft,
+    QrCode,
+    Route,
+    Warehouse,
+    Megaphone,
+    PackageCheck,
     ChevronRight,
     Wifi,
     WifiOff,
@@ -35,9 +36,7 @@ import {
     Activity,
     Boxes,
     Settings,
-    Store,
-    Menu,
-    X
+    Store
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
@@ -45,6 +44,7 @@ import { useCart } from '@/context/CartContext';
 import { toast } from '@/lib/toast';
 import ThemeToggle from '@/components/ThemeToggle';
 import LanguageSelector from '@/components/LanguageSelector';
+import AdminDock, { type AdminDockItem } from './AdminDock';
 import { useTranslation } from '@/context/LanguageContext';
 /* ─── Navegación canónica del dashboard ───────────────────────────────────── */
 type DashboardMenuItem = {
@@ -67,7 +67,7 @@ const menuGroups: { label: string; items: DashboardMenuItem[] }[] = [
             { id: 'crm', title: 'CRM comercial', icon: <User size={19} />, href: '/dashboard/crm' },
             { id: 'customers', title: 'Historial y tickets', icon: <History size={19} />, href: '/dashboard/admin/customers' },
             { id: 'billing', title: 'Facturación CFDI', icon: <FileText size={19} />, href: '/dashboard/billing' },
-            { id: 'qr', title: 'Vinculación QR', icon: <Share2 size={19} />, href: '/dashboard/qr' },
+            { id: 'qr', title: 'Vinculación QR', icon: <QrCode size={19} />, href: '/dashboard/qr' },
             { id: 'setup', title: 'Configuración', icon: <Settings size={19} />, href: '/dashboard/setup' },
             { id: 'guide', title: 'Guía de uso', icon: <BookOpen size={19} />, href: '/dashboard/guia' },
             { id: 'demo', title: 'Entorno de pruebas', icon: <Activity size={19} />, href: '/dashboard/demo', roles: ['superadmin'] },
@@ -77,18 +77,19 @@ const menuGroups: { label: string; items: DashboardMenuItem[] }[] = [
         label: 'Operación y logística',
         items: [
             { id: 'inventory', title: 'Inventario', icon: <Package size={19} />, href: '/dashboard/inventory' },
-            { id: 'patio', title: 'Patio de carga', icon: <Truck size={19} />, href: '/dashboard/patio' },
-            { id: 'pickup', title: 'Mostrador y pickup', icon: <Package size={19} />, href: '/dashboard/pickup' },
-            { id: 'delivery', title: 'Reparto', icon: <Truck size={19} />, href: '/dashboard/delivery' },
+            { id: 'patio', title: 'Patio de carga', icon: <Warehouse size={19} />, href: '/dashboard/patio' },
+            { id: 'pickup', title: 'Mostrador y pickup', icon: <PackageCheck size={19} />, href: '/dashboard/pickup' },
+            { id: 'delivery', title: 'Reparto', icon: <Route size={19} />, href: '/dashboard/delivery' },
             { id: 'simulator', title: 'Simulador operativo', icon: <Boxes size={19} />, href: '/dashboard/simulator' },
         ],
     },
     {
         label: 'Control del negocio',
         items: [
-            { id: 'marketing', title: 'Marketing y marca', icon: <Share2 size={19} />, href: '/dashboard/marketing' },
-            { id: 'audit', title: 'Auditoría', icon: <History size={19} />, href: '/dashboard/audit' },
+            { id: 'marketing', title: 'Marketing y marca', icon: <Megaphone size={19} />, href: '/dashboard/marketing' },
+            { id: 'audit', title: 'Auditoría', icon: <ShieldCheck size={19} />, href: '/dashboard/audit' },
             { id: 'subscription', title: 'Suscripción', icon: <CreditCard size={19} />, href: '/dashboard/suscripcion', roles: ['superadmin'] },
+            { id: 'store', title: 'Tienda pública', icon: <Store size={19} />, href: '/' },
         ],
     },
 ];
@@ -110,9 +111,9 @@ function ConnectionTooltip({ isOpen, firebaseStatus }: { isOpen: boolean; fireba
                         top:             'calc(100% + 10px)',
                         right:           0,
                         zIndex:          9999,
-                        background:      'rgba(255,255,255,0.97)',
-                        backdropFilter:  'blur(12px)',
-                        border:          '1px solid #e2e8f0',
+                        background:      'rgba(5, 10, 20, 0.94)',
+                        backdropFilter:  'blur(18px) saturate(140%)',
+                        border:          '1px solid rgba(56, 189, 248, 0.2)',
                         borderRadius:    '14px',
                         padding:         '16px 18px',
                         boxShadow:       '0 12px 40px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06)',
@@ -124,7 +125,7 @@ function ConnectionTooltip({ isOpen, firebaseStatus }: { isOpen: boolean; fireba
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                         <div style={{
                             width: '32px', height: '32px', borderRadius: '10px',
-                            background: isOnline ? '#ecfdf5' : '#fff7ed',
+                            background: isOnline ? 'rgba(16,185,129,0.14)' : 'rgba(249,115,22,0.14)',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                         }}>
                             {isOnline
@@ -132,7 +133,7 @@ function ConnectionTooltip({ isOpen, firebaseStatus }: { isOpen: boolean; fireba
                                 : <WifiOff size={16} color="#ea580c" />}
                         </div>
                         <div>
-                            <p style={{ margin: 0, fontSize: '0.78rem', fontWeight: '800', color: '#1e293b' }}>
+                            <p style={{ margin: 0, fontSize: '0.78rem', fontWeight: '800', color: '#f8fafc' }}>
                                 {isOnline ? 'Sistema en Línea' : 'Modo Local / Offline'}
                             </p>
                             <p style={{ margin: 0, fontSize: '0.65rem', color: '#94a3b8' }}>
@@ -158,7 +159,7 @@ function ConnectionTooltip({ isOpen, firebaseStatus }: { isOpen: boolean; fireba
                     ].map((item, i) => (
                         <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', marginBottom: '8px' }}>
                             <span style={{ flexShrink: 0, marginTop: '1px' }}>{item.icon}</span>
-                            <span style={{ fontSize: '0.7rem', color: '#475569', lineHeight: '1.4' }}>{item.text}</span>
+                            <span style={{ fontSize: '0.7rem', color: '#cbd5e1', lineHeight: '1.4' }}>{item.text}</span>
                         </div>
                     ))}
                 </motion.div>
@@ -303,9 +304,6 @@ function ProfileSetupScreen({ uid }: { uid: string }) {
 /* ─── Main Layout ─────────────────────────────────────────────────────────── */
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
-    const router = useRouter();
-    const [isCollapsed, setIsCollapsed] = useState(false);
-    const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
     const [connTooltipOpen, setConnTooltipOpen] = useState(false);
     const tooltipRef = useRef<HTMLDivElement>(null);
 
@@ -313,25 +311,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const { isReadOnly, isPremium, profile, signOut } = useAuth();
     const { firebaseStatus, siteConfig } = useCart();
     const { t } = useTranslation();
-
-    useEffect(() => {
-        try {
-            setIsCollapsed(localStorage.getItem('_admincom_sidebar_collapsed') === 'true');
-        } catch {}
-    }, []);
-
-    useEffect(() => {
-        setIsMobileNavOpen(false);
-    }, [pathname]);
-
-    useEffect(() => {
-        if (!isMobileNavOpen) return;
-        const previousOverflow = document.body.style.overflow;
-        document.body.style.overflow = 'hidden';
-        return () => {
-            document.body.style.overflow = previousOverflow;
-        };
-    }, [isMobileNavOpen]);
 
     /* close tooltip on outside click */
     useEffect(() => {
@@ -353,20 +332,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         }
     }, [firebaseStatus]);
 
-    const toggleSidebar = (e?: React.MouseEvent) => {
-        if (e) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
-        setIsCollapsed(prev => {
-            const next = !prev;
-            try {
-                localStorage.setItem('_admincom_sidebar_collapsed', String(next));
-            } catch {}
-            return next;
-        });
-    };
-
     if (profile?.needsSetup) {
         return <ProfileSetupScreen uid={profile.uid} />;
     }
@@ -376,10 +341,25 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
 
     const isPOSFullscreen = pathname === '/dashboard/sales';
-    const showAdminSidebar = !isPOSFullscreen && (profile?.role === 'superadmin' || profile?.role === 'admin');
-    const sidebarWidth = isCollapsed ? '72px' : '260px';
-    const sidebarIsCollapsed = isCollapsed && !isMobileNavOpen;
+    const showAdminDock = !isPOSFullscreen && (profile?.role === 'superadmin' || profile?.role === 'admin');
     const currentRole = profile?.role || 'admin';
+    const shortLabels: Record<string, string> = {
+        dashboard: 'Panel', pos: 'POS', team: 'Equipo', users: 'Accesos', crm: 'CRM',
+        customers: 'Clientes', billing: 'CFDI', qr: 'QR', setup: 'Ajustes', guide: 'Guía',
+        demo: 'Pruebas', inventory: 'Stock', patio: 'Patio', pickup: 'Pickup', delivery: 'Rutas',
+        simulator: 'Simulador', marketing: 'Marketing', audit: 'Auditoría', subscription: 'Plan', store: 'Tienda',
+    };
+    const dockItems: AdminDockItem[] = menuGroups
+        .flatMap((group) => group.items)
+        .filter((item) => !item.roles || item.roles.includes(currentRole))
+        .map((item) => ({
+            id: item.id,
+            title: item.title,
+            shortLabel: shortLabels[item.id] || item.title,
+            icon: item.icon,
+            href: item.href,
+            premium: item.premium,
+        }));
 
     /* ── Breadcrumbs helper ───────────────────────────────────── */
     const labelsMap: Record<string, string> = {
@@ -400,187 +380,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return (
         <div className="bunkker-shell" style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'transparent', color: '#f8fafc' }}>
 
-            {showAdminSidebar && isMobileNavOpen && (
-                <button
-                    type="button"
-                    className="fixed inset-0 z-[90] bg-slate-950/70 backdrop-blur-sm md:hidden"
-                    aria-label="Cerrar navegación del panel"
-                    onClick={() => setIsMobileNavOpen(false)}
-                />
-            )}
-
-            {/* ── Sidebar (Layer 4 Translucent Container) ─────────────────────────────────────────── */}
-            {showAdminSidebar && (
-                <aside
-                    id="admin-sidebar"
-                    aria-label="Navegación del panel"
-                    className={`admin-sidebar ${isMobileNavOpen ? 'flex translate-x-0' : 'hidden -translate-x-full'} md:flex md:translate-x-0 transition-transform duration-200`}
-                    style={{
-                    width: isMobileNavOpen ? 'min(86vw, 260px)' : sidebarWidth,
-                    color: 'white',
-                    padding: sidebarIsCollapsed ? '1.5rem 0.5rem' : '1.5rem 1.25rem',
-                    position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    height: '100vh',
-                    overflowY: 'auto',
-                    zIndex: 100,
-                    transition: 'width 0.3s cubic-bezier(0.4,0,0.2,1), padding 0.3s cubic-bezier(0.4,0,0.2,1)',
-                    flexDirection: 'column',
-                    background: 'rgba(8, 12, 22, 0.85)',
-                    backdropFilter: 'blur(24px) saturate(140%)',
-                    WebkitBackdropFilter: 'blur(24px) saturate(140%)',
-                    borderRight: '1px solid rgba(56, 189, 248, 0.18)',
-                    boxShadow: '10px 0 35px rgba(0,0,0,0.7)',
-                }}>
-                    {/* Header + Toggle */}
-                    <div style={{
-                        marginBottom: '2rem', display: 'flex', alignItems: 'center',
-                        justifyContent: sidebarIsCollapsed ? 'center' : 'space-between', gap: '10px',
-                    }}>
-                        {!sidebarIsCollapsed ? (
-                            <div className="flex items-center gap-2.5 min-w-0">
-                                <img 
-                                    src="/bunkker-logo-hero.png" 
-                                    alt="BUNKKER" 
-                                    className="w-8 h-8 object-contain rounded-lg border border-cyan-500/40 shadow-[0_0_12px_rgba(56,189,248,0.5)] shrink-0" 
-                                />
-                                <div className="min-w-0">
-                                    <h2 className="font-black text-white text-sm tracking-wider flex items-center gap-1 leading-none">
-                                        BUNKKER <span className="text-cyan-400 font-mono text-[10px]">ERP</span>
-                                    </h2>
-                                    <span className="text-[8px] uppercase tracking-widest text-cyan-400/80 block font-semibold truncate mt-1">
-                                        {siteConfig?.businessName || 'SISTEMA E.C.O.S.'}
-                                    </span>
-                                </div>
-                            </div>
-                        ) : (
-                            <img 
-                                src="/bunkker-logo-hero.png" 
-                                alt="BUNKKER" 
-                                className="w-8 h-8 object-contain rounded-lg border border-cyan-500/40 shadow-[0_0_12px_rgba(56,189,248,0.5)]" 
-                            />
-                        )}
-                        <button
-                            type="button"
-                            className="md:hidden inline-flex"
-                            onClick={() => setIsMobileNavOpen(false)}
-                            aria-label="Cerrar navegación"
-                            style={{
-                                background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: '#cbd5e1',
-                                padding: '6px', borderRadius: '8px', cursor: 'pointer', alignItems: 'center', justifyContent: 'center',
-                            }}
-                        >
-                            <X size={16} />
-                        </button>
-                        <button
-                            type="button"
-                            onClick={toggleSidebar}
-                            style={{
-                                background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.2)', color: '#38bdf8',
-                                padding: '6px', borderRadius: '8px', cursor: 'pointer',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                transition: 'all 0.2s',
-                            }}
-                            title={isCollapsed ? 'Expandir Panel' : 'Colapsar Panel'}
-                        >
-                            {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-                        </button>
-                    </div>
-
-                    {/* Nav groups */}
-                    <nav aria-label="Secciones del dashboard" className="admin-sidebar-nav" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1, overflowY: 'auto', paddingRight: '4px' }}>
-                        {menuGroups.map((group, groupIdx) => {
-                            const visibleItems = group.items.filter(item =>
-                                !item.roles || item.roles.includes(currentRole)
-                            );
-
-                            if (visibleItems.length === 0) return null;
-
-                            return (
-                                <div key={groupIdx} style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                                    {!sidebarIsCollapsed ? (
-                                        <div style={{
-                                            fontSize: '0.65rem', fontWeight: '900', textTransform: 'uppercase',
-                                            color: 'rgba(255,255,255,0.65)', letterSpacing: '0.08em',
-                                            paddingLeft: '12px',
-                                            marginTop: groupIdx === 0 ? '0px' : '1.2rem',
-                                            marginBottom: '0.4rem',
-                                        }}>
-                                            {group.label}
-                                        </div>
-                                    ) : (
-                                        groupIdx > 0 && (
-                                            <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', margin: '0.8rem 0' }} />
-                                        )
-                                    )}
-
-                                    {visibleItems.map((item) => {
-                                        const active = pathname === item.href;
-                                        const locked = item.premium && !isPremium;
-
-                                        return (
-                                            <Link
-                                                className="admin-sidebar-link"
-                                                key={item.id}
-                                                aria-current={active ? 'page' : undefined}
-                                                id={`tour-sidebar-${item.id}`}
-                                                href={locked ? '#' : item.href}
-                                                onClick={(e) => {
-                                                    if (locked) {
-                                                        e.preventDefault();
-                                                        toast.info('Esta característica es exclusiva de la versión PRO. Adquiere la actualización para desbloquearla.', 'Premium');
-                                                        return;
-                                                    }
-                                                    setIsMobileNavOpen(false);
-                                                }}
-                                                style={{
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: sidebarIsCollapsed ? 'center' : 'flex-start',
-                                                    gap: '12px',
-                                                    padding: '12px',
-                                                    borderRadius: '12px',
-                                                    textDecoration: 'none',
-                                                    color: locked ? 'rgba(255,255,255,0.4)' : active ? 'var(--neon-yellow)' : 'white',
-                                                    background: active ? 'rgba(0,242,255,0.1)' : 'transparent',
-                                                    borderLeft: active ? '4px solid var(--neon-yellow)' : '4px solid transparent',
-                                                    boxShadow: active ? 'inset 20px 0 20px -20px rgba(0,242,255,0.4)' : 'none',
-                                                    textShadow: active ? '0 0 10px rgba(212,255,0,0.5)' : 'none',
-                                                    transition: 'all 0.2s',
-                                                    cursor: locked ? 'not-allowed' : 'pointer',
-                                                }}
-                                                title={sidebarIsCollapsed ? item.title : undefined}
-                                            >
-                                                <div style={{ flexShrink: 0 }}>{item.icon}</div>
-                                                {!sidebarIsCollapsed && (
-                                                    <span style={{ fontSize: '0.85rem', fontWeight: 'bold' }}>{item.title}</span>
-                                                )}
-                                                {!sidebarIsCollapsed && locked && <Lock size={14} style={{ marginLeft: 'auto', color: '#FFCB05' }} />}
-                                            </Link>
-                                        );
-                                    })}
-                                </div>
-                            );
-                        })}
-
-                        <Link
-                            href="/"
-                            onClick={() => setIsMobileNavOpen(false)}
-                            style={{ display: 'flex', alignItems: 'center', justifyContent: sidebarIsCollapsed ? 'center' : 'flex-start', gap: '12px', padding: '12px', borderRadius: '12px', color: '#94a3b8', textDecoration: 'none', marginTop: 'auto' }}
-                            title={sidebarIsCollapsed ? 'Abrir tienda pública' : undefined}
-                        >
-                            <div style={{ flexShrink: 0 }}><Store size={20} /></div>
-                            {!sidebarIsCollapsed && <span style={{ fontSize: '0.85rem', fontWeight: 'bold' }}>Abrir tienda pública</span>}
-                        </Link>
-                    </nav>
-                </aside>
-            )}
-
             {/* ── Main content (Layer 4) ────────────────────────────────────── */}
             <div
-                className={`admin-main-viewport min-w-0 flex-1 flex flex-col min-h-screen relative z-10 transition-all duration-300 ${isPOSFullscreen ? 'pb-0' : 'pb-6'} ${showAdminSidebar ? (isCollapsed ? 'md:ml-[72px]' : 'md:ml-[260px]') : ''} w-full md:w-auto`}
-                style={{ transition: 'margin-left 0.3s cubic-bezier(0.4,0,0.2,1)' }}
+                className={`admin-main-viewport min-w-0 flex-1 flex flex-col min-h-screen relative z-10 transition-all duration-300 ${isPOSFullscreen ? 'pb-0' : showAdminDock ? 'pb-28' : 'pb-6'} w-full`}
+                style={{ transition: 'padding-bottom 0.3s ease' }}
             >
                 {/* ── Top header bar (Layer 4 Translucent Container) ─────────────────────────────── */}
                 {!isPOSFullscreen && (
@@ -600,19 +403,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     zIndex: 50,
                     boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
                 }}>
-                    {showAdminSidebar && (
-                        <button
-                            type="button"
-                            className="md:hidden inline-flex items-center justify-center rounded-lg border border-slate-700/70 bg-slate-900/70 p-2 text-slate-300 hover:text-white"
-                            aria-controls="admin-sidebar"
-                            aria-expanded={isMobileNavOpen}
-                            aria-label={isMobileNavOpen ? 'Cerrar navegación' : 'Abrir navegación'}
-                            onClick={() => setIsMobileNavOpen((open) => !open)}
-                        >
-                            <Menu size={18} />
-                        </button>
-                    )}
-
                     {/* Breadcrumbs */}
                     <nav style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.72rem', fontWeight: '700', color: '#94a3b8' }}>
                         <Link
@@ -660,25 +450,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         {/* Selector de Tema */}
                         <ThemeToggle />
 
-                        {/* Premium badge */}
-                        <div style={{
-                            display: 'flex', alignItems: 'center', gap: '6px',
-                            fontSize: '0.68rem', fontWeight: '900', letterSpacing: '0.05em',
-                            backgroundColor: isPremium ? 'rgba(245,158,11,0.1)' : 'rgba(255,255,255,0.05)',
-                            color: isPremium ? '#fbbf24' : '#94a3b8',
-                            padding: '5px 12px', borderRadius: '8px',
-                            border: isPremium ? '1px solid rgba(245,158,11,0.2)' : '1px solid rgba(255,255,255,0.1)',
-                        }}>
-                            <ShieldCheck size={13} />
-                            <span className="hidden xl:inline">{isPremium ? t('status.premium_active', 'PREMIUM ACTIVE') : t('status.basic', 'BÁSICO')}</span>
-                        </div>
-
                         {/* Connection badge */}
                         <div ref={tooltipRef} style={{ position: 'relative' }}>
                             <button
                                 type="button"
                                 onClick={() => setConnTooltipOpen(!connTooltipOpen)}
                                 title="Ver estado de conexión"
+                                aria-label={firebaseStatus === 'online' ? 'Sistema en línea' : 'Sistema en modo local u offline'}
                                 style={{
                                     display: 'flex', alignItems: 'center', gap: '6px',
                                     fontSize: '0.68rem', fontWeight: '900', letterSpacing: '0.05em',
@@ -704,61 +482,47 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                         }} />
                                     )}
                                 </span>
-                                <span className="hidden lg:inline">{firebaseStatus === 'online' ? t('status.online', 'SISTEMA ONLINE') : t('status.offline', 'SIN CONEXIÓN')}</span>
+                                <span className="sr-only">{firebaseStatus === 'online' ? t('status.online', 'SISTEMA ONLINE') : t('status.offline', 'SIN CONEXIÓN')}</span>
                             </button>
 
                             <ConnectionTooltip isOpen={connTooltipOpen} firebaseStatus={firebaseStatus} />
                         </div>
 
-                        {/* Atrás */}
-                        {pathname !== '/dashboard' && (
-                            <button
-                                onClick={() => router.back()}
-                                style={{
-                                    display: 'flex', alignItems: 'center', gap: '6px',
-                                    fontSize: '0.75rem', fontWeight: '900', color: '#cbd5e1',
-                                    backgroundColor: 'rgba(255,255,255,0.05)', padding: '6px 12px',
-                                    borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)',
-                                    cursor: 'pointer', transition: 'all 0.2s',
-                                }}
-                                title="Volver a la vista anterior"
+                        <details className="relative">
+                            <summary
+                                className="inline-flex list-none cursor-pointer items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-2 text-white transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+                                aria-label="Abrir menú de perfil"
+                                title={profile?.displayName || 'Perfil'}
                             >
-                                <ChevronLeft size={14} />
-                                <span className="hidden sm:inline">{t('nav.back', 'ATRÁS')}</span>
-                            </button>
-                        )}
-
-                        {/* Mi Perfil */}
-                        <Link
-                            href="/dashboard/profile"
-                            style={{
-                                display: 'flex', alignItems: 'center', gap: '6px',
-                                fontSize: '0.75rem', fontWeight: '900', color: '#38bdf8',
-                                backgroundColor: 'rgba(56,189,248,0.1)', padding: '6px 12px',
-                                borderRadius: '8px', border: '1px solid rgba(56,189,248,0.2)',
-                                textDecoration: 'none', transition: 'all 0.2s',
-                            }}
-                            title="Ir a Mi Perfil"
-                        >
-                            <User size={14} />
-                            <span className="hidden sm:inline">{t('nav.profile', 'PERFIL')}</span>
-                        </Link>
-
-                        {/* Cerrar Sesión */}
-                        <button
-                            onClick={signOut}
-                            style={{
-                                display: 'flex', alignItems: 'center', gap: '6px',
-                                fontSize: '0.75rem', fontWeight: '900', color: '#ef4444',
-                                backgroundColor: 'rgba(239,68,68,0.1)', padding: '6px 12px',
-                                borderRadius: '8px', border: '1px solid rgba(239,68,68,0.2)',
-                                cursor: 'pointer', transition: 'all 0.2s',
-                            }}
-                            title="Cerrar Sesión"
-                        >
-                            <LogOut size={14} />
-                            <span className="hidden sm:inline">{t('nav.logout', 'SALIR')}</span>
-                        </button>
+                                <User size={15} aria-hidden="true" />
+                                <span className="hidden max-w-28 truncate text-xs font-semibold xl:inline">
+                                    {profile?.displayName || t('nav.profile', 'PERFIL')}
+                                </span>
+                            </summary>
+                            <div className="absolute right-0 top-full z-50 mt-2 w-56 rounded-2xl border border-white/10 bg-slate-950/90 p-2 text-white shadow-2xl backdrop-blur-2xl">
+                                <div className="border-b border-white/10 px-3 py-2">
+                                    <p className="truncate text-sm font-semibold text-white">{profile?.displayName || 'Personal'}</p>
+                                    <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                        {profile?.role || 'usuario'} · {isPremium ? 'PREMIUM' : 'BÁSICO'}
+                                    </p>
+                                </div>
+                                <Link
+                                    href="/dashboard/profile"
+                                    className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-200 transition-colors hover:bg-white/10 hover:text-white"
+                                >
+                                    <User size={15} aria-hidden="true" />
+                                    Mi perfil
+                                </Link>
+                                <button
+                                    type="button"
+                                    onClick={signOut}
+                                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-rose-300 transition-colors hover:bg-rose-500/10 hover:text-rose-200"
+                                >
+                                    <LogOut size={15} aria-hidden="true" />
+                                    Cerrar sesión
+                                </button>
+                            </div>
+                        </details>
                     </div>
                 </div>
                 )}
@@ -782,6 +546,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     {children}
                 </div>
             </div>
+            {showAdminDock && <AdminDock items={dockItems} isPremium={isPremium} />}
         </div>
     );
 }

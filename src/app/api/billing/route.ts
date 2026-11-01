@@ -3,25 +3,7 @@ import { validateApiSession } from '@/lib/apiAuth';
 import Facturapi from 'facturapi';
 import { db, auth } from '@/lib/firebase-admin';
 import { prisma } from '@/lib/prisma';
-
-// VULNERABILITY B FIXED: Secure Key Retrieval
-// The API key is ONLY retrieved from secure environment variables.
-// It is no longer read from the public-facing Firestore 'config' collection.
-async function getFacturapiKey() {
-    if (process.env.FACTURAPI_SECRET_KEY) {
-        return process.env.FACTURAPI_SECRET_KEY;
-    }
-    if (process.env.FACTURAPI_KEY) {
-        return process.env.FACTURAPI_KEY;
-    }
-    try {
-        const secretSnap = await db.collection('secrets').doc('billing').get();
-        if (secretSnap.exists) {
-            return secretSnap.data()?.facturapi_key;
-        }
-    } catch {}
-    return null;
-}
+import { getFacturapiApiKey } from '@/lib/facturapi-config';
 
 export async function POST(req: NextRequest) {
     const sessionAuth = validateApiSession(req);
@@ -52,24 +34,20 @@ export async function POST(req: NextRequest) {
              return NextResponse.json({ error: 'La facturación automática requiere una Licencia PRO' }, { status: 402 });
         }
 
-        const apiKey = await getFacturapiKey();
+        const tenantId = sessionAuth.tenantId || 'default';
+        const apiKey = await getFacturapiApiKey(tenantId);
         if (!apiKey) {
-            return NextResponse.json({ success: false, error: 'API Key de Facturapi no configurada en el servidor' }, { status: 503 });
+            return NextResponse.json({ success: false, error: 'Facturapi no está configurado para este negocio.' }, { status: 503 });
         }
 
         const body = await req.json();
-        const { customer, items, payment_form, use, tenantId = 'default' } = body;
+        const { customer, items, payment_form, use } = body;
 
         if (!customer || !items || !Array.isArray(items) || items.length === 0) {
             return NextResponse.json({ error: 'Datos de facturación o productos faltantes' }, { status: 400 });
         }
 
-        const facturapiKey = await getFacturapiKey();
-        if (!facturapiKey) {
-            return NextResponse.json({ error: 'Sistema de facturación no configurado' }, { status: 500 });
-        }
-
-        const facturapi = new Facturapi(facturapiKey);
+        const facturapi = new Facturapi(apiKey);
 
         const verifiedItems = [];
         for (const item of items) {
