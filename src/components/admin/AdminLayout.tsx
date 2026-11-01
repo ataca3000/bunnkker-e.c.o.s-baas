@@ -601,18 +601,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
                 }}>
                     {showAdminSidebar && (
-                        {showAdminSidebar && (
-                            <button
-                                type="button"
-                                className="md:hidden inline-flex items-center justify-center rounded-lg border border-slate-700/70 bg-slate-900/70 p-2 text-slate-300 hover:text-white"
-                                aria-controls="admin-sidebar"
-                                aria-expanded={isMobileNavOpen}
-                                aria-label={isMobileNavOpen ? 'Cerrar navegación' : 'Abrir navegación'}
-                                onClick={() => setIsMobileNavOpen((open) => !open)}
-                            >
-                                <Menu size={18} />
-                            </button>
-                        )}
+                        <button
+                            type="button"
+                            className="md:hidden inline-flex items-center justify-center rounded-lg border border-slate-700/70 bg-slate-900/70 p-2 text-slate-300 hover:text-white"
+                            aria-controls="admin-sidebar"
+                            aria-expanded={isMobileNavOpen}
+                            aria-label={isMobileNavOpen ? 'Cerrar navegación' : 'Abrir navegación'}
+                            onClick={() => setIsMobileNavOpen((open) => !open)}
+                        >
+                            <Menu size={18} />
+                        </button>
                     )}
 
                     {/* Breadcrumbs */}

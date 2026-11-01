@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic';
 import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-    Settings, Key, Landmark, MapPin, CheckCircle2, User, Lock, 
+    Settings, Key, Landmark, MapPin, CheckCircle2, Lock, 
     CreditCard, HardDrive, Loader2, ArrowRight,
     Printer
 } from 'lucide-react';
@@ -23,7 +23,7 @@ const HardwareSettingsModal = dynamic(() => import('@/components/hardware/Hardwa
 export default function SetupWizard() {
     const searchParams = useSearchParams();
     const urlStep = searchParams?.get('step') ? Number(searchParams.get('step')) : 1;
-    const { isPremium, profile } = useAuth();
+    const { isPremium } = useAuth();
     const { siteConfig, updateSiteConfig } = useCart();
     const [step, setStep] = useState(urlStep);
     const [isSaving, setIsSaving] = useState(false);
@@ -54,10 +54,9 @@ export default function SetupWizard() {
         requireCashierInspection: true
     });
 
-    // Cargar configuración existente
     useEffect(() => {
         const fetchConfig = async () => {
-            let baseData = {
+            const baseData = {
                 businessName: siteConfig?.businessName || '',
                 whatsapp: siteConfig?.businessPhone || '',
                 location: siteConfig?.businessAddress || '',
@@ -66,46 +65,47 @@ export default function SetupWizard() {
                 enableWebPayments: siteConfig?.enableWebPayments ?? true,
                 requireCashierInspection: siteConfig?.requireCashierInspection ?? true
             };
+            let publicData: Record<string, unknown> = { ...baseData };
 
             try {
-                const docSnap = await getDoc(doc(db, 'settings', 'site_config'));
-                let publicData = {};
-                if (docSnap.exists()) {
-                    publicData = docSnap.data();
-                }
-
-                let secretData = {};
-                try {
-                    const secretSnap = await getDoc(doc(db, 'secrets', 'billing'));
-                    if (secretSnap.exists()) {
-                        secretData = secretSnap.data();
+                const response = await fetch('/api/settings', { cache: 'no-store' });
+                if (response.ok) {
+                    const payload = await response.json().catch(() => null);
+                    if (payload?.data && typeof payload.data === 'object') {
+                        publicData = payload.data as Record<string, unknown>;
                     }
-                } catch (secErr) {
-                    console.log("No se pudieron cargar secretos. Quizá no hay o no eres admin.");
                 }
-
-                setConfig(prev => ({
-                    ...prev,
-                    ...baseData,
-                    ...publicData,
-                    ...secretData
-                }));
-            } catch (err) {
-                console.error("Error loading config:", err);
-                setConfig(prev => ({
-                    ...prev,
-                    ...baseData
-                }));
+            } catch {
+                // CartContext provides the local-first fallback when the settings API is offline.
             }
+
+            let secretData = {};
+            try {
+                const secretSnap = await getDoc(doc(db, 'secrets', 'billing'));
+                if (secretSnap.exists()) secretData = secretSnap.data();
+            } catch {
+                // Secret settings remain optional while the device is offline.
+            }
+
+            setConfig((previous) => ({
+                ...previous,
+                ...baseData,
+                ...publicData,
+                ...secretData,
+            }));
         };
-        fetchConfig();
+
+        void fetchConfig();
     }, [siteConfig]);
 
     const handleSave = async () => {
         setIsSaving(true);
         try {
-            const { stripe_secret_key, facturapi_key, stripe_webhook_secret, ...publicConfig } = config as any;
-            await setDoc(doc(db, 'settings', 'site_config'), publicConfig, { merge: true });
+            const configWithSecrets = config as typeof config & {
+                facturapi_key?: string;
+                stripe_webhook_secret?: string;
+            };
+            const { stripe_secret_key, facturapi_key, stripe_webhook_secret, ...publicConfig } = configWithSecrets;
 
             const secretConfig = {
                 ...(stripe_secret_key && { stripe_secret_key }),
@@ -117,6 +117,7 @@ export default function SetupWizard() {
             }
 
             await updateSiteConfig({
+                ...publicConfig,
                 businessName: config.businessName,
                 businessPhone: config.whatsapp,
                 businessAddress: config.location,
@@ -154,7 +155,7 @@ export default function SetupWizard() {
 
             </header>
 
-            <div className="flex-1 grid grid-cols-1 xl:grid-cols-[240px_1fr] z-10 relative">
+            <div className="flex-1 grid grid-cols-1 content-start xl:grid-cols-[240px_1fr] z-10 relative">
                 <nav className="bg-slate-950/70 border-b xl:border-b-0 xl:border-r border-slate-800/80 p-2 xl:p-3 flex flex-col justify-start xl:justify-between gap-3" aria-label="Menú de configuración">
                     <div className="flex gap-2 overflow-x-auto pb-1 xl:flex-col xl:overflow-visible xl:pb-0">
                         <div className="hidden xl:block text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-2 pl-2">Secciones</div>
@@ -382,10 +383,18 @@ export default function SetupWizard() {
                                                     setIsScanning(true);
                                                     setScanResult(null);
                                                     try {
-                                                        const { ipcRenderer } = (window as any).require('electron');
-                                                        const result = await ipcRenderer.invoke('scan-for-vault-drive');
+                                                        const electronWindow = window as Window & {
+                                                            require?: (moduleName: string) => {
+                                                                ipcRenderer: {
+                                                                    invoke: (channel: string) => Promise<{ success: boolean; message: string }>;
+                                                                };
+                                                            };
+                                                        };
+                                                        const electron = electronWindow.require?.('electron');
+                                                        if (!electron) throw new Error('Desktop client unavailable');
+                                                        const result = await electron.ipcRenderer.invoke('scan-for-vault-drive');
                                                         setScanResult(result);
-                                                    } catch (err: any) {
+                                                    } catch {
                                                         setScanResult({ success: false, message: 'Esta función requiere utilizar la aplicación de Escritorio (.exe).' });
                                                     } finally {
                                                         setIsScanning(false);
@@ -400,7 +409,7 @@ export default function SetupWizard() {
 
                                             {scanResult && (
                                                 <div className={`mt-6 p-4 rounded-xl font-bold text-xs border ${scanResult.success ? 'bg-green-950/20 text-green-400 border-green-800/30' : 'bg-red-950/20 text-red-400 border-red-800/30'}`}>
-                                                    {scanResult.success ? '✅ ' : '❌ '} {scanResult.message}
+                                                    {scanResult.success ? 'Listo: ' : 'No disponible: '}{scanResult.message}
                                                 </div>
                                             )}
 

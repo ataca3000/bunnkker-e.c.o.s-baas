@@ -23,7 +23,6 @@ const CustomDashboardTooltip = ({ active, payload, label, selectedKpi, formatCur
     const isSales = selectedKpi === 'sales';
     const isProfit = selectedKpi === 'profit';
     const isInventory = selectedKpi === 'inventory';
-    const isOrders = selectedKpi === 'orders';
 
     const accentColor = isSales ? '#22D3EE' : isProfit ? '#34D399' : isInventory ? '#FBBF24' : '#A78BFA';
     const badgeText = isSales ? 'Ventas' : isProfit ? 'Utilidad' : isInventory ? 'Stock Físico' : 'Pedidos';
@@ -290,7 +289,7 @@ export default function SuperAdminDashboard({
                             value: kpi.badge.value,
                             label: kpi.badge.label,
                             positive: kpi.badge.positive,
-                            neutral: (kpi.badge as any).neutral
+                            neutral: (kpi.badge as { neutral?: boolean }).neutral
                         }}
                         delayIndex={i}
                         isSelected={selectedKpi === kpi.id}

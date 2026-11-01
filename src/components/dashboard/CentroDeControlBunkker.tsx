@@ -5,9 +5,7 @@ import dynamic from 'next/dynamic';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
 import { 
-    Activity, ShieldCheck, UserCheck, 
-    Layers, Store, DollarSign, Package, Truck, 
-    BarChart3, RefreshCw, Smartphone, Loader2
+    Activity, Layers, Store, Truck, Loader2
 } from 'lucide-react';
 import { toast } from '@/lib/toast';
 
@@ -261,7 +259,7 @@ export default function CentroDeControlBunkker({
                     order={tenderOrder}
                     cashierName={usuario.nombre}
                     cashierUid={usuario.id}
-                    onPaymentSuccess={(ticket, updatedOrder) => {
+                    onPaymentSuccess={(_ticket, _updatedOrder) => {
                         setTenderOrder(null);
                         toast.success(`Ticket emitido para orden #${tenderOrder.id.slice(-6).toUpperCase()}`);
                     }}

@@ -90,12 +90,12 @@ export default function LoginPage() {
     if (!user || !profile) return;
 
     const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
-    const targetPath = getRoleLandingPath(profile.role, params?.get('redirect'));
+    const targetPath = profile.role
+      ? getRoleLandingPath(profile.role, params?.get('redirect'))
+      : null;
 
     if (targetPath) {
       router.replace(targetPath);
-    } else {
-      setStaffError('Este perfil no tiene un módulo asignado. Contacta al administrador.');
     }
   }, [user, profile, router]);
 
