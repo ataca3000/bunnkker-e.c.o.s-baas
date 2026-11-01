@@ -1,33 +1,20 @@
 "use client";
+
+import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
 import { useMemo, useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { AreaChart, Area, BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Users, FileText, ShieldCheck, CheckCircle, Maximize2, Share2, Map, TrendingUp, Zap, Package, ShoppingCart, Truck, Settings, ReceiptText, BookOpen, Cloud, BarChart3, Headphones, Terminal, Store, Boxes, Radio, Download } from 'lucide-react';
-import Link from 'next/link';
-import StaffRankingWidget from '@/components/admin/StaffRankingWidget';
-import RestockAlertWidget from '@/components/admin/RestockAlertWidget';
-import { BalanceEffectWidget } from '@/components/BalanceEffectWidget';
-import ModuleSection from '@/components/admin/ModuleSection';
+import { ShieldCheck, TrendingUp, Zap, Package, ReceiptText, BarChart3, Download } from 'lucide-react';
 import KPICard from '@/components/admin/KPICard';
-import CloudBackupConfigWidget from '@/components/admin/CloudBackupConfigWidget';
-import { Palette, Globe } from 'lucide-react';
-import { isDemo, isNube } from '@/lib/envConfig';
+import { buildDashboardMetrics } from '@/lib/dashboardMetrics';
 
-const premiumBtn: React.CSSProperties = {
-    display:         'inline-flex',
-    alignItems:      'center',
-    gap:             '8px',
-    padding:         '10px 20px',
-    borderRadius:    '14px',
-    fontWeight:      '700',
-    fontSize:        '0.82rem',
-    letterSpacing:   '0.04em',
-    border:          'none',
-    cursor:          'pointer',
-    transition:      'all 0.18s cubic-bezier(0.4,0,0.2,1)',
-    userSelect:      'none',
-};
+const BalanceEffectWidget = dynamic(
+    () => import('@/components/BalanceEffectWidget').then((module) => module.BalanceEffectWidget),
+    { ssr: false }
+);
+const StaffRankingWidget = dynamic(() => import('@/components/admin/StaffRankingWidget'), { ssr: false });
+const RestockAlertWidget = dynamic(() => import('@/components/admin/RestockAlertWidget'), { ssr: false });
 
 /* ─── 1. SUPER ADMIN / ADMIN DASHBOARD ─────────────────────────────────────── */
 const CustomDashboardTooltip = ({ active, payload, label, selectedKpi, formatCurrency }: any) => {
@@ -102,12 +89,12 @@ const CustomDashboardTooltip = ({ active, payload, label, selectedKpi, formatCur
 export default function SuperAdminDashboard({
     profile, userName, greeting, products = [], orders = [],
     maintenanceBalance, ownerBalance, siteConfig,
-    formatCurrency, isScannerOpen, setIsScannerOpen, handleAdminScan
+    formatCurrency
 }: any) {
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-
     const [rniUrl, setRniUrl] = useState<string | null>(null);
+    const [selectedKpi, setSelectedKpi] = useState<'sales' | 'profit' | 'inventory' | 'orders'>('sales');
+    const [chartMode, setChartMode] = useState<'bar' | 'area'>('area');
+    const [showAdvancedAnalytics, setShowAdvancedAnalytics] = useState(false);
 
     useEffect(() => {
         if (typeof window !== 'undefined' && (window as any).electronAPI) {
@@ -120,181 +107,24 @@ export default function SuperAdminDashboard({
         }
     }, []);
 
-    const isValidSale = (o: any) => {
-        if (!o || o.status === 'cancelled' || o.status === 'refunded') return false;
-        return Boolean(o.confirmedAt) || ['paid', 'COMPLETED', 'READY_TO_SHIP', 'OUT_FOR_DELIVERY', 'DELIVERED', 'READY_FOR_PICKUP_PAID'].includes(o.status);
-    };
-
-    const yesterdaySales = orders
-        .filter((o: any) => isValidSale(o) && new Date(o.date).toDateString() === yesterday.toDateString())
-        .reduce((sum: number, o: any) => sum + (Number(o.total) || 0), 0);
-
-    const todaySales = orders
-        .filter((o: any) => isValidSale(o) && new Date(o.date).toDateString() === new Date().toDateString())
-        .reduce((sum: number, o: any) => sum + (Number(o.total) || 0), 0);
-
-    const salesDiff = yesterdaySales > 0 ? ((todaySales - yesterdaySales) / yesterdaySales) * 100 : (todaySales > 0 ? 100 : 0);
-
-    const todayOrders = orders.filter((o: any) =>
-        isValidSale(o) && new Date(o.date).toDateString() === new Date().toDateString()
-    ).length;
-
-    const [selectedKpi, setSelectedKpi] = useState<'sales' | 'profit' | 'inventory' | 'orders'>('sales');
-    const [chartMode, setChartMode] = useState<'bar' | 'area'>('area');
-
-    // 7D Sales data
-    const chartSalesData = useMemo(() => {
-        const data = [];
-        for (let i = 6; i >= 0; i--) {
-            const d = new Date();
-            d.setDate(d.getDate() - i);
-            const dateStr = d.toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric' });
-            const dayOrders = orders.filter((o: any) =>
-                isValidSale(o) &&
-                new Date(o.date).toDateString() === d.toDateString()
-            );
-            const salesOnDate = dayOrders.reduce((sum: number, o: any) => sum + (Number(o.total) || 0), 0);
-            
-            data.push({
-                name: dateStr,
-                ventas: salesOnDate,
-                pedidos: dayOrders.length,
-                isToday: i === 0,
-            });
-        }
-        return data;
-    }, [orders]);
-
-    // 7D Profit data (calculated from order items margin or realistic gross margin)
-    const chartProfitData = useMemo(() => {
-        const data = [];
-        for (let i = 6; i >= 0; i--) {
-            const d = new Date();
-            d.setDate(d.getDate() - i);
-            const dateStr = d.toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric' });
-            const dayOrders = orders.filter((o: any) =>
-                isValidSale(o) &&
-                new Date(o.date).toDateString() === d.toDateString()
-            );
-            const profitOnDate = dayOrders.reduce((sum: number, o: any) => {
-                if (Array.isArray(o.items) && o.items.length > 0) {
-                    const itemProfit = o.items.reduce((acc: number, it: any) => {
-                        const itPrice = Number(it.price) || 0;
-                        const itCost = Number(it.cost) || (itPrice * 0.72);
-                        const itQty = Number(it.quantity) || 1;
-                        return acc + Math.max(0, (itPrice - itCost) * itQty);
-                    }, 0);
-                    return sum + itemProfit;
-                }
-                return sum + (Number(o.ownerCut || o.profit || (Number(o.total || 0) * 0.28)) || 0);
-            }, 0);
-            
-            data.push({
-                name: dateStr,
-                ganancia: Math.round(profitOnDate),
-                pedidos: dayOrders.length,
-                isToday: i === 0,
-            });
-        }
-        return data;
-    }, [orders]);
-
-    // Inventory category distribution
-    const chartInventoryData = useMemo(() => {
-        const map: Record<string, { name: string; piezas: number; valor: number }> = {};
-        products.forEach((p: any) => {
-            const rawCat = p.category ? String(p.category).trim() : 'General';
-            const cat = rawCat.charAt(0).toUpperCase() + rawCat.slice(1).toLowerCase();
-            if (!map[cat]) {
-                map[cat] = { name: cat, piezas: 0, valor: 0 };
-            }
-            const st = Number(p.stock) || 0;
-            const pr = Number(p.price) || 0;
-            map[cat].piezas += st;
-            map[cat].valor += st * pr;
-        });
-        const list = Object.values(map).sort((a, b) => b.piezas - a.piezas).slice(0, 7);
-        return list.length > 0 ? list : [{ name: 'General', piezas: 0, valor: 0 }];
-    }, [products]);
-
-    // 7D Orders count
-    const chartOrdersData = useMemo(() => {
-        const data = [];
-        for (let i = 6; i >= 0; i--) {
-            const d = new Date();
-            d.setDate(d.getDate() - i);
-            const dateStr = d.toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric' });
-            const dayOrders = orders.filter((o: any) =>
-                isValidSale(o) &&
-                new Date(o.date).toDateString() === d.toDateString()
-            );
-            data.push({
-                name: dateStr,
-                pedidos: dayOrders.length,
-                isToday: i === 0,
-            });
-        }
-        return data;
-    }, [orders]);
-
-    const weeklyTotalSales = useMemo(
-        () => chartSalesData.reduce((acc, item) => acc + item.ventas, 0),
-        [chartSalesData]
-    );
-    const weeklyTotalProfit = useMemo(
-        () => chartProfitData.reduce((acc, item) => acc + item.ganancia, 0),
-        [chartProfitData]
-    );
-    const weeklyTotalOrders = useMemo(
-        () => chartSalesData.reduce((acc, item) => acc + item.pedidos, 0),
-        [chartSalesData]
-    );
+    const metrics = useMemo(() => buildDashboardMetrics(orders, products), [orders, products]);
+    const {
+        todaySales,
+        todayOrders,
+        chartSalesData,
+        chartProfitData,
+        chartInventoryData,
+        chartOrdersData,
+        weeklyTotalSales,
+        weeklyTotalProfit,
+        weeklyTotalOrders,
+        lowStockCount,
+        totalPieces,
+        totalInvestment,
+    } = metrics;
 
     const avgTicket = todayOrders > 0 ? todaySales / todayOrders : (weeklyTotalOrders > 0 ? weeklyTotalSales / weeklyTotalOrders : 0);
-    const lowStockCount = products.filter((p: any) => (p.stock || 0) < 10).length;
-    const totalPieces = products.reduce((acc: number, p: any) => acc + (Number(p.stock) || 0), 0);
-    const totalInvestment = products.reduce((acc: number, p: any) => acc + ((Number(p.price) || 0) * (Number(p.stock) || 0)), 0);
     const estMargin = weeklyTotalSales > 0 ? ((weeklyTotalProfit / weeklyTotalSales) * 100).toFixed(1) : '28.0';
-
-    /* ── Module categories ── */
-    const isModuleActive = (id: string) => {
-        if (!siteConfig?.activeModules) return true; // show all if not configured
-        // Core designated operational modules are always accessible to Super Admin
-        if (['team', 'purchases', 'reports', 'soporte', 'sales', 'inventory', 'patio', 'pickup', 'delivery', 'simulator'].includes(id)) return true;
-        return siteConfig.activeModules.includes(id);
-    };
-
-    const categoryAdminVentas = [
-        { id: 'sales',      title: 'Caja y Ventas POS',  icon: <ShoppingCart size={26} />, color: '#0ea5e9', href: '/dashboard/sales',       desc: 'Terminal POS, corte de caja, cobro y emisión de tickets.' },
-        { id: 'crm',        title: 'Clientes y CRM',      icon: <Users size={26} />,         color: '#0ea5e9', href: '/dashboard/crm',         desc: 'Base de clientes y seguimiento de relaciones.' },
-        { id: 'team',       title: 'Gestión de Equipo',   icon: <ShieldCheck size={26} />,   color: '#10b981', href: '/dashboard/team',         desc: 'Roles, permisos y control de personal.' },
-        { id: 'users',      title: 'Usuarios y Nodos',    icon: <BookOpen size={26} />,      color: '#8b5cf6', href: '/dashboard/admin/users',  desc: 'Administración de cuentas de acceso al sistema.' },
-    ].filter(m => isModuleActive(m.id));
-
-    const categoryOpLog = [
-        { id: 'simulator',  title: 'Flujo Operativo 3D', icon: <Boxes size={26} />, color: '#06b6d4', href: '/dashboard/simulator', desc: 'Flujo operativo interactivo: Almacén, racks, patio, montacargas y mostrador.' },
-        { id: 'inventory',  title: 'Control de Inventario',  icon: <Package size={26} />,      color: '#ef4444', href: '/dashboard/inventory', desc: 'Catálogo, estantes, stock, importaciones y merma.' },
-        { id: 'patio',      title: 'Patio Carga y Descarga', icon: <Truck size={26} />,        color: '#f59e0b', href: '/dashboard/patio',     desc: 'Surtido, verificación y despacho de material pesado.' },
-        { id: 'pickup',     title: 'Mostrador y Pickup',     icon: <Store size={26} />,        color: '#8b5cf6', href: '/dashboard/pickup',    desc: 'Entrega rápida en mostrador y pedidos de tienda.' },
-        { id: 'delivery',   title: 'Gestión de Reparto',     icon: <Truck size={26} />,        color: '#10b981', href: '/dashboard/delivery',  desc: 'Rutas GPS, firma offline y pedidos a domicilio.' },
-        { id: 'purchases',  title: 'Compras y Proveedores',   icon: <ShoppingCart size={26} />, color: '#6366f1', href: '/dashboard/purchases', desc: 'Órdenes de compra y gestión de proveedores.' },
-    ].filter(m => isModuleActive(m.id));
-
-    const categoryMarketing = [
-        { id: 'design',    title: 'Diseño y Marca',  icon: <Palette size={26} />, color: '#8b5cf6', href: '/dashboard/design',    desc: 'Canvas visual, colores, logo y apariencia de tienda.' },
-        { id: 'marketing', title: 'Marketing y QR',  icon: <Share2 size={26} />,  color: '#ec4899', href: '/dashboard/marketing', desc: 'Flyers, códigos QR y gestión de campañas.' },
-    ].filter(m => isModuleActive(m.id));
-
-    const categoryAudit = [
-        { id: 'billing',   title: 'Facturación SAT',     icon: <FileText size={26} />,      color: '#0ea5e9', href: '/dashboard/billing',      desc: 'Timbrado CFDI, facturas y notas de crédito.' },
-        { id: 'audit',     title: 'Registro Auditoría',  icon: <Map size={26} />,            color: '#ef4444', href: '/dashboard/audit',         desc: 'Bitácora inmutable de operaciones y caja.' },
-        { id: 'reports',   title: 'Reportes',             icon: <BarChart3 size={26} />,      color: '#0ea5e9', href: '/dashboard/reports',       desc: 'Análisis de ventas, KPIs y exportación de datos.' },
-        { id: 'soporte',   title: 'Soporte y Tickets',   icon: <Headphones size={26} />,     color: '#14b8a6', href: '/dashboard/soporte',       desc: 'Gestión de tickets de soporte y quejas de clientes.' },
-    ].filter(m => isModuleActive(m.id));
-
-    const categoryCloud = isNube() ? [
-        { id: 'b2b',       title: 'Red B2B BUNKKER',      icon: <Globe size={26} />,         color: '#0284c7', href: '/b2b-market',              desc: 'Catálogo público y red de abastecimiento.' },
-    ] : [];
 
     /* ── KPI cards config (Filtros interactivos de la gráfica) ── */
     const kpis = [
@@ -353,160 +183,101 @@ export default function SuperAdminDashboard({
     ];
 
     return (
-        <main className="bunkker-industrial relative z-10" style={{ padding: '2rem' }}>
-            {/* ── Header BUNKKER ERP (Capa 4: Contenedores translúcidos y textos azules) ── */}
-            <header className="bunkker-translucent-card p-6 mb-8 flex flex-col md:flex-row items-center justify-between gap-6 border border-cyan-500/20 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.7)]">
-                {/* Logo Hero & Título Maestro */}
-                <div className="flex items-center gap-4 text-center md:text-left">
-                    <div className="relative group">
-                        <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-2xl blur-md opacity-70 group-hover:opacity-100 transition duration-500"></div>
-                        <img 
-                            src="/bunkker-logo-hero.png" 
-                            alt="BUNKKER ERP" 
-                            className="relative w-16 h-16 md:w-20 md:h-20 object-contain rounded-2xl bg-black/60 border border-cyan-400/40 p-1 shadow-2xl" 
-                        />
-                    </div>
-                    <div>
-                        <div className="flex items-center justify-center md:justify-start gap-2.5">
-                            <h1 className="text-2xl md:text-3xl font-black tracking-tight text-white flex items-center gap-2 drop-shadow-[0_2px_10px_rgba(56,189,248,0.5)]">
-                                BUNKKER <span className="text-cyan-400 font-mono">ERP</span>
-                            </h1>
-                            <span className="bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-[0_0_10px_rgba(56,189,248,0.2)]">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                                ONLINE
-                            </span>
-                        </div>
-                    </div>
+        <main className="bunkker-industrial relative z-10 mx-auto w-full max-w-[1600px]" style={{ padding: 'clamp(0.75rem, 1.6vw, 1.5rem)', boxSizing: 'border-box' }}>
+            <header className="bunkker-translucent-card p-4 mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border border-cyan-500/20 rounded-2xl">
+                <div className="min-w-0">
+                    <p className="mb-1 truncate text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                        {siteConfig?.businessName || 'BUNKKER E.C.O.S.'}
+                    </p>
+                    <h1 className="text-xl md:text-2xl font-semibold tracking-tight text-white">Resumen ejecutivo</h1>
+                    <p className="mt-1 text-xs text-slate-400">
+                        {greeting ? `${greeting} · ${userName}` : `Bienvenido, ${userName}`}
+                    </p>
                 </div>
 
-                {/* Acciones Rápidas */}
-                <div className="flex flex-wrap items-center justify-center md:justify-end gap-3">
+                <div className="flex w-full flex-wrap items-center justify-start gap-2 sm:w-auto sm:justify-end">
                     {rniUrl && (
-                        <div className="flex items-center gap-2.5 bg-black/40 border border-cyan-500/30 px-3 py-1.5 rounded-xl shadow-lg">
-                            <div 
-                                className="bg-white p-1 rounded-lg cursor-pointer hover:scale-105 transition-transform"
-                                title="Imprimir QR de Acceso RNI"
-                                onClick={() => {
-                                    const html = `<html><head><title>Catálogo BUNKKER</title><style>body{font-family:sans-serif;text-align:center;padding:50px;}h1{color:#0ea5e9;font-size:3rem;}p{font-size:1.5rem;color:#64748b;}img{margin:40px 0;width:400px;height:400px;}</style></head><body><h1>Catálogo Móvil</h1><p>Escanea este código para acceder al catálogo local sin fila.</p><img src="https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(rniUrl)}" /><p><strong>${rniUrl}</strong></p><script>window.onload = () => { window.print(); setTimeout(() => window.close(), 500); }</script></body></html>`;
-                                    const win = window.open('', '_blank');
-                                    if(win){ win.document.write(html); win.document.close(); }
-                                    }}
-                            >
-                                <QRCodeSVG value={rniUrl} size={36} />
-                            </div>
-                            <div className="text-left">
-                                <span className="text-[9px] text-cyan-400 font-bold uppercase tracking-wider block">Túnel RNI P2P</span>
-                                <span className="text-xs text-white font-mono font-bold truncate max-w-[130px] block">{rniUrl.replace('https://', '').replace('http://', '')}</span>
-                            </div>
-                        </div>
+                        <button
+                            type="button"
+                            className="flex items-center gap-2 rounded-xl border border-cyan-500/30 bg-black/30 px-3 py-2 text-left hover:bg-cyan-500/10"
+                            title="Imprimir QR de acceso RNI"
+                            onClick={() => {
+                                const html = `<html><head><title>Catálogo BUNKKER</title><style>body{font-family:sans-serif;text-align:center;padding:50px;}h1{color:#0ea5e9;font-size:3rem;}p{font-size:1.5rem;color:#64748b;}img{margin:40px 0;width:400px;height:400px;}</style></head><body><h1>Catálogo Móvil</h1><p>Escanea este código para acceder al catálogo local sin fila.</p><img src="https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(rniUrl)}" /><p><strong>${rniUrl}</strong></p><script>window.onload = () => { window.print(); setTimeout(() => window.close(), 500); }</script></body></html>`;
+                                const win = window.open('', '_blank');
+                                if (win) {
+                                    win.document.write(html);
+                                    win.document.close();
+                                }
+                            }}
+                        >
+                            <QRCodeSVG value={rniUrl} size={32} aria-label="Código QR del catálogo móvil" />
+                            <span className="text-xs font-medium text-cyan-200">QR local</span>
+                        </button>
                     )}
 
-                    {/* Botón Restaurar Respaldo Local */}
-                    <motion.label
-                        whileHover={{ scale: 1.03 }}
-                        whileTap={{ scale: 0.97 }}
-                        className="px-3.5 py-2 rounded-xl text-xs font-bold tracking-wide border border-cyan-500/30 bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 cursor-pointer flex items-center gap-1.5 transition-all shadow-[0_0_15px_rgba(56,189,248,0.15)]"
-                    >
-                        <ShieldCheck size={16} className="text-cyan-400" />
-                        <span>RESTAURAR RESPALDO</span>
-                        <input
-                            type="file"
-                            accept=".txt"
-                            style={{ display: 'none' }}
-                            onChange={async (e) => {
-                                const file = e.target.files?.[0];
-                                if (!file) return;
-                                const reader = new FileReader();
-                                reader.onload = async (evt) => {
-                                    const text = evt.target?.result as string;
-                                    if (typeof window !== 'undefined' && (window as any).electronAPI) {
-                                        const res = await (window as any).electronAPI.restoreBackup(text);
-                                        if (res.success) {
-                                            alert(res.message);
-                                        } else {
-                                            alert("Error: " + res.message);
-                                        }
-                                    } else {
-                                        alert("Funcionalidad de respaldo físico disponible en el cliente local.");
-                                    }
-                                };
-                                reader.readAsText(file);
-                            }}
-                        />
-                    </motion.label>
+                    <details className="relative">
+                        <summary className="cursor-pointer list-none rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-white/10">
+                            Más herramientas
+                        </summary>
+                        <div className="absolute right-0 top-full z-30 mt-2 flex min-w-56 flex-col gap-2 rounded-xl border border-white/10 bg-slate-950 p-3 shadow-2xl">
+                            <motion.label
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                className="flex cursor-pointer items-center gap-2 rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-3 py-2 text-xs font-semibold text-cyan-200 hover:bg-cyan-500/20"
+                            >
+                                <ShieldCheck size={15} />
+                                <span>Restaurar respaldo</span>
+                                <input
+                                    type="file"
+                                    accept=".txt"
+                                    className="sr-only"
+                                    onChange={async (event) => {
+                                        const file = event.target.files?.[0];
+                                        if (!file) return;
+                                        const reader = new FileReader();
+                                        reader.onload = async (loadEvent) => {
+                                            const text = loadEvent.target?.result as string;
+                                            if (typeof window !== 'undefined' && (window as any).electronAPI) {
+                                                const result = await (window as any).electronAPI.restoreBackup(text);
+                                                window.alert(result.success ? result.message : `Error: ${result.message}`);
+                                            } else {
+                                                window.alert('El respaldo físico está disponible en el cliente local.');
+                                            }
+                                            event.target.value = '';
+                                        };
+                                        reader.readAsText(file);
+                                    }}
+                                />
+                            </motion.label>
 
-                    {/* Descargar Instalador Windows */}
-                    <motion.a
-                        href="/programas/Bunkker_Setup.exe"
-                        download="Bunkker_Setup.exe"
-                        whileHover={{ scale: 1.03 }}
-                        whileTap={{ scale: 0.97 }}
-                        className="px-3.5 py-2 rounded-xl text-xs font-bold tracking-wide border border-cyan-400/60 bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-[0_4px_18px_rgba(16,185,129,0.3)] flex items-center gap-1.5 hover:brightness-110 transition-all cursor-pointer"
-                        title="Descargar instalador de Windows"
-                    >
-                        <Download size={16} />
-                        <span>DESCARGAR .EXE</span>
-                    </motion.a>
-
-                    {/* Escanear Producto */}
-                    <motion.button
-                        whileHover={{ scale: 1.03 }}
-                        whileTap={{ scale: 0.97 }}
-                        onClick={() => setIsScannerOpen(true)}
-                        className="px-3.5 py-2 rounded-xl text-xs font-bold tracking-wide border border-cyan-400 bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_4px_20px_rgba(14,165,233,0.4)] flex items-center gap-1.5 hover:brightness-110 transition-all cursor-pointer"
-                    >
-                        <Maximize2 size={16} />
-                        <span>ESCANEAR PRODUCTO</span>
-                    </motion.button>
-
-                    {/* Saldo Operativo */}
-                    <div className="bunkker-translucent-card px-3.5 py-2 border border-cyan-500/30 flex items-center gap-2.5 rounded-xl">
-                        <div className="p-1.5 rounded-lg bg-cyan-500/20 text-cyan-400">
-                            <Zap size={16} />
+                            <motion.a
+                                href="/programas/Bunkker_Setup.exe"
+                                download="Bunkker_Setup.exe"
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                className="flex items-center gap-2 rounded-lg border border-emerald-400/30 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-200 hover:bg-emerald-500/20"
+                                title="Descargar instalador de Windows"
+                            >
+                                <Download size={15} />
+                                <span>Descargar instalador</span>
+                            </motion.a>
                         </div>
-                        <div className="text-left">
-                            <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Saldo Sistema</span>
-                            <span className="text-sm font-black font-mono text-cyan-300">{formatCurrency(maintenanceBalance)}</span>
+                    </details>
+
+                    <div className="bunkker-translucent-card flex items-center gap-2 rounded-xl border border-cyan-500/30 px-3 py-2">
+                        <Zap size={15} className="text-cyan-400" />
+                        <div>
+                            <span className="block text-[9px] font-medium uppercase tracking-wider text-slate-400">Saldo sistema</span>
+                            <span className="font-mono text-sm font-semibold text-cyan-200">{formatCurrency(maintenanceBalance)}</span>
                         </div>
                     </div>
                 </div>
             </header>
 
-            {/* ⚖️ Algoritmo Efecto Balanza: Rotación vs. Margen Puro (IA SuperAdmin) */}
-            <BalanceEffectWidget />
-
-            {/* 🌐 Flujo Operativo 3D: FerreFlujo Logístico y Económico */}
-            <div className="bunkker-translucent-card p-4 sm:p-5 mb-8 border border-cyan-500/30 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.7)] relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20"></div>
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 relative z-10">
-                    <div className="flex items-center gap-3.5">
-                        <div className="p-2.5 rounded-xl bg-cyan-500/15 border border-cyan-400/40 text-cyan-300 shadow-lg shadow-cyan-500/20">
-                            <Boxes size={24} className="text-cyan-400" />
-                        </div>
-                        <div>
-                            <h2 className="text-lg font-black text-white uppercase tracking-tight flex items-center gap-2">
-                                FerreFlujo 3D <span className="text-cyan-400 font-mono text-xs">FLUJO OPERATIVO</span>
-                            </h2>
-                        </div>
-                    </div>
-
-                    <Link href="/dashboard/simulator" className="w-full sm:w-auto">
-                        <motion.button
-                            whileHover={{ scale: 1.03 }}
-                            whileTap={{ scale: 0.97 }}
-                            className="w-full sm:w-auto px-4 py-2.5 rounded-xl text-xs font-black tracking-wider border border-cyan-400 bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_4px_20px_rgba(14,165,233,0.3)] flex items-center justify-center gap-2 hover:brightness-110 transition cursor-pointer uppercase"
-                        >
-                            <Boxes size={16} />
-                            <span>Abrir Simulador 3D</span>
-                        </motion.button>
-                    </Link>
-                </div>
-            </div>
-
 
 
             {/* ── KPI Cards (Filtros Interactivos de Analítica BUNKKER) ─────────────────────────────────────── */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.85rem', marginBottom: '1.25rem' }}>
+            <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 {kpis.map((kpi, i) => (
                     <KPICard
                         key={kpi.id}
@@ -529,7 +300,7 @@ export default function SuperAdminDashboard({
             </div>
 
             {/* ── Gráfica Dinámica Multimétrica (Filtro según KPI Seleccionado) ────────────────────────── */}
-            <div className="relative overflow-hidden backdrop-blur-2xl bg-gradient-to-br from-slate-900/90 via-slate-900/70 to-slate-950/90 border border-white/10 shadow-[0_12px_40px_rgba(0,0,0,0.55)] rounded-3xl p-5 sm:p-6" style={{ marginBottom: '2.5rem' }}>
+            <div className="relative mb-4 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-slate-900/90 via-slate-900/70 to-slate-950/90 p-4 shadow-xl backdrop-blur-2xl sm:p-5">
                 {/* Luces ambientales decorativas reactivas al KPI */}
                 <div 
                     className="absolute -top-24 -left-24 w-72 h-72 rounded-full blur-[100px] pointer-events-none transition-all duration-700 opacity-40 mix-blend-screen"
@@ -640,7 +411,7 @@ export default function SuperAdminDashboard({
                     )}
                 </div>
 
-                <div className="relative z-10 w-full h-[320px]">
+                <div className="relative z-10 h-[240px] w-full sm:h-[260px]">
                     <ResponsiveContainer width="100%" height="100%">
                         {/* 1. VENTAS */}
                         {selectedKpi === 'sales' && (
@@ -822,35 +593,24 @@ export default function SuperAdminDashboard({
                 </div>
             </div>
 
-            {/* ── Dashboard Widgets (Ranking & Restock) ──────────────────── */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-[8px] mb-6">
-                <StaffRankingWidget tenantId={profile?.tenantId} />
-                <RestockAlertWidget products={products} formatCurrency={formatCurrency} />
-            </div>
-
-            {/* ── System Health ──────────────────────────────────── */}
-            <div className="bg-[#1a1d2d] border border-white/5 shadow-[0_0_15px_rgba(14,165,233,0.05)] hover:shadow-[0_0_20px_rgba(14,165,233,0.15)] transition-shadow" style={{ padding: '1.25rem 1.5rem', display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap', borderRadius: '16px', marginTop: '1rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ background: 'rgba(16,185,129,0.1)', padding: '0.75rem', borderRadius: '12px' }}>
-                        <CheckCircle size={28} color="#10b981" />
+            <details
+                className="overflow-hidden rounded-2xl border border-white/10 bg-slate-900/50"
+                onToggle={(event) => setShowAdvancedAnalytics(event.currentTarget.open)}
+            >
+                <summary className="flex cursor-pointer list-none flex-col gap-1 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                    <span className="text-sm font-semibold text-slate-100">Análisis avanzado</span>
+                    <span className="text-xs text-slate-400">
+                        {lowStockCount} productos con stock bajo · ranking y balance
+                    </span>
+                </summary>
+                {showAdvancedAnalytics && (
+                    <div className="grid grid-cols-1 gap-3 border-t border-white/10 p-4 xl:grid-cols-2">
+                        <BalanceEffectWidget />
+                        <StaffRankingWidget tenantId={profile?.tenantId} />
+                        <RestockAlertWidget products={products} formatCurrency={formatCurrency} />
                     </div>
-                    <div>
-                        <p style={{ margin: 0, fontWeight: '800', color: '#fff', fontSize: '0.9rem' }}>Sistema Activo</p>
-                        <p style={{ margin: '3px 0 0', fontSize: '0.78rem', color: '#94a3b8' }}>Sincronización en tiempo real activa.</p>
-                    </div>
-                </div>
-                <div style={{ marginLeft: 'auto' }}>
-                    <Link href="/dashboard/setup">
-                        <motion.button
-                            whileHover={{ scale: 1.03 }}
-                            whileTap={{ scale: 0.97 }}
-                            style={{ ...premiumBtn, backgroundColor: '#2d3345', color: '#f1f5f9', boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}
-                        >
-                            <Settings size={15} /> CONFIGURACIÓN
-                        </motion.button>
-                    </Link>
-                </div>
-            </div>
+                )}
+            </details>
         </main>
     );
 };

@@ -1,22 +1,24 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Settings, Key, Landmark, MapPin, CheckCircle2, User, Lock, 
-    CreditCard, HardDrive, Loader2, Sparkles, RefreshCw, Check, ArrowRight,
+    CreditCard, HardDrive, Loader2, ArrowRight,
     Printer
 } from 'lucide-react';
-import APIKeyManager from '@/components/admin/APIKeyManager';
-import InteractiveTerraMap from '@/components/admin/InteractiveTerraMap';
-import CloudBackupConfigWidget from '@/components/admin/CloudBackupConfigWidget';
-import HardwareSettingsModal from '@/components/hardware/HardwareSettingsModal';
 import { db } from '@/lib/firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
 import { toast } from '@/lib/toast';
+
+const APIKeyManager = dynamic(() => import('@/components/admin/APIKeyManager'), { ssr: false });
+const InteractiveTerraMap = dynamic(() => import('@/components/admin/InteractiveTerraMap'), { ssr: false });
+const CloudBackupConfigWidget = dynamic(() => import('@/components/admin/CloudBackupConfigWidget'), { ssr: false });
+const HardwareSettingsModal = dynamic(() => import('@/components/hardware/HardwareSettingsModal'), { ssr: false });
 
 export default function SetupWizard() {
     const searchParams = useSearchParams();
@@ -28,14 +30,6 @@ export default function SetupWizard() {
     const [isScanning, setIsScanning] = useState(false);
     const [scanResult, setScanResult] = useState<{success: boolean, message: string} | null>(null);
 
-    // Estado del sistema de módulos (Centro de Innovación)
-    const [modulesStatus, setModulesStatus] = useState<Record<string, { version: string; status: 'up_to_date' | 'update_available' }>>({
-        sales: { version: 'v1.4.2', status: 'up_to_date' },
-        inventory: { version: 'v1.3.0', status: 'update_available' },
-        logistics: { version: 'v1.2.1', status: 'up_to_date' },
-        ai_swarm: { version: 'v2.0.1', status: 'up_to_date' },
-        billing: { version: 'v1.0.5', status: 'up_to_date' }
-    });
 
     const [config, setConfig] = useState({
         api_key: '',
@@ -142,58 +136,28 @@ export default function SetupWizard() {
         }
     };
 
-    const triggerUpdate = (moduleName: string) => {
-        toast.info(`Instalando actualización para modulo: ${moduleName.toUpperCase()}...`, '🔄 Actualización');
-        setTimeout(() => {
-            setModulesStatus(prev => ({
-                ...prev,
-                [moduleName]: { ...prev[moduleName], status: 'up_to_date' }
-            }));
-            toast.success(`Módulo ${moduleName.toUpperCase()} actualizado correctamente.`, '✅ Completado');
-        }, 2000);
-    };
 
     return (
-        <div className="min-h-screen relative text-slate-100 flex flex-col font-sans overflow-hidden">
-            
-            {/* Imagen de fondo con degradado difuminado */}
-            <div 
-                className="absolute inset-0 bg-cover bg-center filter blur-lg opacity-25 scale-105 pointer-events-none transition-all duration-700"
-                style={{ 
-                    backgroundImage: `url(${config.loginBackgroundUrl || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1964&auto=format&fit=crop'})`
-                }}
-            />
-            {/* Overlay de gradiente difuminado oscuro */}
-            <div className="absolute inset-0 bg-gradient-to-tr from-black via-slate-950/95 to-slate-900/80 pointer-events-none" />
+        <div className="min-h-screen relative text-slate-100 flex flex-col font-sans overflow-x-hidden bg-slate-950">
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-950 to-slate-900" aria-hidden="true" />
 
-            {/* Barra Superior - Fondo Negro Puro */}
-            <header className="w-full bg-black border-b border-slate-800/80 px-6 py-4 flex items-center justify-between z-20 relative">
+            <header className="w-full bg-slate-950/90 border-b border-slate-800/80 px-4 sm:px-6 py-3 flex items-center justify-between z-20 relative">
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
                         <Settings className="text-white animate-spin-slow" size={22} />
                     </div>
                     <div>
-                        <h1 className="text-lg font-black tracking-widest text-white uppercase italic flex items-center gap-2">
-                            BUNKKER <span className="text-cyan-400 text-xs font-bold not-italic px-2 py-0.5 rounded-md bg-cyan-950/50 border border-cyan-800/30">CONSOLA</span>
-                        </h1>
-                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Centro de Operaciones y Control de Red</p>
+                        <h1 className="text-base font-semibold tracking-tight text-white">Configuración del sistema</h1>
+                        <p className="text-xs text-slate-400">{config.businessName || 'Ajustes del negocio y la operación'}</p>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-[8px] text-xs font-bold text-slate-400">
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/60 border border-slate-800">
-                        <div className="w-2 h-2 rounded-full bg-green-500 animate-ping" />
-                        <span>NODO EDGE: {config.businessName || 'LOCAL'}</span>
-                    </div>
-                </div>
             </header>
 
-            <div className="flex-1 grid grid-cols-1 lg:grid-cols-[280px_1fr] z-10 relative">
-                
-                {/* Barra Lateral Izquierda - Fondo Negro Puro */}
-                <nav className="bg-black border-r border-slate-800/80 p-[8px] flex flex-col justify-between" aria-label="Menú de configuración">
-                    <div className="space-y-2">
-                        <div className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-4 pl-2">Asistente de Arranque</div>
+            <div className="flex-1 grid grid-cols-1 xl:grid-cols-[240px_1fr] z-10 relative">
+                <nav className="bg-slate-950/70 border-b xl:border-b-0 xl:border-r border-slate-800/80 p-2 xl:p-3 flex flex-col justify-start xl:justify-between gap-3" aria-label="Menú de configuración">
+                    <div className="flex gap-2 overflow-x-auto pb-1 xl:flex-col xl:overflow-visible xl:pb-0">
+                        <div className="hidden xl:block text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-2 pl-2">Secciones</div>
                         {[
                             { id: 1, label: 'Facturación SAT', icon: <Key size={18} /> },
                             { id: 2, label: 'Cuenta Bancaria', icon: <Landmark size={18} /> },
@@ -206,7 +170,7 @@ export default function SetupWizard() {
                             <button
                                 key={s.id}
                                 onClick={() => setStep(s.id)}
-                                className={`w-full p-3.5 flex items-center gap-3 cursor-pointer rounded-xl transition-all border-l-4 text-left ${
+                                className={`min-w-max xl:min-w-0 xl:w-full px-3 py-2.5 xl:p-3 flex items-center gap-2.5 cursor-pointer rounded-xl transition-all border-l-4 text-left ${
                                     step === s.id 
                                     ? 'border-cyan-500 bg-cyan-950/20 font-bold text-cyan-400 shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]' 
                                     : 'border-transparent bg-transparent font-medium text-slate-400 hover:bg-slate-900/40 hover:text-slate-200'
@@ -218,7 +182,7 @@ export default function SetupWizard() {
                         ))}
                     </div>
 
-                    <div className="mt-8 pt-6 border-t border-slate-800/80">
+                    <div className="hidden xl:block mt-8 pt-6 border-t border-slate-800/80">
                         <div className="p-4 rounded-xl bg-slate-900/40 border border-slate-800 text-center">
                             <span className="text-[10px] font-bold text-slate-500 block mb-1">LICENCIA</span>
                             <span className={`text-xs font-black uppercase tracking-widest ${isPremium ? 'text-cyan-400' : 'text-slate-400'}`}>
@@ -229,10 +193,8 @@ export default function SetupWizard() {
                 </nav>
 
                 {/* Área Principal de Contenido */}
-                <main className="p-[8px] md:p-8 grid grid-cols-1 xl:grid-cols-[1.5fr_1fr] gap-8 overflow-y-auto">
-                    
-                    {/* Panel del Asistente Guiado */}
-                    <div className="bg-slate-950/40 backdrop-blur-md rounded-[5px] border border-slate-800/60 p-[8px] md:p-8 flex flex-col justify-between shadow-2xl relative">
+                <main className="mx-auto w-full max-w-5xl p-3 sm:p-4 xl:p-6 grid grid-cols-1 gap-4 xl:gap-6 overflow-y-auto">
+                    <div className="bg-slate-950/55 rounded-2xl border border-slate-800/70 p-4 sm:p-5 xl:p-6 flex flex-col justify-between shadow-xl relative">
                         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-t-2xl" />
                         
                         <AnimatePresence mode="wait">
@@ -245,14 +207,14 @@ export default function SetupWizard() {
                             >
                                 {step === 1 && (
                                     <div className="space-y-6">
-                                        <h3 className="flex items-center gap-2.5 text-cyan-400 font-bold text-xl uppercase tracking-wider">
+                                        <h3 className="flex items-center gap-2.5 text-cyan-400 font-bold text-lg sm:text-xl tracking-wide">
                                             <Key /> Facturación SAT (Facturapi 4.0)
                                         </h3>
                                         <p className="text-sm text-slate-400 leading-relaxed">
                                             Conecta tu cuenta de Facturapi para timbrar facturas de forma automática al cerrar ventas en tu POS. Las facturas se enviarán solas al WhatsApp de tus clientes.
                                         </p>
 
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-[8px] pt-2">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                                             <div>
                                                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Nombre comercial del negocio</label>
                                                 <input 
@@ -277,7 +239,7 @@ export default function SetupWizard() {
 
                                         <div className="pt-4 border-t border-slate-800/80">
                                             {!isPremium ? (
-                                                <div className="p-[8px] rounded-xl bg-slate-900/30 border border-slate-800 text-center">
+                                                <div className="p-4 rounded-xl bg-slate-900/30 border border-slate-800 text-center">
                                                     <Lock size={32} className="mx-auto text-slate-600 mb-2" />
                                                     <h4 className="text-sm font-bold text-white mb-1">Módulo de Facturación Bloqueado</h4>
                                                     <p className="text-xs text-slate-500 max-w-sm mx-auto mb-4">Requiere tener una licencia activa de BUNKKER ERP.</p>
@@ -291,13 +253,13 @@ export default function SetupWizard() {
 
                                 {step === 2 && (
                                     <div className="space-y-6">
-                                        <h3 className="flex items-center gap-2.5 text-cyan-400 font-bold text-xl uppercase tracking-wider">
+                                        <h3 className="flex items-center gap-2.5 text-cyan-400 font-bold text-lg sm:text-xl tracking-wide">
                                             <Landmark /> Cuenta Bancaria de Destino
                                         </h3>
                                         <p className="text-sm text-slate-400">
                                             Especifica los datos del banco donde recibirás las transferencias de cobro electrónico y los cortes de caja.
                                         </p>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-[8px]">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div>
                                                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Banco emisor</label>
                                                 <input
@@ -324,14 +286,14 @@ export default function SetupWizard() {
 
                                 {step === 3 && (
                                     <div className="space-y-6">
-                                        <h3 className="flex items-center gap-2.5 text-cyan-400 font-bold text-xl uppercase tracking-wider">
+                                        <h3 className="flex items-center gap-2.5 text-cyan-400 font-bold text-lg sm:text-xl tracking-wide">
                                             <CreditCard /> Reservas y Operación Local
                                         </h3>
                                         <p className="text-sm text-slate-400">
                                             El sistema opera en modo Local-First. Puedes otorgar o revocar el acceso a pagos web públicos e inspección obligatoria en caja.
                                         </p>
                                         
-                                        <div className="p-[8px] rounded-[5px] bg-cyan-950/20 border border-cyan-500/30 text-cyan-400 text-sm">
+                                        <div className="p-4 rounded-xl bg-cyan-950/20 border border-cyan-500/30 text-cyan-400 text-sm">
                                             <span className="font-bold block mb-1">🛒 Flujo de Reservas WiFi LAN & Ficha de Pago:</span>
                                             Todos los pedidos desde la fila o web entran en reserva con temporizador de 30 minutos. Los clientes obtienen un Serial único (BNK-XXXX) para validar y pagar directamente en la caja (Efectivo/Tarjeta/SPEI).
                                         </div>
@@ -368,10 +330,10 @@ export default function SetupWizard() {
 
                                 {step === 4 && (
                                     <div className="space-y-6">
-                                        <h3 className="flex items-center gap-2.5 text-cyan-400 font-bold text-xl uppercase tracking-wider">
+                                        <h3 className="flex items-center gap-2.5 text-cyan-400 font-bold text-lg sm:text-xl tracking-wide">
                                             <MapPin /> Contacto y Cobertura
                                         </h3>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-[8px]">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div>
                                                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">WhatsApp de ventas</label>
                                                 <input
@@ -405,7 +367,7 @@ export default function SetupWizard() {
 
                                 {step === 5 && (
                                     <div className="space-y-6">
-                                        <h3 className="flex items-center gap-2.5 text-cyan-400 font-bold text-xl uppercase tracking-wider">
+                                        <h3 className="flex items-center gap-2.5 text-cyan-400 font-bold text-lg sm:text-xl tracking-wide">
                                             <HardDrive /> Bóveda Local y Respaldos Google Cloud
                                         </h3>
                                         <p className="text-sm text-slate-400">
@@ -498,56 +460,6 @@ export default function SetupWizard() {
                         )}
                     </div>
 
-                    {/* Centro de Innovación / Actualizaciones (Derecha) */}
-                    <div className="bg-slate-950/20 backdrop-blur-md rounded-[5px] border border-slate-800/40 p-[8px] flex flex-col shadow-xl">
-                        <div className="flex items-center justify-between mb-6 border-b border-slate-800/80 pb-4">
-                            <h3 className="flex items-center gap-2 text-cyan-400 font-bold text-sm uppercase tracking-wider">
-                                <Sparkles size={16} /> Centro de Innovación
-                            </h3>
-                            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Módulos VIP</span>
-                        </div>
-
-                        <div className="space-y-4 flex-1">
-                            {Object.entries(modulesStatus).map(([name, info]) => (
-                                <div key={name} className="p-4 rounded-xl bg-slate-900/40 border border-slate-850 flex items-center justify-between transition-all hover:bg-slate-900/60">
-                                    <div className="flex items-center gap-3">
-                                        <div className="p-2 rounded-lg bg-slate-950 border border-slate-800 text-slate-400">
-                                            {name === 'sales' && <CreditCard size={16} />}
-                                            {name === 'inventory' && <HardDrive size={16} />}
-                                            {name === 'logistics' && <MapPin size={16} />}
-                                            {name === 'ai_swarm' && <Sparkles size={16} />}
-                                            {name === 'billing' && <Key size={16} />}
-                                        </div>
-                                        <div>
-                                            <h4 className="text-xs font-black uppercase text-white tracking-wide">{name.replace('_', ' ')}</h4>
-                                            <span className="text-[9px] text-slate-500 font-mono block mt-0.5">Versión actual: {info.version}</span>
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        {info.status === 'update_available' ? (
-                                            <button 
-                                                onClick={() => triggerUpdate(name)}
-                                                className="bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 font-black text-[9px] uppercase tracking-wider px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-all"
-                                            >
-                                                <RefreshCw size={10} className="animate-spin-slow" /> Actualizar
-                                            </button>
-                                        ) : (
-                                            <span className="bg-green-500/10 border border-green-500/20 text-green-400 text-[9px] font-black uppercase tracking-wider px-2.5 py-1.5 rounded-lg flex items-center gap-1">
-                                                <Check size={10} /> Al día
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-
-                        <div className="mt-6 pt-4 border-t border-slate-800/80 text-center">
-                            <p className="text-[10px] text-slate-500 leading-normal font-medium">
-                                Recibe de forma automática las últimas optimizaciones y mejoras de seguridad directo al motor local de tu dispositivo.
-                            </p>
-                        </div>
-                    </div>
 
                 </main>
             </div>

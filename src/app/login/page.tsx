@@ -10,6 +10,7 @@ import {
 import { motion } from 'framer-motion';
 import { saveCustomerSession } from '@/lib/customerAuth';
 import { saveStaffSession } from '@/lib/staffAuth';
+import { getRoleLandingPath } from '@/lib/dashboardRouting';
 
 function applyBrowserSessionCookies(uid?: string, role?: string, signature?: string) {
   if (typeof window === 'undefined' || !uid || !role || !signature) return;
@@ -84,43 +85,17 @@ export default function LoginPage() {
     }
   }, []);
 
-  // Auto-ruteo si ya hay sesión activa
+  // Una sola regla de destino evita saltos distintos entre login y middleware.
   useEffect(() => {
-    if (user && profile) {
-      const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
-      const redirectParam = params?.get('redirect');
-      if (redirectParam && redirectParam.startsWith('/dashboard')) {
-        router.push(redirectParam);
-        return;
-      }
+    if (!user || !profile) return;
 
-      switch (profile.role) {
-        case 'superadmin':
-        case 'admin':
-          router.push('/dashboard');
-          break;
-        case 'sales':
-        case 'caja':
-          router.push('/dashboard/sales');
-          break;
-        case 'inventory':
-        case 'almacen':
-          router.push('/dashboard/inventory');
-          break;
-        case 'driver':
-        case 'delivery':
-        case 'carga_descarga':
-          router.push('/dashboard/patio');
-          break;
-        case 'marketing':
-          router.push('/dashboard/marketing');
-          break;
-        case 'client':
-          router.push('/cuenta');
-          break;
-        default:
-          router.push('/dashboard');
-      }
+    const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+    const targetPath = getRoleLandingPath(profile.role, params?.get('redirect'));
+
+    if (targetPath) {
+      router.replace(targetPath);
+    } else {
+      setStaffError('Este perfil no tiene un módulo asignado. Contacta al administrador.');
     }
   }, [user, profile, router]);
 
@@ -148,6 +123,14 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (res.ok && data.success) {
+        const params = new URLSearchParams(window.location.search);
+        const targetUrl = getRoleLandingPath(data.role, params.get('redirect'));
+
+        if (!targetUrl) {
+          setStaffError('Este perfil no tiene un módulo asignado. Contacta al administrador.');
+          return;
+        }
+
         applyBrowserSessionCookies(data.uid, data.role, data.signature);
         saveStaffSession({
           uid: data.uid,
@@ -163,28 +146,7 @@ export default function LoginPage() {
             lastLogin: Date.now()
           }
         });
-        setStaffSuccess('Credenciales verificadas. Ingresando al Dashboard...');
-
-        const roleRedirects: Record<string, string> = {
-          superadmin: '/dashboard',
-          admin: '/dashboard',
-          sales: '/dashboard/sales',
-          caja: '/dashboard/sales',
-          inventory: '/dashboard/inventory',
-          almacen: '/dashboard/inventory',
-          marketing: '/dashboard/marketing',
-          driver: '/dashboard/patio',
-          delivery: '/dashboard/patio',
-          carga_descarga: '/dashboard/patio',
-          pickup: '/dashboard/pickup'
-        };
-
-        const params = new URLSearchParams(window.location.search);
-        const redirectParam = params.get('redirect');
-        const targetUrl = (redirectParam && redirectParam.startsWith('/dashboard'))
-          ? redirectParam
-          : (roleRedirects[data.role] || '/dashboard');
-
+        setStaffSuccess('Acceso verificado. Abriendo el panel...');
         window.location.assign(targetUrl);
       } else {
         setStaffError(data.error || 'PIN incorrecto o no autorizado.');

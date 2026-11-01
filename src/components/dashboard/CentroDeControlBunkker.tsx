@@ -5,18 +5,20 @@ import dynamic from 'next/dynamic';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
 import { 
-    Activity, LogOut, ShieldCheck, UserCheck, 
+    Activity, ShieldCheck, UserCheck, 
     Layers, Store, DollarSign, Package, Truck, 
     BarChart3, RefreshCw, Smartphone, Loader2
 } from 'lucide-react';
 import { toast } from '@/lib/toast';
 
-import FosaComunDePedidos from './fosa/FosaComunDePedidos';
-import MisIncisosEnRecoleccion from './fosa/MisIncisosEnRecoleccion';
-import ColaDeCobroFisico from './fosa/ColaDeCobroFisico';
-import GestorInventarioYPrecios from './fosa/GestorInventarioYPrecios';
-import OrderPickingAssistant from '@/components/orders/OrderPickingAssistant';
-import { CashTenderModal } from '@/components/sales/CashTenderModal';
+const FosaComunDePedidos = dynamic(() => import('./fosa/FosaComunDePedidos'));
+const MisIncisosEnRecoleccion = dynamic(() => import('./fosa/MisIncisosEnRecoleccion'));
+const ColaDeCobroFisico = dynamic(() => import('./fosa/ColaDeCobroFisico'));
+const GestorInventarioYPrecios = dynamic(() => import('./fosa/GestorInventarioYPrecios'));
+const OrderPickingAssistant = dynamic(() => import('@/components/orders/OrderPickingAssistant'));
+const CashTenderModal = dynamic(() =>
+    import('@/components/sales/CashTenderModal').then((module) => module.CashTenderModal)
+);
 
 // Carga bajo demanda para el chofer y superadmin (cero contaminación de memoria RAM)
 const DeliveryDashboard = dynamic(() => import('@/app/dashboard/delivery/page'), {
@@ -51,7 +53,7 @@ export default function CentroDeControlBunkker({
     usuario,
     onSwitchToClassic
 }: CentroDeControlBunkkerProps) {
-    const { signOut, profile } = useAuth();
+    const { profile } = useAuth();
     const { orders, products, maintenanceBalance, ownerBalance, siteConfig, formatCurrency } = useCart();
 
     // Modales de operación asistida
@@ -104,12 +106,6 @@ export default function CentroDeControlBunkker({
                             Solo Pedidos Pagados en Caja
                         </span>
                     </div>
-                    <button 
-                        onClick={() => signOut()}
-                        className="text-rose-400 hover:text-rose-300 text-[11px] font-semibold"
-                    >
-                        Cerrar Sesión
-                    </button>
                 </header>
                 <DeliveryDashboard />
             </div>
@@ -132,9 +128,6 @@ export default function CentroDeControlBunkker({
                     ownerBalance={ownerBalance}
                     siteConfig={siteConfig}
                     formatCurrency={formatCurrency}
-                    isScannerOpen={false}
-                    setIsScannerOpen={() => {}}
-                    handleAdminScan={() => {}}
                 />
             </div>
         );
@@ -184,15 +177,6 @@ export default function CentroDeControlBunkker({
                     </nav>
                 </div>
 
-                <div className="pt-4 border-t border-slate-800 text-xs">
-                    <button
-                        onClick={() => signOut()}
-                        className="w-full flex items-center gap-2 py-2 px-3 rounded-lg text-rose-400 hover:bg-rose-500/10 transition-colors"
-                    >
-                        <LogOut size={15} />
-                        <span>Cerrar Sesión</span>
-                    </button>
-                </div>
             </aside>
 
             {/* Contenedor Principal Espejo Restringido al Rol */}

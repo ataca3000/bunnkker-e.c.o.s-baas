@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { canAccessDashboardPath, getRoleLandingPath } from './lib/dashboardRouting';
 
 // Comparación segura en tiempo constante compatible con Edge Runtime (sin import 'crypto')
 function timingSafeEqualHex(a: string, b: string): boolean {
@@ -10,43 +11,6 @@ function timingSafeEqualHex(a: string, b: string): boolean {
   }
   return result === 0;
 }
-
-// 🛡️ Permisos por rol y ruta
-const ROLE_PERMISSIONS: Record<string, string[]> = {
-  '/dashboard/inventory':       ['superadmin', 'admin', 'inventory', 'almacen'],
-  '/dashboard/sales':           ['superadmin', 'admin', 'sales', 'caja'],
-  '/dashboard/admin/sales':     ['superadmin', 'admin', 'sales', 'caja'],
-  '/dashboard/admin/customers': ['superadmin', 'admin', 'sales', 'caja'],
-  '/dashboard/audit':           ['superadmin', 'admin', 'billing'],
-  '/dashboard/billing':         ['superadmin', 'admin', 'billing'],
-  '/dashboard/users':           ['superadmin', 'admin'],
-  '/dashboard/admin/users':     ['superadmin', 'admin'],
-  '/dashboard/patio':           ['superadmin', 'admin', 'carga_descarga', 'driver', 'delivery', 'inventory', 'almacen'],
-  '/dashboard/pickup':          ['superadmin', 'admin', 'carga_descarga', 'driver', 'delivery', 'inventory', 'almacen'],
-  '/dashboard/delivery':        ['superadmin', 'admin', 'driver', 'delivery', 'carga_descarga', 'repartidor'],
-  '/dashboard/marketing':       ['superadmin', 'admin', 'marketing'],
-  '/dashboard/omnipulse':       ['superadmin', 'admin', 'marketing'],
-  '/dashboard/design':          ['superadmin', 'admin', 'marketing'],
-  '/dashboard/reports':         ['superadmin', 'admin'],
-  '/dashboard/qr':              ['superadmin', 'admin', 'marketing', 'sales', 'caja'],
-  '/dashboard/simulator':       ['superadmin', 'admin'],
-  '/dashboard/demo':            ['superadmin'],
-  '/dashboard/suscripcion':     ['superadmin'],
-};
-
-// Redirecciones directas desde /dashboard según el rol del empleado
-const WORKER_DASHBOARD_REDIRECTS: Record<string, string> = {
-  inventory: '/dashboard/inventory',
-  almacen: '/dashboard/inventory',
-  sales: '/dashboard/sales',
-  caja: '/dashboard/sales',
-  billing: '/dashboard/audit',
-  driver: '/dashboard/patio',
-  delivery: '/dashboard/patio',
-  carga_descarga: '/dashboard/patio',
-  repartidor: '/dashboard/patio',
-  marketing: '/dashboard/marketing',
-};
 
 // Dominios que NO se tratan como sub-tenants
 const PUBLIC_DOMAINS = [
@@ -107,22 +71,22 @@ export default async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
-  if (pathname.startsWith('/dashboard')) {
+  const isDashboardPath = pathname === '/dashboard' || pathname.startsWith('/dashboard/');
+  if (isDashboardPath) {
     const session = request.cookies.get('msj-session')?.value;
-    const role    = request.cookies.get('msj-role')?.value;
-    const sig     = request.cookies.get('msj-role-sig')?.value;
+    const role = request.cookies.get('msj-role')?.value;
+    const sig = request.cookies.get('msj-role-sig')?.value;
 
-    // Sin sesión -> login
     if (!session) {
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('redirect', pathname);
       return NextResponse.redirect(loginUrl);
     }
 
-    // ✨ Verificación HMAC obligatoria de firma de rol (Fail-Closed) ✨
     if (!role || !sig) {
       return NextResponse.redirect(new URL('/login?error=unauthorized', request.url));
     }
+
     try {
       const signatureValid = await verifyHmac(session, role, sig, tenantId);
       if (!signatureValid) {
@@ -133,28 +97,21 @@ export default async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/login?error=unauthorized', request.url));
     }
 
-    // Superadmin/admin tienen acceso total
     if (role === 'superadmin' || role === 'admin') {
-      const res = NextResponse.next({ request: { headers: requestHeaders } });
-      res.headers.set('x-tenant-id', tenantId);
-      return res;
+      const response = NextResponse.next({ request: { headers: requestHeaders } });
+      response.headers.set('x-tenant-id', tenantId);
+      return response;
     }
 
-    // Verificar permisos por ruta
-    const matchedEntry = Object.entries(ROLE_PERMISSIONS).find(
-      ([path]) => pathname.startsWith(path) && path !== '/dashboard'
-    );
-
-    if (matchedEntry) {
-      const requiredRoles = matchedEntry[1];
-      if (!role || !requiredRoles.includes(role)) {
+    if (pathname === '/dashboard' || pathname === '/dashboard/') {
+      const landingPath = getRoleLandingPath(role);
+      if (!landingPath) {
         return NextResponse.redirect(new URL('/login?error=unauthorized', request.url));
       }
-    } else if (pathname === '/dashboard') {
-      if (role && WORKER_DASHBOARD_REDIRECTS[role]) {
-        return NextResponse.redirect(new URL(WORKER_DASHBOARD_REDIRECTS[role], request.url));
+      if (landingPath !== '/dashboard') {
+        return NextResponse.redirect(new URL(landingPath, request.url));
       }
-    } else if (role !== 'superadmin' && role !== 'admin') {
+    } else if (!canAccessDashboardPath(role, pathname)) {
       return NextResponse.redirect(new URL('/login?error=unauthorized', request.url));
     }
   }
