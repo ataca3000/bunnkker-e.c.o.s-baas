@@ -36,6 +36,16 @@ const DB_NAME = 'bunkker-standalone-device';
 const DB_VERSION = 1;
 const STORES = { users: 'users', products: 'products', orders: 'orders', settings: 'settings' } as const;
 
+export function validateLocalStaffInput(name: string, pin: string): void {
+  if (!name.trim() || !/^\d{4,8}$/.test(pin)) throw new Error('Usa un nombre y un PIN de 4 a 8 dígitos.');
+}
+
+export function validateLocalProductInput(input: { name: string; price: number; stock: number }): void {
+  if (!input.name.trim() || !Number.isFinite(input.price) || input.price < 0 || !Number.isInteger(input.stock) || input.stock < 0) {
+    throw new Error('Revisa nombre, precio y existencia del producto.');
+  }
+}
+
 function openDb(): Promise<IDBDatabase> {
   if (typeof window === 'undefined' || !window.indexedDB) {
     return Promise.reject(new Error('Este navegador no permite almacenamiento local.'));
@@ -85,6 +95,8 @@ async function derivePinHash(pin: string, salt: Uint8Array): Promise<string> {
 }
 
 export async function initializeLocalDevice(businessName: string, adminName: string, pin: string): Promise<void> {
+  if (!businessName.trim()) throw new Error('Indica el nombre del negocio.');
+  validateLocalStaffInput(adminName, pin);
   const db = await openDb();
   const users = db.transaction(STORES.users, 'readonly');
   const existing = await requestValue<LocalStaffUser[]>(users.objectStore(STORES.users).getAll());
@@ -128,7 +140,7 @@ export async function authenticateLocalUser(name: string, pin: string): Promise<
 
 export async function addLocalStaffUser(name: string, pin: string, role: LocalRole): Promise<void> {
   const cleanName = name.trim();
-  if (!cleanName || !/^\d{4,8}$/.test(pin)) throw new Error('Usa un nombre y un PIN de 4 a 8 dígitos.');
+  validateLocalStaffInput(cleanName, pin);
   if ((await listLocalUsers()).some(user => user.name.toLocaleLowerCase() === cleanName.toLocaleLowerCase())) {
     throw new Error('Ya existe un usuario local con ese nombre.');
   }
@@ -149,10 +161,8 @@ export async function listLocalProducts(): Promise<LocalProduct[]> {
 }
 
 export async function saveLocalProduct(input: { id?: string; name: string; price: number; stock: number }): Promise<void> {
+  validateLocalProductInput(input);
   const product: LocalProduct = { id: input.id || makeId(), name: input.name.trim(), price: input.price, stock: input.stock, updatedAt: new Date().toISOString() };
-  if (!product.name || !Number.isFinite(product.price) || product.price < 0 || !Number.isInteger(product.stock) || product.stock < 0) {
-    throw new Error('Revisa nombre, precio y existencia del producto.');
-  }
   const db = await openDb();
   const tx = db.transaction(STORES.products, 'readwrite');
   tx.objectStore(STORES.products).put(product);
