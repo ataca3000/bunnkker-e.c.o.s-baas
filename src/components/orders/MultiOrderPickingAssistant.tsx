@@ -19,14 +19,12 @@ export interface MultiOrderPickingAssistantProps {
 }
 
 export default function MultiOrderPickingAssistant({
-    orders,
+    orders = [],
     role,
     onClose,
     onCompleteOrder,
     onBatchCompleteAll
 }: MultiOrderPickingAssistantProps) {
-    if (!orders || orders.length === 0) return null;
-
     // Vista: 'by_order' (pestañas por pedido) o 'by_shelf' (ruta unificada por estantes)
     const [viewMode, setViewMode] = useState<'by_order' | 'by_shelf'>('by_order');
     const [selectedOrderIndex, setSelectedOrderIndex] = useState(0);
@@ -36,7 +34,8 @@ export default function MultiOrderPickingAssistant({
     const [completedOrderIds, setCompletedOrderIds] = useState<Record<string, boolean>>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const activeOrder = orders[selectedOrderIndex] || orders[0];
+    const safeOrders = orders || [];
+    const activeOrder = safeOrders[selectedOrderIndex] || safeOrders[0];
 
     // Toggle de un ítem en una orden específica
     const toggleItem = (orderId: string, itemId: string) => {
@@ -125,6 +124,8 @@ export default function MultiOrderPickingAssistant({
             setIsSubmitting(false);
         }
     };
+
+    if (!orders || orders.length === 0) return null;
 
     return (
         <div className="fixed inset-0 z-[195] flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md">

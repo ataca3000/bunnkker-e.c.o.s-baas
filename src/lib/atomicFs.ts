@@ -12,6 +12,28 @@ import path from 'path';
  * 4. Si el directorio es de solo lectura (ej. /var/task en Vercel Serverless),
  *    redirige de forma transparente a os.tmpdir() (/tmp) sin romper la ejecución.
  */
+export function isServerlessEnvironment(): boolean {
+    return Boolean(
+        process.env.VERCEL ||
+        process.env.AWS_LAMBDA_FUNCTION_VERSION ||
+        process.env.AWS_EXECUTION_ENV ||
+        process.env.LAMBDA_TASK_ROOT ||
+        process.env.NETLIFY ||
+        process.env.NEXT_RUNTIME === 'edge'
+    );
+}
+
+export function resolveReadablePath(targetPath: string): string {
+    if (!targetPath || typeof targetPath !== 'string') return targetPath;
+    const cleanPath = path.normalize(targetPath);
+    const resolvedPath = path.resolve(cleanPath);
+    const fallbackPath = path.join(os.tmpdir(), 'bunnkker-ecos', path.basename(resolvedPath));
+    if (fs.existsSync(fallbackPath)) {
+        return fallbackPath;
+    }
+    return resolvedPath;
+}
+
 export function resolveWritablePath(targetPath: string): string {
     if (!targetPath || typeof targetPath !== 'string' || targetPath.includes('\0')) {
         throw new Error('Ruta inválida proporcionada a atomicFs');
@@ -22,10 +44,24 @@ export function resolveWritablePath(targetPath: string): string {
     }
     const resolvedPath = path.resolve(cleanPath);
     const dir = path.dirname(resolvedPath);
+
+    // Si estamos en Vercel o entorno serverless con sistema de archivos raíz de solo lectura
+    if (isServerlessEnvironment()) {
+        const fallbackDir = path.join(os.tmpdir(), 'bunnkker-ecos');
+        try {
+            if (!fs.existsSync(fallbackDir)) {
+                fs.mkdirSync(fallbackDir, { recursive: true });
+            }
+        } catch {}
+        return path.join(fallbackDir, path.basename(resolvedPath));
+    }
+
     try {
         if (!fs.existsSync(dir)) {
             fs.mkdirSync(dir, { recursive: true });
         }
+        // Validar explícitamente permisos de escritura para evitar EROFS
+        fs.accessSync(dir, fs.constants.W_OK);
         return resolvedPath;
     } catch {
         // Fallback para entornos Serverless de solo lectura (Vercel / AWS Lambda)

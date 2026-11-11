@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import crypto from 'crypto';
-import { atomicWriteFileSync } from './atomicFs';
+import { atomicWriteFileSync, resolveReadablePath, resolveWritablePath } from './atomicFs';
 import fs from 'fs';
 import path from 'path';
 
@@ -29,7 +29,16 @@ function hashPin(pin: string): string {
 const PERSISTENCE_FILE = path.join(process.cwd(), '.prisma_memory_store.json');
 
 const initialMemoryStore: Record<string, any[]> = {
-  product: [],
+  product: [
+    { id: 'prod-1', tenantId: 'default', name: 'Taladro Percutor Inalámbrico 20V Max', price: 1850, stock: 24, reservedStock: 0, category: 'Herramientas', image: 'https://images.unsplash.com/photo-1504148455328-c376907d081c?w=600&auto=format&fit=crop', rating: 4.8, reviewCount: 32, barcode: '750100234001', description: 'Motor sin escobillas (Brushless), 2 baterías de litio y maletín de transporte rígido.', estante: 'A-1', fila: 'Nivel 2', orderIndex: 1, deletedAt: null },
+    { id: 'prod-2', tenantId: 'default', name: 'Caja de Herramientas Mecánica 128 Pzs', price: 1450, stock: 18, reservedStock: 0, category: 'Herramientas', image: 'https://images.unsplash.com/photo-1581244277943-fe4a9c777189?w=600&auto=format&fit=crop', rating: 4.9, reviewCount: 45, barcode: '750100234002', description: 'Juego de dados milimétricos y pulgadas en acero cromo vanadio con carraca.', estante: 'A-2', fila: 'Nivel 1', orderIndex: 2, deletedAt: null },
+    { id: 'prod-3', tenantId: 'default', name: 'Tina Pintura Látex Lavable 5 Galones', price: 920, stock: 35, reservedStock: 0, category: 'Pinturas', image: 'https://images.unsplash.com/photo-1562259949-e8e7689d7828?w=600&auto=format&fit=crop', rating: 4.7, reviewCount: 19, barcode: '750100234003', description: 'Pintura vinil acrílica para interiores y exteriores, máxima lavabilidad.', estante: 'B-1', fila: 'Nivel 3', orderIndex: 3, deletedAt: null },
+    { id: 'prod-4', tenantId: 'default', name: 'Saco de Cemento Portland Tipo I 50kg', price: 245, stock: 80, reservedStock: 0, category: 'Construcción', image: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600&auto=format&fit=crop', rating: 5.0, reviewCount: 68, barcode: '750100234004', description: 'Cemento de fraguado normal para cimientos y losas.', estante: 'Patio Sur', fila: 'Tarima 4', orderIndex: 4, deletedAt: null },
+    { id: 'prod-5', tenantId: 'default', name: 'Kit de Grifería Monomando + Tubería PVC', price: 680, stock: 2, reservedStock: 0, category: 'Plomería', image: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=600&auto=format&fit=crop', rating: 4.6, reviewCount: 14, barcode: '750100234005', description: 'Grifería cromada con conexiones completas.', estante: 'C-1', fila: 'Nivel 1', orderIndex: 5, deletedAt: null },
+    { id: 'prod-6', tenantId: 'default', name: 'Compresor de Aire Eléctrico 50 Litros', price: 3400, stock: 1, reservedStock: 0, category: 'Equipos', image: 'https://images.unsplash.com/photo-1580983218765-f663bec07b37?w=600&auto=format&fit=crop', rating: 4.9, reviewCount: 27, barcode: '750100234006', description: 'Compresor lubricado 2.5 HP tanque horizontal.', estante: 'D-2', fila: 'Nivel 1', orderIndex: 6, deletedAt: null },
+    { id: 'prod-7', tenantId: 'default', name: 'Cable Eléctrico Calibre 12 THW 100m', price: 1150, stock: 12, reservedStock: 0, category: 'Electricidad', image: 'https://images.unsplash.com/photo-1558346490-a72e53ae2d4f?w=600&auto=format&fit=crop', rating: 4.8, reviewCount: 22, barcode: '750100234007', description: 'Conductor de cobre para instalaciones residenciales.', estante: 'E-1', fila: 'Nivel 2', orderIndex: 7, deletedAt: null },
+    { id: 'prod-8', tenantId: 'default', name: 'Generador Eléctrico a Gasolina 3500W', price: 8900, stock: 0, reservedStock: 0, category: 'Equipos', image: 'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?w=600&auto=format&fit=crop', rating: 4.5, reviewCount: 8, barcode: '750100234008', description: 'Generador portátil 4 tiempos con arranque manual.', estante: 'D-1', fila: 'Nivel 1', orderIndex: 8, deletedAt: null },
+  ],
   user: [
     { id: 'demo-superadmin', tenantId: 'default', name: 'Dueño (Superadmin)', email: 'superadmin@bunnkker.local', role: 'superadmin', pin: hashPin('0000'), active: true, createdAt: new Date() },
     { id: 'demo-admin', tenantId: 'default', name: 'Gerente (Admin)', email: 'admin@bunnkker.local', role: 'admin', pin: hashPin('1111'), active: true, createdAt: new Date() },
@@ -115,8 +124,9 @@ function applyUpdateData(target: any, data: any) {
 
 function loadPersistedStore(): Record<string, any[]> {
   try {
-    if (fs.existsSync(PERSISTENCE_FILE)) {
-      const content = fs.readFileSync(PERSISTENCE_FILE, 'utf-8');
+    const readablePath = resolveReadablePath(PERSISTENCE_FILE);
+    if (fs.existsSync(readablePath)) {
+      const content = fs.readFileSync(readablePath, 'utf-8');
       const parsed = JSON.parse(content);
       if (parsed && typeof parsed === 'object') {
         for (const [key, val] of Object.entries(initialMemoryStore)) {
@@ -141,7 +151,8 @@ export function flushPersistedStore() {
     const store = g._bunkker_memory_store;
     if (store) {
       if (saveTimer) clearTimeout(saveTimer);
-      atomicWriteFileSync(PERSISTENCE_FILE, JSON.stringify(store, null, 2), true);
+      const writablePath = resolveWritablePath(PERSISTENCE_FILE);
+      atomicWriteFileSync(writablePath, JSON.stringify(store, null, 2), true);
     }
   } catch (err) {
     console.warn('[Prisma Store] Error flushing store to disk:', err);
@@ -153,7 +164,8 @@ function triggerStoreSave(store: Record<string, any[]>) {
   if (saveTimer) clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
     try {
-      atomicWriteFileSync(PERSISTENCE_FILE, JSON.stringify(store, null, 2), true);
+      const writablePath = resolveWritablePath(PERSISTENCE_FILE);
+      atomicWriteFileSync(writablePath, JSON.stringify(store, null, 2), true);
     } catch (err) {
       console.warn('[Prisma Store] Error saving store to disk:', err);
     }

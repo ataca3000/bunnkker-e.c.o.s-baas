@@ -838,7 +838,7 @@ export default function SalesDashboard() {
     const greenCanClaimOrders = orders.filter(o => {
         if (!isStoreOrder(o) || isTestOrder(o)) return false;
         const isUnpaid = !o.confirmedAt && o.status !== 'paid' && o.status !== 'READY_FOR_PICKUP_PAID';
-        const isNotLoaded = !Boolean(o.isLoaded) && !['READY_TO_SHIP', 'READY_FOR_PICKUP'].includes(o.status);
+        const isNotLoaded = !o.isLoaded && !['READY_TO_SHIP', 'READY_FOR_PICKUP'].includes(o.status);
         const isTerminal = ['DELIVERED', 'COMPLETED', 'cancelled', 'refunded'].includes(o.status);
         if (!isUnpaid || !isNotLoaded || isTerminal) return false;
         // Libre para tomar si no tiene cajero asignado o fue iniciado por otro usuario
@@ -850,7 +850,7 @@ export default function SalesDashboard() {
     const yellowNeedPrepOrders = orders.filter(o => {
         if (!isStoreOrder(o) || isTestOrder(o)) return false;
         const isUnpaid = !o.confirmedAt && o.status !== 'paid' && o.status !== 'READY_FOR_PICKUP_PAID';
-        const isNotLoaded = !Boolean(o.isLoaded) && !['READY_TO_SHIP', 'READY_FOR_PICKUP'].includes(o.status);
+        const isNotLoaded = !o.isLoaded && !['READY_TO_SHIP', 'READY_FOR_PICKUP'].includes(o.status);
         const isTerminal = ['DELIVERED', 'COMPLETED', 'cancelled', 'refunded'].includes(o.status);
         if (!isUnpaid || !isNotLoaded || isTerminal) return false;
         if (onlyMyOrders && o.vendedorId !== profile?.uid) return false;

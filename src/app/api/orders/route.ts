@@ -430,9 +430,29 @@ export async function POST(request: NextRequest) {
                 finalTotal = numTotal;
             }
 
-            // Si la orden nace pagada de inmediato, apartar en reservedStock con Control de Concurrencia Optimista (OCC):
-            // Garantiza que si dos cajas compiten por la última pieza al mismo milisegundo, solo una gana la reserva.
-            if (initialStatus === 'paid') {
+            const resolvedDeliveryType = deliveryType || (deliveryMethod === 'repartidor' ? 'DELIVERY' : (['pickup', 'piso', 'tienda'].includes(deliveryMethod) ? 'PICKUP' : 'LOCAL'));
+            const isDirectLocalSale = resolvedDeliveryType === 'LOCAL' && initialStatus === 'paid';
+            const finalStatusToPersist = isDirectLocalSale ? 'COMPLETED' : initialStatus;
+
+            // GESTIÓN DE STOCK ATÓMICA CON OCC (Control de Concurrencia Optimista):
+            // - Para venta directa LOCAL pagada en mostrador: el cliente se lleva el producto de inmediato,
+            //   por lo que se descuenta físicamente el stock de anaquel de inmediato.
+            // - Para pedidos pagados que requieren entrega en patio, pickup o reparto (PATIO, PICKUP, DELIVERY):
+            //   se aparta en reservedStock y se descontará físicamente al confirmar la entrega (PoD).
+            if (isDirectLocalSale) {
+                for (const roi of resolvedOrderItems) {
+                    const occ = await tx.product.updateMany({
+                        where: {
+                            id: roi.productId,
+                            stock: { gte: roi.cantidad }
+                        },
+                        data: { stock: { decrement: roi.cantidad } }
+                    });
+                    if (occ.count !== 1) {
+                        throw new Error(`INSUFFICIENT_STOCK: El inventario de "${roi.productId}" cambió o es insuficiente para completar la venta.`);
+                    }
+                }
+            } else if (initialStatus === 'paid') {
                 for (const roi of resolvedOrderItems) {
                     const occ = await tx.product.updateMany({
                         where: { 
@@ -448,26 +468,30 @@ export async function POST(request: NextRequest) {
                 }
             }
 
-                    const isPending = ['pending_payment', 'pending_confirmation'].includes(initialStatus);
+            const isPending = ['pending_payment', 'pending_confirmation'].includes(initialStatus);
 
-                    // 3. Creación de la Orden en el Pipeline Logístico
-                    const order = await tx.order.create({
-                        data: {
-                            id: orderId,
-                            tenantId,
-                            total: finalTotal,
-                            deliveryType: deliveryType || (deliveryMethod === 'repartidor' ? 'DELIVERY' : (['pickup', 'piso', 'tienda'].includes(deliveryMethod) ? 'PICKUP' : 'LOCAL')),
-                            paymentMethod: isCashierRequest ? 'pago_caja' : paymentMethod || 'CASH',
-                            status: initialStatus,
-                            vendedorId: isCashierRequest ? null : staffUid,
-                            vendedorName: isCashierRequest ? null : (staffUser?.name || body.vendedorName || null),
-                            confirmedAt: isCashierRequest ? null : new Date(),
-                            expiresAt: body.expiresAt ? new Date(body.expiresAt) : null,
+            // 3. Creación de la Orden en el Pipeline Logístico con Trazabilidad Completa (Quién compra y Quién vende)
+            const order = await tx.order.create({
+                data: {
+                    id: orderId,
+                    tenantId,
+                    total: finalTotal,
+                    deliveryType: resolvedDeliveryType,
+                    paymentMethod: isCashierRequest ? 'pago_caja' : (paymentMethod || 'CASH'),
+                    status: finalStatusToPersist,
+                    vendedorId: body.vendedorId || staffUid || (isCashierRequest ? null : 'LOCAL'),
+                    vendedorName: body.vendedorName || staffUser?.name || (staffRole ? `Personal (${staffRole})` : (isCashierRequest ? null : 'Cajero')),
+                    confirmedAt: (isCashierRequest && !isDirectLocalSale) ? null : new Date(),
+                    expiresAt: body.expiresAt ? new Date(body.expiresAt) : null,
                     deliveryPin: body.deliveryPin || null,
                     deliveryLat: typeof deliveryLat === 'number' ? deliveryLat : null,
                     deliveryLng: typeof deliveryLng === 'number' ? deliveryLng : null,
-                    deliveryAddress: clientData?.address || null,
+                    deliveryAddress: clientData?.address || body.deliveryAddress || body.address || null,
                     customerId: customerId,
+                    isLoaded: isDirectLocalSale,
+                    loadedBy: isDirectLocalSale ? (staffUser?.name || actorName) : null,
+                    loadedByUid: isDirectLocalSale ? (staffUid || null) : null,
+                    completedAt: isDirectLocalSale ? new Date() : null,
                     items: {
                         create: resolvedOrderItems.map(roi => ({
                             productId: roi.productId,
@@ -482,12 +506,18 @@ export async function POST(request: NextRequest) {
             await tx.orderEvent.create({
                 data: {
                     orderId: order.id,
-                    eventType: 'ORDER_CREATED',
+                    eventType: isDirectLocalSale ? 'DIRECT_SALE_COMPLETED' : 'ORDER_CREATED',
                     toStatus: order.status,
                     actorId,
                     actorName,
                     actorRole,
-                    details: JSON.stringify({ deliveryType, itemCount: items.length, total: finalTotal })
+                    details: JSON.stringify({ 
+                        deliveryType: resolvedDeliveryType, 
+                        itemCount: items.length, 
+                        total: finalTotal,
+                        vendedorName: order.vendedorName,
+                        compradorName: clientData?.name || actorName
+                    })
                 }
             });
             return order;

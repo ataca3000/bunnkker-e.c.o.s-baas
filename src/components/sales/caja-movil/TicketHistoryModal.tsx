@@ -25,9 +25,75 @@ export function TicketHistoryModal({ isOpen, onClose, cajaId = 'caja_1', onSelec
     const [cancelReasonInput, setCancelReasonInput] = useState('');
     const [showClearConfirm, setShowClearConfirm] = useState(false);
 
-    const reloadTickets = () => {
-        const list = getDigitalTickets(cajaId);
-        setTickets(list);
+    const reloadTickets = async () => {
+        const localList = getDigitalTickets(cajaId);
+        setTickets(localList);
+
+        try {
+            const res = await fetch('/api/orders');
+            const json = await res.json();
+            if (json.success && Array.isArray(json.data)) {
+                const serverTickets: DigitalTicket[] = json.data.map((order: any, idx: number) => {
+                    const timeIso = order.date ? new Date(order.date).toISOString() : new Date().toISOString();
+                    const now = new Date(timeIso);
+                    const timeStr = now.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                    const dateStr = now.toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                    return {
+                        id: order.id.startsWith('TCK') ? order.id : `TCK-${order.id}`,
+                        orderId: order.id,
+                        cajaId: cajaId || 'caja_1',
+                        cajaName: `Caja ${(cajaId || 'caja_1').replace('caja_', '').toUpperCase()}`,
+                        cashierName: order.vendedorName || 'Cajero de Turno',
+                        vendedorId: order.vendedorId || 'LOCAL',
+                        vendedorName: order.vendedorName || 'Vendedor Piso',
+                        customerName: order.customer?.name || order.customerName || 'Cliente Mostrador',
+                        customerPhone: order.customer?.phone || '',
+                        customerAddress: order.customer?.address || order.deliveryAddress || '',
+                        timestamp: `${timeStr} - ${dateStr}`,
+                        dateIso: timeIso,
+                        items: (order.items || []).map((it: any) => ({
+                            id: it.productId || it.id,
+                            name: it.name || it.product?.name || 'Producto',
+                            quantity: Number(it.quantity ?? it.cantidad ?? 1),
+                            unitType: it.unitType || 'PZA',
+                            price: Number(it.price ?? it.precio ?? 0),
+                            subtotal: Number((it.quantity ?? it.cantidad ?? 1) * (it.price ?? it.precio ?? 0))
+                        })),
+                        total: Number(order.total || 0),
+                        amountReceived: Number(order.amountReceived || order.total || 0),
+                        change: Number(order.change || 0),
+                        paymentMethod: order.paymentMethod || 'EFECTIVO EN CAJA',
+                        consecutiveNumber: idx + 1,
+                        status: order.status === 'cancelled' || order.status === 'refunded' ? 'CANCELADO' : 'COMPLETADO',
+                        deliveryType: order.deliveryType || 'CAJA'
+                    };
+                });
+
+                const mergedMap = new Map<string, DigitalTicket>();
+                for (const st of serverTickets) {
+                    mergedMap.set(st.orderId, st);
+                }
+                for (const lt of localList) {
+                    const existing = mergedMap.get(lt.orderId);
+                    if (existing) {
+                        mergedMap.set(lt.orderId, {
+                            ...existing,
+                            notes: lt.notes || existing.notes,
+                            evidencePhoto: lt.evidencePhoto || existing.evidencePhoto,
+                            signatureData: lt.signatureData || existing.signatureData
+                        });
+                    } else {
+                        mergedMap.set(lt.orderId || lt.id, lt);
+                    }
+                }
+                const combined = Array.from(mergedMap.values()).sort(
+                    (a, b) => new Date(b.dateIso).getTime() - new Date(a.dateIso).getTime()
+                );
+                setTickets(combined);
+            }
+        } catch (e) {
+            console.warn('[TicketHistoryModal] Server orders sync error, using local tickets:', e);
+        }
     };
 
     useEffect(() => {

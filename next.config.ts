@@ -4,7 +4,7 @@ import path from "path";
 const isDesktopBuild = (process.env.BUILD_TARGET === 'desktop' || process.env.NEXT_PUBLIC_APP_ENV === 'local') && !process.env.VERCEL;
 
 const nextConfig: NextConfig = {
-  ...(isDesktopBuild ? { output: 'standalone' } : {}),
+  output: 'standalone',
   // TODO (S3.2): Reactivar reactStrictMode: true una vez identificado el componente
   // que causa doble-render problemático. StrictMode detecta efectos secundarios
   // inesperados y refs obsoletas — su desactivación oculta bugs reales.
@@ -49,7 +49,7 @@ const nextConfig: NextConfig = {
 
 let withVercelToolbar = (cfg: NextConfig) => cfg;
 try {
-  // @ts-ignore
+  // @ts-ignore - optional vercel toolbar plugin may not exist in non-vercel builds
   const createWithVercelToolbar = require('@vercel/toolbar/plugins/next');
   withVercelToolbar = (createWithVercelToolbar?.default || createWithVercelToolbar)();
 } catch {

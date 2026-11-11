@@ -50,7 +50,10 @@ export function broadcastSync(payload?: { action?: string; id?: string; [key: st
  */
 export function useSyncListener(onSync: () => void) {
   const onSyncRef = useRef(onSync);
-  onSyncRef.current = onSync;
+
+  useEffect(() => {
+    onSyncRef.current = onSync;
+  });
 
   useEffect(() => {
     if (typeof window === 'undefined') return;

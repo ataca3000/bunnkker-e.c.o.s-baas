@@ -14,11 +14,12 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, QrCode } from 'lucide-react';
+import { Search, QrCode, LayoutGrid, ListFilter, ShieldCheck, WifiOff, Wifi } from 'lucide-react';
 import { useCart, type Product } from '@/context/CartContext';
 import BarcodeScanner from './BarcodeScanner';
 import { CategoryFilter, PromoBanners } from './catalog/CatalogFilters';
 import { ProductCard, ProductDetailDrawer } from './catalog/ProductCard';
+import { SimplifiedOfflineCatalogView } from './catalog/SimplifiedOfflineCatalogView';
 import { toast } from '@/lib/toast';
 
 export default function MarketCatalog({ initialCategory, hideHeader }: { initialCategory?: string; hideHeader?: boolean }) {
@@ -30,6 +31,48 @@ export default function MarketCatalog({ initialCategory, hideHeader }: { initial
     const [showScanner, setShowScanner]     = useState(false);
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
     const [visibleCount, setVisibleCount]   = useState(24);
+
+    // Modo de vista: 'standard' (cuadrícula gráfica) vs 'simplified' (lista compacta con disponibilidad garantizada)
+    const [catalogViewMode, setCatalogViewMode] = useState<'standard' | 'simplified'>('standard');
+    const [isDeviceOnline, setIsDeviceOnline] = useState(true);
+    const [isSimulatedOffline, setIsSimulatedOffline] = useState(false);
+    const [lastSyncTimestamp, setLastSyncTimestamp] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+
+        setIsDeviceOnline(navigator.onLine);
+        const urlView = searchParams.get('view');
+        if (urlView === 'simplified' || !navigator.onLine) {
+            setCatalogViewMode('simplified');
+        }
+
+        const handleOnline = () => {
+            setIsDeviceOnline(true);
+        };
+        const handleOffline = () => {
+            setIsDeviceOnline(false);
+            setCatalogViewMode('simplified');
+            toast.warning('Sin conexión a internet: Activando vista simplificada con disponibilidad física garantizada.', '📡 Modo Offline');
+        };
+
+        window.addEventListener('online', handleOnline);
+        window.addEventListener('offline', handleOffline);
+
+        const storedSync = localStorage.getItem('_bunkker_last_catalog_sync');
+        if (storedSync) {
+            setLastSyncTimestamp(storedSync);
+        } else {
+            const now = new Date().toISOString();
+            localStorage.setItem('_bunkker_last_catalog_sync', now);
+            setLastSyncTimestamp(now);
+        }
+
+        return () => {
+            window.removeEventListener('online', handleOnline);
+            window.removeEventListener('offline', handleOffline);
+        };
+    }, [searchParams]);
 
     // Leer parámetro ?search= de la URL (enviado por Navbar al escanear)
     const [prevUrlSearch, setPrevUrlSearch] = useState<string | null>(null);
@@ -108,8 +151,8 @@ export default function MarketCatalog({ initialCategory, hideHeader }: { initial
             {!hideHeader ? (
                 <div className="flex justify-between items-center mb-12 flex-wrap gap-6">
                     <div>
-                        <h2 className="text-4xl font-black text-white tracking-tighter drop-shadow-md">MÓDULOS DEL SISTEMA</h2>
-                        <p className="text-slate-400 mt-1 font-medium">Selecciona los módulos operativos y características que deseas integrar en tu ERP.</p>
+                        <h2 className="text-4xl font-black text-white tracking-tighter drop-shadow-md">CATÁLOGO DE PRODUCTOS & COMPRAS</h2>
+                        <p className="text-slate-400 mt-1 font-medium">Explora materiales, herramientas y artículos con stock confirmado en anaquel para compra y entrega inmediata.</p>
                     </div>
                     <div className="flex gap-3 items-center flex-wrap">
                         <button
@@ -157,49 +200,111 @@ export default function MarketCatalog({ initialCategory, hideHeader }: { initial
             {/* Banners promocionales */}
             <PromoBanners banners={catalogBanners} activeFilter={filter} />
 
-            {/* Grid del catálogo estilo Shopify */}
-            <div className="mt-6 mb-12">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 pb-4 border-b border-slate-200/80 dark:border-slate-800">
-                    <div>
-                        <span className="text-xs font-bold uppercase tracking-wider text-[#008060] flex items-center gap-1.5 mb-1">
-                            Colección Disponible
-                        </span>
-                        <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-                            {filter === 'Todos' ? 'Todos los Productos' : filter}
-                        </h2>
-                    </div>
-                    <span className="text-xs font-semibold text-slate-500 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-full self-start sm:self-auto">
-                        {filtered.length} {filtered.length === 1 ? 'producto' : 'productos'}
+            {/* ── SELECTOR DE VISTA: ESTÁNDAR VS SIMPLIFICADA (DISPONIBILIDAD GARANTIZADA) ── */}
+            <div className="mt-6 mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-3 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl shadow-xs">
+                <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-500 mr-1 flex items-center gap-1">
+                        <ListFilter size={14} /> Modo de Catálogo:
                     </span>
+                    <div className="inline-flex p-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200/60 dark:border-slate-700/60">
+                        <button
+                            onClick={() => setCatalogViewMode('standard')}
+                            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                                catalogViewMode === 'standard'
+                                    ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
+                                    : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                            }`}
+                            aria-label="Activar vista estándar en cuadrícula"
+                        >
+                            <LayoutGrid size={14} />
+                            <span>Vista Estándar</span>
+                        </button>
+                        <button
+                            onClick={() => setCatalogViewMode('simplified')}
+                            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                                catalogViewMode === 'simplified'
+                                    ? 'bg-[#008060] text-white shadow-xs'
+                                    : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                            }`}
+                            aria-label="Activar vista simplificada de disponibilidad garantizada"
+                        >
+                            <ShieldCheck size={14} />
+                            <span>Vista Simplificada</span>
+                            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse ml-0.5" />
+                        </button>
+                    </div>
                 </div>
 
-                <motion.div layout className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 auto-rows-auto">
-                    {filtered.length > 0 ? (
-                        filtered.slice(0, visibleCount).map((p, index) => (
-                            <ProductCard
-                                key={p.id}
-                                p={p}
-                                index={index}
-                                onOpenDetails={setSelectedProduct}
-                            />
-                        ))
+                <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
+                    {(!isDeviceOnline || isSimulatedOffline) ? (
+                        <span className="inline-flex items-center gap-1.5 text-amber-600 dark:text-amber-400 font-bold bg-amber-50 dark:bg-amber-950/40 px-2.5 py-1 rounded-lg border border-amber-500/30">
+                            <WifiOff size={13} /> Operando sin internet (Corte sincronizado local)
+                        </span>
                     ) : (
-                        <div className="col-span-full text-center py-16 text-slate-400 bg-white dark:bg-slate-900 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 font-medium">
-                            No se encontraron productos disponibles en esta categoría.
-                        </div>
+                        <span className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-lg border border-emerald-500/30">
+                            <Wifi size={13} /> Conectado en tiempo real
+                        </span>
                     )}
-                </motion.div>
+                </div>
             </div>
 
-            {/* Cargar más */}
-            {visibleCount < filtered.length && (
-                <div className="flex justify-center py-8">
-                    <button
-                        onClick={() => setVisibleCount(prev => Math.min(prev + 12, filtered.length))}
-                        className="px-6 py-2.5 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs rounded-xl transition-all shadow-xs hover:shadow-sm"
-                    >
-                        Cargar más productos ({filtered.length - visibleCount} restantes)
-                    </button>
+            {/* Renderizado condicional según el modo de vista */}
+            {catalogViewMode === 'simplified' ? (
+                <div className="mb-12">
+                    <SimplifiedOfflineCatalogView
+                        products={filtered}
+                        onOpenDetails={setSelectedProduct}
+                        isSimulatedOffline={isSimulatedOffline}
+                        onToggleSimulatedOffline={() => setIsSimulatedOffline(prev => !prev)}
+                        isDeviceOnline={isDeviceOnline}
+                        lastSyncTimestamp={lastSyncTimestamp}
+                    />
+                </div>
+            ) : (
+                /* Grid del catálogo estilo Shopify (Vista Estándar) */
+                <div className="mt-2 mb-12">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 pb-4 border-b border-slate-200/80 dark:border-slate-800">
+                        <div>
+                            <span className="text-xs font-bold uppercase tracking-wider text-[#008060] flex items-center gap-1.5 mb-1">
+                                Colección Disponible
+                            </span>
+                            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                                {filter === 'Todos' ? 'Todos los Productos' : filter}
+                            </h2>
+                        </div>
+                        <span className="text-xs font-semibold text-slate-500 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-full self-start sm:self-auto">
+                            {filtered.length} {filtered.length === 1 ? 'producto' : 'productos'}
+                        </span>
+                    </div>
+
+                    <motion.div layout className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 auto-rows-auto">
+                        {filtered.length > 0 ? (
+                            filtered.slice(0, visibleCount).map((p, index) => (
+                                <ProductCard
+                                    key={p.id}
+                                    p={p}
+                                    index={index}
+                                    onOpenDetails={setSelectedProduct}
+                                />
+                            ))
+                        ) : (
+                            <div className="col-span-full text-center py-16 text-slate-400 bg-white dark:bg-slate-900 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 font-medium">
+                                No se encontraron productos disponibles en esta categoría.
+                            </div>
+                        )}
+                    </motion.div>
+
+                    {/* Cargar más en vista estándar */}
+                    {visibleCount < filtered.length && (
+                        <div className="flex justify-center py-8">
+                            <button
+                                onClick={() => setVisibleCount(prev => Math.min(prev + 12, filtered.length))}
+                                className="px-6 py-2.5 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs rounded-xl transition-all shadow-xs hover:shadow-sm cursor-pointer"
+                            >
+                                Cargar más productos ({filtered.length - visibleCount} restantes)
+                            </button>
+                        </div>
+                    )}
                 </div>
             )}
 

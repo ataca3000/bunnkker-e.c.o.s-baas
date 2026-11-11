@@ -44,7 +44,7 @@ function getSafeInternalRedirect(rawUrl: string | null | undefined): string {
         return '/cuenta';
     }
     // Permitir únicamente rutas relativas compuestas por caracteres alfanuméricos y guiones
-    if (!/^\/[a-zA-Z0-9_\-\/]*$/.test(trimmed)) {
+    if (!/^\/[a-zA-Z0-9_/-]*$/.test(trimmed)) {
         return '/cuenta';
     }
     return trimmed;

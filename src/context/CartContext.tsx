@@ -208,6 +208,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
                         setProducts(finalProducts);
                         try {
                             localStorage.setItem('_bunkker_cached_products', JSON.stringify(finalProducts));
+                            localStorage.setItem('_bunkker_last_catalog_sync', new Date().toISOString());
                         } catch {}
                     }
                 }
