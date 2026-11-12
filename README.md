@@ -2,9 +2,9 @@
 
 <img src="./docs/assets/bunkker-logo-3d.jpg" width="120" alt="BUNKKER Logo 3D" style="margin-bottom: 8px;" />
 
-# BUNKKER E.C.O.S.
-### Ecosistema Comercial Omnipotente Sincronizado
-**ERP & BaaS Local-First Soberano • Red LAN P2P • Punto de Venta • Omnipulse Marketing**
+# BUNKKER E.C.O.S.(share-point) 
+### Ecosistema Comercial Operacion Sincronizado offline y online
+**ERP & BaaS Local-First - SyncWiFi-zone-local-operation-multiuser• Red LAN P2P • Punto de Venta • Marketing-Multi rol -Multiagente-Despliegue-Web-App-escritorio-Walkie-tolkie-operacion logistica-Almacen-Inventario-sharepoint**
 
 [![Deploy with Vercel](https://img.shields.io/badge/Deploy-Vercel-black?style=for-the-badge&logo=vercel)](https://bunnkker-e-c-o-s-baas.vercel.app/)
 [![Security Audit: Clean](https://img.shields.io/badge/CodeQL-Secured_0_Alerts-success?style=for-the-badge&logo=githubactions&logoColor=white)](https://github.com/BRECHACORP/bunnkker-e.c.o.s-baas/security)
@@ -14,21 +14,21 @@
 
 <br/>
 
-<img width="100%" alt="BUNKKER - Tecnología que Genera Impacto Real" src="./docs/assets/bunkker-hero-dome.jpg" style="border-radius: 14px; box-shadow: 0 12px 36px rgba(0,0,0,0.6);" />
+<img width="100%" alt="BUNKKER - Tecnología al alcance de una tecla" src="./docs/assets/bunkker-hero-dome.jpg" style="border-radius: 14px; box-shadow: 0 12px 36px rgba(0,0,0,0.6);" />
 
 <br/><br/>
 
-🔗 **Demo Oficial en Vivo:** [bunnkker-e-c-o-s-baas.vercel.app](https://bunnkker-e-c-o-s-baas.vercel.app/)
+🔗 **Demo Oficial ** [bunnkker-e-c-o-s-baas.vercel.app](https://bunnkker-e-c-o-s-baas.vercel.app/)
 
 </div>
 
 ---
 
-## 🎮 Actividad y Contribuciones en Tiempo Real
+## 🎮 Actividad y Contribuciones
 
 <div align="center">
 
-<!-- Snake Game Eating Commits Animation -->
+<!--  Commits Animation -->
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/ataca3000/ataca3000/output/github-contribution-grid-snake-dark.svg">
   <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/ataca3000/ataca3000/output/github-contribution-grid-snake.svg">
@@ -55,35 +55,35 @@
 ## 🖥️ Suite Operativa y Módulos de Control
 
 <div align="center">
-  <img width="100%" alt="BUNKKER ERP Dashboard" src="./docs/assets/bunkker-erp-dashboard.jpg" style="border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.5);" />
-  <p><em>Dashboard General "Camaleón ERP": KPIs en tiempo real, control de ventas, inventario activo y sincronización híbrida con Google Cloud.</em></p>
+  <img width="100%" alt="BUNKKER e-c-o-s Dashboard" src="./docs/assets/bunkker-erp-dashboard.jpg" style="border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.5);" />
+  <p><em>Dashboard General "bunkker": KPIs en tiempo real, control de ventas, inventario activo y sincronización híbrida multimodal,multiagente ,Cloud.</em></p>
 </div>
 
 <br/>
 
 <div align="center">
-  <img width="100%" alt="Ecosistema de Dispositivos y Despliegue" src="./docs/assets/bunkker-ecosystem-grid.jpg" style="border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.5);" />
-  <p><em>Arquitectura física y distribuida: Servidores locales P2P, hardware en caja, red multi-dispositivo LAN y soporte offline total.</em></p>
+  <img width="100%" alt="compatibilidad con Dispositivos📱 🖥️ 💻 y Despliegue💾 🌐 🗺️ " src="./docs/assets/bunkker-ecosystem-grid.jpg" style="border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.5);" />
+  <p><em>Arquitectura de conexión para su  operacion: Servidores locales P2P, hardware en caja, red multi-dispositivo LAN WiFi zona de operación multi rol soporte offline total.</em></p>
 </div>
 
 ---
 
 ## ⚡ ¿Qué es BUNKKER E.C.O.S.?
 
-**BUNKKER E.C.O.S.** es una suite empresarial de **grado industrial** diseñada para ferreterías, abarrotes, distribuidoras y bodegas de materiales que necesitan operar de forma continua **sin depender del internet ni de servidores externos**:
+**BUNKKER E.C.O.S.** es una suite empresarial de **Fácil instalación y bajo coste ** diseñada para ferreterías, abarrotes, distribuidoras y bodegas de materiales que necesitan operar de forma continua **sin depender del internet o con el va mejor **:
 
-* 🛡️ **Arquitectura Local-First Soberana:** Opera al 100% desconectado sobre SQLite WAL con sincronización LAN P2P y puente en tiempo real con Supabase / PostgreSQL cuando regresa la nube.
-* 🦁 **Asistente Gerencial LION:** Motor de Inteligencia Artificial que supervisa inventarios, alertas de merma y balance de stock directamente en el hardware local (sin costos de API externa).
+* 🛡️ **Arquitectura Local-First:** Opera al 100% desconectado sobre SQLite WAL con sincronización LAN P2P y puente en tiempo real con Supabase / PostgreSQL cuando reconecta con la nube.
+* 🦁 **Asistente Gerencial LION:** Motor de Inteligencia Artificial que supervisa inventarios, alertas de merma y balance de stock directamente en el hardware local (sin costos de API externa)con multipersonalidad para potenciar y dar soporte a tus trabajadores y clientes.
 * 📦 **3 Métodos de Entrega Integrados:**
   1. `📦 PISO / CAJA`: Cobro ultrarrápido con timeout fusible de 1,500ms contra latencias.
   2. `🏗️ CARGA / PATIO`: Despacho para materiales pesados en patio de maniobras con exclusión de reclamo (*mutex*).
   3. `🛵 REPARTO / OBRA`: App fuera de línea para choferes con geolocalización, bitácora y firma digital del cliente.
 * 📡 **Radio LAN P2P y Walkie-Talkie:** Comunicación y sincronización instantánea entre cajas y terminales móviles en la misma red Wi-Fi sin routers complejos.
-* 🌐 **OMNIPULSE:** Motor de publicación multired (16 redes sociales) con motor anti-spam Spintax $O(N)$ y jitter de humanización.
+* 🌐 **catalago virtual de acceso local por conexión WiFi clientes administración y roles (logística, caja, almacén, entregas y métricas de tus ventas con pruebas lógicas y marketing para  publicación en redes sociales motor anti-spam Spintax $O(N)$ lógica. 
 
 ---
 
-## 🔐 Seguridad y Auditoría de Grado Bancario
+## 🔐 Seguridad y Auditoría(actualizada continuamente) 
 
 Este repositorio ha sido sometido y blindado bajo el protocolo **N3** y auditorías avanzadas de **GitHub CodeQL**:
 
@@ -97,11 +97,11 @@ Este repositorio ha sido sometido y blindado bajo el protocolo **N3** y auditor�
 
 ---
 
-## 👥 Matriz de Roles y PINs Canónicos
+## 👥 Matriz de Roles y PINs de o iniciales (actualizsble y personalizable) 
 
 El acceso multi-dispositivo permite que cualquier smartphone o tablet en la red Wi-Fi ingrese sin instalar apps, usando PINs unificados:
 
-| PIN Clásico | PIN Canónico | Rol | Módulo Asignado |
+| PIN Clásico | PIN demo | Rol | Módulo Asignado |
 |:---:|:---:|---|---|
 | `0000` | `A0000` | **Dueño (Superadmin)** | KPIs ejecutivos, IA, auditoría forense y control total. |
 | `1111` / `1234` | `A1111` | **Gerente (Admin)** | Control de precios, activación de pasarelas y cortes. |
@@ -151,9 +151,9 @@ El instalador NSIS optimizado se creará dentro de `dist-build-win/`.
 ![Uploading image.png…]()
 
 
-## 📜 Licencia y Registro Institucional
+## 📜 Licencia
 
-**Business Source License 1.1 (BSL 1.1)** — Libre para visualización, pruebas, auditoría y desarrollo local. Para implementación comercial en producción se requiere licencia de uso. Se convertirá automáticamente a **Apache 2.0** en septiembre de 2030.
+**Business Source License 1.1 (BSL 1.1)** — visualización, pruebas, auditoría y desarrollo local. Para implementación comercial en producción se requiere licencia de uso. Se convertirá automáticamente a **Apache 2.0** en septiembre de 2030.
 
-© 2026 **Brecha Soluciones S.A. de C.V. / BUNKKER E.C.O.S. Team**  
-*Obra registrada y protegida ante el Instituto Nacional del Derecho de Autor (INDAUTOR) — México.*
+© 2026 **Brecha Soluciones S.A. de C.V. / BUNKKER E.C.O.S.**  
+**todos los derechos reservados 
