@@ -108,6 +108,7 @@
     "@stripe/stripe-js": "^9.8.0",
     "@types/canvas-confetti": "^1.9.0",
     "@types/three": "^0.186.0",
+    "@vercel/analytics": "^2.0.1",
     "@vercel/toolbar": "^0.2.7",
     "ai": "^7.0.146",
     "bcryptjs": "^3.0.3",

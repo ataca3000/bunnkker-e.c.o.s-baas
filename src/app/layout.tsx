@@ -1,4 +1,5 @@
 import { VercelToolbar } from '@vercel/toolbar/next';
+import { Analytics } from '@vercel/analytics/next';
 import CookieConsent from '@/components/CookieConsent';
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
@@ -193,6 +194,7 @@ export default async function RootLayout({
         </div>
         <CookieConsent />
         {shouldInjectToolbar ? <VercelToolbar /> : null}
+        <Analytics />
       </body>
     </html>
   );
