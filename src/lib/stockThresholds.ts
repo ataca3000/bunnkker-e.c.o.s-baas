@@ -293,3 +293,40 @@ export function evaluateThresholdBreaches(
     summary,
   };
 }
+
+export function findNewlyBreachedProducts(
+  previouslyAlertedIds: ReadonlySet<string>,
+  summary: StockAlertSummary
+): ProductStockAnalysis[] {
+  if (!summary.alertsEnabled) return [];
+  const allBreached = [...summary.criticalItems, ...summary.lowStockItems];
+  return allBreached.filter((item) => !previouslyAlertedIds.has(item.productId));
+}
+
+export function formatBreachToastMessage(
+  breached: ProductStockAnalysis[]
+): { title: string; message: string; isCritical: boolean } {
+  if (breached.length === 0) {
+    return { title: 'Stock Saludable', message: 'Todos los productos cumplen el mínimo configurado.', isCritical: false };
+  }
+  const hasCritical = breached.some((b) => b.status === 'out_of_stock');
+  const first = breached[0];
+  const title = hasCritical
+    ? `Stock Crítico (${breached.length})`
+    : `Stock Bajo Mínimo (${breached.length})`;
+
+  if (breached.length === 1) {
+    const label = first.currentStock <= 0
+      ? `"${first.productName}" se quedó en 0 uds (mínimo: ${first.effectiveThreshold})`
+      : `"${first.productName}" bajó a ${first.currentStock} uds (mínimo: ${first.effectiveThreshold})`;
+    return { title, message: label, isCritical: hasCritical };
+  }
+
+  const previewNames = breached.slice(0, 2).map((b) => `${b.productName} (${b.currentStock}/${b.effectiveThreshold})`).join(', ');
+  const extra = breached.length > 2 ? ` y +${breached.length - 2} más` : '';
+  return {
+    title,
+    message: `${previewNames}${extra} están por debajo del mínimo configurado.`,
+    isCritical: hasCritical,
+  };
+}

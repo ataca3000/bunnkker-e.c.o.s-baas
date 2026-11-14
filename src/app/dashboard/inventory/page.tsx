@@ -41,6 +41,9 @@ import {
     loadStockThresholdConfig,
     saveStockThresholdConfig,
     isAlertSnoozed,
+    setAlertSnooze,
+    findNewlyBreachedProducts,
+    formatBreachToastMessage,
     type StockAlertSummary,
     type StockThresholdConfig
 } from '@/lib/stockThresholds';
@@ -83,28 +86,41 @@ export default function InventoryDashboard() {
     const [thresholdConfig, setThresholdConfig] = useState<StockThresholdConfig>(() => loadStockThresholdConfig());
     const [isThresholdAlertModalOpen, setIsThresholdAlertModalOpen] = useState(false);
     const [isThresholdToastVisible, setIsThresholdToastVisible] = useState(true);
-    const lastAlertedCountRef = useRef<number>(0);
+    const lastAlertedProductIdsRef = useRef<Set<string>>(new Set());
 
     // Resumen reactivo de alertas de stock
     const alertSummary: StockAlertSummary = useMemo(() => {
         return computeInventoryStockAlerts(localProducts, thresholdConfig);
     }, [localProducts, thresholdConfig]);
 
-    // Disparo de alerta auditiva y toast si hay productos bajo umbral y no está en snooze
+    // Disparo de notificación visual (toast), aviso flotante y alerta auditiva cuando cualquier producto cae debajo de su mínimo configurado
     useEffect(() => {
-        if (!thresholdConfig.alertsEnabled) return;
-        if (alertSummary.totalAlerts === 0) return;
-        if (isAlertSnoozed()) return;
+        const currentBreachedIds = new Set<string>([
+            ...alertSummary.criticalItems.map((i) => i.productId),
+            ...alertSummary.lowStockItems.map((i) => i.productId),
+        ]);
 
-        // Solo sonar si el conteo de alertas aumentó o es la primera vez que se detectan
-        if (alertSummary.totalAlerts > lastAlertedCountRef.current) {
+        if (!thresholdConfig.alertsEnabled || currentBreachedIds.size === 0) {
+            lastAlertedProductIdsRef.current = currentBreachedIds;
+            return;
+        }
+
+        const newlyBreached = findNewlyBreachedProducts(lastAlertedProductIdsRef.current, alertSummary);
+        lastAlertedProductIdsRef.current = currentBreachedIds;
+
+        if (newlyBreached.length > 0 && !isAlertSnoozed()) {
+            const { title, message, isCritical } = formatBreachToastMessage(newlyBreached);
+            if (isCritical) {
+                toast.error(message, title);
+            } else {
+                toast.warning(message, title);
+            }
             if (thresholdConfig.soundAlerts) {
                 playErrorBeep(0.35);
             }
             setIsThresholdToastVisible(true);
         }
-        lastAlertedCountRef.current = alertSummary.totalAlerts;
-    }, [alertSummary.totalAlerts, thresholdConfig.alertsEnabled, thresholdConfig.soundAlerts]);
+    }, [alertSummary, thresholdConfig.alertsEnabled, thresholdConfig.soundAlerts]);
     const [hydratedChunksMap, setHydratedChunksMap] = useState<Record<string, boolean>>({});
     const [trashedProducts, setTrashedProducts] = useState<Product[]>([]);
     const [trashLoading, setTrashLoading] = useState(false);
@@ -3048,17 +3064,21 @@ export default function InventoryDashboard() {
                         handleEditProduct(product);
                     }}
                 />
-
-                {/* TOAST FLOTANTE DE ALERTA DE STOCK */}
-                {isThresholdToastVisible && alertSummary.totalAlerts > 0 && !isAlertSnoozed() && (
-                    <StockThresholdAlertToast
-                        summary={alertSummary}
-                        onOpenModal={() => setIsThresholdAlertModalOpen(true)}
-                        onNavigateToThresholds={() => setActiveTab('thresholds')}
-                        onDismiss={() => setIsThresholdToastVisible(false)}
-                    />
-                )}
             </AnimatePresence>
+
+            {/* TOAST FLOTANTE DE ALERTA DE STOCK MÍNIMO */}
+            <StockThresholdAlertToast
+                isVisible={isThresholdToastVisible && !isAlertSnoozed()}
+                summary={alertSummary}
+                onOpenModal={() => setIsThresholdAlertModalOpen(true)}
+                onNavigateToThresholds={() => setActiveTab('thresholds')}
+                onDismiss={() => setIsThresholdToastVisible(false)}
+                onSnooze={() => {
+                    setAlertSnooze(60);
+                    setIsThresholdToastVisible(false);
+                    toast.info('Alertas de stock mínimo pospuestas por 1 hora.');
+                }}
+            />
 
             {/* CÁMARA ESCÁNER */}
             {isScannerOpen && (
