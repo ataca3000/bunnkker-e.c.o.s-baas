@@ -2,10 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { jwtVerify } from 'jose';
 
-import { validateApiSession, validateActiveDbUser, verifyRoleSignature } from '@/lib/apiAuth';
+import { validateApiSession, validateActiveDbUser, verifyRoleSignature, getTenantId } from '@/lib/apiAuth';
 import { SentinelGuardAgent } from '@/lib/sentinelGuard';
 import { roundMoney } from '@/lib/financial';
 import { getSalesTrialStatus, recordPersistentSale } from '@/lib/salesCounter';
+import { publishRealtimeEvent } from '@/lib/realtimeBus';
+import { verifyStaffPin } from '@/lib/staffPinVerify';
 const CUSTOMER_JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'super_secret_local_key');
 
 async function writeOrderEvent(tx: any, event: {
@@ -201,13 +203,13 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        // AISLAMIENTO DE TENANT: Se deriva de la configuración soberana en base de datos, no de headers arbitrarios
+        // Resolver configuración comercial del tenant (manteniendo tenantId consistente entre GET y POST)
         const appConfig = await prisma.appConfig.findUnique({ where: { id: 'global' } }).catch(() => null);
-        const tenantId = appConfig?.tenantId || 'default';
+        const billingTenantId = appConfig?.tenantId || tenantId;
         const isSubscribed = Boolean(appConfig && (appConfig as any).subscriptionStatus === 'active');
 
         // REGLA 100 + 20 VENTAS (Anti-Tampering): Verificar límite de prueba antes de procesar
-        const trialStatus = getSalesTrialStatus(tenantId, isSubscribed);
+        const trialStatus = getSalesTrialStatus(billingTenantId, isSubscribed);
         if (trialStatus.isLocked) {
             return NextResponse.json({
                 success: false,
@@ -526,7 +528,14 @@ export async function POST(request: NextRequest) {
         // Registrar venta de forma monotónica e irreversible en disco (Anti-Tampering)
         // SOLO cuando la orden nace efectivamente cobrada (evita que carritos en espera consuman el límite de 120 ventas)
         const isPaidOnCreate = orderResult.status === 'paid' || orderResult.status === 'COMPLETED' || Boolean(orderResult.confirmedAt);
-        const counterInfo = isPaidOnCreate ? recordPersistentSale(tenantId) : trialStatus;
+        const counterInfo = isPaidOnCreate ? recordPersistentSale(billingTenantId) : trialStatus;
+
+        publishRealtimeEvent({
+            tenantId,
+            scope: 'orders',
+            action: 'NEW_ORDER',
+            entityId: orderResult.id,
+        });
 
         return NextResponse.json({ success: true, data: orderResult, trialStatus: counterInfo });
 
@@ -602,6 +611,16 @@ export async function POST(request: NextRequest) {
                 details: { error: cleanMsg }
             });
         }
+
+        console.error('[ORDERS POST ERROR]:', error);
+        return NextResponse.json(
+            {
+                success: false,
+                code: 'ERR_ORDER_CREATE_FAILED',
+                error: error?.message || 'Error interno al crear la orden.',
+            },
+            { status: 500 }
+        );
     }
 }
 
@@ -618,6 +637,16 @@ export async function PATCH(request: NextRequest) {
         const actorUser = await prisma.user.findUnique({ where: { id: auth.uid }, select: { name: true } });
         const actorName = actorUser?.name || auth.uid;
         const actorRole = auth.role;
+        const patchTenantId = auth.tenantId || getTenantId(request);
+        const emitOrderEvent = (eventAction: string, extra?: Record<string, unknown>) => {
+            publishRealtimeEvent({
+                tenantId: patchTenantId,
+                scope: 'orders',
+                action: eventAction,
+                entityId: id,
+                payload: extra,
+            });
+        };
         const cashierRoles = ['sales', 'billing', 'admin', 'superadmin'];
         const loadingRoles = ['carga_descarga', 'inventory', 'admin', 'superadmin', 'sales', 'billing', 'pickup'];
         const deliveryRoles = ['driver', 'carga_descarga', 'admin', 'superadmin'];
@@ -642,6 +671,7 @@ export async function PATCH(request: NextRequest) {
                 return { order };
             });
             if (result.conflict) return NextResponse.json({ success: false, error: result.claimedBy ? `Pedido tomado por ${result.claimedBy}.` : 'Otro cajero tomó este pedido o ya cambió de etapa.' }, { status: 409 });
+            emitOrderEvent('ORDER_CASHIER_CLAIMED');
             return NextResponse.json({ success: true, data: result.order });
         }
 
@@ -757,6 +787,7 @@ export async function PATCH(request: NextRequest) {
                 });
 
                 const counterInfo = recordPersistentSale(sovereignTenantId);
+                emitOrderEvent('ORDER_CONFIRMED');
                 return NextResponse.json({ success: true, data: order, trialStatus: counterInfo });
             } catch (error: any) {
                 if (String(error.message).startsWith('ORDER_CONFLICT:')) {
@@ -780,7 +811,7 @@ export async function PATCH(request: NextRequest) {
                     return { httpStatus: 403, error: 'Los pedidos a domicilio son exclusivos para repartidores.' };
                 }
 
-                const loadingStatuses = ['pending', 'pending_payment', 'pending_confirmation', 'paid', 'PREPARANDO', 'NIGHT_QUEUE', 'PENDIENTE_LLEGADA'];
+                const loadingStatuses = ['pending', 'pending_payment', 'pending_confirmation', 'paid', 'PREPARANDO', 'EN_ESPERA', 'NIGHT_QUEUE', 'PENDIENTE_LLEGADA'];
                 if (!loadingStatuses.includes(current.status) || current.isLoaded) {
                     return { httpStatus: 409, error: 'El pedido ya no está disponible para preparación.' };
                 }
@@ -809,6 +840,7 @@ export async function PATCH(request: NextRequest) {
 
             if ('error' in result) return NextResponse.json({ success: false, error: result.error }, { status: result.httpStatus });
             if (result.alreadyClaimed) return NextResponse.json({ success: true, data: result.order, alreadyClaimed: true });
+            emitOrderEvent('ORDER_LOADING_STARTED');
             return NextResponse.json({ success: true, data: result.order });
         }
 
@@ -873,7 +905,165 @@ export async function PATCH(request: NextRequest) {
             });
 
             if ('error' in result) return NextResponse.json({ success: false, error: result.error }, { status: result.httpStatus });
+            emitOrderEvent('ORDER_LOADING_COMPLETED');
             return NextResponse.json({ success: true, data: result.order });
+        }
+
+        if (action === 'hold_preparation') {
+            if (![...loadingRoles, 'driver'].includes(actorRole)) {
+                return NextResponse.json({ success: false, error: 'Rol sin permiso para poner pedidos en espera.' }, { status: 403 });
+            }
+            const holdReason = typeof body.reason === 'string' && body.reason.trim()
+                ? body.reason.trim().slice(0, 180)
+                : 'En espera temporal — avance guardado';
+            const checkedCount = Number(body.checkedCount ?? 0);
+            const totalItems = Number(body.totalItems ?? 0);
+
+            const result = await prisma.$transaction(async (tx) => {
+                const current = await tx.order.findUnique({ where: { id } });
+                if (!current) return { httpStatus: 404, error: 'Pedido no encontrado.' };
+                if (['DELIVERED', 'COMPLETED', 'cancelled', 'refunded'].includes(current.status)) {
+                    return { httpStatus: 409, error: 'No se puede poner en espera un pedido cerrado o cancelado.' };
+                }
+                if (current.loadedByUid && current.loadedByUid !== auth.uid && !['superadmin', 'admin'].includes(actorRole)) {
+                    return { httpStatus: 403, error: `Este pedido está siendo preparado por ${current.loadedBy || 'otro operador'}.` };
+                }
+
+                const updated = await tx.order.update({
+                    where: { id },
+                    data: {
+                        status: 'EN_ESPERA',
+                        loadedBy: current.loadedBy || actorName,
+                        loadedByUid: current.loadedByUid || auth.uid,
+                        loadingStartedAt: current.loadingStartedAt || new Date(),
+                    }
+                });
+
+                await writeOrderEvent(tx, {
+                    orderId: id,
+                    eventType: 'ORDER_HOLD_PAUSED',
+                    fromStatus: current.status,
+                    toStatus: 'EN_ESPERA',
+                    actorId: auth.uid,
+                    actorName,
+                    actorRole,
+                    details: { reason: holdReason, checkedCount, totalItems }
+                });
+
+                return { order: updated };
+            });
+
+            if ('error' in result) return NextResponse.json({ success: false, error: result.error }, { status: result.httpStatus });
+            emitOrderEvent('ORDER_HOLD_PAUSED', { reason: holdReason });
+            return NextResponse.json({ success: true, data: result.order });
+        }
+
+        if (action === 'resume_preparation') {
+            if (![...loadingRoles, 'driver'].includes(actorRole)) {
+                return NextResponse.json({ success: false, error: 'Rol sin permiso para retomar pedidos.' }, { status: 403 });
+            }
+
+            const result = await prisma.$transaction(async (tx) => {
+                const current = await tx.order.findUnique({ where: { id } });
+                if (!current) return { httpStatus: 404, error: 'Pedido no encontrado.' };
+                if (['DELIVERED', 'COMPLETED', 'cancelled', 'refunded'].includes(current.status)) {
+                    return { httpStatus: 409, error: 'El pedido ya fue cerrado o cancelado.' };
+                }
+                if (current.loadedByUid && current.loadedByUid !== auth.uid && !['superadmin', 'admin'].includes(actorRole)) {
+                    return { httpStatus: 403, error: `El pedido está protegido en espera por ${current.loadedBy || 'otro operador'}.` };
+                }
+
+                const nextStatus = current.confirmedAt ? 'paid' : 'PREPARANDO';
+                const updated = await tx.order.update({
+                    where: { id },
+                    data: {
+                        status: nextStatus,
+                        loadedBy: current.loadedBy || actorName,
+                        loadedByUid: current.loadedByUid || auth.uid,
+                        loadingStartedAt: current.loadingStartedAt || new Date(),
+                    }
+                });
+
+                await writeOrderEvent(tx, {
+                    orderId: id,
+                    eventType: 'ORDER_HOLD_RESUMED',
+                    fromStatus: current.status,
+                    toStatus: nextStatus,
+                    actorId: auth.uid,
+                    actorName,
+                    actorRole,
+                });
+
+                return { order: updated };
+            });
+
+            if ('error' in result) return NextResponse.json({ success: false, error: result.error }, { status: result.httpStatus });
+            emitOrderEvent('ORDER_HOLD_RESUMED');
+            return NextResponse.json({ success: true, data: result.order });
+        }
+
+        if (action === 'abandon_preparation') {
+            const suppliedPin = String(body.verificationPin || body.pin || '').trim();
+            const pinCheck = await verifyStaffPin({
+                pin: suppliedPin,
+                tenantId: patchTenantId,
+                activeUserId: auth.uid,
+                prismaInstance: prisma,
+            });
+            if (!pinCheck.ok) {
+                return NextResponse.json({ success: false, error: pinCheck.error }, { status: pinCheck.status });
+            }
+
+            const abandonReason = typeof body.reason === 'string' && body.reason.trim()
+                ? body.reason.trim().slice(0, 180)
+                : 'Abandono autorizado con NIP';
+
+            const result = await prisma.$transaction(async (tx) => {
+                const current = await tx.order.findUnique({ where: { id } });
+                if (!current) return { httpStatus: 404, error: 'Pedido no encontrado.' };
+                if (['DELIVERED', 'COMPLETED', 'cancelled', 'refunded'].includes(current.status)) {
+                    return { httpStatus: 409, error: 'No se puede liberar una operación cerrada.' };
+                }
+
+                const nextStatus = current.confirmedAt ? 'paid' : 'pending_payment';
+                const updated = await tx.order.update({
+                    where: { id },
+                    data: {
+                        status: nextStatus,
+                        loadedBy: null,
+                        loadedByUid: null,
+                        loadingStartedAt: null,
+                    }
+                });
+
+                await writeOrderEvent(tx, {
+                    orderId: id,
+                    eventType: 'ORDER_PREPARATION_ABANDONED',
+                    fromStatus: current.status,
+                    toStatus: nextStatus,
+                    actorId: auth.uid,
+                    actorName,
+                    actorRole,
+                    details: { reason: abandonReason, verifiedBy: pinCheck.verifiedBy }
+                });
+
+                try {
+                    await tx.auditLog.create({
+                        data: {
+                            tenantId: patchTenantId,
+                            action: 'ORDER_PREPARATION_ABANDONED',
+                            details: `Preparación de orden ${id} abandonada por ${actorName}. Autorizado con NIP de ${pinCheck.verifiedBy.name} (${pinCheck.verifiedBy.role}). Motivo: ${abandonReason}`,
+                            userId: pinCheck.verifiedBy.uid,
+                        }
+                    });
+                } catch {}
+
+                return { order: updated };
+            });
+
+            if ('error' in result) return NextResponse.json({ success: false, error: result.error }, { status: result.httpStatus });
+            emitOrderEvent('ORDER_PREPARATION_ABANDONED');
+            return NextResponse.json({ success: true, data: result.order, message: 'Operación abandonada con autorización de NIP.' });
         }
 
         if (action === 'delegate_order') {
@@ -889,6 +1079,20 @@ export async function PATCH(request: NextRequest) {
 
             if (current.loadedByUid && current.loadedByUid !== auth.uid && !['superadmin', 'admin', 'sales'].includes(actorRole)) {
                 return NextResponse.json({ success: false, error: 'Solo el operador que tomó el pedido o un administrador pueden liberarlo.' }, { status: 403 });
+            }
+
+            let delegatedVerifiedBy: any = null;
+            if (body.verificationPin !== undefined) {
+                const pinCheck = await verifyStaffPin({
+                    pin: String(body.verificationPin || ''),
+                    tenantId: patchTenantId,
+                    activeUserId: auth.uid,
+                    prismaInstance: prisma,
+                });
+                if (!pinCheck.ok) {
+                    return NextResponse.json({ success: false, error: pinCheck.error }, { status: pinCheck.status });
+                }
+                delegatedVerifiedBy = pinCheck.verifiedBy;
             }
 
             const targetRole = body.targetRole || body.targetLocation || 'caja';
@@ -910,10 +1114,15 @@ export async function PATCH(request: NextRequest) {
                     actorId: auth.uid,
                     actorName,
                     actorRole,
-                    details: { delegatedTo: targetRole, reason: body.reason || 'Operador ocupado / Delegación rápida' }
+                    details: {
+                        delegatedTo: targetRole,
+                        reason: body.reason || 'Operador ocupado / Delegación rápida',
+                        ...(delegatedVerifiedBy ? { verifiedBy: delegatedVerifiedBy } : {}),
+                    }
                 });
             });
 
+            emitOrderEvent('ORDER_DELEGATED', { targetRole });
             return NextResponse.json({ success: true, message: `Pedido delegado a ${targetRole}` });
         }
 
@@ -961,6 +1170,7 @@ export async function PATCH(request: NextRequest) {
                 return tx.order.findUnique({ where: { id }, include: { items: true, customer: true } });
             });
 
+            emitOrderEvent('ORDER_REFUNDED');
             return NextResponse.json({ success: true, data: updated, message: 'Devolución autorizada. Artículos listos para reincorporación al anaquel.' });
         }
 
@@ -1054,6 +1264,7 @@ export async function PATCH(request: NextRequest) {
                 return tx.order.findUnique({ where: { id }, include: { items: true, customer: true } });
             });
 
+            emitOrderEvent('ORDER_RETURNED_TO_SHELF');
             return NextResponse.json({ success: true, data: updated, message: 'Artículos reincorporados al anaquel exitosamente. Inventario protegido contra duplicidad e inflación.' });
         }
 
@@ -1097,6 +1308,7 @@ export async function PATCH(request: NextRequest) {
                 return tx.order.findUnique({ where: { id }, include: { items: true, customer: true } });
             });
 
+            emitOrderEvent('ORDER_ADMIN_RETURN_INTAKE');
             return NextResponse.json({ success: true, data: updated, message: 'Devolución registrada como dato del dueño. Artículos agregados a inventario como nuevo ingreso.' });
         }
 
@@ -1113,6 +1325,7 @@ export async function PATCH(request: NextRequest) {
                 return tx.order.findUnique({ where: { id } });
             });
             if (!order) return NextResponse.json({ success: false, error: 'Otro repartidor tomó este pedido o aún no está liberado a ruta.' }, { status: 409 });
+            emitOrderEvent('ORDER_DELIVERY_CLAIMED');
             return NextResponse.json({ success: true, data: order });
         }
 
@@ -1209,6 +1422,7 @@ export async function PATCH(request: NextRequest) {
                 return tx.order.findUnique({ where: { id }, include: { customer: true, items: true } });
             });
 
+            emitOrderEvent('ORDER_DELIVERED');
             return NextResponse.json({ success: true, data: order });
         }
 
@@ -1269,6 +1483,20 @@ export async function PATCH(request: NextRequest) {
                 }, { status: 409 });
             }
 
+            let cancelVerifiedBy: any = null;
+            if (body.verificationPin !== undefined) {
+                const pinCheck = await verifyStaffPin({
+                    pin: String(body.verificationPin || ''),
+                    tenantId: patchTenantId,
+                    activeUserId: auth.uid,
+                    prismaInstance: prisma,
+                });
+                if (!pinCheck.ok) {
+                    return NextResponse.json({ success: false, error: pinCheck.error }, { status: pinCheck.status });
+                }
+                cancelVerifiedBy = pinCheck.verifiedBy;
+            }
+
             if (!prismaUpdates.rejectionReason) {
                 prismaUpdates.rejectionReason = current.isLoaded ? 'CANCELADO_PENDIENTE_REACOMODO' : 'CANCELADA_POR_USUARIO';
             }
@@ -1308,7 +1536,8 @@ export async function PATCH(request: NextRequest) {
                     actorRole,
                     details: { 
                         stockReservedReleased: hadReservedStock,
-                        pendingReacomodo: Boolean(current.isLoaded)
+                        pendingReacomodo: Boolean(current.isLoaded),
+                        ...(cancelVerifiedBy ? { verifiedBy: cancelVerifiedBy } : {}),
                     }
                 });
                 return updated;
@@ -1357,6 +1586,7 @@ export async function PATCH(request: NextRequest) {
             });
         }
 
+        emitOrderEvent(updates.status === 'cancelled' ? 'ORDER_CANCELLED' : 'ORDER_UPDATED');
         return NextResponse.json({ success: true, data: order });
     } catch (error: any) {
         if (String(error.message).startsWith('ORDER_CONFLICT:')) {
@@ -1432,6 +1662,12 @@ export async function DELETE(request: NextRequest) {
             });
         });
 
+        publishRealtimeEvent({
+            tenantId: auth.tenantId || getTenantId(request),
+            scope: 'orders',
+            action: 'ORDER_DELETED',
+            entityId: id,
+        });
         return NextResponse.json({ success: true, message: 'Pedido eliminado correctamente.' });
     } catch (error: any) {
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });

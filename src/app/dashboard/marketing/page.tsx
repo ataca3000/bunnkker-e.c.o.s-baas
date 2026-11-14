@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { QRCodeSVG } from 'qrcode.react';
 import { Download, Printer, Share2, Copy, CheckCircle, Settings, Globe, Image, Type, Palette, Save, RefreshCw, Clock } from 'lucide-react';
@@ -442,30 +443,38 @@ export default function MarketingPage() {
                         </div>
                         
                         <h3 className="text-white font-black text-sm tracking-tight mb-2">
-                            Personalización Visual de Fachada
+                            BUNKKER E.C.O.S — Visual Storefront Builder
                         </h3>
                         
                         <p className="text-xs text-slate-300 leading-relaxed mb-4">
-                            Navega y edita directamente sobre tu tienda pública. Personaliza Hero multimedia con herramientas a la izquierda, y en <b>Servicios, Nosotros y Contacto</b> con barra superior y switch <b>❌ / ✔️</b> por tarjeta.
+                            Edita directamente sobre tu tienda pública sin afectar a tus clientes hasta confirmar publicación. Elige iniciar con la plantilla preconfigurada (<b>PRE</b>) o en lienzo libre (<b>CLEAN</b>).
                         </p>
 
                         <div className="space-y-2">
-                            <a
-                                href="/?editMode=true"
-                                target="_blank"
-                                rel="noopener noreferrer"
+                            <Link
+                                href="/dashboard/marketing/editor?page=inicio&builderMode=pre"
                                 className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-slate-950 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/25 transition-all hover:scale-[1.02]"
                             >
-                                <span>🎨 Abrir Editor (Inicio)</span>
-                            </a>
-                            <a
-                                href="/servicios?editMode=true"
-                                target="_blank"
-                                rel="noopener noreferrer"
+                                <span>🎨 Abrir Editor (Modo PRE)</span>
+                            </Link>
+                            <Link
+                                href="/dashboard/marketing/editor?page=inicio&builderMode=clean"
+                                className="w-full py-2.5 px-4 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-colors"
+                            >
+                                <span>✨ Empezar en Limpio (CLEAN)</span>
+                            </Link>
+                            <Link
+                                href="/dashboard/marketing/editor?page=catalogo"
+                                className="w-full py-2 px-3 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 text-amber-300 border border-amber-500/30 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-colors"
+                            >
+                                <span>🛍️ Editar Catálogo y Banners</span>
+                            </Link>
+                            <Link
+                                href="/dashboard/marketing/editor?page=empresa"
                                 className="w-full py-2 px-3 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 text-cyan-300 border border-cyan-500/30 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-colors"
                             >
-                                <span>🛠️ Servicios (❌ / ✔️)</span>
-                            </a>
+                                <span>🏢 Editar Nosotros / Contacto</span>
+                            </Link>
                             <a
                                 href="/"
                                 target="_blank"

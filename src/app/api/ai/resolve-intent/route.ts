@@ -15,9 +15,6 @@ export async function POST(request: NextRequest) {
 
         const result = resolveSemanticIntent(query);
 
-        // Delay opcional para imitar tiempo de procesamiento en UX (muy bajo de 200ms)
-        await new Promise(resolve => setTimeout(resolve, 150));
-
         return NextResponse.json({
             success: true,
             data: result

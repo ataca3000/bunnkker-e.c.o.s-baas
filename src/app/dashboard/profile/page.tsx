@@ -8,16 +8,17 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { toast } from '@/lib/toast';
 import HardwareSettingsModal from '@/components/hardware/HardwareSettingsModal';
+import {
+    loadHardwareConfig as readStoredHardwareConfig,
+    DEFAULT_HARDWARE_CONFIG,
+    type HardwareConfig,
+} from '@/lib/hardwareConfig';
 
 export default function UserProfile() {
     const { profile, isReadOnly } = useAuth();
     const [isEditing, setIsEditing] = useState(false);
     const [hardwareModalOpen, setHardwareModalOpen] = useState(false);
-    const [hardwareConfig, setHardwareConfig] = useState({
-        printerMode: 'digital',
-        scannerMode: 'camera',
-        scaleUnit: 'kg'
-    });
+    const [hardwareConfig, setHardwareConfig] = useState<HardwareConfig>(DEFAULT_HARDWARE_CONFIG);
     const [newPin, setNewPin] = useState('');
     const [confirmPin, setConfirmPin] = useState('');
     const [isSaving, setIsSaving] = useState(false);
@@ -31,26 +32,7 @@ export default function UserProfile() {
     });
 
     const loadHardwareConfig = () => {
-        if (typeof window === 'undefined') return;
-        try {
-            const raw = localStorage.getItem('_bunkker_hardware_config');
-            if (raw) {
-                const parsed = JSON.parse(raw);
-                setHardwareConfig({
-                    printerMode: parsed.printerMode || 'digital',
-                    scannerMode: parsed.scannerMode || 'camera',
-                    scaleUnit: parsed.scaleUnit || 'kg'
-                });
-            } else {
-                setHardwareConfig({
-                    printerMode: 'digital',
-                    scannerMode: 'camera',
-                    scaleUnit: 'kg'
-                });
-            }
-        } catch {
-            // fallback
-        }
+        setHardwareConfig(readStoredHardwareConfig());
     };
 
     useEffect(() => {
@@ -348,7 +330,7 @@ export default function UserProfile() {
                                             </div>
                                             <div className="text-sm font-black text-white mt-0.5 truncate">
                                                 {hardwareConfig.printerMode === 'digital' && '📱 Ticket Digital (Pantalla, QR y WhatsApp)'}
-                                                {hardwareConfig.printerMode === 'usb' && '🔌 Impresora USB / Serial (Cable)'}
+                                                {hardwareConfig.printerMode === 'serial' && '🔌 Impresora USB / Serial (Cable)'}
                                                 {hardwareConfig.printerMode === 'bluetooth' && '📶 Impresora Bluetooth (BLE)'}
                                                 {hardwareConfig.printerMode === 'network' && '🌐 Impresora Wi-Fi / Red Local'}
                                             </div>
@@ -360,7 +342,7 @@ export default function UserProfile() {
                                         </div>
                                     </div>
 
-                                    {/* Escáner de Códigos */}
+                                    {/* Escáner de Códigos, QR & NFC */}
                                     <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 flex items-start gap-3">
                                         <div className="p-2.5 rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 shrink-0">
                                             {hardwareConfig.scannerMode === 'camera' ? (
@@ -371,23 +353,25 @@ export default function UserProfile() {
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center justify-between gap-1">
-                                                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Escáner de Códigos</span>
+                                                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Escáner, QR & NFC</span>
                                                 <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
                                                     hardwareConfig.scannerMode === 'camera' 
                                                         ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' 
                                                         : 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
                                                 }`}>
-                                                    {hardwareConfig.scannerMode === 'camera' ? 'DEFAULT: CÁMARA' : 'LÁSER HID'}
+                                                    {hardwareConfig.scannerMode === 'camera' ? 'CÁMARA QR' : 'LÁSER HID'}
                                                 </span>
                                             </div>
                                             <div className="text-sm font-black text-white mt-0.5 truncate">
-                                                {hardwareConfig.scannerMode === 'camera' && '📷 Cámara del Dispositivo (Móvil / PC)'}
-                                                {hardwareConfig.scannerMode === 'laser' && '🔫 Pistola Láser HID (USB / BT)'}
+                                                {hardwareConfig.scannerMode === 'camera' && '📷 Cámara QR / Barras del Dispositivo'}
+                                                {hardwareConfig.scannerMode === 'hid' && '🔫 Pistola Láser HID (USB / BT)'}
                                             </div>
                                             <p className="text-[11px] text-slate-400 mt-1 line-clamp-2">
-                                                {hardwareConfig.scannerMode === 'camera' 
-                                                    ? 'Usa el lente y autofocus de tu smartphone, tablet o cámara web sin hardware adicional.' 
-                                                    : 'Recibe ráfagas directas de teclado mediante pistola lectora láser conectada.'}
+                                                {hardwareConfig.nfcEnabled
+                                                    ? `NFC activo (${hardwareConfig.nfcMode === 'web_nfc' ? 'Web NFC' : 'USB HID'}). ${hardwareConfig.qrContinuousMode ? 'QR continuo.' : 'QR unitario.'}`
+                                                    : (hardwareConfig.scannerMode === 'camera'
+                                                        ? 'Usa el lente de tu smartphone, tablet o webcam para QR y barras.'
+                                                        : 'Recibe ráfagas directas de teclado mediante pistola lectora láser.')}
                                             </p>
                                         </div>
                                     </div>

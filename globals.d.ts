@@ -31,6 +31,7 @@ declare module 'ai' {
 declare module 'flags/next' {
   export function flag<T = any>(options: any): any;
   export function evaluate(flags: any): Promise<any>;
+  export function createFlagsDiscoveryEndpoint(getApiData: any, options?: any): any;
   const def: any;
   export default def;
 }
@@ -38,6 +39,7 @@ declare module 'flags/next' {
 declare module '@flags-sdk/vercel' {
   export const vercelAdapter: any;
   export const vercelFlag: any;
+  export function getProviderData(flags: any): any;
   const def: any;
   export default def;
 }

@@ -88,11 +88,15 @@ export function MisIncisosEnRecoleccion({
                                             #{order.id.slice(-6).toUpperCase()}
                                         </span>
                                         {isDeconstruction ? (
-                                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center gap-1">
+                                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center gap-1">
                                                 <RotateCcw size={10} /> Deconstrucción en Rojo
                                             </span>
+                                        ) : order.status === 'EN_ESPERA' ? (
+                                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                                                EN ESPERA
+                                            </span>
                                         ) : (
-                                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
                                                 {order.deliveryType || 'LOCAL'}
                                             </span>
                                         )}

@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { PHASE_DEVELOPMENT_SERVER } from "next/constants";
 import path from "path";
 
 const isDesktopBuild = (process.env.BUILD_TARGET === 'desktop' || process.env.NEXT_PUBLIC_APP_ENV === 'local') && !process.env.VERCEL;
@@ -27,12 +28,14 @@ const nextConfig: NextConfig = {
   },
   webpack: (config, { dev }) => {
     if (dev) {
+      config.devtool = 'cheap-module-source-map';
       config.watchOptions = {
         poll: false,
         ignored: [
           '**/node_modules/**',
           '**/.git/**',
           '**/.next/**',
+          '**/build/**',
           '**/prisma/*.db*',
           '**/.agents/**',
           '**/lfeds/**',
@@ -48,12 +51,20 @@ const nextConfig: NextConfig = {
 };
 
 let withVercelToolbar = (cfg: NextConfig) => cfg;
-try {
-  // @ts-ignore - optional vercel toolbar plugin may not exist in non-vercel builds
-  const createWithVercelToolbar = require('@vercel/toolbar/plugins/next');
-  withVercelToolbar = (createWithVercelToolbar?.default || createWithVercelToolbar)();
-} catch {
-  // Entorno local / standalone sin toolbar de Vercel
+if (process.env.VERCEL === '1') {
+  try {
+    // @ts-ignore - optional vercel toolbar plugin may not exist in non-vercel builds
+    const createWithVercelToolbar = require('@vercel/toolbar/plugins/next');
+    withVercelToolbar = (createWithVercelToolbar?.default || createWithVercelToolbar)();
+  } catch {
+    // Entorno local / standalone sin toolbar de Vercel
+  }
 }
 
-export default withVercelToolbar(nextConfig);
+export default function getNextConfig(phase: string): NextConfig {
+  const isDevServer = phase === PHASE_DEVELOPMENT_SERVER;
+  return withVercelToolbar({
+    ...nextConfig,
+    ...(isDevServer ? { distDir: 'build/.next-dev' } : {}),
+  });
+}

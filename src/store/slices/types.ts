@@ -41,8 +41,20 @@ export interface ConfigSlice {
 export interface UISlice {
     loading: boolean;
     firebaseStatus: FirebaseStatus;
+    syncErrorCode: import('@/lib/syncErrorCodes').BunkkerSyncErrorCode | null;
+    syncErrorDetail: string | null;
+    pendingOfflineCount: number;
+    lastSyncAt: string | null;
+    reconnectAttempt: number;
     setLoading: (loading: boolean) => void;
     setFirebaseStatus: (status: FirebaseStatus) => void;
+    setSyncHealth: (health: {
+        syncErrorCode?: import('@/lib/syncErrorCodes').BunkkerSyncErrorCode | null;
+        syncErrorDetail?: string | null;
+        pendingOfflineCount?: number;
+        lastSyncAt?: string | null;
+        reconnectAttempt?: number;
+    }) => void;
     guidedTourActive: boolean;
     guidedTourStep: number;
     hasCustomizedCanvas: boolean;

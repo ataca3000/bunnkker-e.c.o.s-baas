@@ -10,7 +10,19 @@ import { toast } from '@/lib/toast';
 import { checkLicenseStatus } from '@/lib/license';
 import { enqueueOfflineOrder, flushOfflineOrderQueue, getQueuedOfflineOrders } from '@/lib/indexedDBCart';
 import { getCustomerAuthHeaders } from '@/lib/customerAuth';
-import { broadcastSync } from '@/lib/syncNotifier';
+import { broadcastSync, inferSyncScope } from '@/lib/syncNotifier';
+import type { BunkkerSyncErrorCode } from '@/lib/syncErrorCodes';
+import type { TimedOfferBanner } from '@/lib/storefrontBuilder';
+import {
+    loadOfflineSiteConfigSnapshot,
+    saveOfflineSiteConfigSnapshot,
+    syncStorefrontAssetsWithServiceWorker,
+} from '@/lib/storefrontOfflineCache';
+import {
+    INVENTORY_SOCKET_RECONNECT_EVENT,
+    INVENTORY_SOCKET_STATUS_EVENT,
+    type InventorySocketState,
+} from '@/lib/inventorySocketControl';
 
 export type { Product, CartItem, Order };
 
@@ -39,7 +51,7 @@ export interface PromoWidget {
 
 export interface VisualLayoutBlock {
     id: string;
-    type: 'hero' | 'catalog' | 'map' | 'custom_text' | 'image' | 'widget' | 'about' | 'banner';
+    type: 'hero' | 'catalog' | 'map' | 'custom_text' | 'image' | 'widget' | 'about' | 'banner' | 'video';
     order: number;
     visible: boolean;
     settings?: {
@@ -60,21 +72,45 @@ export interface VisualLayoutBlock {
         subtitleText?: string;
         imageUrl?: string;
         mediaUrl?: string;
+        mediaType?: 'image' | 'gif' | 'video';
+        emojiIcon?: string;
+        sizePreset?: 'sm' | 'md' | 'lg' | 'full';
+        minHeight?: number;
+        glassBlur?: boolean;
+        surfaceMode?: 'solid' | 'glass' | 'media';
+        scrimStrength?: number;
+        zIndex?: number;
+        screenDurationSec?: number;
+        endsAt?: string;
+        ctaHref?: string;
     };
 }
 
 export type CanvasLayer = {
     id: string;
-    type: 'text' | 'image' | 'video' | 'sticker';
+    type: 'text' | 'image' | 'video' | 'sticker' | 'container' | 'banner';
     x: number;
     y: number;
     width: number;
     height?: number;
     content: string;
+    title?: string;
+    subtitle?: string;
+    ctaText?: string;
+    ctaHref?: string;
+    mediaUrl?: string;
+    mediaType?: 'image' | 'gif' | 'video';
     fontSize?: number;
     fontFamily?: string;
     fontEffect?: string;
     color?: string;
+    backdropColor?: string;
+    glassBlur?: boolean;
+    borderRadius?: number;
+    opacity?: number;
+    scrimStrength?: number;
+    screenDurationSec?: number;
+    endsAt?: string;
     rotation?: number;
     zIndex?: number;
     align?: 'left' | 'center' | 'right';
@@ -87,6 +123,8 @@ export interface SiteConfig {
     businessName: string;
     businessPhone: string;
     businessAddress?: string;
+    contactEmail?: string;
+    whatsappNumber?: string;
     currency: string;
     currencySymbol: string;
     marketTitle: string;
@@ -112,6 +150,47 @@ export interface SiteConfig {
     mapLocationUrl?: string;
     layout?: VisualLayoutBlock[];
     productOrder?: string[];
+    builderMode?: 'PRE' | 'CLEAN';
+    publishedAt?: string;
+    heroData?: {
+        badgeText?: string;
+        ctaPrimaryText?: string;
+        ctaSecondaryText?: string;
+        scrimOpacity?: number;
+        heightVh?: number;
+        cardWidth?: 'sm' | 'md' | 'lg' | 'full';
+        cardGlass?: boolean;
+    };
+    aboutData?: {
+        title: string;
+        subtitle: string;
+        description: string;
+        imageUrl?: string;
+        mediaType?: 'image' | 'gif' | 'video';
+        ctaPrimaryText?: string;
+        ctaSecondaryText?: string;
+        highlights?: Array<{
+            id: string;
+            emoji: string;
+            title: string;
+            desc: string;
+            active: boolean;
+        }>;
+    };
+    contactData?: {
+        title: string;
+        subtitle: string;
+        formTitle?: string;
+        showMap?: boolean;
+        extraChannels?: Array<{
+            id: string;
+            emoji: string;
+            label: string;
+            value: string;
+            active: boolean;
+        }>;
+    };
+    timedBanners?: TimedOfferBanner[];
     pagesData?: Record<string, {
         layout: VisualLayoutBlock[];
         canvasLayers: CanvasLayer[];
@@ -135,7 +214,9 @@ export interface SiteConfig {
             title: string;
             desc: string;
             icon?: string;
+            emoji?: string;
             active?: boolean;
+            sizePreset?: 'sm' | 'md' | 'lg' | 'full';
         }>;
     };
 }
@@ -150,19 +231,29 @@ export type FirebaseStatus = 'connecting' | 'online' | 'offline' | 'demo';
 const CartContext = createContext<any>(null); // Dummy context por compatibilidad
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-    const { isReadOnly, profile, loading: authLoading } = useAuth();
+    const { isReadOnly, profile } = useAuth();
     const setProducts       = useERPStore((s) => s.setProducts);
     const setOrders         = useERPStore((s) => s.setOrders);
     const setOwnerConfig    = useERPStore((s) => s.setOwnerConfig);
     const _setSiteConfig    = useERPStore((s) => s.setSiteConfig);
     const setFirebaseStatus = useERPStore((s) => s.setFirebaseStatus);
+    const setSyncHealth     = useERPStore((s) => s.setSyncHealth);
     const setLoading        = useERPStore((s) => s.setLoading);
-    const firebaseStatus    = useERPStore((s) => s.firebaseStatus);
     const localMutationInFlight = useRef(0);
+    const profileRoleRef = useRef<string | null>(null);
 
-    // ─── Local API Sync for Operational Data (Products & Orders) + IndexedDB Queue Flush ───
     useEffect(() => {
-        // Pre-hidratar inmediatamente desde caché para evitar parpadeos
+        profileRoleRef.current = profile?.role || null;
+    }, [profile?.role]);
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            (window as any).__bunkkerMutationLock = localMutationInFlight;
+        }
+    }, []);
+
+    // ─── Local API Sync + Same-Origin SSE + Exponential Backoff Reconnect ───
+    useEffect(() => {
         try {
             const cached = localStorage.getItem('_bunkker_cached_products');
             if (cached) {
@@ -173,37 +264,91 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             }
         } catch {}
 
+        let unmounted = false;
         let isFetching = false;
         let refetchQueued = false;
+        let consecutiveFailures = 0;
+        let pollTimer: ReturnType<typeof setTimeout> | null = null;
+        let sseConnected = false;
+        let sseSource: EventSource | null = null;
+        let sseRetryTimer: ReturnType<typeof setTimeout> | null = null;
+        let sseAttempts = 0;
+        let sseConnectedOnce = false;
+        let lastSseTs = 0;
+        const seenSseTx = new Set<string>();
+
+        const scheduleNextPoll = () => {
+            if (unmounted) return;
+            if (pollTimer) clearTimeout(pollTimer);
+            const delay = consecutiveFailures > 0
+                ? Math.min(25_000, 3_000 * Math.pow(2, Math.min(consecutiveFailures - 1, 3)))
+                : sseConnected
+                    ? 15_000
+                    : 5_000;
+            pollTimer = setTimeout(() => {
+                void fetchLocalData();
+            }, delay);
+        };
+
         const fetchLocalData = async () => {
+            if (unmounted) return;
             if (isFetching || localMutationInFlight.current > 0) {
                 refetchQueued = true;
                 return;
             }
             isFetching = true;
+
             try {
-                // 1. Si hay pedidos pendientes en IndexedDB, sincronizarlos primero
+                if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+                    const queued = await getQueuedOfflineOrders();
+                    setFirebaseStatus('offline');
+                    setSyncHealth({
+                        syncErrorCode: 'ERR_NET_OFFLINE',
+                        syncErrorDetail: 'El dispositivo está sin conexión de red.',
+                        pendingOfflineCount: queued.length,
+                        reconnectAttempt: consecutiveFailures + 1,
+                    });
+                    consecutiveFailures++;
+                    return;
+                }
+
+                // 1. Vaciar cola offline de IndexedDB al recuperar red
                 const flushResult = await flushOfflineOrderQueue((syncedOrderId) => {
                     toast.success(`Pedido offline ${syncedOrderId} sincronizado desde IndexedDB.`, '☁️ Sincronizado');
                 });
                 if (flushResult.synced > 0) {
-                    broadcastSync({ action: 'OFFLINE_QUEUE_SYNCED' });
+                    broadcastSync({ action: 'OFFLINE_QUEUE_SYNCED', scope: 'orders', skipServerPost: true });
                 }
 
-                // Fetch Products from Local API con cache: no-store
-                const prodRes = await fetch('/api/products', { cache: 'no-store', headers: { 'Cache-Control': 'no-cache' } });
+                const [prodRes, ordRes] = await Promise.all([
+                    fetch('/api/products', {
+                        cache: 'no-store',
+                        credentials: 'include',
+                        headers: { 'Cache-Control': 'no-cache' },
+                    }),
+                    fetch('/api/orders', {
+                        cache: 'no-store',
+                        credentials: 'include',
+                        headers: { 'Cache-Control': 'no-cache' },
+                    }),
+                ]);
+
+                let detectedErrorCode: BunkkerSyncErrorCode | null = null;
+                let detectedErrorDetail: string | null = null;
+
                 if (prodRes.ok) {
-                    const prodData = await prodRes.json();
-                    if (prodData.success) {
+                    const prodData = await prodRes.json().catch(() => null);
+                    if (prodData?.success && Array.isArray(prodData.data)) {
                         const mappedProducts = prodData.data.map((p: any) => ({
                             ...p,
                             category: p.category || 'General',
                             location: { estante: p.estante || '', fila: p.fila || '' }
                         }));
-                        // Salvaguardar productos recién creados en los últimos 60 segundos si el servidor aún no los devuelve
                         const currentProducts = useERPStore.getState().products;
                         const serverIds = new Set(mappedProducts.map((p: any) => p.id));
-                        const freshlyCreated = currentProducts.filter(p => !serverIds.has(p.id) && (Date.now() - (new Date(p.createdAt || 0).getTime())) < 60000);
+                        const freshlyCreated = currentProducts.filter(
+                            (p) => !serverIds.has(p.id) && (Date.now() - (new Date(p.createdAt || 0).getTime())) < 60000
+                        );
                         const finalProducts = [...mappedProducts, ...freshlyCreated];
                         setProducts(finalProducts);
                         try {
@@ -211,191 +356,455 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
                             localStorage.setItem('_bunkker_last_catalog_sync', new Date().toISOString());
                         } catch {}
                     }
+                } else {
+                    detectedErrorCode = prodRes.status >= 500 ? 'ERR_SYNC_HTTP_5XX' : 'ERR_SERVER_UNREACHABLE';
+                    detectedErrorDetail = `Catálogo HTTP ${prodRes.status}`;
                 }
 
-                // Fetch Orders from Local API con cache: no-store
-                const ordRes = await fetch('/api/orders', { cache: 'no-store', headers: { 'Cache-Control': 'no-cache' } });
+                const queued = await getQueuedOfflineOrders();
+
                 if (ordRes.ok) {
-                    const ordData = await ordRes.json();
-                    if (ordData.success) {
-                        const queued = await getQueuedOfflineOrders();
+                    const ordData = await ordRes.json().catch(() => null);
+                    if (ordData?.success) {
                         const serverOrders = ordData.data || [];
                         const serverIds = new Set(serverOrders.map((o: any) => o.id));
                         const pendingOfflineOrders = queued
-                            .filter(q => !serverIds.has(q.orderId))
-                            .map(q => ({
+                            .filter((q) => !serverIds.has(q.orderId))
+                            .map((q) => ({
                                 ...q.payload,
                                 id: q.orderId,
-                                offlineQueued: true
+                                offlineQueued: true,
                             }));
                         const combined = [...pendingOfflineOrders, ...serverOrders];
                         setOrders(combined.sort((a: any, b: any) => (b.date || '').localeCompare(a.date || '')));
                     }
+                } else if (ordRes.status === 401) {
+                    // En tienda pública (invitado sin perfil de staff), 401 en /api/orders es comportamiento esperado.
+                    if (profileRoleRef.current) {
+                        detectedErrorCode = 'ERR_SESSION_EXPIRED';
+                        detectedErrorDetail = 'La sesión de trabajo requiere revalidación.';
+                    }
+                } else {
+                    detectedErrorCode = ordRes.status >= 500 ? 'ERR_SYNC_HTTP_5XX' : 'ERR_SERVER_UNREACHABLE';
+                    detectedErrorDetail = `Órdenes HTTP ${ordRes.status}`;
                 }
-                
-                setFirebaseStatus('online'); // Using this status to represent "Local Server Online"
+
+                if (detectedErrorCode) {
+                    consecutiveFailures++;
+                    setFirebaseStatus(detectedErrorCode === 'ERR_SESSION_EXPIRED' ? 'online' : 'offline');
+                    setSyncHealth({
+                        syncErrorCode: detectedErrorCode,
+                        syncErrorDetail: detectedErrorDetail,
+                        pendingOfflineCount: queued.length,
+                        reconnectAttempt: consecutiveFailures,
+                    });
+                } else {
+                    consecutiveFailures = 0;
+                    setFirebaseStatus('online');
+                    setSyncHealth({
+                        syncErrorCode: null,
+                        syncErrorDetail: null,
+                        pendingOfflineCount: queued.length,
+                        lastSyncAt: new Date().toISOString(),
+                        reconnectAttempt: 0,
+                    });
+                }
             } catch (err) {
-                console.warn('[BUNKKER ERP] No se pudo conectar al servidor local. El sistema continúa en modo offline con IndexedDB.', err);
+                consecutiveFailures++;
+                const queued = await getQueuedOfflineOrders().catch(() => []);
+                const offlineNow = typeof navigator !== 'undefined' && navigator.onLine === false;
+                console.warn('[BUNKKER ERP] Reintento de sincronización programado:', err);
                 setFirebaseStatus('offline');
+                setSyncHealth({
+                    syncErrorCode: offlineNow ? 'ERR_NET_OFFLINE' : 'ERR_SERVER_UNREACHABLE',
+                    syncErrorDetail: err instanceof Error ? err.message : 'Fallo de red',
+                    pendingOfflineCount: queued.length,
+                    reconnectAttempt: consecutiveFailures,
+                });
             } finally {
                 setLoading(false);
                 isFetching = false;
-                if (refetchQueued) {
+                if (refetchQueued && !unmounted) {
                     refetchQueued = false;
-                    fetchLocalData();
+                    void fetchLocalData();
+                } else {
+                    scheduleNextPoll();
                 }
             }
         };
 
-        // Initial fetch
-        fetchLocalData();
+        const connectSse = () => {
+            if (unmounted || typeof window === 'undefined' || typeof EventSource === 'undefined') return;
+            if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
 
-        // Sincronizar inmediatamente al recuperar red
-        const handleOnline = () => {
-            fetchLocalData();
+            if (sseSource) {
+                try { sseSource.close(); } catch {}
+                sseSource = null;
+            }
+
+            const sinceParam = lastSseTs > 0 ? `?since=${lastSseTs}` : '';
+            const es = new EventSource(`/api/sync/events${sinceParam}`, { withCredentials: true });
+            sseSource = es;
+
+            es.addEventListener('connected', () => {
+                const wasReconnect = sseConnectedOnce;
+                sseConnectedOnce = true;
+                sseConnected = true;
+                sseAttempts = 0;
+                if (wasReconnect) {
+                    // Reconciliación completa tras reconexión SSE
+                    void fetchLocalData();
+                    broadcastSync({ action: 'RECONCILE_ALL', scope: 'all', fromRemote: true, skipServerPost: true });
+                }
+            });
+
+            es.addEventListener('sync', (msg: MessageEvent) => {
+                try {
+                    const ev = JSON.parse(msg.data);
+                    if (ev?.timestamp && Number(ev.timestamp) > lastSseTs) {
+                        lastSseTs = Number(ev.timestamp);
+                    }
+                    if (ev?.txId) {
+                        if (seenSseTx.has(ev.txId)) return;
+                        if (seenSseTx.size >= 400) {
+                            const oldest = seenSseTx.values().next().value;
+                            if (oldest) seenSseTx.delete(oldest);
+                        }
+                        seenSseTx.add(ev.txId);
+                    }
+                    broadcastSync({
+                        action: ev?.action || 'GLOBAL_SYNC',
+                        id: ev?.entityId,
+                        scope: ev?.scope || 'all',
+                        txId: ev?.txId,
+                        fromRemote: true,
+                        skipServerPost: true,
+                    });
+                    if (ev?.scope !== 'settings' && ev?.scope !== 'devices') {
+                        void fetchLocalData();
+                    }
+                } catch {}
+            });
+
+            es.onerror = () => {
+                sseConnected = false;
+                try { es.close(); } catch {}
+                sseSource = null;
+                if (unmounted) return;
+                sseAttempts++;
+                const retryDelay = Math.min(30_000, 2_000 * Math.pow(2, Math.min(sseAttempts - 1, 4)));
+                if (sseRetryTimer) clearTimeout(sseRetryTimer);
+                sseRetryTimer = setTimeout(connectSse, retryDelay);
+            };
         };
 
-        // Sincronización instantánea multi-pestaña y multi-pantalla (0ms)
+        void fetchLocalData();
+        connectSse();
+
+        const handleOnline = () => {
+            consecutiveFailures = 0;
+            sseAttempts = 0;
+            void fetchLocalData();
+            connectSse();
+        };
+
+        const handleOffline = async () => {
+            const queued = await getQueuedOfflineOrders().catch(() => []);
+            setFirebaseStatus('offline');
+            setSyncHealth({
+                syncErrorCode: 'ERR_NET_OFFLINE',
+                syncErrorDetail: 'Conexión perdida en este dispositivo.',
+                pendingOfflineCount: queued.length,
+            });
+        };
+
+        const handleVisibilityOrFocus = () => {
+            if (typeof document === 'undefined' || document.visibilityState === 'visible') {
+                void fetchLocalData();
+                if (!sseSource && navigator.onLine !== false) {
+                    connectSse();
+                }
+            }
+        };
+
+        const handleForceResync = () => {
+            consecutiveFailures = 0;
+            sseAttempts = 0;
+            if (sseRetryTimer) {
+                clearTimeout(sseRetryTimer);
+                sseRetryTimer = null;
+            }
+            if (sseSource) {
+                try { sseSource.close(); } catch {}
+                sseSource = null;
+                sseConnected = false;
+            }
+            void fetchLocalData();
+            connectSse();
+        };
+
+        const handleLocalSyncEvent = (ev: Event) => {
+            const detail = (ev as CustomEvent<any>).detail;
+            if (detail?.fromRemote) return;
+            const scope = inferSyncScope(detail?.action, detail?.scope);
+            if (scope === 'orders' || scope === 'products' || scope === 'all') {
+                void fetchLocalData();
+            }
+        };
+
         let tabChannel: BroadcastChannel | null = null;
         if (typeof window !== 'undefined') {
             window.addEventListener('online', handleOnline);
-            window.addEventListener('bunkker_sync_event', fetchLocalData);
+            window.addEventListener('offline', handleOffline);
+            window.addEventListener('focus', handleVisibilityOrFocus);
+            window.addEventListener('bunkker_force_resync', handleForceResync);
+            window.addEventListener('bunkker_sync_event', handleLocalSyncEvent);
+            document.addEventListener('visibilitychange', handleVisibilityOrFocus);
 
             if (typeof BroadcastChannel !== 'undefined') {
                 try {
                     tabChannel = new BroadcastChannel('bunkker_tab_sync');
                     tabChannel.onmessage = (event) => {
                         if (event.data?.type === 'SYNC_REFETCH') {
-                            fetchLocalData();
+                            const scope = inferSyncScope(event.data?.payload?.action, event.data?.payload?.scope);
+                            if (scope === 'orders' || scope === 'products' || scope === 'all') {
+                                void fetchLocalData();
+                            }
                         }
                     };
-                } catch (e) {
-                    console.warn('[CartContext] Error initializing tabChannel:', e);
-                }
+                } catch {}
             }
         }
 
-        // Ultra-fast polling for local network (every 2 seconds)
-        const pollInterval = setInterval(fetchLocalData, 2000);
-
         return () => {
-            clearInterval(pollInterval);
+            unmounted = true;
+            if (pollTimer) clearTimeout(pollTimer);
+            if (sseRetryTimer) clearTimeout(sseRetryTimer);
+            if (sseSource) {
+                try { sseSource.close(); } catch {}
+            }
             if (typeof window !== 'undefined') {
                 window.removeEventListener('online', handleOnline);
-                window.removeEventListener('bunkker_sync_event', fetchLocalData);
+                window.removeEventListener('offline', handleOffline);
+                window.removeEventListener('focus', handleVisibilityOrFocus);
+                window.removeEventListener('bunkker_force_resync', handleForceResync);
+                window.removeEventListener('bunkker_sync_event', handleLocalSyncEvent);
+                document.removeEventListener('visibilitychange', handleVisibilityOrFocus);
                 if (tabChannel) {
                     try { tabChannel.close(); } catch {}
                 }
             }
         };
-    }, [setProducts, setOrders, setFirebaseStatus, setLoading]);
+    }, [setProducts, setOrders, setFirebaseStatus, setSyncHealth, setLoading]);
 
-    // ─── Socket.IO Sync for Floating Stock ─────────────────────────────────────
+    // ─── Puente Opcional Socket.IO LAN (solo HTTP local; en HTTPS usa SSE) ───
     useEffect(() => {
-        if (typeof window !== 'undefined') {
-            const { io } = require("socket.io-client");
-            const newSocket = io("http://" + window.location.hostname + ":3001", {
-                reconnection: true,
-                reconnectionAttempts: Infinity,
-                reconnectionDelay: 1000,
-                reconnectionDelayMax: 5000,
-                timeout: 20000,
-            });
-            
-            newSocket.on("connect", () => {
-                console.log("🟢 Conectado al Sync Server de Inventario (Reconexión activa)");
-                try {
-                    broadcastSync({ action: 'SOCKET_RECONNECTED' });
-                } catch {}
-            });
+        if (typeof window === 'undefined') return;
+        const isLocalHttp = window.location.protocol === 'http:';
 
-            newSocket.on("floating_stock_update", (floatingMap: Record<string, number>) => {
-                const state = useERPStore.getState();
-                // Update floating stock globally
-                if (state.setFloatingStock) {
-                    state.setFloatingStock(floatingMap);
-                }
-            });
+        const reservationCheckInterval = setInterval(() => {
+            const state = useERPStore.getState();
+            if (state.cleanExpiredReservations) {
+                state.cleanExpiredReservations();
+            }
+        }, 60 * 1000);
 
-            newSocket.on("sync_db_event", async () => {
-                // Refetch global data silent mode
-                const state = useERPStore.getState();
-                try {
-                    const [resP, resO] = await Promise.all([
-                        fetch('/api/products'), fetch('/api/orders')
-                    ]);
-                    if (resP.ok) {
-                        const dataP = await resP.json();
-                        if (state.setProducts) {
-                            const mappedProducts = (dataP.data || []).map((p: any) => ({
-                                ...p,
-                                location: { estante: p.estante || '', fila: p.fila || '' }
-                            }));
-                            state.setProducts(mappedProducts);
-                        }
-                    }
-                    if (resO.ok) {
-                        const dataO = await resO.json();
-                        if (state.setOrders) state.setOrders(dataO.data || []);
-                    }
-                } catch(e) {}
-            });
-
-            newSocket.on('order_claimed', (data: { orderId: string; claimedBy: string; claimedRole: string }) => {
-                const state = useERPStore.getState();
-                if (state.claimOrder) {
-                    state.claimOrder(data.orderId, { name: data.claimedBy, role: data.claimedRole });
-                }
-            });
-
-            newSocket.on('order_released', (data: { orderId: string; releasedBy: string; role: string; reason?: string }) => {
-                const state = useERPStore.getState();
-                if (state.releaseOrder) {
-                    state.releaseOrder(data.orderId, { name: data.releasedBy, role: data.role }, data.reason);
-                }
-            });
-
-            // Make socket available globally for checkout reservation
-            (window as any).__inventorySocket = newSocket;
-
-            // LFEDS Timer: Auto-limpieza de reservas expiradas (>30 min)
-            const reservationCheckInterval = setInterval(() => {
-                const state = useERPStore.getState();
-                if (state.cleanExpiredReservations) {
-                    state.cleanExpiredReservations();
-                }
-            }, 60 * 1000);
-
-            return () => {
-                newSocket.disconnect();
-                clearInterval(reservationCheckInterval);
-            };
+        if (!isLocalHttp) {
+            return () => clearInterval(reservationCheckInterval);
         }
-    }, []);
-    // ───────────────────────────────────────────────────────────────────────────
 
-    // ─── Local Settings Init ──────────────────────────────────────────────────
-    useEffect(() => {
-        try {
-            // BUG-4 FIX: Migrar clave de siteConfig de _admincom_ a _bunkker_
-            const SITE_CONFIG_KEY = '_bunkker_site_config';
-            const LEGACY_KEY      = '_admincom_site_config';
+        const emitSocketState = (status: InventorySocketState) => {
+            (window as any).__inventorySocketState = status;
+            window.dispatchEvent(new CustomEvent(INVENTORY_SOCKET_STATUS_EVENT, { detail: { status } }));
+        };
 
-            let raw = localStorage.getItem(SITE_CONFIG_KEY);
-            if (!raw) {
-                // Migrar si existe la clave vieja
-                const legacy = localStorage.getItem(LEGACY_KEY);
-                if (legacy) {
-                    localStorage.setItem(SITE_CONFIG_KEY, legacy);
-                    localStorage.removeItem(LEGACY_KEY);
-                    raw = legacy;
-                    console.info('[BUNKKER] siteConfig migrado de _admincom_ a _bunkker_');
+        let newSocket: any = null;
+        let isDisposed = false;
+
+        const createOrConnectSocket = (forceRecreate = false) => {
+            if (isDisposed) return;
+
+            if (newSocket && !forceRecreate) {
+                try {
+                    emitSocketState('reconnecting');
+                    if (newSocket.io?.opts) {
+                        newSocket.io.opts.reconnectionAttempts = 5;
+                    }
+                    newSocket.disconnect();
+                    newSocket.connect();
+                    return;
+                } catch {
+                    forceRecreate = true;
                 }
             }
 
-            if (raw) _setSiteConfig({ ...defaultSiteConfig, ...JSON.parse(raw) });
+            if (newSocket && forceRecreate) {
+                try {
+                    newSocket.removeAllListeners?.();
+                    newSocket.disconnect();
+                } catch {}
+                newSocket = null;
+            }
+
+            try {
+                emitSocketState('reconnecting');
+                const { io } = require('socket.io-client');
+                newSocket = io('http://' + window.location.hostname + ':3001', {
+                    reconnection: true,
+                    reconnectionAttempts: 5,
+                    reconnectionDelay: 1500,
+                    reconnectionDelayMax: 8000,
+                    timeout: 4000,
+                });
+
+                newSocket.on('connect', () => {
+                    console.log('🟢 Puente LAN :3001 activo');
+                    emitSocketState('connected');
+                    try {
+                        newSocket.emit('request_inventory_sync');
+                    } catch {}
+                });
+
+                newSocket.on('disconnect', () => {
+                    emitSocketState('disconnected');
+                });
+
+                newSocket.on('connect_error', () => {
+                    emitSocketState('disconnected');
+                });
+
+                newSocket.io?.on('reconnect_attempt', () => {
+                    emitSocketState('reconnecting');
+                });
+
+                newSocket.io?.on('reconnect_failed', () => {
+                    emitSocketState('disconnected');
+                });
+
+                newSocket.on('floating_stock_update', (floatingMap: Record<string, number>) => {
+                    const state = useERPStore.getState();
+                    if (state.setFloatingStock) {
+                        state.setFloatingStock(floatingMap);
+                    }
+                });
+
+                newSocket.on('sync_db_event', (payload?: any) => {
+                    broadcastSync({
+                        action: payload?.action || 'GLOBAL_SYNC',
+                        id: payload?.id,
+                        scope: payload?.scope,
+                        txId: payload?.txId,
+                        fromRemote: true,
+                        skipServerPost: true,
+                    });
+                    window.dispatchEvent(new CustomEvent('bunkker_force_resync'));
+                });
+
+                newSocket.on('order_claimed', (data: { orderId: string; claimedBy: string; claimedRole: string }) => {
+                    const state = useERPStore.getState();
+                    if (state.claimOrder) {
+                        state.claimOrder(data.orderId, { name: data.claimedBy, role: data.claimedRole });
+                    }
+                });
+
+                newSocket.on('order_released', (data: { orderId: string; releasedBy: string; role: string; reason?: string }) => {
+                    const state = useERPStore.getState();
+                    if (state.releaseOrder) {
+                        state.releaseOrder(data.orderId, { name: data.releasedBy, role: data.role }, data.reason);
+                    }
+                });
+
+                (window as any).__inventorySocket = newSocket;
+            } catch {
+                newSocket = null;
+                emitSocketState('disconnected');
+            }
+        };
+
+        createOrConnectSocket(false);
+
+        const handleForceSocketReconnect = () => {
+            createOrConnectSocket(true);
+        };
+
+        window.addEventListener(INVENTORY_SOCKET_RECONNECT_EVENT, handleForceSocketReconnect);
+
+        return () => {
+            isDisposed = true;
+            window.removeEventListener(INVENTORY_SOCKET_RECONNECT_EVENT, handleForceSocketReconnect);
+            try {
+                newSocket?.removeAllListeners?.();
+                newSocket?.disconnect();
+            } catch {}
+            clearInterval(reservationCheckInterval);
+        };
+    }, []);
+    // ───────────────────────────────────────────────────────────────────────────
+
+    // ─── Local + Server Settings Init (Hydration Instantánea + Sync Publicado) ─
+    useEffect(() => {
+        let cancelled = false;
+        const SITE_CONFIG_KEY = '_bunkker_site_config';
+        const LEGACY_KEY      = '_admincom_site_config';
+
+        const hydrateConfig = async () => {
+            try {
+                let raw = localStorage.getItem(SITE_CONFIG_KEY);
+                if (!raw) {
+                    const legacy = localStorage.getItem(LEGACY_KEY);
+                    if (legacy) {
+                        localStorage.setItem(SITE_CONFIG_KEY, legacy);
+                        localStorage.removeItem(LEGACY_KEY);
+                        raw = legacy;
+                    }
+                }
+
+                if (raw && !cancelled) {
+                    const parsedLocal = { ...defaultSiteConfig, ...JSON.parse(raw) };
+                    _setSiteConfig(parsedLocal);
+                } else {
+                    const idbSnap = await loadOfflineSiteConfigSnapshot();
+                    if (idbSnap && !cancelled) {
+                        _setSiteConfig({ ...defaultSiteConfig, ...idbSnap });
+                    }
+                }
+            } catch {}
+
+            try {
+                const res = await fetch('/api/settings', { cache: 'no-store', credentials: 'include' });
+                if (res.ok) {
+                    const json = await res.json();
+                    if (json?.success && json?.data && Object.keys(json.data).length > 1 && !cancelled) {
+                        const mergedServer = { ...defaultSiteConfig, ...json.data } as SiteConfig;
+                        _setSiteConfig(mergedServer);
+                        try {
+                            localStorage.setItem(SITE_CONFIG_KEY, JSON.stringify(mergedServer));
+                        } catch {}
+                        saveOfflineSiteConfigSnapshot(mergedServer);
+                        syncStorefrontAssetsWithServiceWorker(mergedServer);
+                    }
+                }
+            } catch {}
             setOwnerConfig(0, 0, 0);
-        } catch { }
+        };
+
+        hydrateConfig();
+        const onSync = (ev: Event) => {
+            const detail = (ev as CustomEvent<any>).detail;
+            const scope = inferSyncScope(detail?.action, detail?.scope);
+            if (scope === 'settings' || scope === 'all' || detail?.action === 'RECONCILE_ALL') {
+                void hydrateConfig();
+            }
+        };
+        if (typeof window !== 'undefined') {
+            window.addEventListener('bunkker_sync_event', onSync);
+        }
+        return () => {
+            cancelled = true;
+            if (typeof window !== 'undefined') {
+                window.removeEventListener('bunkker_sync_event', onSync);
+            }
+        };
     }, [_setSiteConfig, setOwnerConfig]);
 
     return <>{children}</>;
@@ -492,6 +901,9 @@ export const useCart = () => {
             source: 'storefront'
         });
 
+        const lock = typeof window !== 'undefined' ? ((window as any).__bunkkerMutationLock as { current: number } | undefined) : undefined;
+        if (lock) lock.current += 1;
+
         try {
             if (typeof navigator !== 'undefined' && navigator.onLine === false) {
                 throw new TypeError('Failed to fetch (Offline)');
@@ -532,11 +944,8 @@ export const useCart = () => {
                 metadata: { paymentMethod: asRequest ? 'pago_caja' : (isOnline ? 'Online' : 'Venta Directa') }
             });
 
-            // Disparar sincronización instantánea (0ms Multi-Tab / Multi-Rol)
-            broadcastSync({ action: 'NEW_ORDER', id: orderId });
-            if (typeof window !== 'undefined' && (window as any).__inventorySocket) {
-                (window as any).__inventorySocket.emit('sync_db_event', { action: 'NEW_ORDER', id: orderId });
-            }
+            // El servidor ya publicó en el bus SSE; notificamos localmente y otras pestañas sin re-publicar
+            broadcastSync({ action: 'NEW_ORDER', id: orderId, scope: 'orders', skipServerPost: true });
 
             return { orderId, deliveryPin, queuedOffline: false };
         } catch (err: any) {
@@ -552,6 +961,11 @@ export const useCart = () => {
                 // Mantener en IndexedDB, agregar optimísticamente al store local y limpiar el carrito
                 state.setOrders([{ ...newOrder, offlineQueued: true } as any, ...state.orders]);
                 state.clearCart();
+                const queuedNow = await getQueuedOfflineOrders().catch(() => []);
+                state.setSyncHealth({
+                    syncErrorCode: 'ERR_NET_OFFLINE',
+                    pendingOfflineCount: queuedNow.length,
+                });
                 toast.warning(
                     `Sin conexión: Tu pedido ${orderId} se guardó de forma segura en tu dispositivo (IndexedDB) y se enviará al reconectar.`,
                     '💾 Guardado Offline (IndexedDB)',
@@ -563,13 +977,15 @@ export const useCart = () => {
             console.error('Order error:', err);
             toast.error(err.message, '❌ Venta rechazada');
             throw err;
+        } finally {
+            if (lock) lock.current = Math.max(0, lock.current - 1);
         }
     }, [isReadOnly, profile]);
 
     const confirmRequest = useCallback(async (orderId: string, locationAssignment?: { ventanilla?: string; cajon?: string }) => {
         const state = useERPStore.getState();
         if (isReadOnly) return;
-        if (state.firebaseStatus === 'offline') console.warn('⚠️ Sin conexión. La confirmación se encolará.');
+        if (state.firebaseStatus === 'offline') console.warn('⚠️ Sin conexión. Reintentando confirmar cobro.');
         
         const order = state.orders.find(o => o.id === orderId);
         if (!order) return;
@@ -577,11 +993,14 @@ export const useCart = () => {
         const sellerName = profile?.displayName || 'Vendedor';
         const timestamp = new Date().toISOString().replace('T', ' ').split('.')[0];
         const plainAudit = `[${timestamp}] ${sellerName.toUpperCase()}: CONFIRMÓ COBRO ${orderId} - TOTAL ${state.formatCurrency(order.total)}`;
+        const lock = typeof window !== 'undefined' ? ((window as any).__bunkkerMutationLock as { current: number } | undefined) : undefined;
+        if (lock) lock.current += 1;
 
         try {
             const res = await fetch('/api/orders', {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({
                     id: orderId,
                     action: 'cashier_payment',
@@ -613,31 +1032,35 @@ export const useCart = () => {
                 metadata: { orderId }
             });
 
-            // Disparar sincronización en tiempo real a otras pestañas/dispositivos
-            broadcastSync({ action: 'ORDER_CONFIRMED', id: orderId });
-            if (typeof window !== 'undefined' && (window as any).__inventorySocket) {
+            broadcastSync({ action: 'ORDER_CONFIRMED', id: orderId, scope: 'orders', skipServerPost: true });
+            if (typeof window !== 'undefined' && (window as any).__inventorySocket?.connected) {
                 (window as any).__inventorySocket.emit('commit_stock', orderId);
-                (window as any).__inventorySocket.emit('sync_db_event', { action: 'ORDER_CONFIRMED', id: orderId });
             }
         } catch (err) {
             console.error("Error confirmando cobro:", err);
             toast.error(err instanceof Error ? err.message : 'Error confirmando el pago.');
             throw err;
+        } finally {
+            if (lock) lock.current = Math.max(0, lock.current - 1);
         }
     }, [isReadOnly, profile]);
 
     const claimCashierOrder = useCallback(async (orderId: string) => {
         if (isReadOnly) throw new Error('Operación no disponible en Modo Demostración.');
-        const response = await fetch('/api/orders', {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id: orderId, action: 'claim_cashier' })
-        });
-        const result = await response.json().catch(() => null);
-        if (!response.ok || !result?.success) throw new Error(result?.error || 'No se pudo tomar este pedido.');
-        broadcastSync({ action: 'ORDER_CASHIER_CLAIMED', id: orderId });
-        if (typeof window !== 'undefined' && (window as any).__inventorySocket) {
-            (window as any).__inventorySocket.emit('sync_db_event', { action: 'ORDER_CASHIER_CLAIMED', id: orderId });
+        const lock = typeof window !== 'undefined' ? ((window as any).__bunkkerMutationLock as { current: number } | undefined) : undefined;
+        if (lock) lock.current += 1;
+        try {
+            const response = await fetch('/api/orders', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ id: orderId, action: 'claim_cashier' })
+            });
+            const result = await response.json().catch(() => null);
+            if (!response.ok || !result?.success) throw new Error(result?.error || 'No se pudo tomar este pedido.');
+            broadcastSync({ action: 'ORDER_CASHIER_CLAIMED', id: orderId, scope: 'orders', skipServerPost: true });
+        } finally {
+            if (lock) lock.current = Math.max(0, lock.current - 1);
         }
     }, [isReadOnly]);
 
@@ -647,18 +1070,21 @@ export const useCart = () => {
         const workerName = profile?.displayName || 'Cargador';
         const timestamp = new Date().toISOString().replace('T', ' ').split('.')[0];
         const plainAudit = `[${timestamp}] ${workerName.toUpperCase()}: INICIÓ CARGA DE ORDEN ${orderId}`;
+        const lock = typeof window !== 'undefined' ? ((window as any).__bunkkerMutationLock as { current: number } | undefined) : undefined;
+        if (lock) lock.current += 1;
 
         try {
             const response = await fetch('/api/orders', {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({
                     id: orderId,
                     action: 'claim_loading'
                 })
             });
-            if (!response.ok) throw new Error('No se pudo iniciar la preparación de la orden.');
             const resData = await response.json().catch(() => null);
+            if (!response.ok) throw new Error(resData?.error || 'No se pudo iniciar la preparación de la orden.');
 
             // Actualización optimista de recolección iniciada
             state.setOrders(state.orders.map(o => {
@@ -674,16 +1100,15 @@ export const useCart = () => {
                 return o;
             }));
 
-            broadcastSync({ action: 'ORDER_LOADING_STARTED', id: orderId });
-            if (typeof window !== 'undefined' && (window as any).__inventorySocket) {
-                (window as any).__inventorySocket.emit('sync_db_event', { action: 'ORDER_LOADING_STARTED', id: orderId });
-            }
+            broadcastSync({ action: 'ORDER_LOADING_STARTED', id: orderId, scope: 'orders', skipServerPost: true });
             await logAudit({
                 type: 'CONFIG_UPDATE', userId: profile?.uid || 'SYSTEM',
                 userName: workerName, userRole: 'carga_descarga',
                 description: plainAudit, metadata: { orderId, action: 'start_loading' }
             });
-        } catch (err) { throw err; }
+        } finally {
+            if (lock) lock.current = Math.max(0, lock.current - 1);
+        }
     }, [isReadOnly, profile]);
 
     const completeLoading = useCallback(async (orderId: string, targetLocation?: 'caja' | 'carga') => {
@@ -693,19 +1118,22 @@ export const useCart = () => {
         const timestamp = new Date().toISOString().replace('T', ' ').split('.')[0];
         const locationText = targetLocation === 'carga' ? 'EN BAHÍA DE CARGA / PATIO' : 'EN CAJA / MOSTRADOR';
         const plainAudit = `[${timestamp}] ${workerName.toUpperCase()}: FINALIZÓ CARGA DE ORDEN ${orderId} (${locationText})`;
+        const lock = typeof window !== 'undefined' ? ((window as any).__bunkkerMutationLock as { current: number } | undefined) : undefined;
+        if (lock) lock.current += 1;
 
         try {
             const response = await fetch('/api/orders', {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({
                     id: orderId,
                     action: 'complete_loading',
                     targetLocation: targetLocation || 'caja'
                 })
             });
-            if (!response.ok) throw new Error('No se pudo finalizar la preparación de la orden.');
             const resData = await response.json().catch(() => null);
+            if (!response.ok) throw new Error(resData?.error || 'No se pudo finalizar la preparación de la orden.');
 
             // Actualización optimista en el store de Zustand
             state.setOrders(state.orders.map(o => {
@@ -729,22 +1157,19 @@ export const useCart = () => {
             broadcastSync({ 
                 action: 'ORDER_LOADING_COMPLETED', 
                 id: orderId,
-                targetLocation: targetLocation || 'caja'
+                scope: 'orders',
+                targetLocation: targetLocation || 'caja',
+                skipServerPost: true,
             });
-            if (typeof window !== 'undefined' && (window as any).__inventorySocket) {
-                (window as any).__inventorySocket.emit('sync_db_event', { 
-                    action: 'ORDER_LOADING_COMPLETED', 
-                    id: orderId,
-                    targetLocation: targetLocation || 'caja'
-                });
-            }
 
             await logAudit({
                 type: 'CONFIG_UPDATE', userId: profile?.uid || 'SYSTEM',
                 userName: workerName, userRole: 'carga_descarga',
                 description: plainAudit, metadata: { orderId, action: 'complete_loading' }
             });
-        } catch (err) { throw err; }
+        } finally {
+            if (lock) lock.current = Math.max(0, lock.current - 1);
+        }
     }, [isReadOnly, profile]);
 
     const exportInventoryToCSV = useCallback(() => {
@@ -775,11 +1200,13 @@ export const useCart = () => {
         const reportText = `CORTE DE CAJA - ${today}\n---------------------------\nVentas Totales: ${state.formatCurrency(totalSales)}\nNúmero de Pedidos: ${salesCount}\nVendedor Activo: ${profile?.displayName || 'Admin'}\n`;
 
         try {
-            await fetch('/api/admin/daily-closing', {
+            const res = await fetch('/api/admin/daily-closing', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({ report: reportText, ownerEmail: state.siteConfig.businessPhone })
             });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
             await logAudit({
                 type: 'CONFIG_UPDATE', userId: profile?.uid || 'SYSTEM',
                 userName: profile?.displayName || 'Admin', userRole: 'admin',
@@ -787,7 +1214,10 @@ export const useCart = () => {
                 metadata: { total: totalSales, count: salesCount }
             });
             toast.success('Corte de caja enviado al correo del dueño.', '✅ Corte de Caja');
-        } catch (e) { console.error(e); }
+        } catch (e) {
+            console.error(e);
+            toast.error('No se pudo enviar el corte de caja.');
+        }
     }, [isReadOnly, profile]);
 
     const updateProductPrice = useCallback(async (productId: string, newPrice: number, adminName: string) => {
@@ -796,18 +1226,32 @@ export const useCart = () => {
         if (state.firebaseStatus === 'offline') { toast.warning('Sin conexión. Intenta cuando haya internet.', '⚠️ Offline'); return; }
         const product = state.products.find(p => p.id === productId);
         if (!product) return;
+        const lock = typeof window !== 'undefined' ? ((window as any).__bunkkerMutationLock as { current: number } | undefined) : undefined;
+        if (lock) lock.current += 1;
         try {
-            await fetch('/api/products', {
+            const res = await fetch('/api/products', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({ id: productId, price: newPrice })
             });
+            const data = await res.json().catch(() => null);
+            if (!res.ok || !data?.success) {
+                throw new Error(data?.error || 'No se pudo actualizar el precio.');
+            }
+            broadcastSync({ action: 'PRODUCT_UPDATED', id: productId, scope: 'products', skipServerPost: true });
             await logAudit({
                 type: 'PRICE_CHANGE', userId: adminName, userName: adminName, userRole: 'admin',
                 description: `Precio ${product.name}: ${state.formatCurrency(product.price)} → ${state.formatCurrency(newPrice)}`,
                 metadata: { productId, oldPrice: product.price, newPrice },
             });
-        } catch (err: any) { console.error('Error', err); }
+        } catch (err: any) {
+            console.error('Error actualizando precio', err);
+            toast.error(err?.message || 'Error actualizando precio.');
+            throw err;
+        } finally {
+            if (lock) lock.current = Math.max(0, lock.current - 1);
+        }
     }, [isReadOnly]);
 
     const updateProduct = useCallback(async (productId: string, updates: Partial<Product>, adminName: string) => {
@@ -816,17 +1260,31 @@ export const useCart = () => {
         if (state.firebaseStatus === 'offline') { toast.warning('Sin conexión. Intenta cuando haya internet.', '⚠️ Offline'); return; }
         const product = state.products.find(p => p.id === productId);
         if (!product) return;
+        const lock = typeof window !== 'undefined' ? ((window as any).__bunkkerMutationLock as { current: number } | undefined) : undefined;
+        if (lock) lock.current += 1;
         try {
-            await fetch('/api/products', {
+            const res = await fetch('/api/products', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({ id: productId, ...updates })
             });
+            const data = await res.json().catch(() => null);
+            if (!res.ok || !data?.success) {
+                throw new Error(data?.error || 'No se pudo actualizar el producto.');
+            }
+            broadcastSync({ action: 'PRODUCT_UPDATED', id: productId, scope: 'products', skipServerPost: true });
             await logAudit({
                 type: 'CONFIG_UPDATE', userId: profile?.uid || 'SYSTEM', userName: adminName, userRole: profile?.role || 'admin',
                 description: `Producto editado: ${product.name}`, metadata: { productId, updates },
             });
-        } catch (err: any) { console.error('Error', err); }
+        } catch (err: any) {
+            console.error('Error actualizando producto', err);
+            toast.error(err?.message || 'Error actualizando producto.');
+            throw err;
+        } finally {
+            if (lock) lock.current = Math.max(0, lock.current - 1);
+        }
     }, [isReadOnly, profile]);
 
     const purchaseCredits = useCallback(async (amount: number, type: 'invoice' | 'maintenance') => {
@@ -853,12 +1311,14 @@ export const useCart = () => {
             return;
         }
 
+        const lock = typeof window !== 'undefined' ? ((window as any).__bunkkerMutationLock as { current: number } | undefined) : undefined;
+        if (lock) lock.current += 1;
+
         try {
-            // BUG-2 FIX: El servidor (PATCH /api/orders con status=cancelled) YA devuelve el stock.
-            // Eliminamos el bucle de PATCH /api/products que lo devolvía una segunda vez.
             const response = await fetch('/api/orders', {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({
                     id: orderId,
                     status: 'cancelled',
@@ -868,7 +1328,7 @@ export const useCart = () => {
             const result = await response.json().catch(() => null);
             if (!response.ok || !result?.success) throw new Error(result?.error || 'No se pudo cancelar la orden.');
 
-            if (typeof window !== 'undefined' && (window as any).__inventorySocket) {
+            if (typeof window !== 'undefined' && (window as any).__inventorySocket?.connected) {
                 (window as any).__inventorySocket.emit('release_stock', orderId);
             }
 
@@ -880,35 +1340,62 @@ export const useCart = () => {
 
             state.setOrders(state.orders.map(o => o.id === orderId ? { ...o, status: 'cancelled' } : o));
 
-            // Notificar a otros dispositivos del cambio
-            broadcastSync({ action: 'ORDER_CANCELLED', id: orderId });
-            if (typeof window !== 'undefined' && (window as any).__inventorySocket) {
-                (window as any).__inventorySocket.emit('sync_db_event', { action: 'ORDER_CANCELLED', id: orderId });
-            }
-        } catch (err: any) { console.error('Error cancelando orden:', err); }
+            // El servidor ya publicó en SSE; notificamos localmente sin re-publicar
+            broadcastSync({ action: 'ORDER_CANCELLED', id: orderId, scope: 'orders', skipServerPost: true });
+        } catch (err: any) {
+            console.error('Error cancelando orden:', err);
+            toast.error(err?.message || 'No se pudo cancelar la orden.');
+            throw err;
+        } finally {
+            if (lock) lock.current = Math.max(0, lock.current - 1);
+        }
     }, [isReadOnly, profile]);
 
     const updateSiteConfig = useCallback(async (config: Partial<SiteConfig>) => {
         const state = useERPStore.getState();
-        if (isReadOnly) return;
-        const merged = { ...state.siteConfig, ...config };
-        state.setSiteConfig(merged);
+        if (isReadOnly) {
+            throw new Error('Operación no disponible en Modo Demostración.');
+        }
+        const merged: SiteConfig = {
+            ...state.siteConfig,
+            ...config,
+            publishedAt: new Date().toISOString(),
+        };
+
+        const lock = typeof window !== 'undefined' ? ((window as any).__bunkkerMutationLock as React.MutableRefObject<number> | undefined) : undefined;
+        if (lock) lock.current += 1;
+
         try {
-            localStorage.setItem('_bunkker_site_config', JSON.stringify(merged));
-            
-            // Persistir cambios en la base de datos central / Firestore
-            fetch('/api/settings', {
+            const res = await fetch('/api/settings', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify(merged)
-            }).catch(err => console.warn('[CartContext] Error al guardar settings en servidor:', err));
-
-            await logAudit({
-                type: 'CONFIG_UPDATE', userId: profile?.uid || 'SYSTEM',
-                userName: profile?.displayName || 'Admin', userRole: profile?.role || 'admin',
-                description: 'Configuración de sitio y Canvas guardada exitosamente', metadata: { config },
             });
-        } catch (e) { console.error(e); }
+            const json = await res.json().catch(() => null);
+            if (!res.ok || !json?.success) {
+                throw new Error(json?.error || `No se pudo publicar la tienda (HTTP ${res.status}).`);
+            }
+
+            const published = { ...merged, ...(json.data || {}) } as SiteConfig;
+            state.setSiteConfig(published);
+            try {
+                localStorage.setItem('_bunkker_site_config', JSON.stringify(published));
+            } catch {}
+            await saveOfflineSiteConfigSnapshot(published);
+            await syncStorefrontAssetsWithServiceWorker(published);
+            broadcastSync({ action: 'SITE_CONFIG_PUBLISHED', scope: 'settings', skipServerPost: true });
+
+            try {
+                await logAudit({
+                    type: 'CONFIG_UPDATE', userId: profile?.uid || 'SYSTEM',
+                    userName: profile?.displayName || 'Admin', userRole: 'admin',
+                    description: 'Fachada y configuración publicada exitosamente', metadata: { builderMode: published.builderMode, publishedAt: published.publishedAt },
+                });
+            } catch {}
+        } finally {
+            if (lock) lock.current = Math.max(0, lock.current - 1);
+        }
     }, [isReadOnly, profile]);
 
     return {

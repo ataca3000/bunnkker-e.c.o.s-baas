@@ -1,343 +1,406 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import { 
-    Palette, 
-    Eye, 
-    EyeOff, 
-    Save, 
-    ArrowLeft, 
-    Plus, 
-    Music, 
-    Image as ImageIcon, 
-    Film, 
-    Smile, 
-    Sparkles,
-    Check,
-    X,
-    Layout,
-    Globe,
-    Layers,
-    Sliders
+import { useRouter } from 'next/navigation';
+import {
+  Eye,
+  EyeOff,
+  Save,
+  ArrowLeft,
+  Plus,
+  Image as ImageIcon,
+  Film,
+  Smile,
+  Sparkles,
+  Check,
+  Store,
+  Layers,
+  Smartphone,
+  Monitor,
+  Type,
+  LayoutTemplate,
+  Package,
 } from 'lucide-react';
-import { useCart } from '@/context/CartContext';
-import { useAuth } from '@/context/AuthContext';
-import { toast } from '@/lib/toast';
+import type { SiteConfig } from '@/context/CartContext';
+import {
+  type BuilderEntryMode,
+  type StorefrontPageId,
+  PRESET_COLORS,
+  STOREFRONT_PAGES,
+  STOREFRONT_EMOJI_GROUPS,
+} from '@/lib/storefrontBuilder';
 
 interface StorefrontLiveEditorProps {
-    pageId: string;
-    onAddBlock?: () => void;
-    onSave?: () => void;
-    isPreview: boolean;
-    setIsPreview: (p: boolean) => void;
-    activeColor?: string;
-    onChangeColor?: (color: string) => void;
+  pageId: StorefrontPageId;
+  builderMode: BuilderEntryMode;
+  isPreview: boolean;
+  setIsPreview: (p: boolean) => void;
+  previewDevice: 'desktop' | 'mobile';
+  setPreviewDevice: (d: 'desktop' | 'mobile') => void;
+  activeColor: string;
+  onChangeColor: (color: string) => void;
+  onSelectPage?: (pageId: StorefrontPageId) => void;
+  onOpenModeSelector: () => void;
+  onOpenStoreInfo: () => void;
+  onOpenPublishConfirm: () => void;
+  onAddContainer: (kind: 'custom_text' | 'image' | 'widget' | 'catalog') => void;
+  onAddTextLayer: () => void;
+  onAddEmojiLayer: (emoji: string) => void;
+  onOpenMediaModal: (target: 'hero_image' | 'hero_video' | 'layer_image' | 'layer_video') => void;
+  onOpenBannerModal: () => void;
+  draftConfig: SiteConfig;
 }
 
 export default function StorefrontLiveEditor({
-    pageId,
-    onAddBlock,
-    onSave,
-    isPreview,
-    setIsPreview,
-    activeColor = '#06b6d4',
-    onChangeColor
+  pageId,
+  builderMode,
+  isPreview,
+  setIsPreview,
+  previewDevice,
+  setPreviewDevice,
+  activeColor,
+  onChangeColor,
+  onSelectPage,
+  onOpenModeSelector,
+  onOpenStoreInfo,
+  onOpenPublishConfirm,
+  onAddContainer,
+  onAddTextLayer,
+  onAddEmojiLayer,
+  onOpenMediaModal,
+  onOpenBannerModal,
 }: StorefrontLiveEditorProps) {
-    const pathname = usePathname();
-    const router = useRouter();
-    const { siteConfig, updateSiteConfig } = useCart();
-    const { profile } = useAuth();
-    const [colorPickerOpen, setColorPickerOpen] = useState(false);
-    const [mediaModalOpen, setMediaModalOpen] = useState<'image' | 'video' | 'audio' | 'sticker' | null>(null);
-    const [mediaInput, setMediaInput] = useState('');
-    const [isSaving, setIsSaving] = useState(false);
+  const router = useRouter();
+  const [colorPickerOpen, setColorPickerOpen] = useState(false);
+  const [addMenuOpen, setAddMenuOpen] = useState(false);
+  const [emojiMenuOpen, setEmojiMenuOpen] = useState(false);
 
-    const isHome = pageId === 'inicio';
+  return (
+    <>
+      {/* ── BARRA SUPERIOR COMPACTA DE 3 ZONAS ── */}
+      <header className="sticky top-0 z-50 w-full bg-slate-950/95 border-b border-cyan-500/30 backdrop-blur-xl shadow-2xl py-2 px-3 md:px-5">
+        <div className="max-w-[1600px] mx-auto flex flex-wrap items-center justify-between gap-2">
+          {/* ZONA 1: Identidad del Builder + Selector de Modo PRE/CLEAN + Vistas Públicas */}
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+            <button
+              type="button"
+              onClick={onOpenModeSelector}
+              className={`min-h-[38px] px-2.5 py-1 rounded-xl border text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5 shrink-0 transition-colors ${
+                builderMode === 'CLEAN'
+                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 hover:bg-emerald-500/30'
+                  : 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40 hover:bg-cyan-500/30'
+              }`}
+              title="Cambiar modo de inicio (PRE o CLEAN)"
+            >
+              <LayoutTemplate size={14} />
+              <span>{builderMode}</span>
+            </button>
 
-    const handleSaveConfig = async () => {
-        setIsSaving(true);
-        try {
-            if (onSave) {
-                await onSave();
-            } else {
-                toast.success('Fachada guardada y publicada para tus clientes.', 'Guardado Exitoso');
-            }
-        } catch (err: any) {
-            toast.error('Error al guardar la fachada.', 'Error');
-        } finally {
-            setIsSaving(false);
-        }
-    };
+            <nav className="flex items-center bg-slate-900 border border-slate-800 rounded-xl p-0.5 gap-0.5 text-xs font-bold shrink-0">
+              {STOREFRONT_PAGES.map((p) => {
+                const active = pageId === p.id;
+                return onSelectPage ? (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => onSelectPage(p.id)}
+                    className={`px-2.5 py-1.5 rounded-lg transition-colors whitespace-nowrap cursor-pointer ${
+                      active ? 'bg-cyan-500 text-slate-950 font-black' : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    {p.label}
+                  </button>
+                ) : (
+                  <Link
+                    key={p.id}
+                    href={`/dashboard/marketing/editor?page=${p.id}`}
+                    className={`px-2.5 py-1.5 rounded-lg transition-colors whitespace-nowrap ${
+                      active ? 'bg-cyan-500 text-slate-950 font-black' : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    {p.label}
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
 
-    const handleApplyMedia = async () => {
-        if (!mediaInput.trim()) return;
-        try {
-            if (mediaModalOpen === 'image') {
-                await updateSiteConfig({ heroImage: mediaInput });
-                toast.success('Fondo de imagen actualizado');
-            } else if (mediaModalOpen === 'video') {
-                await updateSiteConfig({ heroImage: mediaInput, heroMediaType: 'video' });
-                toast.success('Video en loop actualizado');
-            } else if (mediaModalOpen === 'audio') {
-                await updateSiteConfig({ mapLocationUrl: mediaInput }); // or ambient audio
-                toast.success('Pista de audio vinculada');
-            }
-            setMediaModalOpen(null);
-            setMediaInput('');
-        } catch {
-            toast.error('Error al aplicar medio');
-        }
-    };
+          {/* ZONA 2 Y 3: Herramientas rápidas + Vista Previa + Confirmar Publicación */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {/* Color de Marca */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => {
+                  setColorPickerOpen(!colorPickerOpen);
+                  setAddMenuOpen(false);
+                  setEmojiMenuOpen(false);
+                }}
+                className="min-h-[38px] flex items-center gap-1.5 px-2.5 bg-slate-900 hover:bg-slate-800 text-slate-200 rounded-xl text-xs font-bold border border-slate-800"
+                title="Color principal de marca"
+              >
+                <span className="w-3.5 h-3.5 rounded-full border border-white/25" style={{ backgroundColor: activeColor }} />
+                <span className="hidden xl:inline">Color</span>
+              </button>
 
-    const PRESET_COLORS = [
-        { name: 'Cyan Búnker', value: '#06b6d4' },
-        { name: 'Esmeralda Pro', value: '#10b981' },
-        { name: 'Ámbar Ferretero', value: '#f59e0b' },
-        { name: 'Naranja Fuego', value: '#ea580c' },
-        { name: 'Violeta Eléctrico', value: '#8b5cf6' },
-        { name: 'Rosa Neón', value: '#ec4899' },
-        { name: 'Azul Industrial', value: '#2563eb' },
-    ];
-
-    return (
-        <>
-            {/* ── BARRA SUPERIOR DE EDICIÓN ("AQUÍ PON LA EDICIÓN") ── */}
-            <header className="sticky top-0 z-50 w-full bg-slate-950/95 border-b border-cyan-500/30 backdrop-blur-xl shadow-2xl py-2 px-3 md:px-6">
-                <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
-                    {/* Identificador & Navegación de Páginas */}
-                    <div className="flex items-center gap-1 md:gap-2 overflow-x-auto">
-                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shrink-0">
-                            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                            <span className="text-[11px] font-black uppercase tracking-wider">
-                                🎨 Editor de Fachada {pageId !== 'inicio' ? `• ${pageId.toUpperCase()}` : ''}
-                            </span>
-                        </div>
-                        
-                        <div className="flex items-center bg-slate-900 border border-slate-800 rounded-xl p-0.5 gap-0.5 text-xs font-bold">
-                            <Link 
-                                href="/?editMode=true" 
-                                className={`px-2.5 py-1 rounded-lg transition-colors ${pageId === 'inicio' ? 'bg-cyan-500 text-slate-950 font-black' : 'text-slate-400 hover:text-white'}`}
-                            >
-                                Inicio
-                            </Link>
-                            <Link 
-                                href="/catalogo?editMode=true" 
-                                className={`px-2.5 py-1 rounded-lg transition-colors ${pageId === 'catalogo' ? 'bg-cyan-500 text-slate-950 font-black' : 'text-slate-400 hover:text-white'}`}
-                            >
-                                Catálogo
-                            </Link>
-                            <Link 
-                                href="/servicios?editMode=true" 
-                                className={`px-2.5 py-1 rounded-lg transition-colors ${pageId === 'servicios' ? 'bg-cyan-500 text-slate-950 font-black' : 'text-slate-400 hover:text-white'}`}
-                            >
-                                Servicios
-                            </Link>
-                            <Link 
-                                href="/nosotros?editMode=true" 
-                                className={`px-2.5 py-1 rounded-lg transition-colors ${pageId === 'nosotros' || pageId === 'empresa' ? 'bg-cyan-500 text-slate-950 font-black' : 'text-slate-400 hover:text-white'}`}
-                            >
-                                Nosotros
-                            </Link>
-                            <Link 
-                                href="/contacto?editMode=true" 
-                                className={`px-2.5 py-1 rounded-lg transition-colors ${pageId === 'contacto' ? 'bg-cyan-500 text-slate-950 font-black' : 'text-slate-400 hover:text-white'}`}
-                            >
-                                Contacto
-                            </Link>
-                        </div>
-                    </div>
-
-                    {/* Acciones principales de la barra superior */}
-                    <div className="flex items-center gap-2">
-                        {/* Selector de color primario */}
-                        <div className="relative">
-                            <button
-                                onClick={() => setColorPickerOpen(!colorPickerOpen)}
-                                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white rounded-xl text-xs font-bold border border-slate-800"
-                                title="Cambiar color principal de marca"
-                            >
-                                <span className="w-3.5 h-3.5 rounded-full border border-white/20" style={{ backgroundColor: activeColor }} />
-                                <span className="hidden sm:inline">Color</span>
-                            </button>
-
-                            {colorPickerOpen && (
-                                <div className="absolute right-0 mt-2 p-2.5 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl z-50 flex flex-col gap-1.5 w-44">
-                                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Color de Marca</span>
-                                    <div className="grid grid-cols-4 gap-1.5">
-                                        {PRESET_COLORS.map(c => (
-                                            <button
-                                                key={c.value}
-                                                onClick={() => {
-                                                    if (onChangeColor) onChangeColor(c.value);
-                                                    setColorPickerOpen(false);
-                                                }}
-                                                className="w-7 h-7 rounded-lg border border-white/10 hover:scale-110 transition-transform flex items-center justify-center"
-                                                style={{ backgroundColor: c.value }}
-                                                title={c.name}
-                                            >
-                                                {activeColor === c.value && <Check size={12} className="text-slate-950" />}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Botón Añadir Bloque/Tarjeta (Disponible en la barra superior para páginas como Servicios) */}
-                        {onAddBlock && (
-                            <button
-                                onClick={onAddBlock}
-                                className="flex items-center gap-1 px-3 py-1.5 bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 rounded-xl text-xs font-bold border border-cyan-500/30 transition-colors"
-                            >
-                                <Plus size={14} />
-                                <span>Añadir Tarjeta</span>
-                            </button>
-                        )}
-
-                        {/* Botón Vista Previa / Edición */}
-                        <button
-                            onClick={() => setIsPreview(!isPreview)}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
-                                isPreview 
-                                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-sm'
-                                    : 'bg-slate-900 text-slate-300 hover:text-white border-slate-800'
-                            }`}
-                            title={isPreview ? "Volver a modo de edición" : "Ver como lo ven tus clientes"}
-                        >
-                            {isPreview ? <EyeOff size={14} /> : <Eye size={14} />}
-                            <span>{isPreview ? 'Editar' : 'Vista Previa'}</span>
-                        </button>
-
-                        {/* Botón Guardar / Publicar */}
-                        <button
-                            onClick={handleSaveConfig}
-                            disabled={isSaving}
-                            className="flex items-center gap-1.5 px-4 py-1.5 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-black rounded-xl text-xs uppercase tracking-wider shadow-lg shadow-emerald-500/20 transition-all disabled:opacity-50"
-                        >
-                            <Save size={14} />
-                            <span>{isSaving ? 'Guardando...' : 'Publicar'}</span>
-                        </button>
-
-                        {/* Salir de Edición */}
-                        <button
-                            onClick={() => {
-                                if (typeof window !== 'undefined') {
-                                    sessionStorage.removeItem('_bunkker_edit_mode');
-                                }
-                                router.push('/dashboard/marketing');
-                            }}
-                            className="p-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800 transition-colors flex items-center gap-1 text-xs font-bold px-2.5"
-                            title="Guardar y volver al Panel de Marketing"
-                        >
-                            <ArrowLeft size={14} />
-                            <span className="hidden md:inline">Dashboard</span>
-                        </button>
-                    </div>
+              {colorPickerOpen && (
+                <div className="absolute right-0 mt-2 p-3 bg-slate-950 border border-slate-800 rounded-2xl shadow-2xl z-50 w-48 space-y-2">
+                  <span className="text-[10px] text-slate-400 font-black uppercase tracking-wider">Color de Marca</span>
+                  <div className="grid grid-cols-4 gap-2">
+                    {PRESET_COLORS.map((c) => (
+                      <button
+                        key={c.value}
+                        type="button"
+                        onClick={() => {
+                          onChangeColor(c.value);
+                          setColorPickerOpen(false);
+                        }}
+                        className="w-8 h-8 rounded-lg border border-white/15 flex items-center justify-center"
+                        style={{ backgroundColor: c.value }}
+                        title={c.name}
+                      >
+                        {activeColor === c.value && <Check size={13} className="text-slate-950" />}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-            </header>
+              )}
+            </div>
 
-            {/* ── BARRA LATERAL FLOTANTE MULTIMEDIA (EXCLUSIVA PARA INICIO/HERO) ── */}
-            {isHome && !isPreview && (
-                <aside className="fixed left-3 top-28 z-40 bg-slate-950/90 border border-purple-500/30 rounded-2xl p-1.5 shadow-2xl backdrop-blur-xl flex flex-col gap-1.5">
-                    {/* Botón + (Añadir Elemento) */}
-                    <button
-                        onClick={onAddBlock}
-                        className="w-10 h-10 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 flex items-center justify-center font-black transition-all hover:scale-105"
-                        title="Añadir elemento / capa"
-                    >
-                        <Plus size={18} />
-                    </button>
+            {/* Datos de Tienda */}
+            <button
+              type="button"
+              onClick={onOpenStoreInfo}
+              className="min-h-[38px] flex items-center gap-1.5 px-3 bg-slate-900 hover:bg-slate-800 text-slate-200 rounded-xl text-xs font-bold border border-slate-800"
+              title="Editar datos rápidos del negocio"
+            >
+              <Store size={14} className="text-cyan-400" />
+              <span className="hidden md:inline">Datos Tienda</span>
+            </button>
 
-                    {/* Botón 🎵 (Música / Sonido) */}
-                    <button
-                        onClick={() => setMediaModalOpen('audio')}
-                        className="w-10 h-10 rounded-xl bg-slate-900 hover:bg-slate-800 text-rose-400 border border-slate-800 flex items-center justify-center transition-all hover:scale-105"
-                        title="Vincular música o audio ambiente"
-                    >
-                        <Music size={18} />
-                    </button>
+            {/* Dispositivo Desktop / Móvil Android */}
+            <div className="hidden sm:flex items-center bg-slate-900 border border-slate-800 rounded-xl p-0.5">
+              <button
+                type="button"
+                onClick={() => setPreviewDevice('desktop')}
+                className={`p-1.5 rounded-lg ${previewDevice === 'desktop' ? 'bg-slate-700 text-white' : 'text-slate-400'}`}
+                title="Vista Escritorio"
+              >
+                <Monitor size={14} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setPreviewDevice('mobile')}
+                className={`p-1.5 rounded-lg ${previewDevice === 'mobile' ? 'bg-cyan-500 text-slate-950' : 'text-slate-400'}`}
+                title="Vista Móvil Android"
+              >
+                <Smartphone size={14} />
+              </button>
+            </div>
 
-                    {/* Botón JPG (Fondo de Imagen) */}
-                    <button
-                        onClick={() => setMediaModalOpen('image')}
-                        className="w-10 h-10 rounded-xl bg-slate-900 hover:bg-slate-800 text-sky-400 border border-slate-800 flex items-center justify-center font-black text-xs transition-all hover:scale-105"
-                        title="Cambiar fondo JPG/PNG del Hero"
-                    >
-                        JPG
-                    </button>
+            {/* Vista Previa / Editar */}
+            <button
+              type="button"
+              onClick={() => setIsPreview(!isPreview)}
+              className={`min-h-[38px] flex items-center gap-1.5 px-3 rounded-xl text-xs font-bold border transition-all ${
+                isPreview
+                  ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                  : 'bg-slate-900 text-slate-200 hover:text-white border-slate-800'
+              }`}
+              title={isPreview ? 'Volver al modo edición' : 'Revisar cómo lo verá el cliente'}
+            >
+              {isPreview ? <EyeOff size={14} /> : <Eye size={14} />}
+              <span>{isPreview ? 'Editar' : 'Revisar'}</span>
+            </button>
 
-                    {/* Botón MP4 (Video Loop) */}
-                    <button
-                        onClick={() => setMediaModalOpen('video')}
-                        className="w-10 h-10 rounded-xl bg-slate-900 hover:bg-slate-800 text-emerald-400 border border-slate-800 flex items-center justify-center font-black text-xs transition-all hover:scale-105"
-                        title="Cambiar video de fondo MP4"
-                    >
-                        MP4
-                    </button>
+            {/* Confirmar y Publicar */}
+            <button
+              type="button"
+              onClick={onOpenPublishConfirm}
+              className="min-h-[38px] flex items-center gap-1.5 px-4 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-black rounded-xl text-xs uppercase tracking-wider shadow-lg shadow-emerald-500/20"
+            >
+              <Save size={14} />
+              <span>Publicar</span>
+            </button>
 
-                    {/* Botón GIF (Stickers Animados) */}
-                    <button
-                        onClick={() => setMediaModalOpen('sticker')}
-                        className="w-10 h-10 rounded-xl bg-slate-900 hover:bg-slate-800 text-amber-400 border border-slate-800 flex items-center justify-center font-black text-xs transition-all hover:scale-105"
-                        title="Añadir stickers o GIFs animados"
-                    >
-                        GIF
-                    </button>
-                </aside>
+            {/* Volver al Dashboard */}
+            <button
+              type="button"
+              onClick={() => {
+                if (typeof window !== 'undefined') {
+                  sessionStorage.removeItem('_bunkker_edit_mode');
+                }
+                router.push('/dashboard/marketing');
+              }}
+              className="min-h-[38px] px-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800 flex items-center gap-1 text-xs font-bold"
+              title="Salir del editor visual al Dashboard"
+            >
+              <ArrowLeft size={14} />
+              <span className="hidden lg:inline">Salir</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* ── DOCK FLOTANTE ESTILO ANDROID WIDGET (ACTIVO EN TODAS LAS VISTAS PÚBLICAS) ── */}
+      {!isPreview && (
+        <aside className="fixed left-3 bottom-4 md:bottom-auto md:top-28 z-40 bg-slate-950/92 border border-cyan-500/30 rounded-2xl p-1.5 shadow-2xl backdrop-blur-xl flex md:flex-col gap-1.5">
+          {/* + Contenedor / Bloque */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => {
+                setAddMenuOpen(!addMenuOpen);
+                setEmojiMenuOpen(false);
+              }}
+              className="w-11 h-11 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 flex items-center justify-center font-black transition-transform hover:scale-105"
+              title="Agregar contenedor a esta sección"
+            >
+              <Plus size={20} />
+            </button>
+
+            {addMenuOpen && (
+              <div className="absolute bottom-14 md:bottom-auto md:top-0 left-0 md:left-14 w-60 bg-slate-950/95 border border-slate-700 rounded-2xl p-2 shadow-2xl space-y-1 z-50 text-xs">
+                <p className="px-2 py-1 text-[10px] font-black uppercase text-slate-400">
+                  Agregar a {STOREFRONT_PAGES.find((p) => p.id === pageId)?.label}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onAddContainer('custom_text');
+                    setAddMenuOpen(false);
+                  }}
+                  className="w-full px-3 py-2.5 rounded-xl hover:bg-slate-800 text-left text-white font-bold flex items-center gap-2"
+                >
+                  <Layers size={15} className="text-cyan-400" /> Contenedor Texto / Cristal
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onAddContainer('image');
+                    setAddMenuOpen(false);
+                  }}
+                  className="w-full px-3 py-2.5 rounded-xl hover:bg-slate-800 text-left text-white font-bold flex items-center gap-2"
+                >
+                  <ImageIcon size={15} className="text-sky-400" /> Contenedor Imagen / GIF / MP4
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onAddContainer('widget');
+                    setAddMenuOpen(false);
+                  }}
+                  className="w-full px-3 py-2.5 rounded-xl hover:bg-slate-800 text-left text-white font-bold flex items-center gap-2"
+                >
+                  <Sparkles size={15} className="text-amber-400" /> Tarjeta Widget con Emoji
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onAddContainer('catalog');
+                    setAddMenuOpen(false);
+                  }}
+                  className="w-full px-3 py-2.5 rounded-xl hover:bg-slate-800 text-left text-emerald-300 font-bold flex items-center gap-2"
+                >
+                  <Package size={15} /> Bloque Catálogo Conectado
+                </button>
+                <div className="my-1 border-t border-slate-800" />
+                <button
+                  type="button"
+                  onClick={() => {
+                    onOpenBannerModal();
+                    setAddMenuOpen(false);
+                  }}
+                  className="w-full px-3 py-2.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-left text-amber-300 font-black flex items-center gap-2 border border-amber-500/30"
+                >
+                  <Sparkles size={15} /> Banner Oferta sobre Imagen
+                </button>
+              </div>
             )}
+          </div>
 
-            {/* Modal de Carga / Enlace Multimedia */}
-            {mediaModalOpen && (
-                <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-                    <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4">
-                        <div className="flex justify-between items-center pb-2 border-b border-slate-800">
-                            <h3 className="text-base font-black text-white uppercase tracking-wider flex items-center gap-2">
-                                {mediaModalOpen === 'image' && <ImageIcon size={18} className="text-sky-400" />}
-                                {mediaModalOpen === 'video' && <Film size={18} className="text-emerald-400" />}
-                                {mediaModalOpen === 'audio' && <Music size={18} className="text-rose-400" />}
-                                {mediaModalOpen === 'sticker' && <Smile size={18} className="text-amber-400" />}
-                                <span>Configurar Medio ({mediaModalOpen.toUpperCase()})</span>
-                            </h3>
-                            <button onClick={() => setMediaModalOpen(null)} className="text-slate-400 hover:text-white">
-                                <X size={18} />
-                            </button>
-                        </div>
+          {/* Texto libre "I" */}
+          <button
+            type="button"
+            onClick={onAddTextLayer}
+            className="w-11 h-11 rounded-xl bg-slate-900 hover:bg-slate-800 text-cyan-300 border border-slate-800 flex items-center justify-center font-serif font-black text-base transition-transform hover:scale-105"
+            title="Añadir texto flotante libre (cursor I)"
+          >
+            <Type size={18} />
+          </button>
 
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold text-slate-400">
-                                Enlace URL directa del archivo {mediaModalOpen.toUpperCase()}:
-                            </label>
-                            <input
-                                type="url"
-                                value={mediaInput}
-                                onChange={(e) => setMediaInput(e.target.value)}
-                                placeholder="https://images.unsplash.com/... o https://.../video.mp4"
-                                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-500 font-mono"
-                            />
-                            <p className="text-[11px] text-slate-500">
-                                Puedes pegar una URL pública de Cloudinary, Unsplash, Firebase Storage o tu propio CDN.
-                            </p>
-                        </div>
+          {/* Imagen / GIF */}
+          <button
+            type="button"
+            onClick={() => onOpenMediaModal(pageId === 'inicio' ? 'hero_image' : 'layer_image')}
+            className="w-11 h-11 rounded-xl bg-slate-900 hover:bg-slate-800 text-sky-400 border border-slate-800 flex items-center justify-center font-black text-[11px] transition-transform hover:scale-105"
+            title="Subir Imagen o GIF (Portada o Capa Libre)"
+          >
+            <ImageIcon size={18} />
+          </button>
 
-                        <div className="flex justify-end gap-2 pt-2">
-                            <button
-                                onClick={() => setMediaModalOpen(null)}
-                                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold"
-                            >
-                                Cancelar
-                            </button>
-                            <button
-                                onClick={handleApplyMedia}
-                                className="px-5 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black rounded-xl text-xs uppercase tracking-wider shadow-lg shadow-cyan-500/20"
-                            >
-                                Aplicar a Fachada
-                            </button>
-                        </div>
+          {/* Video MP4 corto */}
+          <button
+            type="button"
+            onClick={() => onOpenMediaModal(pageId === 'inicio' ? 'hero_video' : 'layer_video')}
+            className="w-11 h-11 rounded-xl bg-slate-900 hover:bg-slate-800 text-emerald-400 border border-slate-800 flex items-center justify-center font-black text-[11px] transition-transform hover:scale-105"
+            title="Subir Video MP4 corto en loop"
+          >
+            <Film size={18} />
+          </button>
+
+          {/* Banner dinámico de ofertas con temporizador */}
+          <button
+            type="button"
+            onClick={onOpenBannerModal}
+            className="w-11 h-11 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/35 flex items-center justify-center transition-transform hover:scale-105"
+            title="Crear Banner Dinámico de Oferta con Temporizador"
+          >
+            <Sparkles size={18} />
+          </button>
+
+          {/* Selector rápido de Emoji / Sticker */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => {
+                setEmojiMenuOpen(!emojiMenuOpen);
+                setAddMenuOpen(false);
+              }}
+              className="w-11 h-11 rounded-xl bg-slate-900 hover:bg-slate-800 text-pink-300 border border-slate-800 flex items-center justify-center transition-transform hover:scale-105"
+              title="Añadir Emoji / Sticker al lienzo"
+            >
+              <Smile size={18} />
+            </button>
+
+            {emojiMenuOpen && (
+              <div className="absolute bottom-14 md:bottom-auto md:top-0 left-0 md:left-14 w-72 bg-slate-950/95 border border-slate-700 rounded-2xl p-3 shadow-2xl space-y-2 max-h-72 overflow-y-auto z-50">
+                {STOREFRONT_EMOJI_GROUPS.map((grp) => (
+                  <div key={grp.label}>
+                    <p className="text-[10px] font-black uppercase text-slate-400 mb-1">{grp.label}</p>
+                    <div className="grid grid-cols-6 gap-1">
+                      {grp.emojis.map((em) => (
+                        <button
+                          key={em}
+                          type="button"
+                          onClick={() => {
+                            onAddEmojiLayer(em);
+                            setEmojiMenuOpen(false);
+                          }}
+                          className="h-9 rounded-lg hover:bg-slate-800 text-lg flex items-center justify-center"
+                        >
+                          {em}
+                        </button>
+                      ))}
                     </div>
-                </div>
+                  </div>
+                ))}
+              </div>
             )}
-        </>
-    );
+          </div>
+        </aside>
+      )}
+    </>
+  );
 }

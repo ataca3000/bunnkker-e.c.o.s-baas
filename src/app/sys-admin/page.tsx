@@ -7,12 +7,9 @@ import { toast } from '@/lib/toast';
 type AgentRole = 'support' | 'cashier' | 'warehouse' | 'delivery' | 'owner';
 
 interface AgentConfig {
-    provider: string;
-    model: string;
-    endpoint: string;
-    apiKey: string;
     enabled: boolean;
     privateScope: boolean;
+    instructions: string;
 }
 
 const AGENT_ROLES: Array<{ id: AgentRole; label: string; description: string }> = [
@@ -49,8 +46,10 @@ export default function SysAdmin() {
     const [agentLoading, setAgentLoading] = useState(false);
     const [agentMessage, setAgentMessage] = useState('');
 
+    const [agentEngine, setAgentEngine] = useState<'gemini' | 'local'>('local');
+
     const selectedAgentConfig = agentConfigs[selectedAgent] ?? {
-        provider: 'vercel-ai-gateway', model: 'openai/gpt-4o-mini', endpoint: '', apiKey: '', enabled: true, privateScope: true
+        enabled: true, privateScope: true, instructions: ''
     };
 
     const loadAgentConfigs = useCallback(async () => {
@@ -60,6 +59,9 @@ export default function SysAdmin() {
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Error cargando agentes');
             setAgentConfigs(data.configs || {});
+            if (data.engine === 'gemini' || data.engine === 'local') {
+                setAgentEngine(data.engine);
+            }
         } catch (error) {
             setAgentMessage(error instanceof Error ? error.message : 'Error cargando agentes');
         } finally { setAgentLoading(false); }
@@ -80,7 +82,7 @@ export default function SysAdmin() {
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'No se pudo guardar');
             setAgentConfigs(current => ({ ...current, [selectedAgent]: data.config }));
-            setAgentMessage('Configuración guardada. La llave nunca se muestra completa.');
+            setAgentMessage('Configuración operativa guardada correctamente.');
         } catch (error) {
             setAgentMessage(error instanceof Error ? error.message : 'Error guardando configuración');
         } finally { setAgentLoading(false); }
@@ -387,11 +389,23 @@ export default function SysAdmin() {
                         <div className="bunkker-card" style={{ borderLeft: '5px solid #0ea5e9' }}>
                             <h2 style={{ marginTop: 0 }}>{AGENT_ROLES.find(agent => agent.id === selectedAgent)?.label}</h2>
                             <p style={{ color: '#666', fontSize: '0.85rem' }}>{AGENT_ROLES.find(agent => agent.id === selectedAgent)?.description}</p>
-                            <div style={{ display: 'grid', gap: '12px', marginTop: '1.5rem' }}>
-                                <label><b>Proveedor</b><input value={selectedAgentConfig.provider} onChange={e => updateSelectedAgent({ provider: e.target.value })} placeholder="vercel-ai-gateway" style={{ width: '100%', padding: '10px', marginTop: '4px', border: '1px solid #ddd', borderRadius: '6px' }} /></label>
-                                <label><b>Modelo</b><input value={selectedAgentConfig.model} onChange={e => updateSelectedAgent({ model: e.target.value })} placeholder="openai/gpt-4o-mini" style={{ width: '100%', padding: '10px', marginTop: '4px', border: '1px solid #ddd', borderRadius: '6px' }} /></label>
-                                <label><b>Endpoint opcional</b><input value={selectedAgentConfig.endpoint} onChange={e => updateSelectedAgent({ endpoint: e.target.value })} placeholder="https://..." style={{ width: '100%', padding: '10px', marginTop: '4px', border: '1px solid #ddd', borderRadius: '6px' }} /></label>
-                                <label><b>API key / token</b><input type="password" value={selectedAgentConfig.apiKey} onChange={e => updateSelectedAgent({ apiKey: e.target.value })} placeholder="Se conserva si lo dejas vacío" style={{ width: '100%', padding: '10px', marginTop: '4px', border: '1px solid #ddd', borderRadius: '6px' }} /></label>
+                            <div style={{ padding: '10px 12px', marginTop: '12px', borderRadius: '8px', background: '#f0f9ff', border: '1px solid #bae6fd', fontSize: '0.82rem', color: '#0369a1' }}>
+                                <strong>Motor centralizado del servidor:</strong>{' '}
+                                {agentEngine === 'gemini'
+                                    ? 'Gemini activo mediante configuración central del entorno (GEMINI_API_KEY).'
+                                    : 'Motor determinista local activo (respaldo offline sin llaves externas).'}
+                            </div>
+                            <div style={{ display: 'grid', gap: '12px', marginTop: '1.25rem' }}>
+                                <label>
+                                    <b>Instrucciones operativas para este rol</b>
+                                    <textarea
+                                        rows={4}
+                                        value={selectedAgentConfig.instructions}
+                                        onChange={e => updateSelectedAgent({ instructions: e.target.value })}
+                                        placeholder="Ej. Priorizar respuestas breves, verificar stock antes de confirmar entregas..."
+                                        style={{ width: '100%', padding: '10px', marginTop: '4px', border: '1px solid #ddd', borderRadius: '6px', resize: 'vertical' }}
+                                    />
+                                </label>
                                 <label style={{ display: 'flex', gap: '8px', alignItems: 'center' }}><input type="checkbox" checked={selectedAgentConfig.enabled} onChange={e => updateSelectedAgent({ enabled: e.target.checked })} /> Agente habilitado</label>
                                 <label style={{ display: 'flex', gap: '8px', alignItems: 'center' }}><input type="checkbox" checked={selectedAgentConfig.privateScope} onChange={e => updateSelectedAgent({ privateScope: e.target.checked })} /> Mantener tareas y datos aislados por rol</label>
                                 <button onClick={saveAgentConfig} disabled={agentLoading} className="bunkker-btn" style={{ width: '100%' }}>{agentLoading ? 'GUARDANDO...' : 'GUARDAR CONFIGURACIÓN'}</button>

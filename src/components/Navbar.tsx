@@ -5,10 +5,11 @@ import { useAuth } from "@/context/AuthContext";
 import { ShoppingCart, Search, Menu, X, MapPin, Lock, User, Camera, Home, Package, Wrench, Building, Phone } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { useState } from "react";
+import dynamic from "next/dynamic";
+import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
-import CartDrawer from "./CartDrawer";
-import BarcodeScanner from "./BarcodeScanner";
+const CartDrawer = dynamic(() => import("./CartDrawer"), { ssr: false });
+const BarcodeScanner = dynamic(() => import("./BarcodeScanner"), { ssr: false });
 import ThemeToggle from "./ThemeToggle";
 import LanguageSelector from "./LanguageSelector";
 import styles from "./Navbar.module.css";
@@ -20,8 +21,15 @@ export default function Navbar() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [isCartOpen, setIsCartOpen] = useState(false);
+    const [hasOpenedCart, setHasOpenedCart] = useState(false);
     const [isScannerOpen, setIsScannerOpen] = useState(false);
     const pathname = usePathname();
+
+    useEffect(() => {
+        if (isCartOpen && !hasOpenedCart) {
+            setHasOpenedCart(true);
+        }
+    }, [isCartOpen, hasOpenedCart]);
 
     // No mostrar la Navbar global si estamos dentro del Dashboard Administrativo
     if (pathname?.startsWith('/dashboard')) return null;
@@ -240,7 +248,9 @@ export default function Navbar() {
                 )}
             </nav>
 
-            <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
+            {(isCartOpen || hasOpenedCart) && (
+                <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
+            )}
             {isScannerOpen && (
                 <BarcodeScanner
                     onScanSuccess={handlePriceScan}

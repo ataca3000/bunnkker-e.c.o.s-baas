@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireRole, validateApiSession, getTenantId, WRITE_ROLES } from '@/lib/apiAuth';
+import { publishRealtimeEvent } from '@/lib/realtimeBus';
 
 export const dynamic = 'force-dynamic';
 
@@ -83,6 +84,9 @@ export async function POST(request: NextRequest) {
             data.fila = body.location?.fila ?? body.fila ?? null;
         }
         if (typeof body.orderIndex === 'number') data.orderIndex = body.orderIndex;
+        if (body.minStock !== undefined && body.minStock !== null && body.minStock !== '') {
+            data.minStock = Math.max(0, Math.floor(Number(body.minStock)));
+        }
 
         // REGLA DOBLE CIEGO: Almacén solo cuenta materia física (stock/ubicación).
         // El precio solo puede ser asignado y sellado por SuperAdmin / Admin.
@@ -114,6 +118,7 @@ export async function POST(request: NextRequest) {
         const existing = await prisma.product.findFirst({ where: { id, tenantId } });
         if (existing) {
             const product = await prisma.product.update({ where: { id }, data });
+            publishRealtimeEvent({ tenantId, scope: 'products', action: 'PRODUCT_UPDATED', entityId: product.id });
             return NextResponse.json({ success: true, data: product });
         }
 
@@ -133,6 +138,7 @@ export async function POST(request: NextRequest) {
                 ...(data as any) 
             },
         });
+        publishRealtimeEvent({ tenantId, scope: 'products', action: 'PRODUCT_CREATED', entityId: product.id });
         return NextResponse.json({ success: true, data: product });
     } catch (error: any) {
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });
@@ -161,6 +167,7 @@ export async function PATCH(request: NextRequest) {
                 fila?: string;
                 orderIndex?: number;
                 stockIncrement?: number;
+                minStock?: number;
             }>;
 
             if (updates.length === 0) {
@@ -177,6 +184,7 @@ export async function PATCH(request: NextRequest) {
                     if (u.estante !== undefined) dataToUpdate.estante = u.estante;
                     if (u.fila !== undefined) dataToUpdate.fila = u.fila;
                     if (typeof u.orderIndex === 'number') dataToUpdate.orderIndex = u.orderIndex;
+                    if (typeof u.minStock === 'number') dataToUpdate.minStock = Math.max(0, Math.floor(u.minStock));
 
                     return prisma.product.update({
                         where: { id: u.id, tenantId },
@@ -185,10 +193,11 @@ export async function PATCH(request: NextRequest) {
                 });
 
             const results = await prisma.$transaction(operations);
+            publishRealtimeEvent({ tenantId, scope: 'products', action: 'PRODUCTS_BATCH_UPDATED' });
             return NextResponse.json({ success: true, count: results.length, data: results });
         }
 
-        const { id, stockIncrement, estante, fila } = body;
+        const { id, stockIncrement, estante, fila, minStock } = body;
 
         if (!id) {
             throw new Error('id is required');
@@ -212,6 +221,9 @@ export async function PATCH(request: NextRequest) {
         }
         if (estante !== undefined) dataToUpdate.estante = estante;
         if (fila !== undefined) dataToUpdate.fila = fila;
+        if (minStock !== undefined && minStock !== null) {
+            dataToUpdate.minStock = Math.max(0, Math.floor(Number(minStock)));
+        }
         // BUG-SYNC-1 FIX: Aceptar orderIndex para persistir el orden del drag & drop
         if (typeof body.orderIndex === 'number') dataToUpdate.orderIndex = body.orderIndex;
         if (body.restore === true) dataToUpdate.deletedAt = null;
@@ -221,6 +233,7 @@ export async function PATCH(request: NextRequest) {
             where: { id, tenantId },
             data: dataToUpdate
         });
+        publishRealtimeEvent({ tenantId, scope: 'products', action: 'PRODUCT_UPDATED', entityId: product.id });
         return NextResponse.json({ success: true, data: product });
     } catch (error: any) {
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });
@@ -264,6 +277,7 @@ export async function DELETE(request: NextRequest) {
             await prisma.product.update({ where: { id, tenantId }, data: { deletedAt: new Date() } });
         }
 
+        publishRealtimeEvent({ tenantId, scope: 'products', action: 'PRODUCT_DELETED', entityId: id });
         return NextResponse.json({ success: true, permanent });
     } catch (error: any) {
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });

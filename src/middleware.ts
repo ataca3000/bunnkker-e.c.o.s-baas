@@ -129,9 +129,14 @@ export default async function middleware(request: NextRequest) {
     ];
     // Permitir acceso a productos para que la validación RBAC granular se ejecute en el route handler
     const isProductsApi = pathname === '/api/products' || pathname.startsWith('/api/products/');
+    // Permitir lectura pública de media subida para la tienda (POST /api/media/upload sigue protegido)
+    const isPublicMediaGet = request.method === 'GET' && pathname.startsWith('/api/media/');
+    // Permitir reclamar pase de vinculación QR/código y conectar al stream SSE multidispositivo
+    const isPublicPairingClaim = pathname === '/api/pairing/claim';
+    const isPublicSyncEvents = pathname === '/api/sync/events';
     // Permitir creación de pedidos (la seguridad, RBAC y validación de roles/invitados se gestiona de forma segura en /api/orders y /api/store-checkout)
     const isPublicOrderCreate = request.method === 'POST' && (pathname === '/api/orders' || pathname === '/api/store-checkout');
-    const isPublicApi = isProductsApi || isPublicOrderCreate || publicApiRoutes.some(r => pathname.startsWith(r));
+    const isPublicApi = isProductsApi || isPublicMediaGet || isPublicPairingClaim || isPublicSyncEvents || isPublicOrderCreate || publicApiRoutes.some(r => pathname.startsWith(r));
 
     if (!isPublicApi) {
       const session = request.cookies.get('msj-session')?.value;

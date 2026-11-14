@@ -53,6 +53,24 @@ export default function OmniPulseDashboard() {
     const [connecting, setConnecting] = useState(false);
     const sseRef = useRef<EventSource | null>(null);
 
+    // ─── CARGAR CUENTAS PERSISTIDAS EN BD ──────────────────────────────────────
+    useEffect(() => {
+        fetch('/api/omnipulse/accounts')
+            .then(r => r.json())
+            .then(data => {
+                if (Array.isArray(data?.accounts)) {
+                    setAccounts(
+                        data.accounts.map((acc: OmniAccountSummary) => ({
+                            ...acc,
+                            _token: '',
+                            _channelId: acc.channelId,
+                        }))
+                    );
+                }
+            })
+            .catch(() => {});
+    }, []);
+
     // ─── SPINTAX PREVIEW ───────────────────────────────────────────────────────
     useEffect(() => {
         if (!useSpintax || !postBody) { setSpintaxPreviews([]); return; }
@@ -83,8 +101,8 @@ export default function OmniPulseDashboard() {
             if (data.account) {
                 const newAcc: LocalAccount = {
                     ...data.account,
-                    _token: connectForm.token,
-                    _channelId: connectForm.channelId || undefined,
+                    _token: '',
+                    _channelId: connectForm.channelId || data.account.channelId || undefined,
                 };
                 setAccounts(prev => [...prev.filter(a =>
                     !(a.network === connectingNetwork && a.accountName === connectForm.accountName)
@@ -99,9 +117,18 @@ export default function OmniPulseDashboard() {
     };
 
     // ─── DESCONECTAR CUENTA ────────────────────────────────────────────────────
-    const handleDisconnect = (accountId: string) => {
+    const handleDisconnect = async (accountId: string) => {
         setAccounts(prev => prev.filter(a => a.id !== accountId));
         setSelectedAccounts(prev => { const s = new Set(prev); s.delete(accountId); return s; });
+        try {
+            await fetch('/api/omnipulse/accounts', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: accountId }),
+            });
+        } catch {
+            // Ignored: UI already updated
+        }
     };
 
     // ─── TOGGLE SELECCIÓN ────────────────────────────────────────────────────
@@ -864,16 +891,30 @@ export default function OmniPulseDashboard() {
                                                 />
                                             </div>
 
-                                            {connectingNetwork === 'telegram' && (
+                                            {(connectingNetwork === 'telegram' || connectingNetwork === 'facebook' || connectingNetwork === 'instagram' || connectingNetwork === 'whatsapp' || connectingNetwork === 'linkedin_personal' || connectingNetwork === 'linkedin_company') && (
                                                 <div>
                                                     <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-2">
-                                                        ID del Canal / Chat
+                                                        {connectingNetwork === 'telegram'
+                                                            ? 'ID del Canal / Chat'
+                                                            : connectingNetwork === 'whatsapp'
+                                                                ? 'Teléfono Destino (E.164 sin +)'
+                                                                : connectingNetwork === 'facebook'
+                                                                    ? 'Page ID de Facebook'
+                                                                    : connectingNetwork === 'instagram'
+                                                                        ? 'IG User ID (Cuenta Profesional)'
+                                                                        : 'URN / ID de Perfil o Empresa LinkedIn'}
                                                     </label>
                                                     <input
                                                         type="text"
                                                         value={connectForm.channelId}
                                                         onChange={e => setConnectForm(f => ({ ...f, channelId: e.target.value }))}
-                                                        placeholder="@mi_canal o -100123456789"
+                                                        placeholder={
+                                                            connectingNetwork === 'telegram' ? '@mi_canal o -100123456789' :
+                                                            connectingNetwork === 'whatsapp' ? '5215512345678' :
+                                                            connectingNetwork === 'facebook' ? '109876543210' :
+                                                            connectingNetwork === 'instagram' ? '17841400000000000' :
+                                                            'urn:li:person:ABC123'
+                                                        }
                                                         className="w-full bg-slate-900/80 border border-slate-700/50 rounded-xl px-4 py-3 text-sm text-white
                                                                    outline-none focus:border-purple-500/60 transition-all"
                                                     />

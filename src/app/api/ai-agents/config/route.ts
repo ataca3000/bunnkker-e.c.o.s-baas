@@ -1,81 +1,102 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { db, hasRealCredentials } from '@/lib/firebase';
 import { getTenantId, requireRole } from '@/lib/apiAuth';
+import { prisma } from '@/lib/prisma';
+import { DEFAULT_GEMINI_MODEL, hasServerGeminiKey } from '@/lib/geminiClient';
 import { loadPersistentAgentConfigs, savePersistentAgentConfigs } from '@/lib/persistentSettings';
 
 type AgentRole = 'support' | 'cashier' | 'warehouse' | 'delivery' | 'owner';
 
 const AGENT_ROLES: AgentRole[] = ['support', 'cashier', 'warehouse', 'delivery', 'owner'];
-const MAX_TEXT_LENGTH = 160;
+const PROVIDER_KEY = 'ai_agents_config';
 
 interface AgentConfig {
-  provider: string;
-  model: string;
-  endpoint: string;
-  apiKey?: string;
   enabled: boolean;
   privateScope: boolean;
+  instructions: string;
+  updatedAt?: string;
 }
 
 function sanitizeConfig(value: unknown): AgentConfig {
   const input = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>;
   return {
-    provider: typeof input.provider === 'string' ? input.provider.slice(0, MAX_TEXT_LENGTH) : 'vercel-ai-gateway',
-    model: typeof input.model === 'string' ? input.model.slice(0, MAX_TEXT_LENGTH) : '',
-    endpoint: typeof input.endpoint === 'string' ? input.endpoint.slice(0, 500) : '',
-    apiKey: typeof input.apiKey === 'string' ? input.apiKey.slice(0, 500) : undefined,
     enabled: input.enabled !== false,
     privateScope: input.privateScope !== false,
+    instructions: typeof input.instructions === 'string' ? input.instructions.slice(0, 1200) : '',
+    updatedAt: typeof input.updatedAt === 'string' ? input.updatedAt : undefined,
   };
 }
 
-function maskConfig(config: AgentConfig): AgentConfig {
-  return {
-    ...config,
-    apiKey: config.apiKey ? `••••••••${config.apiKey.slice(-4)}` : '',
-  };
+function buildPublicMap(raw: Record<string, unknown> | null | undefined) {
+  return Object.fromEntries(
+    AGENT_ROLES.map((role) => [role, raw?.[role] ? sanitizeConfig(raw[role]) : null])
+  );
 }
 
-function configRef(tenantId: string) {
-  return doc(db, 'tenants', tenantId, 'settings', 'ai_agents');
+async function readConfigs(tenantId: string): Promise<Record<string, AgentConfig>> {
+  try {
+    const dbRow = await prisma.integrationConfig.findFirst({
+      where: { tenantId, provider: PROVIDER_KEY },
+    });
+    if (dbRow?.settings) {
+      const parsed = JSON.parse(dbRow.settings) as Record<string, unknown>;
+      savePersistentAgentConfigs(tenantId, parsed);
+      return buildPublicMap(parsed) as Record<string, AgentConfig>;
+    }
+  } catch (err) {
+    console.warn('[AI AGENTS] Error leyendo Prisma integrationConfig, usando respaldo en disco:', err);
+  }
+  return buildPublicMap(loadPersistentAgentConfigs(tenantId)) as Record<string, AgentConfig>;
+}
+
+async function writeConfigs(tenantId: string, configs: Record<string, unknown>, updatedBy: string) {
+  savePersistentAgentConfigs(tenantId, configs);
+  const serialized = JSON.stringify(configs);
+  try {
+    const existing = await prisma.integrationConfig.findFirst({
+      where: { tenantId, provider: PROVIDER_KEY },
+    });
+    if (existing) {
+      await prisma.integrationConfig.update({
+        where: { id: existing.id },
+        data: {
+          settings: serialized,
+          status: hasServerGeminiKey() ? 'connected' : 'local_fallback',
+          updatedBy,
+        },
+      });
+    } else {
+      await prisma.integrationConfig.create({
+        data: {
+          tenantId,
+          provider: PROVIDER_KEY,
+          settings: serialized,
+          status: hasServerGeminiKey() ? 'connected' : 'local_fallback',
+          updatedBy,
+        },
+      });
+    }
+  } catch (err) {
+    console.warn('[AI AGENTS] Error persistiendo en Prisma (respaldo local activo):', err);
+  }
 }
 
 export async function GET(request: NextRequest) {
-  const auth = await requireRole(request, ['superadmin']);
+  const auth = requireRole(request, ['superadmin']);
   if (!auth.ok) return auth.response;
 
   const tenantId = getTenantId(request);
+  const configs = await readConfigs(tenantId);
 
-  if (!hasRealCredentials) {
-    const local = loadPersistentAgentConfigs(tenantId);
-    const configs = Object.fromEntries(
-      AGENT_ROLES.map((role) => [role, local?.[role] ? maskConfig(sanitizeConfig(local[role])) : null])
-    );
-    return NextResponse.json({ success: true, configs });
-  }
-
-  try {
-    const snapshot = await getDoc(configRef(tenantId));
-    const data = snapshot.exists() ? snapshot.data().configs : {};
-    const configs = Object.fromEntries(
-      AGENT_ROLES.map((role) => [role, data?.[role] ? maskConfig(sanitizeConfig(data[role])) : null])
-    );
-    // Respaldar localmente
-    savePersistentAgentConfigs(tenantId, data || {});
-    return NextResponse.json({ success: true, configs });
-  } catch (error) {
-    console.error('[AI AGENTS] Error cargando configuración cloud, usando respaldo local:', error);
-    const local = loadPersistentAgentConfigs(tenantId);
-    const configs = Object.fromEntries(
-      AGENT_ROLES.map((role) => [role, local?.[role] ? maskConfig(sanitizeConfig(local[role])) : null])
-    );
-    return NextResponse.json({ success: true, configs });
-  }
+  return NextResponse.json({
+    success: true,
+    engine: hasServerGeminiKey() ? 'gemini' : 'local',
+    model: DEFAULT_GEMINI_MODEL,
+    configs,
+  });
 }
 
 export async function POST(request: NextRequest) {
-  const auth = await requireRole(request, ['superadmin']);
+  const auth = requireRole(request, ['superadmin']);
   if (!auth.ok) return auth.response;
 
   const tenantId = getTenantId(request);
@@ -87,37 +108,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Rol de agente inválido.' }, { status: 400 });
     }
 
-    const config = sanitizeConfig(body.config);
-    if (!config.provider || !config.model) {
-      return NextResponse.json({ success: false, error: 'Proveedor y modelo son obligatorios.' }, { status: 400 });
-    }
-
-    // Persistir localmente de forma obligatoria (Soberanía Local-First)
-    const local = loadPersistentAgentConfigs(tenantId);
-    const existingLocalKey = local[role]?.apiKey;
-    if (!config.apiKey || config.apiKey.startsWith('••••••••')) {
-      config.apiKey = existingLocalKey;
-    }
-    local[role] = config;
-    savePersistentAgentConfigs(tenantId, local);
-
-    if (!hasRealCredentials) {
-      return NextResponse.json({ success: true, config: maskConfig(config), localOnly: true });
-    }
-
-    const reference = configRef(tenantId);
-    const current = await getDoc(reference);
-    const existing = current.exists() ? current.data().configs || {} : {};
-    const existingKey = existing[role]?.apiKey;
-    if (!config.apiKey || config.apiKey.startsWith('••••••••')) config.apiKey = existingKey;
-
-    await setDoc(reference, {
-      configs: { ...existing, [role]: config },
+    const config = sanitizeConfig({
+      ...(body?.config || {}),
       updatedAt: new Date().toISOString(),
-      updatedBy: auth.uid,
-    }, { merge: true });
+    });
 
-    return NextResponse.json({ success: true, config: maskConfig(config) });
+    const current = await readConfigs(tenantId);
+    const updated = { ...current, [role]: config };
+    await writeConfigs(tenantId, updated, auth.uid);
+
+    return NextResponse.json({
+      success: true,
+      engine: hasServerGeminiKey() ? 'gemini' : 'local',
+      config,
+    });
   } catch (error) {
     console.error('[AI AGENTS] Error guardando configuración:', error);
     return NextResponse.json({ success: false, error: 'No se pudo guardar la configuración.' }, { status: 500 });
@@ -125,7 +129,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const auth = await requireRole(request, ['superadmin']);
+  const auth = requireRole(request, ['superadmin']);
   if (!auth.ok) return auth.response;
 
   const tenantId = getTenantId(request);
@@ -137,19 +141,10 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Rol de agente inválido.' }, { status: 400 });
     }
 
-    const local = loadPersistentAgentConfigs(tenantId);
-    delete local[role];
-    savePersistentAgentConfigs(tenantId, local);
+    const current = await readConfigs(tenantId);
+    delete current[role];
+    await writeConfigs(tenantId, current, auth.uid);
 
-    if (!hasRealCredentials) {
-      return NextResponse.json({ success: true, localOnly: true });
-    }
-
-    const reference = configRef(tenantId);
-    const current = await getDoc(reference);
-    const existing = current.exists() ? current.data().configs || {} : {};
-    delete existing[role];
-    await setDoc(reference, { configs: existing, updatedAt: new Date().toISOString(), updatedBy: auth.uid }, { merge: true });
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('[AI AGENTS] Error eliminando configuración:', error);

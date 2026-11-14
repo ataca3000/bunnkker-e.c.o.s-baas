@@ -62,6 +62,8 @@ export interface OmniAccountSummary {
     network: NetworkId;
     accountName: string;
     accountId: string;
+    channelId?: string;
+    hasStoredToken?: boolean;
     isActive: boolean;
     isTokenValid: boolean;
     expiresAt: string | null;

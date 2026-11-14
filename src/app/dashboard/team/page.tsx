@@ -123,18 +123,23 @@ export default function TeamManagement() {
         setQrUser(user);
         setMagicUrl(''); // Reset
         try {
-            const res = await fetch(`/api/users/${user.id}/magic`);
+            const res = await fetch(`/api/users/${user.id}/magic`, { credentials: 'include' });
             const data = await res.json();
-            
-            const ipRes = await fetch('/api/network-ip');
-            const ipData = await ipRes.json();
-            
+
             if (data.success && typeof window !== 'undefined') {
-                const protocol = window.location.protocol;
-                const port = window.location.port ? `:${window.location.port}` : '';
-                const host = ipData.success ? `${protocol}//${ipData.ip}${port}` : window.location.origin;
-                
-                setMagicUrl(`${host}/api/auth/magic?token=${data.payload}`);
+                const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+                let host = window.location.origin;
+
+                if (isLocal) {
+                    const ipRes = await fetch('/api/network-ip').catch(() => null);
+                    const ipData = ipRes ? await ipRes.json().catch(() => null) : null;
+                    if (ipData?.success && ipData?.ip) {
+                        const port = window.location.port ? `:${window.location.port}` : '';
+                        host = `${window.location.protocol}//${ipData.ip}${port}`;
+                    }
+                }
+
+                setMagicUrl(`${host}/api/auth/magic?token=${encodeURIComponent(data.payload)}`);
             } else {
                 toast.error('No se pudo generar la llave mágica.');
                 setQrUser(null);

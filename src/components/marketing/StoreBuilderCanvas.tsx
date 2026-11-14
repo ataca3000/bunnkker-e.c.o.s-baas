@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import Link from 'next/link';
 import { useCart, type VisualLayoutBlock, type CanvasLayer } from '@/context/CartContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -308,14 +309,42 @@ export default function StoreBuilderCanvas() {
         }
 
         setIsUploading(true);
-        setUploadProgress(0);
+        setUploadProgress(20);
 
         try {
-            // Intentar subir a Firebase Storage
+            // Vía principal: subir al almacenamiento soberano del servidor (/api/media/upload)
+            const fd = new FormData();
+            fd.append('file', file);
+            const res = await fetch('/api/media/upload', {
+                method: 'POST',
+                credentials: 'include',
+                body: fd,
+            });
+            const json = await res.json().catch(() => null);
+            if (res.ok && json?.success && json?.url) {
+                setUploadProgress(100);
+                if (selectedBlockId) {
+                    updateBlockSettings(selectedBlockId, { imageUrl: json.url });
+                } else {
+                    addLayer({
+                        type,
+                        content: json.url,
+                        width: type === 'image' ? 240 : 280,
+                        height: type === 'image' ? 160 : 170,
+                    });
+                }
+                setIsUploading(false);
+                toast.success('Medio guardado en el servidor.');
+                return;
+            }
+        } catch {
+            // Intentar fallback a Firebase Storage
+        }
+
+        try {
             const fileExt = file.name.split('.').pop();
             const fileName = `media_${Date.now()}.${fileExt}`;
             const storageRef = ref(storage, `store_builder/${fileName}`);
-            
             const uploadTask = uploadBytesResumable(storageRef, file);
 
             uploadTask.on('state_changed', 
@@ -323,46 +352,23 @@ export default function StoreBuilderCanvas() {
                     const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
                     setUploadProgress(progress);
                 }, 
-                (error: any) => {
-                    console.error('Error uploading:', error);
-                    toast.error('Error al subir el archivo. Revisa tu conexión o configuración de Storage.');
+                () => {
+                    toast.error('Error al subir el archivo. Usa la opción de Insertar URL como respaldo.');
                     setIsUploading(false);
                 }, 
                 async () => {
                     const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-                    
                     if (selectedBlockId) {
                         updateBlockSettings(selectedBlockId, { imageUrl: downloadURL });
                     } else {
-                        addLayer({ 
-                            type, 
-                            content: downloadURL, 
-                            width: type === 'image' ? 200 : 260, 
-                            height: type === 'image' ? 150 : 160 
-                        });
+                        addLayer({ type, content: downloadURL, width: type === 'image' ? 200 : 260, height: type === 'image' ? 150 : 160 });
                     }
                     setIsUploading(false);
                 }
             );
-        } catch (error) {
-            console.error('Storage error:', error);
-            // Fallback to base64 if Firebase Storage fails/isn't configured, but only for very small files
-            if (file.size < 800 * 1024) {
-                const reader = new FileReader();
-                reader.onload = e => {
-                    const content = e.target?.result as string;
-                    if (selectedBlockId) {
-                        updateBlockSettings(selectedBlockId, { imageUrl: content });
-                    } else {
-                        addLayer({ type, content, width: type === 'image' ? 200 : 260, height: type === 'image' ? 150 : 160 });
-                    }
-                    setIsUploading(false);
-                };
-                reader.readAsDataURL(file);
-            } else {
-                toast.warning('No se pudo subir a la nube. Para archivos pesados, usa la opción de Insertar URL directa o configura Firebase Storage.', '⚠️ Fallback Local');
-                setIsUploading(false);
-            }
+        } catch {
+            toast.warning('No se pudo subir el archivo. Usa la opción de Insertar URL directa como respaldo.');
+            setIsUploading(false);
         }
     };
 
@@ -657,10 +663,18 @@ export default function StoreBuilderCanvas() {
             {/* ══ CANVAS AREA ══ */}
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#1e293b', overflow: 'hidden' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 20px', background: '#0f172a', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                    <div style={{ display: 'flex', gap: '8px' }}>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                         {[['desktop', <Monitor size={14} key="d" />], ['mobile', <Smartphone size={14} key="m" />]].map(([v, icon]) => (
                             <button key={v as string} onClick={() => setDevice(v as any)} style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 12px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '0.72rem', fontWeight: '700', background: device === v ? '#0ea5e9' : 'rgba(255,255,255,0.06)', color: device === v ? 'white' : '#94a3b8' }}>{icon}</button>
                         ))}
+                        <Link
+                            href="/dashboard/marketing/editor?page=inicio&openBannerModal=1"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs no-underline"
+                            title="Abrir editor visual en vivo para superponer banners de oferta sobre imágenes"
+                        >
+                            <Sparkles size={13} />
+                            <span>Banners sobre Imágenes</span>
+                        </Link>
                     </div>
                     <button onClick={handleApplyToMarket} disabled={isSaving} style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '8px 18px', borderRadius: '12px', border: 'none', background: showSuccess ? '#10b981' : '#0ea5e9', color: 'white', fontWeight: '900', fontSize: '0.78rem', cursor: isSaving ? 'wait' : 'pointer' }}>
                         {showSuccess ? <CheckCircle2 size={15} /> : <Save size={15} />} {showSuccess ? 'APLICADO!' : 'APLICAR EN MARKET'}

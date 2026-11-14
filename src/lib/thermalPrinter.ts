@@ -112,6 +112,81 @@ const withTimeout = <T,>(p: Promise<T>, ms: number): Promise<T> =>
         p.then(v => { clearTimeout(t); resolve(v); }, e => { clearTimeout(t); reject(e); });
     });
 
+const getConfiguredBaudRate = (): number => {
+    try {
+        const storage = typeof window !== 'undefined' ? window.localStorage : (globalThis as any)?.localStorage;
+        const raw = storage?.getItem?.('_bunkker_hardware_config');
+        if (raw) {
+            const parsed = JSON.parse(raw);
+            if (Number(parsed?.baudRate) > 0) return Number(parsed.baudRate);
+        }
+    } catch { /* fallback to 9600 */ }
+    return 9600;
+};
+
+/**
+ * Inicializa y verifica la impresora térmica USB/Serial enviando un pulso ESC/POS INIT (0x1B 0x40).
+ */
+export const initializeSerialPrinter = async (
+    baudRate = getConfiguredBaudRate(),
+    promptIfMissing = false
+): Promise<{ ok: boolean; portCount: number; message: string }> => {
+    if (typeof navigator === 'undefined' || !('serial' in navigator)) {
+        return {
+            ok: false,
+            portCount: 0,
+            message: 'Web Serial no está disponible en este navegador (usa Chrome o Edge en escritorio).',
+        };
+    }
+
+    let port: SerialPortLike | null = null;
+    let writer: WritableStreamDefaultWriter<Uint8Array> | null = null;
+    let opened = false;
+
+    try {
+        const granted = await navigator.serial.getPorts();
+        if (granted.length === 0 && !promptIfMissing) {
+            return {
+                ok: false,
+                portCount: 0,
+                message: 'Sin puerto USB/Serial autorizado aún. Haz clic en "Escanear Puertos USB".',
+            };
+        }
+
+        port = granted[0] ?? await navigator.serial.requestPort();
+        await port.open({ baudRate });
+        opened = true;
+
+        if (!port.writable) {
+            return {
+                ok: false,
+                portCount: Math.max(1, granted.length),
+                message: 'Puerto detectado sin flujo de escritura disponible.',
+            };
+        }
+
+        writer = port.writable.getWriter();
+        await withTimeout(writer.write(CMD.INIT), WRITE_TIMEOUT_MS);
+        return {
+            ok: true,
+            portCount: Math.max(1, granted.length),
+            message: `Impresora USB/Serial inicializada a ${baudRate} baudios (ESC/POS listo).`,
+        };
+    } catch (err) {
+        const res = classifyError(err);
+        return {
+            ok: false,
+            portCount: 0,
+            message: res.ok ? 'Puerto verificado.' : res.message,
+        };
+    } finally {
+        try { writer?.releaseLock(); } catch { /* ya liberado */ }
+        if (port && opened) {
+            try { await port.close(); } catch { /* puerto cerrado */ }
+        }
+    }
+};
+
 /**
  * Imprime por Web Serial (ESC/POS). NUNCA lanza: devuelve un PrintResult.
  * Siempre libera el writer y cierra el puerto, incluso si falla a mitad del ticket.
@@ -130,7 +205,7 @@ export const printReceiptWithWebSerial = async (data: PrintData): Promise<PrintR
         const granted = await navigator.serial.getPorts();
         port = granted[0] ?? await navigator.serial.requestPort();
 
-        await port.open({ baudRate: 9600 }); // Impresoras térmicas comunes usan 9600 o 115200
+        await port.open({ baudRate: getConfiguredBaudRate() });
         opened = true;
 
         if (!port.writable) {

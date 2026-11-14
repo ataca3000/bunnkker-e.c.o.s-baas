@@ -122,7 +122,8 @@ export default function SuperAdminDashboard({
         totalInvestment,
     } = metrics;
 
-    const avgTicket = todayOrders > 0 ? todaySales / todayOrders : (weeklyTotalOrders > 0 ? weeklyTotalSales / weeklyTotalOrders : 0);
+    const todayAvgTicket = todayOrders > 0 ? todaySales / todayOrders : 0;
+    const weeklyAvgTicket = weeklyTotalOrders > 0 ? weeklyTotalSales / weeklyTotalOrders : 0;
     const estMargin = weeklyTotalSales > 0 ? ((weeklyTotalProfit / weeklyTotalSales) * 100).toFixed(1) : '28.0';
 
     /* ── KPI cards config (Filtros interactivos de la gráfica) ── */
@@ -135,8 +136,12 @@ export default function SuperAdminDashboard({
             bg: 'rgba(14, 165, 233, 0.15)',
             icon: <TrendingUp color="#0ea5e9" size={22} />,
             badge: { 
-                value: `${todayOrders} tickets`, 
-                label: `Ticket Prom: ${formatCurrency(avgTicket)}`, 
+                value: `${todayOrders} ${todayOrders === 1 ? 'ticket hoy' : 'tickets hoy'}`, 
+                label: todayOrders > 0
+                    ? `Prom. hoy: ${formatCurrency(todayAvgTicket)}`
+                    : weeklyTotalOrders > 0
+                        ? `Prom. 7D (${weeklyTotalOrders}): ${formatCurrency(weeklyAvgTicket)}`
+                        : `Prom. hoy: ${formatCurrency(0)}`,
                 positive: todayOrders > 0 
             },
         },
@@ -169,14 +174,14 @@ export default function SuperAdminDashboard({
         {
             id: 'orders' as const,
             label: 'PEDIDOS HOY',
-            value: `${todayOrders} órdenes`,
+            value: `${todayOrders} ${todayOrders === 1 ? 'orden' : 'órdenes'}`,
             color: '#8b5cf6',
             bg: 'rgba(139, 92, 246, 0.15)',
             icon: <ReceiptText color="#8b5cf6" size={22} />,
             badge: { 
-                value: `${weeklyTotalOrders} esta sem`, 
-                label: `Total: ${orders.length} pedidos`, 
-                positive: true 
+                value: `${weeklyTotalOrders} en últimos 7 días`, 
+                label: `Histórico: ${orders.length} pedidos`, 
+                positive: todayOrders > 0 
             },
         },
     ];

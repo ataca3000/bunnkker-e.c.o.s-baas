@@ -6,25 +6,48 @@ import { useRouter } from 'next/navigation';
 import { useCart, type Product } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import {
-    Clock, Bell, History, User, Store, ShieldAlert, Wifi, Globe, TerminalSquare, AlertCircle, XCircle, CheckCircle2, Phone, Lock, Unlock,
+    Clock, Bell, History, User, Store, ShieldAlert, Wifi, WifiOff, Globe, TerminalSquare, AlertCircle, XCircle, CheckCircle2, Phone, Lock, Unlock,
     LayoutDashboard, LogOut, ShoppingCart, Trash2, Zap, UserCheck, Scale, Settings, PenTool, Camera, RefreshCw, Package, Search,
-    Columns, Receipt, DollarSign
+    Columns, Receipt, DollarSign, RotateCcw, Sliders, Nfc, PauseCircle, LockKeyhole, Sparkles
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
+import { useNfcScanner } from '@/hooks/useNfcScanner';
 import { useBluetoothScale } from '@/hooks/useBluetoothScale';
-import { printReceipt } from '@/lib/thermalPrinter';
+import { printReceipt, flushPendingPrintJobs } from '@/lib/thermalPrinter';
 import { logAudit } from '@/lib/audit';
 import { toast } from '@/lib/toast';
 import { useERPStore } from '@/store/useERPStore';
 import { broadcastSync } from '@/lib/syncNotifier';
 import { playSupermarketBeep, playIncrementBeep, playErrorBeep, initAudioContextOnFirstGesture } from '@/lib/scannerAudio';
 import { saveDigitalTicket, getDigitalTickets, type DigitalTicket } from '@/lib/digitalTicket';
-import { loadPosCartFromIDB, savePosCartToIDB, enqueueOfflineOrder, removeQueuedOfflineOrder } from '@/lib/indexedDBCart';
+import { loadPosCartFromIDB, savePosCartToIDB, enqueueOfflineOrder, removeQueuedOfflineOrder, flushOfflineOrderQueue } from '@/lib/indexedDBCart';
+import {
+    loadHardwareConfig,
+    HARDWARE_CONFIG_UPDATED_EVENT,
+    type HardwareConfig,
+} from '@/lib/hardwareConfig';
+import {
+    INVENTORY_SOCKET_STATUS_EVENT,
+    computePosConnectionView,
+    forceReconnectInventorySockets,
+    type InventorySocketState,
+} from '@/lib/inventorySocketControl';
+import {
+    putPosCartOnHold,
+    listHeldPosCarts,
+    takeHeldPosCart,
+    discardHeldPosCart,
+    OPERATION_HOLD_UPDATED_EVENT,
+    type PosHeldCart,
+} from '@/lib/operationGuard';
+import { runMobileOptimization } from '@/lib/mobileOptimizer';
+import PinAuthorizationModal, { type PinAuthorizationResult } from '@/components/security/PinAuthorizationModal';
 
 // Lazy loading de componentes pesados (cero bloqueo en el arranque del POS)
 const CorteCajaCiego = dynamic(() => import('@/components/sales/CorteCajaCiego'), { ssr: false });
 const BarcodeScanner = dynamic(() => import('@/components/BarcodeScanner'), { ssr: false });
+const HardwareSettingsModal = dynamic(() => import('@/components/hardware/HardwareSettingsModal'), { ssr: false });
 const PaymentModal = dynamic(() => import('@/components/sales/caja-movil/PaymentModal').then(m => m.PaymentModal), { ssr: false });
 const DeliveryModal = dynamic(() => import('@/components/sales/caja-movil/DeliveryModal').then(m => m.DeliveryModal), { ssr: false });
 const ScaleModal = dynamic(() => import('@/components/sales/caja-movil/ScaleModal').then(m => m.ScaleModal), { ssr: false });
@@ -74,9 +97,20 @@ export default function SalesDashboard() {
     const [processingId, setProcessingId] = useState<string | null>(null);
     const [lastOrderData, setLastOrderData] = useState<any>(null);
 
-    // Nuevos estados para Báscula Bluetooth, Configuración de Caja, Tickets y Atajos
+    // Nuevos estados para Báscula Bluetooth, Configuración de Caja, Tickets, Hardware/QR/NFC y Sockets
+    const firebaseStatus = useERPStore((s) => s.firebaseStatus);
+    const syncErrorCode = useERPStore((s) => s.syncErrorCode);
+    const pendingOfflineCount = useERPStore((s) => s.pendingOfflineCount);
+
+    const [navigatorOnline, setNavigatorOnline] = useState(true);
+    const [isLocalHttp, setIsLocalHttp] = useState(false);
+    const [socketState, setSocketState] = useState<InventorySocketState>('idle');
+    const [isReconnectingSockets, setIsReconnectingSockets] = useState(false);
+
     const [posConfig, setPosConfig] = useState<PosConfig>(DEFAULT_POS_CONFIG);
+    const [hardwareConfig, setHardwareConfig] = useState<HardwareConfig>(() => loadHardwareConfig());
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [isHardwareModalOpen, setIsHardwareModalOpen] = useState(false);
     const [isScaleOpen, setIsScaleOpen] = useState(false);
     const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
     const [isHistoryOpen, setIsHistoryOpen] = useState(false);
@@ -153,10 +187,16 @@ export default function SalesDashboard() {
         }
     };
 
-    // Cancel PIN states
+    // Protección contra abandono, espera de tickets y autorización por NIP real
     const [orderToCancel, setOrderToCancel] = useState<string | null>(null);
-    const [cancelPinInput, setCancelPinInput] = useState('');
-    const [cancelPinError, setCancelPinError] = useState('');
+    const [heldCarts, setHeldCarts] = useState<PosHeldCart[]>(() => listHeldPosCarts());
+    const [cartGuardAction, setCartGuardAction] = useState<'clear' | 'logout' | 'leave_dashboard' | null>(null);
+    const [pendingCartPinAction, setPendingCartPinAction] = useState<{
+        type: 'clear_cart' | 'discard_held';
+        holdId?: string;
+        afterAction?: 'logout' | 'leave_dashboard';
+    } | null>(null);
+    const [isOptimizingMobile, setIsOptimizingMobile] = useState(false);
 
     useEffect(() => {
         const timer = setInterval(() => {
@@ -185,6 +225,86 @@ export default function SalesDashboard() {
             posCartHydrated.current = true;
         });
     }, []);
+
+    // Monitorear red, estado de Sockets de Inventario y cambios de Hardware/QR/NFC
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        setNavigatorOnline(navigator.onLine);
+        setIsLocalHttp(window.location.protocol === 'http:');
+
+        const existingSocket = (window as any).__inventorySocket;
+        const existingSocketState = (window as any).__inventorySocketState as InventorySocketState | undefined;
+        if (existingSocket?.connected) {
+            setSocketState('connected');
+        } else if (existingSocketState) {
+            setSocketState(existingSocketState);
+        }
+
+        const onOnline = () => setNavigatorOnline(true);
+        const onOffline = () => setNavigatorOnline(false);
+        const onSocketStatus = (ev: Event) => {
+            const next = (ev as CustomEvent<{ status?: InventorySocketState }>).detail?.status;
+            if (next) setSocketState(next);
+        };
+        const onHardwareUpdate = () => {
+            setHardwareConfig(loadHardwareConfig());
+        };
+        const onHoldUpdated = () => {
+            setHeldCarts(listHeldPosCarts());
+        };
+
+        window.addEventListener('online', onOnline);
+        window.addEventListener('offline', onOffline);
+        window.addEventListener(INVENTORY_SOCKET_STATUS_EVENT, onSocketStatus);
+        window.addEventListener(HARDWARE_CONFIG_UPDATED_EVENT, onHardwareUpdate);
+        window.addEventListener(OPERATION_HOLD_UPDATED_EVENT, onHoldUpdated);
+        return () => {
+            window.removeEventListener('online', onOnline);
+            window.removeEventListener('offline', onOffline);
+            window.removeEventListener(INVENTORY_SOCKET_STATUS_EVENT, onSocketStatus);
+            window.removeEventListener(HARDWARE_CONFIG_UPDATED_EVENT, onHardwareUpdate);
+            window.removeEventListener(OPERATION_HOLD_UPDATED_EVENT, onHoldUpdated);
+        };
+    }, []);
+
+    // Aviso preventivo del navegador si hay ticket o cobro en preparación activa
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const hasPendingOperation = posCart.length > 0 || Boolean(pickingOrder) || Boolean(cashTenderOrder);
+        if (!hasPendingOperation) return;
+        const onBeforeUnload = (ev: BeforeUnloadEvent) => {
+            ev.preventDefault();
+            ev.returnValue = '';
+        };
+        window.addEventListener('beforeunload', onBeforeUnload);
+        return () => window.removeEventListener('beforeunload', onBeforeUnload);
+    }, [posCart.length, pickingOrder, cashTenderOrder]);
+
+    const connectionView = computePosConnectionView({
+        navigatorOnline,
+        firebaseStatus,
+        syncErrorCode,
+        isLocalHttp,
+        socketState,
+        pendingOfflineCount,
+    });
+
+    const handleRetryInventoryConnection = useCallback(async () => {
+        setIsReconnectingSockets(true);
+        if (isLocalHttp) {
+            setSocketState('reconnecting');
+        }
+        try {
+            forceReconnectInventorySockets();
+            await Promise.allSettled([
+                flushOfflineOrderQueue(),
+                flushPendingPrintJobs(),
+            ]);
+            showToast('🔄 Reconexión de Sockets de Inventario y sincronización lanzada.');
+        } finally {
+            setTimeout(() => setIsReconnectingSockets(false), 900);
+        }
+    }, [isLocalHttp]);
 
     // Persistir automáticamente el carrito del POS en IndexedDB y sincronizar posesión en RAM (Chunk Lease con TTL)
     const posSessionIdRef = useRef<string>('');
@@ -405,22 +525,68 @@ export default function SalesDashboard() {
         showToast(`⚖️ Peso de ${weight.toFixed(3)} ${scale.unit} aplicado al producto.`);
     };
 
-    // Escáner láser nativo (Hook global de teclado rápido)
-    useBarcodeScanner((barcode) => {
-        if (activeTab !== 'pos') return;
-        const code = barcode.trim().toLowerCase();
+    const handleCodeLookup = useCallback((rawCode: string, source: 'barcode' | 'qr' | 'nfc') => {
+        const cleanCode = rawCode.trim();
+        if (!cleanCode) return;
+        const normalized = cleanCode.toLowerCase();
+
+        const shouldCheckOrdersFirst =
+            (source === 'nfc' && hardwareConfig.nfcAutoAction === 'lookup_order') ||
+            normalized.startsWith('ord-') ||
+            normalized.startsWith('ped-') ||
+            normalized.startsWith('tk-');
+
+        if (shouldCheckOrdersFirst) {
+            setActiveTab('online');
+            setOnlineSearch(cleanCode);
+            if (posConfig.soundEnabled && hardwareConfig.scannerBeep) playSupermarketBeep(posConfig.soundVolume);
+            showToast(`🔎 Buscando pedido/ticket "${cleanCode}"...`);
+            return;
+        }
+
         const product = products.find(p =>
-            p.barcode?.toLowerCase() === code ||
-            p.id.toLowerCase() === code ||
-            p.name.toLowerCase() === code
+            p.barcode?.toLowerCase() === normalized ||
+            p.id.toLowerCase() === normalized ||
+            p.name.toLowerCase() === normalized
         );
 
         if (product) {
             handleAddProduct(product);
-        } else {
-            if (posConfig.soundEnabled) playErrorBeep(posConfig.soundVolume);
-            showToast('❌ Código no registrado: ' + barcode);
+            setPosSearch('');
+            return;
         }
+
+        if (source === 'nfc' && hardwareConfig.nfcAutoAction === 'auto') {
+            const matchedOrder = orders.find(o => o.id?.toLowerCase() === normalized);
+            if (matchedOrder) {
+                setActiveTab('online');
+                setOnlineSearch(cleanCode);
+                if (posConfig.soundEnabled && hardwareConfig.scannerBeep) playSupermarketBeep(posConfig.soundVolume);
+                showToast(`🎫 Pedido NFC localizado: ${matchedOrder.id}`);
+                return;
+            }
+        }
+
+        if (posConfig.soundEnabled) playErrorBeep(posConfig.soundVolume);
+        showToast('❌ Código no registrado: ' + cleanCode);
+    }, [products, orders, hardwareConfig.nfcAutoAction, hardwareConfig.scannerBeep, posConfig.soundEnabled, posConfig.soundVolume]);
+
+    // Escáner láser y lector NFC USB HID nativo (Hook global de teclado rápido)
+    useBarcodeScanner((barcode) => {
+        if (activeTab !== 'pos' && !hardwareConfig.nfcEnabled) return;
+        const source = hardwareConfig.nfcEnabled && hardwareConfig.nfcMode === 'usb_hid' && activeTab !== 'pos' ? 'nfc' : 'barcode';
+        handleCodeLookup(barcode, source);
+    });
+
+    // Lector Web NFC nativo (cuando está habilitado en HardwareSettingsModal)
+    const nfcScanner = useNfcScanner({
+        enabled: hardwareConfig.nfcEnabled && hardwareConfig.nfcMode === 'web_nfc',
+        onRead: (tag) => {
+            handleCodeLookup(tag.code, 'nfc');
+        },
+        onError: (msg) => {
+            showToast(`⚠️ NFC: ${msg}`);
+        },
     });
 
     // Atajos de Teclado Globales (Hotkeys de Caja)
@@ -453,14 +619,11 @@ export default function SalesDashboard() {
                 return;
             }
 
-            // F4: Vaciar Carrito
+            // F4: Proteger vaciado de carrito (En Espera o Abandono con NIP)
             if (e.key === 'F4') {
                 e.preventDefault();
                 if (posCart.length > 0) {
-                    if (confirm('¿Vaciar todo el pedido actual de caja?')) {
-                        setPosCart([]);
-                        showToast('Pedido vaciado.');
-                    }
+                    setCartGuardAction('clear');
                 }
                 return;
             }
@@ -717,36 +880,127 @@ export default function SalesDashboard() {
         }
     };
 
-    const handleConfirmCancel = async () => {
-        if (cancelPinInput.length !== 6) {
-            setCancelPinError('El PIN debe ser de 6 dígitos.');
-            return;
-        }
-
-        // Validación real de PIN: Solo el cajero activo o un superadmin con el PIN correcto puede cancelar
-        const userPin = (profile as any)?.pin || '123456'; // fallback de desarrollo si no tiene PIN configurado
-        if (cancelPinInput !== userPin && cancelPinInput !== '123456') {
-            setCancelPinError('PIN de autorización incorrecto.');
-            return;
-        }
-
+    const handleAuthorizedOrderCancel = async (authResult: PinAuthorizationResult) => {
+        if (!orderToCancel) return;
+        const targetId = orderToCancel;
         try {
-            await cancelOrder(orderToCancel as string);
-            await logAudit({
-                type: 'ORDER_CANCELLED',
-                userId: profile?.uid || 'POS',
-                userName: profile?.displayName || 'Cajero',
-                userRole: profile?.role || 'sales',
-                description: `Cancelación de orden ${orderToCancel} autorizada con PIN.`,
-                metadata: { orderId: orderToCancel, authPin: cancelPinInput }
+            const res = await fetch('/api/orders', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({
+                    id: targetId,
+                    status: 'cancelled',
+                    verificationPin: authResult.pin,
+                    reason: authResult.reason || 'Cancelación autorizada con NIP en caja',
+                }),
             });
-            showToast('✅ Orden rechazada correctamente.');
-        } catch (e) {
-            showToast('❌ Error al rechazar la orden.');
+            const data = await res.json().catch(() => null);
+            if (!res.ok || !data?.success) {
+                await cancelOrder(targetId);
+            }
+            broadcastSync({ action: 'ORDER_CANCELLED', id: targetId });
+            showToast(`Orden ${targetId} cancelada por ${authResult.verifiedBy.name}.`);
+        } catch {
+            showToast('Error al rechazar la orden.');
         } finally {
             setOrderToCancel(null);
-            setCancelPinInput('');
-            setCancelPinError('');
+        }
+    };
+
+    const handleHoldCurrentPosCart = async () => {
+        const after = cartGuardAction;
+        if (posCart.length > 0) {
+            const held = putPosCartOnHold({
+                items: posCart as any,
+                orderType,
+                deliveryInfo: deliveryInfo as any,
+                operatorUid: profile?.uid,
+                operatorName: profile?.displayName,
+                reason: after === 'logout' ? 'Ticket pausado antes de cerrar sesión' : 'Ticket en espera en mostrador',
+            });
+            if (held) {
+                setHeldCarts(listHeldPosCarts());
+                setPosCart([]);
+                setDeliveryInfo(undefined);
+                setOrderType('local');
+                showToast(`Ticket guardado en espera (${held.itemCount} artículos).`);
+            }
+        }
+        setCartGuardAction(null);
+        if (after === 'leave_dashboard') {
+            router.push('/dashboard');
+        } else if (after === 'logout') {
+            await signOut();
+            window.location.href = '/login';
+        }
+    };
+
+    const handleRestoreHeldCart = (holdId: string) => {
+        if (posCart.length > 0) {
+            putPosCartOnHold({
+                items: posCart as any,
+                orderType,
+                deliveryInfo: deliveryInfo as any,
+                operatorUid: profile?.uid,
+                operatorName: profile?.displayName,
+                reason: 'Pausado automáticamente al retomar otro ticket',
+            });
+        }
+        const restored = takeHeldPosCart(holdId);
+        if (!restored) return;
+        setPosCart(restored.items as any);
+        setOrderType(restored.orderType || 'local');
+        setDeliveryInfo(restored.deliveryInfo as any);
+        setHeldCarts(listHeldPosCarts());
+        setActiveTab('pos');
+        showToast(`Ticket en espera retomado (${restored.itemCount} artículos).`);
+    };
+
+    const handleAuthorizedCartAbandon = async (authResult: PinAuthorizationResult) => {
+        if (!pendingCartPinAction) return;
+        const { type, holdId, afterAction } = pendingCartPinAction;
+
+        if (type === 'discard_held' && holdId) {
+            discardHeldPosCart(holdId);
+            setHeldCarts(listHeldPosCarts());
+            showToast(`Ticket en espera descartado con NIP (${authResult.verifiedBy.name}).`);
+        } else {
+            logAudit({
+                type: 'ORDER_CANCEL',
+                userId: authResult.verifiedBy.uid,
+                userName: authResult.verifiedBy.name,
+                userRole: authResult.verifiedBy.role,
+                description: `[POS] Ticket en preparación descartado con NIP (${posCart.length} artículos). Motivo: ${authResult.reason || 'Cancelación en mostrador'}`,
+                metadata: { itemCount: posCart.length, reason: authResult.reason },
+            }).catch(() => {});
+            setPosCart([]);
+            setDeliveryInfo(undefined);
+            setOrderType('local');
+            showToast(`Operación cancelada con NIP (${authResult.verifiedBy.name}).`);
+        }
+
+        setPendingCartPinAction(null);
+        setCartGuardAction(null);
+
+        if (afterAction === 'leave_dashboard') {
+            router.push('/dashboard');
+        } else if (afterAction === 'logout') {
+            await signOut();
+            window.location.href = '/login';
+        }
+    };
+
+    const handleRunMobileOptimize = async () => {
+        if (isOptimizingMobile) return;
+        setIsOptimizingMobile(true);
+        try {
+            const rep = await runMobileOptimization();
+            showToast(
+                `Caché móvil liberado: ${rep.serverRemovedFiles} archivos temp, ${rep.swCacheEvicted} entradas SW y ${rep.prunedLocalDrafts} borradores.`
+            );
+        } finally {
+            setIsOptimizingMobile(false);
         }
     };
 
@@ -804,6 +1058,7 @@ export default function SalesDashboard() {
         'pending',
         'paid',
         'PREPARANDO',
+        'EN_ESPERA',
         'READY_TO_SHIP',
         'READY_FOR_PICKUP',
         'READY_FOR_PICKUP_PAID',
@@ -912,12 +1167,102 @@ export default function SalesDashboard() {
                     <div className="bg-blue-500/20 text-blue-400 p-1.5 rounded-lg flex items-center justify-center border border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.3)]">
                         <TerminalSquare className="w-6 h-6" />
                     </div>
-                    <div>
+                    <div className="min-w-0">
                         <h1 className="text-sm font-bold tracking-wide">CAJA MÓVIL</h1>
-                        <p className="text-[10px] text-zinc-400 font-mono flex items-center gap-1">
-                            <span className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.8)] animate-pulse"></span>
-                            Sincronizado
-                        </p>
+                        <div
+                            id="pos-connection-status"
+                            data-status={connectionView.statusType}
+                            onClick={() => setIsHardwareModalOpen(true)}
+                            className="flex items-center gap-2 flex-wrap mt-0.5 cursor-pointer group"
+                            title="Haz clic para abrir la configuración e inicialización de hardware (Impresora USB/Serial, Láser, QR y NFC)"
+                        >
+                            <span
+                                className={`text-[10px] font-mono inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border transition-all group-hover:brightness-110 ${
+                                    connectionView.isDisconnected
+                                        ? 'bg-red-500/15 text-red-300 border-red-500/40'
+                                        : connectionView.isDegraded
+                                            ? 'bg-amber-500/15 text-amber-300 border-amber-500/40'
+                                            : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'
+                                }`}
+                                title={connectionView.detail}
+                            >
+                                {connectionView.isDisconnected ? (
+                                    <WifiOff className="w-3 h-3 text-red-400 shrink-0" />
+                                ) : (
+                                    <span
+                                        className={`w-2 h-2 rounded-full shrink-0 ${
+                                            connectionView.isDegraded
+                                                ? 'bg-amber-400 animate-ping'
+                                                : 'bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.8)] animate-pulse'
+                                        }`}
+                                    />
+                                )}
+                                <span className="font-bold">{connectionView.label}</span>
+                            </span>
+
+                            {connectionView.isDisconnected && (
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        void handleRetryInventoryConnection();
+                                    }}
+                                    disabled={isReconnectingSockets}
+                                    className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-red-600 hover:bg-red-500 text-white text-[10px] font-black uppercase tracking-wider shadow-lg shadow-red-600/30 transition-all active:scale-95 disabled:opacity-60 cursor-pointer"
+                                    title="Forzar reconexión de los Sockets de Inventario y sincronización SSE"
+                                >
+                                    <RotateCcw className={`w-3 h-3 ${isReconnectingSockets ? 'animate-spin' : ''}`} />
+                                    {isReconnectingSockets ? 'Reconectando...' : 'Reintentar Conexión'}
+                                </button>
+                            )}
+
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setIsHardwareModalOpen(true);
+                                }}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-200 border border-cyan-500/35 text-[10px] font-bold transition-all cursor-pointer"
+                                title="Seleccionar e inicializar impresora USB/Serial, escáner láser, QR y NFC"
+                            >
+                                <Sliders className="w-3 h-3 text-cyan-400" />
+                                <span>
+                                    {hardwareConfig.printerMode === 'serial'
+                                        ? 'USB/Serial'
+                                        : hardwareConfig.printerMode === 'bluetooth'
+                                            ? 'BT'
+                                            : hardwareConfig.printerMode === 'network'
+                                                ? 'Red'
+                                                : 'Digital'}
+                                    {' · '}
+                                    {hardwareConfig.scannerMode === 'hid' ? 'Láser' : 'QR'}
+                                    {hardwareConfig.nfcEnabled ? ' · NFC' : ''}
+                                </span>
+                            </button>
+
+                            {hardwareConfig.nfcEnabled && hardwareConfig.nfcMode === 'web_nfc' && (
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (nfcScanner.isListening) {
+                                            nfcScanner.stopScan();
+                                        } else {
+                                            void nfcScanner.startScan();
+                                        }
+                                    }}
+                                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-bold transition-all cursor-pointer ${
+                                        nfcScanner.isListening
+                                            ? 'bg-amber-500/25 text-amber-200 border-amber-400 animate-pulse'
+                                            : 'bg-zinc-800/80 text-zinc-300 border-white/15 hover:border-amber-400/50'
+                                    }`}
+                                    title="Activar o detener lectura NFC en caja"
+                                >
+                                    <Nfc className="w-3 h-3 text-amber-400" />
+                                    <span>{nfcScanner.isListening ? 'NFC Escuchando' : 'Activar NFC'}</span>
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </div>
 
@@ -1021,9 +1366,26 @@ export default function SalesDashboard() {
                         <span className="hidden sm:block">CORTE</span>
                     </button>
 
+                    <button
+                        type="button"
+                        onClick={handleRunMobileOptimize}
+                        disabled={isOptimizingMobile}
+                        className="hover:text-white transition-all active:scale-95 flex items-center gap-1.5 bg-white/5 px-3 py-2 rounded-xl border border-white/10 text-xs font-bold shadow-sm disabled:opacity-50"
+                        title="Liberar caché y memoria móvil"
+                    >
+                        <Sparkles className={`h-4 w-4 text-emerald-400 shrink-0 ${isOptimizingMobile ? 'animate-spin' : ''}`} />
+                        <span className="hidden xl:inline">{isOptimizingMobile ? 'Limpiando...' : 'Caché'}</span>
+                    </button>
+
                     {/* Botón Salir al Dashboard */}
                     <button
-                        onClick={() => router.push('/dashboard')}
+                        onClick={() => {
+                            if (posCart.length > 0) {
+                                setCartGuardAction('leave_dashboard');
+                            } else {
+                                router.push('/dashboard');
+                            }
+                        }}
                         className="hover:text-white transition-all active:scale-95 flex items-center gap-1.5 bg-cyan-950/70 hover:bg-cyan-900/90 text-cyan-200 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl border border-cyan-700/60 text-xs sm:text-sm font-black shadow-sm"
                         title="Volver al Menú Principal del Dashboard"
                     >
@@ -1035,7 +1397,8 @@ export default function SalesDashboard() {
                     <button
                         onClick={async () => {
                             if (posCart.length > 0) {
-                                if (!confirm("Hay productos pendientes en el carrito de caja. ¿Deseas cerrar sesión de todos modos?")) return;
+                                setCartGuardAction('logout');
+                                return;
                             }
                             await signOut();
                             window.location.href = '/login';
@@ -1066,9 +1429,8 @@ export default function SalesDashboard() {
                     onCobrarClick={handleCheckoutClick}
                     onScaleClick={() => setIsScaleOpen(true)}
                     onClearClick={() => {
-                        if (posCart.length > 0 && confirm('¿Vaciar todo el pedido actual de caja?')) {
-                            setPosCart([]);
-                            showToast('Pedido vaciado.');
+                        if (posCart.length > 0) {
+                            setCartGuardAction('clear');
                         }
                     }}
                     onCameraClick={() => setShowCameraScanner(true)}
@@ -1080,6 +1442,42 @@ export default function SalesDashboard() {
                     scaleUnit={scale.unit}
                     isScaleConnected={scale.isConnected}
                 />
+            )}
+
+            {/* Bandeja de Tickets en Espera para Cajero (Recuperación inmediata sin pérdida de captura) */}
+            {activeTab === 'pos' && heldCarts.length > 0 && (
+                <div className="bg-slate-900/95 border-b border-amber-500/30 px-4 py-2 flex items-center gap-2 overflow-x-auto shrink-0 z-20">
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-300 shrink-0 mr-1">
+                        <PauseCircle size={15} />
+                        <span>En espera ({heldCarts.length}):</span>
+                    </div>
+                    {heldCarts.map((held) => (
+                        <div
+                            key={held.id}
+                            className="flex items-center gap-1.5 bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1 shrink-0"
+                        >
+                            <button
+                                type="button"
+                                onClick={() => handleRestoreHeldCart(held.id)}
+                                className="min-h-[36px] text-xs font-semibold text-white hover:text-amber-300 flex items-center gap-2"
+                                title="Retomar este ticket en caja"
+                            >
+                                <span>{held.label}</span>
+                                <span className="font-mono tabular-nums text-emerald-400">
+                                    {held.itemCount} pzas · ${held.total.toFixed(2)}
+                                </span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setPendingCartPinAction({ type: 'discard_held', holdId: held.id })}
+                                className="min-w-[32px] min-h-[32px] rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 flex items-center justify-center"
+                                title="Descartar ticket en espera (Requiere NIP)"
+                            >
+                                <Trash2 size={13} />
+                            </button>
+                        </div>
+                    ))}
+                </div>
             )}
 
             {/* Main Content Workspace */}
@@ -1110,7 +1508,9 @@ export default function SalesDashboard() {
                                 setOrderType={setOrderType}
                                 updateQuantity={handleUpdateQuantity}
                                 removeItem={(id) => setPosCart(prev => prev.filter(i => i.id !== id))}
-                                onClear={() => setPosCart([])}
+                                onClear={() => {
+                                    if (posCart.length > 0) setCartGuardAction('clear');
+                                }}
                                 onCheckout={handleCheckoutClick}
                             />
                         </div>
@@ -1630,21 +2030,20 @@ export default function SalesDashboard() {
                 <BarcodeScanner
                     isOpen={showCameraScanner}
                     onClose={() => setShowCameraScanner(false)}
-                    continuousModeDefault={true}
+                    continuousModeDefault={hardwareConfig.qrContinuousMode}
                     onScanSuccess={(decodedText) => {
-                        const code = decodedText.trim().toLowerCase();
-                        const product = products.find(p => p.barcode?.toLowerCase() === code || p.id.toLowerCase() === code || p.name.toLowerCase() === code);
-                        if (product) {
-                            handleAddProduct(product);
-                            setPosSearch('');
-                            showToast(`Agregado a la cesta: ${product.name}`);
-                        } else {
-                            if (posConfig.soundEnabled) playErrorBeep(posConfig.soundVolume);
-                            showToast('❌ Producto no encontrado: ' + decodedText);
-                        }
+                        handleCodeLookup(decodedText, 'qr');
                     }}
                 />
             )}
+
+            <HardwareSettingsModal
+                isOpen={isHardwareModalOpen}
+                onClose={() => {
+                    setIsHardwareModalOpen(false);
+                    setHardwareConfig(loadHardwareConfig());
+                }}
+            />
 
             {/* Modal de Báscula Electrónica BLE / Serial */}
             <ScaleModal
@@ -1811,34 +2210,85 @@ export default function SalesDashboard() {
                 </div>
             )}
 
-            {/* Modal PIN Cancelación */}
-            {orderToCancel && (
-                <div className="fixed inset-0 z-[4000] bg-black/80 flex items-center justify-center p-4">
-                    <div className="bg-zinc-900 border border-white/10 p-[8px] rounded-[5px] w-full max-w-sm">
-                        <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2"><AlertCircle className="text-red-500" /> Autorización Requerida</h3>
-                        <p className="text-sm text-zinc-400 mb-6">Ingresa tu PIN de 6 dígitos para autorizar la cancelación de esta orden.</p>
+            {/* Modal de Protección contra Abandono de Ticket POS */}
+            {cartGuardAction && (
+                <div className="fixed inset-0 z-[4100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+                    <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center shrink-0">
+                                <ShieldAlert size={20} />
+                            </div>
+                            <div>
+                                <h3 className="text-base font-bold text-white">Protección de Venta en Curso</h3>
+                                <p className="text-xs text-slate-400 font-mono tabular-nums">
+                                    {posCart.length} producto(s) · Total ${posTotal.toFixed(2)}
+                                </p>
+                            </div>
+                        </div>
 
-                        <input
-                            type="password"
-                            inputMode="numeric"
-                            maxLength={6}
-                            value={cancelPinInput}
-                            onChange={(e) => {
-                                setCancelPinInput(e.target.value.replace(/\D/g, ''));
-                                setCancelPinError('');
-                            }}
-                            className="w-full bg-black/50 border border-white/10 text-white text-center text-3xl tracking-[1em] p-4 rounded-xl mb-2 focus:border-blue-500 outline-none"
-                            placeholder="••••••"
-                        />
-                        {cancelPinError && <p className="text-red-500 text-xs text-center font-bold mb-4">{cancelPinError}</p>}
+                        <p className="text-sm text-slate-300 leading-relaxed">
+                            Para no perder esta captura, puedes guardar el ticket en espera o autorizar su cancelación con tu NIP.
+                        </p>
 
-                        <div className="flex gap-3 mt-6">
-                            <button onClick={() => { setOrderToCancel(null); setCancelPinInput(''); }} className="flex-1 py-3 text-zinc-400 hover:text-white font-bold text-sm">Cancelar</button>
-                            <button onClick={handleConfirmCancel} className="flex-1 py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-sm shadow-[0_0_15px_rgba(220,38,38,0.4)]">Rechazar Orden</button>
+                        <div className="flex flex-col gap-2.5">
+                            <button
+                                type="button"
+                                onClick={() => setCartGuardAction(null)}
+                                className="w-full min-h-[44px] py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm"
+                            >
+                                Seguir atendiendo este ticket
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleHoldCurrentPosCart}
+                                className="w-full min-h-[44px] py-2.5 px-4 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-200 font-semibold text-sm flex items-center justify-center gap-2"
+                            >
+                                <PauseCircle size={16} />
+                                <span>Poner ticket en espera (Guardar)</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    setPendingCartPinAction({
+                                        type: 'clear_cart',
+                                        afterAction: cartGuardAction === 'clear' ? undefined : cartGuardAction,
+                                    })
+                                }
+                                className="w-full min-h-[44px] py-2.5 px-4 rounded-xl bg-red-600/20 hover:bg-red-600/30 border border-red-500/40 text-red-200 font-semibold text-sm flex items-center justify-center gap-2"
+                            >
+                                <LockKeyhole size={15} />
+                                <span>Cancelar y vaciar (Requiere NIP)</span>
+                            </button>
                         </div>
                     </div>
                 </div>
             )}
+
+            {/* Modal NIP Real para Cancelación de Orden en Cola */}
+            <PinAuthorizationModal
+                isOpen={Boolean(orderToCancel)}
+                title="Autorizar Cancelación de Orden"
+                description={`Ingresa tu NIP de operador o supervisor para cancelar la orden ${orderToCancel || ''}.`}
+                actionLabel="Cancelar Orden"
+                actionTone="danger"
+                requireReason={true}
+                defaultReason="Cancelación autorizada en caja"
+                onClose={() => setOrderToCancel(null)}
+                onAuthorized={handleAuthorizedOrderCancel}
+            />
+
+            {/* Modal NIP Real para Abandono / Descarte de Carrito en Caja */}
+            <PinAuthorizationModal
+                isOpen={Boolean(pendingCartPinAction)}
+                title="Autorizar Cancelación de Ticket POS"
+                description="Ingresa tu NIP de operador o supervisor para descartar el ticket sin cobrar."
+                actionLabel="Descartar Ticket"
+                actionTone="danger"
+                requireReason={true}
+                defaultReason="Ticket cancelado en mostrador"
+                onClose={() => setPendingCartPinAction(null)}
+                onAuthorized={handleAuthorizedCartAbandon}
+            />
 
             {/* Asistente de Recolección IA (Picking) */}
             {pickingOrder && (

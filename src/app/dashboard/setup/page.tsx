@@ -41,8 +41,6 @@ export default function SetupWizard() {
         supportPhone: '',
         facebookUrl: '',
         instagramUrl: '',
-        mp_public_key: '',
-        stripe_publishable_key: '',
         activeModules: ['sales', 'users', 'crm', 'inventory', 'delivery', 'design', 'marketing', 'billing', 'audit'],
         operationRange: 'local' as 'local' | 'regional' | 'nacional' | 'global',
         enableWebPayments: true,

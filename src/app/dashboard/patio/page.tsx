@@ -11,6 +11,8 @@ import { toast } from '@/lib/toast';
 import DeliveryProofModal from '@/components/orders/DeliveryProofModal';
 import TicketEntrega from '@/components/TicketEntrega';
 import OrderPickingAssistant from '@/components/orders/OrderPickingAssistant';
+import PinAuthorizationModal, { type PinAuthorizationResult } from '@/components/security/PinAuthorizationModal';
+import { PauseCircle, LockKeyhole } from 'lucide-react';
 
 export default function PatioDashboard() {
     const { orders, startLoading, completeLoading, products, siteConfig } = useCart();
@@ -25,6 +27,7 @@ export default function PatioDashboard() {
     const [pickingOrder, setPickingOrder] = useState<any | null>(null);
     const [deconstructingOrder, setDeconstructingOrder] = useState<any | null>(null);
     const [onlyMyLoads, setOnlyMyLoads] = useState(false);
+    const [abandonTargetOrder, setAbandonTargetOrder] = useState<any | null>(null);
 
     // 1. Cargas pendientes de surtir en Almacén destinadas a Patio / Bahía de Carga
     const pendingLoads = useMemo(() => {
@@ -35,13 +38,15 @@ export default function PatioDashboard() {
             const isDelivery = o.deliveryType === 'DELIVERY' || (o as any).deliveryMethod === 'repartidor';
             if (!isPatioOrder || isDelivery) return false;
 
-            const validStatus = ['READY_TO_SHIP', 'paid', 'pending_payment', 'pending_confirmation', 'paid_pending_delivery', 'PREPARANDO', 'READY_FOR_PICKUP', 'NIGHT_QUEUE', 'PENDIENTE_LLEGADA'].includes(o.status);
+            const validStatus = ['READY_TO_SHIP', 'paid', 'pending_payment', 'pending_confirmation', 'paid_pending_delivery', 'PREPARANDO', 'EN_ESPERA', 'READY_FOR_PICKUP', 'NIGHT_QUEUE', 'PENDIENTE_LLEGADA'].includes(o.status);
             const notLoaded = !(o as any).isLoaded && !['DELIVERED', 'READY_FOR_PICKUP_PAID', 'OUT_FOR_DELIVERY', 'COMPLETED'].includes(o.status);
             const custName = o.customer?.name || o.customerName || 'Cliente';
             const matchesSearch = o.id.toLowerCase().includes(searchTerm.toLowerCase()) || 
                                  custName.toLowerCase().includes(searchTerm.toLowerCase());
             return validStatus && notLoaded && matchesSearch;
         }).sort((a, b) => {
+            if (a.status === 'EN_ESPERA' && b.status !== 'EN_ESPERA') return -1;
+            if (b.status === 'EN_ESPERA' && a.status !== 'EN_ESPERA') return 1;
             if (a.status === 'NIGHT_QUEUE' || a.status === 'PENDIENTE_LLEGADA') return 1;
             if (b.status === 'NIGHT_QUEUE' || b.status === 'PENDIENTE_LLEGADA') return -1;
             return 0;
@@ -81,13 +86,25 @@ export default function PatioDashboard() {
         }
     };
 
-    const handleAction = async (orderId: string, action: 'start' | 'complete' | 'postpone' | 'resume') => {
+    const handleAction = async (orderId: string, action: 'start' | 'complete' | 'postpone' | 'resume' | 'hold') => {
         setProcessingId(orderId);
         try {
             if (action === 'start') {
                 await startLoading(orderId);
             } else if (action === 'complete') {
                 setScanTargetId(orderId); // Activa el scanner
+            } else if (action === 'hold') {
+                const res = await fetch('/api/orders', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ id: orderId, action: 'hold_preparation', reason: 'Pausado en espera en Patio' })
+                });
+                if (!res.ok) throw new Error('No se pudo poner en espera');
+                if (typeof window !== 'undefined' && (window as any).__inventorySocket) {
+                    (window as any).__inventorySocket.emit('sync_db_event', { action: 'ORDER_HOLD', id: orderId });
+                }
+                toast.success('Carga guardada en espera sin perder asignación.');
             } else if (action === 'postpone') {
                 const res = await fetch('/api/orders', {
                     method: 'PATCH',
@@ -98,21 +115,57 @@ export default function PatioDashboard() {
                 if (typeof window !== 'undefined' && (window as any).__inventorySocket) {
                     (window as any).__inventorySocket.emit('sync_db_event', { action: 'ORDER_POSTPONED', id: orderId });
                 }
-                toast.success('Orden pospuesta. Se moverá al final de la fila.', '⏰ Pospuesto');
+                toast.success('Orden pospuesta. Se moverá al final de la fila.', 'Pospuesto');
             } else if (action === 'resume') {
+                const target = orders.find((o: any) => o.id === orderId);
+                const payload = target?.status === 'EN_ESPERA'
+                    ? { id: orderId, action: 'resume_preparation' }
+                    : { id: orderId, status: 'PREPARANDO' };
                 const res = await fetch('/api/orders', {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id: orderId, status: 'PREPARANDO' })
+                    credentials: 'include',
+                    body: JSON.stringify(payload)
                 });
                 if (!res.ok) throw new Error('Error al retomar la orden');
                 if (typeof window !== 'undefined' && (window as any).__inventorySocket) {
                     (window as any).__inventorySocket.emit('sync_db_event', { action: 'ORDER_RESUMED', id: orderId });
                 }
-                toast.success('Orden retomada. Volviendo a la fila activa.', '▶️ Retomado');
+                toast.success('Orden retomada en fila activa.');
             }
-        } catch (error) {
+        } catch {
             toast.error('Error al procesar la acción. Intenta de nuevo.');
+        } finally {
+            setProcessingId(null);
+        }
+    };
+
+    const handleAuthorizedAbandon = async (authResult: PinAuthorizationResult) => {
+        if (!abandonTargetOrder) return;
+        const targetId = abandonTargetOrder.id;
+        setProcessingId(targetId);
+        try {
+            const res = await fetch('/api/orders', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({
+                    id: targetId,
+                    action: 'abandon_preparation',
+                    verificationPin: authResult.pin,
+                    reason: authResult.reason || 'Carga abandonada con NIP en Patio',
+                })
+            });
+            const data = await res.json().catch(() => null);
+            if (!res.ok || !data?.success) {
+                toast.error(data?.error || 'No se pudo liberar la carga.');
+                return;
+            }
+            if (typeof window !== 'undefined' && (window as any).__inventorySocket) {
+                (window as any).__inventorySocket.emit('sync_db_event', { action: 'ORDER_ABANDONED', id: targetId });
+            }
+            toast.success(`Carga #${targetId.slice(-6)} liberada con NIP (${authResult.verifiedBy.name}).`);
+            setAbandonTargetOrder(null);
         } finally {
             setProcessingId(null);
         }
@@ -211,35 +264,39 @@ export default function PatioDashboard() {
                         pendingLoads.map((order: any) => {
                             const isNight = order.status === 'NIGHT_QUEUE';
                             const isPending = order.status === 'PENDIENTE_LLEGADA';
-                            const isDelayed = isNight || isPending;
+                            const isOnHold = order.status === 'EN_ESPERA';
+                            const isDelayed = isNight || isPending || isOnHold;
 
                             return (
                                 <motion.div 
                                     key={order.id}
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    className={`bg-slate-900/90 rounded-2xl p-6 border-l-8 shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border border-slate-800 ${
-                                        isNight ? 'border-l-purple-500' : isPending ? 'border-l-amber-500' : order.loadedBy ? 'border-l-sky-400' : 'border-l-slate-700'
-                                    }`}
+                                    className="bg-slate-900/90 rounded-2xl p-6 shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border border-slate-800"
                                 >
                                     <div className="flex-1">
-                                        <div className="flex flex-wrap items-center gap-2 mb-3">
-                                            <span className="bg-slate-800 text-sky-400 px-3 py-1 rounded-lg text-xs font-mono font-black border border-slate-700">
+                                        <div className="flex flex-wrap items-center gap-2 mb-3 text-xs">
+                                            <span className="bg-slate-800 text-sky-400 px-3 py-1 rounded-lg font-mono font-bold border border-slate-700 tabular-nums">
                                                 {order.id}
                                             </span>
                                             {order.loadedBy && (
-                                                <span className="bg-sky-500/15 text-sky-300 border border-sky-500/30 px-3 py-1 rounded-lg text-[10px] font-black uppercase flex items-center gap-1.5">
-                                                    <Clock size={12} /> Surtido en curso por: {order.loadedBy}
+                                                <span className="text-sky-300 font-semibold">
+                                                    · En surtido por: {order.loadedBy}
+                                                </span>
+                                            )}
+                                            {isOnHold && (
+                                                <span className="text-amber-300 font-semibold">
+                                                    · En Espera (Avance guardado)
                                                 </span>
                                             )}
                                             {isNight && (
-                                                <span className="bg-purple-500/20 text-purple-300 border border-purple-500/30 px-3 py-1 rounded-lg text-[10px] font-black uppercase">
-                                                    Cola Nocturna
+                                                <span className="text-purple-300 font-semibold">
+                                                    · Cola Nocturna
                                                 </span>
                                             )}
                                             {isPending && (
-                                                <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 px-3 py-1 rounded-lg text-[10px] font-black uppercase">
-                                                    Pospuesto
+                                                <span className="text-amber-300 font-semibold">
+                                                    · Pospuesto
                                                 </span>
                                             )}
                                         </div>
@@ -274,14 +331,26 @@ export default function PatioDashboard() {
                                     {/* Botones de Control de Almacén */}
                                     <div className="flex flex-col gap-3 w-full md:w-auto min-w-[240px]">
                                         {isDelayed ? (
-                                            <button 
-                                                onClick={() => handleAction(order.id, 'resume')}
-                                                disabled={!!processingId}
-                                                className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 rounded-xl font-black text-xs uppercase flex items-center gap-2 justify-center transition-all shadow-lg active:scale-95"
-                                            >
-                                                {processingId === order.id ? <Loader2 className="animate-spin" size={16} /> : <Play size={16} />} 
-                                                {isNight ? 'Pasar a Fila Activa' : 'Retomar (Llegó el Cliente)'}
-                                            </button>
+                                            <div className="flex flex-col gap-2">
+                                                <button 
+                                                    onClick={() => handleAction(order.id, 'resume')}
+                                                    disabled={!!processingId}
+                                                    className="min-h-[44px] bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 rounded-xl font-bold text-xs flex items-center gap-2 justify-center transition-all shadow-lg active:scale-95"
+                                                >
+                                                    {processingId === order.id ? <Loader2 className="animate-spin" size={16} /> : <Play size={16} />} 
+                                                    {isOnHold ? 'Retomar Surtido Guardado' : isNight ? 'Pasar a Fila Activa' : 'Retomar (Llegó el Cliente)'}
+                                                </button>
+                                                {order.loadedBy && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setAbandonTargetOrder(order)}
+                                                        disabled={!!processingId}
+                                                        className="min-h-[44px] bg-red-500/15 hover:bg-red-500/25 border border-red-500/30 text-red-200 px-4 py-2 rounded-xl font-semibold text-xs flex items-center gap-1.5 justify-center"
+                                                    >
+                                                        <LockKeyhole size={14} /> Cancelar / Soltar (NIP)
+                                                    </button>
+                                                )}
+                                            </div>
                                         ) : !order.loadedBy ? (
                                             <div className="flex flex-col gap-2">
                                                 <button 
@@ -335,10 +404,28 @@ export default function PatioDashboard() {
                                                 <button 
                                                     onClick={() => handleAction(order.id, 'complete')}
                                                     disabled={!!processingId || (order.loadedByUid !== profile?.uid && profile?.role !== 'superadmin')}
-                                                    className="w-full bg-slate-800 text-slate-300 px-4 py-2 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 hover:bg-slate-700 transition-colors disabled:opacity-50 mt-1"
+                                                    className="w-full min-h-[44px] bg-slate-800 text-slate-200 px-4 py-2 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 hover:bg-slate-700 transition-colors disabled:opacity-50 mt-1"
                                                 >
                                                     <QrCode size={14} /> Escanear Código
                                                 </button>
+                                                <div className="grid grid-cols-2 gap-2 pt-1">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleAction(order.id, 'hold')}
+                                                        disabled={!!processingId}
+                                                        className="min-h-[44px] bg-amber-500/15 hover:bg-amber-500/25 text-amber-200 border border-amber-500/30 px-3 py-2 rounded-xl font-semibold text-xs flex items-center justify-center gap-1.5"
+                                                    >
+                                                        <PauseCircle size={14} /> En Espera
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setAbandonTargetOrder(order)}
+                                                        disabled={!!processingId}
+                                                        className="min-h-[44px] bg-red-500/15 hover:bg-red-500/25 text-red-200 border border-red-500/30 px-3 py-2 rounded-xl font-semibold text-xs flex items-center justify-center gap-1.5"
+                                                    >
+                                                        <LockKeyhole size={14} /> Soltar (NIP)
+                                                    </button>
+                                                </div>
                                             </div>
                                         )}
                                     </div>
@@ -620,6 +707,18 @@ export default function PatioDashboard() {
                     />
                 )}
             </AnimatePresence>
+
+            <PinAuthorizationModal
+                isOpen={Boolean(abandonTargetOrder)}
+                title="Autorizar Abandono de Carga en Patio"
+                description={`Ingresa tu NIP de operador o supervisor para liberar la carga #${abandonTargetOrder?.id?.slice(-6) || ''}.`}
+                actionLabel="Liberar Carga"
+                actionTone="danger"
+                requireReason={true}
+                defaultReason="Carga liberada en patio con NIP"
+                onClose={() => setAbandonTargetOrder(null)}
+                onAuthorized={handleAuthorizedAbandon}
+            />
         </div>
     );
 }

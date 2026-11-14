@@ -13,7 +13,6 @@ export default function ProSyncPage() {
   
   const [isPro, setIsPro] = useState(false);
   const [tenantId, setTenantId] = useState('');
-  const [cloudToken, setCloudToken] = useState('');
   const [isLoadingConfig, setIsLoadingConfig] = useState(true);
   const [isDownloading, setIsDownloading] = useState(false);
 
@@ -45,9 +44,8 @@ export default function ProSyncPage() {
     fetch('/api/pairing/status')
       .then(res => res.json())
       .then(data => {
-        setIsPro(data.isPro);
-        setTenantId(data.tenantId);
-        setCloudToken(data.cloudToken);
+        setIsPro(Boolean(data.isPro));
+        setTenantId(data.tenantId || '');
         setIsLoadingConfig(false);
       })
       .catch(() => setIsLoadingConfig(false));
@@ -55,7 +53,7 @@ export default function ProSyncPage() {
 
   const handlePairing = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (serial.length !== 6) return;
+    if (serial.length < 4) return;
 
     setStatus('pairing');
     setErrorMsg('');
@@ -106,30 +104,35 @@ export default function ProSyncPage() {
   const handleDownloadBackup = async () => {
     setIsDownloading(true);
     try {
-      const CLOUD_URL = process.env.NEXT_PUBLIC_CLOUD_URL || 'https://us-central1-admin-erp-pro-1.cloudfunctions.net';
-      
-      const res = await fetch(`${CLOUD_URL}/downloadBackup`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tenantId, token: cloudToken })
-      });
-      
-      const data = await res.json();
-      
-      if (!res.ok || !data.success) throw new Error(data.error || 'No se encontró respaldo en la nube');
-      
-      if (typeof window !== 'undefined' && (window as any).electronAPI) {
-        const result = await (window as any).electronAPI.restoreBackup(data.payload);
+      const res = await fetch('/api/backup');
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || 'No se pudo generar el snapshot completo');
+      }
+
+      const backupPayload = await res.json();
+
+      if (typeof window !== 'undefined' && (window as any).electronAPI?.restoreBackup) {
+        const result = await (window as any).electronAPI.restoreBackup(backupPayload);
         if (result.success) {
           toast.success(result.message, 'Restauración Completada');
         } else {
           toast.error(result.message, 'Fallo al restaurar SQLite');
         }
       } else {
-        toast.warning('Esta función solo opera dentro del entorno de Escritorio (.exe)');
+        const blob = new Blob([JSON.stringify(backupPayload, null, 2)], { type: 'application/json' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `bunkker_snapshot_${tenantId || 'default'}_${Date.now()}.json`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+        toast.success('Snapshot completo descargado con verificación SHA-256', 'Respaldo Listo');
       }
     } catch (err: any) {
-      toast.error(err.message, 'Error de Nube');
+      toast.error(err.message, 'Error de Respaldo');
     } finally {
       setIsDownloading(false);
     }
@@ -216,14 +219,14 @@ export default function ProSyncPage() {
                     <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
                     <input
                       type="text"
-                      maxLength={6}
+                      maxLength={12}
                       value={serial}
                       onChange={(e) => {
                         setStatus('idle');
                         setSerial(e.target.value.replace(/\D/g, ''));
                       }}
                       className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-12 pr-4 py-4 text-2xl font-mono text-center tracking-[0.5em] text-white focus:border-yellow-500 transition-colors"
-                      placeholder="000000"
+                      placeholder="0000"
                     />
                   </div>
                   {status === 'error' && (
@@ -233,10 +236,10 @@ export default function ProSyncPage() {
 
                 <button
                   type="submit"
-                  disabled={serial.length !== 6 || status === 'pairing'}
+                  disabled={serial.length < 4 || status === 'pairing'}
                   className="w-full bg-gradient-to-r from-yellow-500 to-amber-600 text-white font-black uppercase tracking-widest py-4 rounded-xl transition-all disabled:opacity-50"
                 >
-                  {status === 'pairing' ? 'Validando en la Nube...' : 'Validar y Conectar'}
+                  {status === 'pairing' ? 'Validando Nodo...' : 'Validar y Conectar'}
                 </button>
               </form>
             </div>

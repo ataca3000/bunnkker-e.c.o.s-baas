@@ -1,6 +1,0 @@
-{
-  "summary":  "Plan arquitectónico revisado enfocándose en la Arquitectura de Chunks Espaciales (X, Y, Z), Render Distance / Lazy Loading por Viewport y Mocks en Memoria para que miles de productos y estantes carguen y fluyan a 60fps sin saturar el navegador ni bloquear la base de datos.",
-  "updatedAt":  "2026-10-11T15:53:54.273614499Z",
-  "requestFeedback":  true,
-  "userFacing":  true
-}

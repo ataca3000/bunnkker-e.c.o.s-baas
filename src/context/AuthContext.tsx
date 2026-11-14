@@ -5,6 +5,8 @@ import { createContext, useContext, useState, useEffect } from 'react';
 import type { UserProfile } from '@/lib/types';
 
 import { getStaffSession, saveStaffSession, clearStaffSession } from '@/lib/staffAuth';
+import { getDeviceFingerprint } from '@/lib/fingerprint';
+import { getQueuedOfflineOrders } from '@/lib/indexedDBCart';
 
 export type { UserProfile };
 
@@ -12,6 +14,7 @@ interface AuthContextType {
     user: any | null;
     profile: UserProfile | null;
     loading: boolean;
+    deviceId: string | null;
     signOut: () => Promise<void>;
     isAdmin: boolean;
     isSuperAdmin: boolean;
@@ -25,6 +28,18 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+function detectPlatformLabel(): string {
+    if (typeof navigator === 'undefined') return 'Web';
+    const ua = navigator.userAgent || '';
+    if ((window as any).electronAPI) return 'Escritorio Desktop';
+    if (/Android/i.test(ua)) return 'Android';
+    if (/iPad|Tablet/i.test(ua)) return 'iPad / Tablet';
+    if (/iPhone|iOS/i.test(ua)) return 'iPhone';
+    if (/Windows/i.test(ua)) return 'Windows Web';
+    if (/Mac/i.test(ua)) return 'macOS Web';
+    return 'Navegador Web';
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Pre-hidratación instantánea (0ms) desde almacenamiento local
@@ -53,16 +68,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Si ya tenemos sesión persistida en el navegador, no bloquear con pantalla de carga
         return !getStaffSession();
     });
-    const [isReadOnly, setIsReadOnly] = useState(false);
-    const [networkMode, setNetworkMode] = useState(() => {
+    const [deviceId, setDeviceId] = useState<string | null>(null);
+    const [isReadOnly] = useState(false);
+    const [networkMode] = useState(() => {
         if (typeof window !== 'undefined') {
             const hostname = window.location.hostname;
             const port = window.location.port;
             const isMaster = hostname === 'localhost' || hostname === '127.0.0.1';
+            const hostPort = port ? `${hostname}:${port}` : hostname;
             return {
                 isMaster,
                 host: hostname,
-                label: isMaster ? 'SERVIDOR MAESTRO' : `NODO CONECTADO A ${hostname}:${port}`
+                label: isMaster ? 'SERVIDOR MAESTRO' : `NODO CONECTADO A ${hostPort}`
             };
         }
         return { isMaster: true, host: 'localhost', label: 'SERVIDOR MAESTRO' };
@@ -71,12 +88,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         // Si estamos en Electron, inicializar el Machine ID desde el host nativo
         if (typeof window !== 'undefined') {
+            setDeviceId(getDeviceFingerprint());
             const electronAPI = (window as any).electronAPI;
             if (electronAPI?.getMachineId) {
                 electronAPI.getMachineId().then((hwid: string) => {
                     if (hwid) {
                         localStorage.setItem('_admincom_v1_mid', hwid);
-                        console.log("[Electron] Machine ID persistido:", hwid);
                     }
                 }).catch((err: any) => console.error("[Electron] Error al obtener Machine ID:", err));
             }
@@ -155,9 +172,60 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     }, []);
 
+    // ─── Heartbeat Multidispositivo + Detección de Revocación Remota ────────
+    useEffect(() => {
+        if (typeof window === 'undefined' || !profile?.uid) return;
+        const devId = getDeviceFingerprint();
+        setDeviceId(devId);
+        let cancelled = false;
+
+        const sendHeartbeat = async () => {
+            if (cancelled) return;
+            if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
+            try {
+                const queued = await getQueuedOfflineOrders().catch(() => []);
+                const res = await fetch('/api/pairing/heartbeat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        deviceId: devId,
+                        userName: profile.displayName,
+                        platform: detectPlatformLabel(),
+                        currentPath: window.location.pathname,
+                        pendingQueueSize: queued.length,
+                    }),
+                });
+                if (res.status === 403) {
+                    const json = await res.json().catch(() => null);
+                    if (json?.code === 'ERR_DEVICE_REVOKED') {
+                        clearStaffSession();
+                        setUser(null);
+                        setProfile(null);
+                        window.location.assign('/login?error=device_revoked');
+                    }
+                }
+            } catch {
+                // Reintento silencioso en el próximo pulso
+            }
+        };
+
+        void sendHeartbeat();
+        const hbInterval = setInterval(() => {
+            if (typeof document === 'undefined' || document.visibilityState === 'visible') {
+                void sendHeartbeat();
+            }
+        }, 30_000);
+
+        return () => {
+            cancelled = true;
+            clearInterval(hbInterval);
+        };
+    }, [profile?.uid, profile?.displayName]);
+
     const signOut = async () => {
         try {
-            await fetch('/api/auth/session', { method: 'DELETE' });
+            await fetch('/api/auth/session', { method: 'DELETE', credentials: 'include' });
             clearStaffSession();
             setUser(null);
             setProfile(null);
@@ -175,7 +243,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
     };
 
-    const isAdmin = profile?.role === 'superadmin';
+    const isAdmin = profile?.role === 'superadmin' || profile?.role === 'admin';
     const isSuperAdmin = profile?.role === 'superadmin';
 
     return (
@@ -183,6 +251,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             user,
             profile,
             loading,
+            deviceId,
             signOut,
             isAdmin,
             isSuperAdmin,

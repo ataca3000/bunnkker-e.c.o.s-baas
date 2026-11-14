@@ -38,6 +38,8 @@ import {
     type ProductReview
 } from '@/lib/productReviews';
 import { useERPStore } from '@/store/useERPStore';
+import { ImageCardOfferOverlay } from '@/components/marketing/TimedOfferBanners';
+import type { TimedOfferBanner, StorefrontPageId } from '@/lib/storefrontBuilder';
 
 // ── ProductCard ───────────────────────────────────────────────────────────────
 
@@ -45,6 +47,11 @@ interface ProductCardProps {
     p: Product;
     index: number;
     onOpenDetails: (p: Product) => void;
+    timedBannersOverride?: TimedOfferBanner[];
+    pageId?: StorefrontPageId;
+    isEditMode?: boolean;
+    isPreview?: boolean;
+    onEditBanner?: (banner: TimedOfferBanner) => void;
 }
 
 /**
@@ -54,14 +61,23 @@ interface ProductCardProps {
  * - Modo de abrir la imagen y descripción completa con un clic (lupa / modal).
  * - Verificación de compra para poder calificar y puntuar el producto.
  */
-export function ProductCard({ p, onOpenDetails }: ProductCardProps) {
-    const { addToCart, decrementFromCart, removeFromCart, floatingStock = {}, cart = [] } = useCart() as any;
+export function ProductCard({
+    p,
+    onOpenDetails,
+    timedBannersOverride,
+    pageId = 'catalogo',
+    isEditMode = false,
+    isPreview = false,
+    onEditBanner,
+}: ProductCardProps) {
+    const { addToCart, decrementFromCart, removeFromCart, floatingStock = {}, cart = [], siteConfig } = useCart() as any;
     const [isImageLightboxOpen, setIsImageLightboxOpen] = useState(false);
+    const [isPressedOrTouched, setIsPressedOrTouched] = useState(false);
+    const activeTimedBanners: TimedOfferBanner[] = timedBannersOverride ?? siteConfig?.timedBanners ?? [];
 
     const cartItem = (cart || []).find((item: any) => item.id === p.id);
     const inCartQty = cartItem ? cartItem.quantity : 0;
     const floatHold = floatingStock[p.id] || 0;
-    // Stock real disponible en anaquel
     const availableStock = Math.max(0, p.stock - floatHold);
 
     const handleDecrementFromCart = (e: React.MouseEvent) => {
@@ -88,21 +104,35 @@ export function ProductCard({ p, onOpenDetails }: ProductCardProps) {
         <>
             <motion.div
                 layout
-                initial={{ opacity: 0, y: 15 }}
+                initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95 }}
+                exit={{ opacity: 0, scale: 0.96 }}
                 whileHover={{ y: -4 }}
-                transition={{ duration: 0.25, ease: 'easeOut' }}
-                className="group relative flex flex-col bg-white text-slate-900 rounded-3xl overflow-hidden border border-slate-200/90 shadow-[0_10px_30px_-5px_rgba(0,0,0,0.07),0_4px_10px_-2px_rgba(0,0,0,0.03)] hover:shadow-[0_22px_45px_-6px_rgba(0,0,0,0.14),0_8px_18px_-4px_rgba(0,0,0,0.06)] hover:border-slate-300 transition-all duration-300"
+                whileTap={{ scale: 0.985 }}
+                transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+                onTouchStart={() => setIsPressedOrTouched(true)}
+                onTouchEnd={() => setIsPressedOrTouched(false)}
+                onTouchCancel={() => setIsPressedOrTouched(false)}
+                onPointerDown={() => setIsPressedOrTouched(true)}
+                onPointerUp={() => setIsPressedOrTouched(false)}
+                onPointerCancel={() => setIsPressedOrTouched(false)}
+                onClick={() => onOpenDetails(p)}
+                className={`group relative flex flex-col bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-2xl overflow-hidden border transition-all duration-200 cursor-pointer select-none ${
+                    isPressedOrTouched
+                        ? 'border-emerald-400/80 shadow-[0_20px_42px_-8px_rgba(0,128,96,0.28)]'
+                        : 'border-slate-200/90 dark:border-slate-800 shadow-[0_10px_28px_-6px_rgba(0,0,0,0.08)] hover:shadow-[0_22px_44px_-8px_rgba(0,0,0,0.18)] hover:border-slate-300 dark:hover:border-slate-600'
+                }`}
             >
-                {/* ── CAPA DE PROFUNDIDAD SUPERIOR: CONTENEDOR DE IMAGEN CON TÍTULO SUPERPUESTO ── */}
-                <div className="relative w-full aspect-[4/3] sm:aspect-square overflow-hidden bg-gradient-to-b from-slate-100 to-slate-200">
-                    {/* Imagen principal */}
+                {/* ── 1. CONTENEDOR DOMINANTE DE IMAGEN CON CONTROLES SUPERPUESTOS ── */}
+                <div className="relative w-full h-[300px] sm:h-[340px] overflow-hidden bg-slate-900">
                     {p.image ? (
                         <img
                             src={p.image}
                             alt={p.name}
-                            className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-108"
+                            referrerPolicy="no-referrer"
+                            className={`w-full h-full object-cover transition-transform duration-300 ease-out will-change-transform group-hover:scale-110 ${
+                                isPressedOrTouched ? 'scale-105' : 'scale-100'
+                            }`}
                             onError={e => {
                                 e.currentTarget.style.display = 'none';
                                 (e.currentTarget.nextElementSibling as HTMLElement | null)?.style?.setProperty('display', 'flex');
@@ -110,198 +140,221 @@ export function ProductCard({ p, onOpenDetails }: ProductCardProps) {
                         />
                     ) : null}
 
-                    {/* Placeholder fallback si no hay foto */}
-                    <div className={`absolute inset-0 flex items-center justify-center bg-slate-100 ${p.image ? 'hidden' : 'flex'}`}>
-                        <Package size={44} className="text-slate-400" />
+                    {/* div:nth-of-type(1) Fallback visual */}
+                    <div className={`absolute inset-0 items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900 ${p.image ? 'hidden' : 'flex'}`}>
+                        <Package size={48} className="text-slate-500" />
                     </div>
 
-                    {/* Halo de sombra de cristal interior para profundidad */}
-                    <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-slate-950/70 via-transparent to-black/20" />
+                    {/* div:nth-of-type(2) Scrim superior/inferior medido + brillo reactivo al cursor/dedo */}
+                    <div
+                        className={`absolute inset-0 pointer-events-none transition-opacity duration-200 bg-gradient-to-t from-slate-950/95 via-slate-950/35 to-black/25 ${
+                            isPressedOrTouched ? 'opacity-100' : 'opacity-90 group-hover:opacity-100'
+                        }`}
+                    />
 
-                    {/* ── BOTONES FLOTANTES SUPERIORES (CRISTAL DIFUMINADO) ── */}
-                    {/* Insignia de Categoría (Superior Izquierda) */}
-                    <div className="absolute top-3 left-3 z-10">
-                        <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-slate-900 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full border border-white/60 shadow-md">
-                            {p.category || 'General'}
-                        </span>
-                    </div>
-
-                    {/* Botón rápido para abrir imagen y descripción completa (Superior Derecha) */}
-                    <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5">
-                        {inCartQty > 0 && (
-                            <span className="text-[10px] sm:text-[11px] font-black text-white bg-[#008060] px-2.5 py-1 rounded-full shadow-md flex items-center gap-1">
-                                🛒 {inCartQty}
-                            </span>
+                    {/* div:nth-of-type(3) Metadato superior izquierdo sin pill excesivo */}
+                    <div className="absolute top-3 left-3 right-14 z-20 pointer-events-none flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-white/95 drop-shadow-[0_1px_3px_rgba(0,0,0,0.85)]">
+                        <span className="truncate">{p.category || 'General'}</span>
+                        {(p.rating ?? 0) > 0 && (
+                            <>
+                                <span aria-hidden="true" className="text-white/60">·</span>
+                                <span className="inline-flex items-center gap-0.5 text-amber-300 tabular-nums shrink-0">
+                                    <Star size={11} className="fill-amber-300" /> {Number(p.rating).toFixed(1)}
+                                </span>
+                            </>
                         )}
+                    </div>
+
+                    {/* div:nth-of-type(4) Botones rápidos flotantes sobre imagen (Zoom y Detalles) */}
+                    <div className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1.5">
                         <button
                             type="button"
                             onClick={(e) => {
                                 e.stopPropagation();
-                                onOpenDetails(p);
+                                setIsImageLightboxOpen(true);
                             }}
-                            className="w-8 h-8 rounded-full bg-white/90 hover:bg-white text-slate-800 hover:text-sky-600 backdrop-blur-md border border-white/80 shadow-md flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer"
-                            title="Abrir imagen y descripción completa"
-                            aria-label={`Abrir imagen y descripción de ${p.name}`}
+                            className={`w-10 h-10 rounded-xl backdrop-blur-md border border-white/25 text-white flex items-center justify-center transition-all duration-150 cursor-pointer shadow-lg ${
+                                isPressedOrTouched
+                                    ? 'bg-emerald-500/85 scale-105 border-emerald-300'
+                                    : 'bg-slate-950/55 hover:bg-white hover:text-slate-950 hover:scale-110 active:scale-95'
+                            }`}
+                            title="Ampliar imagen"
+                            aria-label={`Ampliar imagen de ${p.name}`}
                         >
-                            <ZoomIn size={15} />
+                            <ZoomIn size={16} />
                         </button>
+                    </div>
+
+                    {/* div:nth-of-type(5) Superposición inferior sobre imagen (201.714px) con título y botones táctiles/hover */}
+                    <div
+                        style={{ height: '201.714px' }}
+                        className="absolute inset-x-0 bottom-0 z-20 flex flex-col justify-end p-3 sm:p-3.5 bg-gradient-to-t from-slate-950/95 via-slate-950/65 to-transparent"
+                    >
+                        <div className="mb-2.5 transition-transform duration-200 group-hover:-translate-y-0.5">
+                            <h3 className="text-white font-bold text-sm sm:text-[15px] leading-snug line-clamp-2 tracking-tight drop-shadow-sm group-hover:text-emerald-300 transition-colors">
+                                {p.name}
+                            </h3>
+                            {(p.estante || p.fila || p.location?.estante) && (
+                                <p className="mt-0.5 text-[11px] text-slate-300/90 flex items-center gap-1 truncate">
+                                    <MapPin size={11} className="text-slate-400 shrink-0" />
+                                    <span className="truncate">
+                                        {p.estante || p.location?.estante || 'A-1'} · {p.fila || p.location?.fila || 'N1'}
+                                    </span>
+                                </p>
+                            )}
+                        </div>
+
+                        {/* Botones interactivos directamente sobre la imagen */}
+                        {inCartQty > 0 ? (
+                            <div className="space-y-1.5" onClick={(e) => e.stopPropagation()}>
+                                <div className="flex items-center justify-between gap-1 bg-slate-900/80 backdrop-blur-md border border-white/25 rounded-xl p-1 shadow-lg transition-all duration-150 group-hover:border-emerald-400/60">
+                                    <button
+                                        type="button"
+                                        className="w-10 h-9 flex items-center justify-center text-white bg-white/10 hover:bg-white/25 active:scale-90 rounded-lg transition-all cursor-pointer"
+                                        onClick={handleDecrementFromCart}
+                                        title="Quitar 1 pieza"
+                                        aria-label="Disminuir cantidad"
+                                    >
+                                        <Minus size={15} />
+                                    </button>
+                                    <span className="text-xs font-bold text-white tabular-nums px-1 whitespace-nowrap">
+                                        {inCartQty} en bolsa
+                                    </span>
+                                    <button
+                                        type="button"
+                                        className={`w-10 h-9 flex items-center justify-center rounded-lg transition-all cursor-pointer ${
+                                            availableStock > 0
+                                                ? 'text-white bg-emerald-500/80 hover:bg-emerald-400 hover:text-slate-950 active:scale-90'
+                                                : 'text-slate-400 opacity-40 cursor-not-allowed'
+                                        }`}
+                                        onClick={handleIncrementToCart}
+                                        disabled={availableStock <= 0}
+                                        title={availableStock > 0 ? 'Sumar 1 pieza' : 'Sin más stock disponible'}
+                                        aria-label="Aumentar cantidad"
+                                    >
+                                        <Plus size={15} />
+                                    </button>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                    <button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (typeof window !== 'undefined') window.location.href = '/carrito';
+                                        }}
+                                        className="flex-1 h-10 px-3 bg-[#008060] hover:bg-emerald-500 active:scale-95 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 shadow-lg transition-all duration-150 whitespace-nowrap cursor-pointer"
+                                    >
+                                        <ShoppingCart size={14} /> Pagar (${(p.price * inCartQty).toLocaleString('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 2 })})
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onOpenDetails(p);
+                                        }}
+                                        className="w-10 h-10 shrink-0 rounded-xl bg-white/15 hover:bg-white hover:text-slate-950 active:scale-90 text-white backdrop-blur-md border border-white/25 flex items-center justify-center transition-all duration-150 cursor-pointer"
+                                        title="Ver ficha completa"
+                                        aria-label={`Ver detalles de ${p.name}`}
+                                    >
+                                        <Eye size={15} />
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                                <button
+                                    type="button"
+                                    className={`flex-1 h-10 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all duration-150 whitespace-nowrap cursor-pointer shadow-lg ${
+                                        availableStock === 0
+                                            ? 'bg-slate-800/85 text-slate-400 cursor-not-allowed border border-white/10'
+                                            : isPressedOrTouched
+                                                ? 'bg-emerald-500 text-slate-950 scale-[1.02]'
+                                                : 'bg-[#008060]/95 hover:bg-emerald-500 hover:text-slate-950 active:scale-95 text-white backdrop-blur-md border border-emerald-400/40 group-hover:shadow-emerald-500/30'
+                                    }`}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (availableStock > 0) {
+                                            addToCart(p, 1);
+                                            toast.success(`${p.name} agregado al carrito.`, '🛒 Carrito');
+                                        }
+                                    }}
+                                    disabled={availableStock === 0}
+                                >
+                                    <ShoppingCart size={14} />
+                                    <span>{availableStock === 0 ? 'Agotado' : 'Agregar'}</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onOpenDetails(p);
+                                    }}
+                                    className={`w-10 h-10 shrink-0 rounded-xl backdrop-blur-md border border-white/25 flex items-center justify-center transition-all duration-150 cursor-pointer ${
+                                        isPressedOrTouched
+                                            ? 'bg-white text-slate-950 scale-105'
+                                            : 'bg-slate-950/60 hover:bg-white hover:text-slate-950 active:scale-90 text-white'
+                                    }`}
+                                    title="Ver detalles y reseñas"
+                                    aria-label={`Ver detalles de ${p.name}`}
+                                >
+                                    <Eye size={15} />
+                                </button>
+                            </div>
+                        )}
                     </div>
 
                     {/* Estado Agotado */}
                     {availableStock === 0 && (
-                        <div className="absolute inset-0 bg-slate-950/65 backdrop-blur-[2px] flex items-center justify-center z-20">
-                            <span className="bg-red-600/95 text-white font-black text-xs tracking-widest uppercase px-3.5 py-1.5 rounded-xl shadow-lg border border-red-400/40">
+                        <div className="absolute inset-0 bg-slate-950/55 backdrop-blur-[1px] flex items-center justify-center z-10 pointer-events-none">
+                            <span className="bg-red-600/95 text-white font-bold text-xs tracking-wider uppercase px-3 py-1 rounded-lg shadow-lg border border-red-400/40">
                                 Agotado
                             </span>
                         </div>
                     )}
 
-                    {/* ── TÍTULO SOBRE LA IMAGEN OCUPANDO CASI TODO EL CONTENEDOR ── */}
-                    {/* Panel de cristal esmerilado translúcido con desenfoque de fondo */}
-                    <div className="absolute inset-x-2 bottom-2 z-10">
-                        <button
-                            type="button"
-                            onClick={() => onOpenDetails(p)}
-                            className="w-full text-left p-2.5 sm:p-3 rounded-2xl bg-slate-950/75 hover:bg-slate-950/85 backdrop-blur-md border border-white/20 shadow-xl transition-all group/title block cursor-pointer"
-                            title="Haz clic para ver imagen y descripción"
-                        >
-                            <h3 className="text-white font-black text-xs sm:text-sm md:text-[15px] leading-snug line-clamp-2 tracking-tight drop-shadow-sm group-hover/title:text-cyan-300 transition-colors">
-                                {p.name}
-                            </h3>
-                            <div className="mt-1 flex items-center justify-between gap-1 text-[10px] text-slate-300">
-                                <span className="flex items-center gap-1 text-cyan-300 font-bold">
-                                    <Eye size={11} /> Ver detalles
-                                </span>
-                                {(p.rating ?? 0) > 0 && (
-                                    <span className="flex items-center gap-1 font-semibold text-amber-300">
-                                        <Star size={10} className="fill-amber-300" /> {Number(p.rating).toFixed(1)}
-                                    </span>
-                                )}
-                            </div>
-                        </button>
-                    </div>
+                    {/* Banner Dinámico de Oferta Superpuesto sobre la Imagen del Producto */}
+                    {activeTimedBanners.length > 0 && (
+                        <ImageCardOfferOverlay
+                            banners={activeTimedBanners}
+                            surface="catalog_product"
+                            pageId={pageId}
+                            category={p.category || 'General'}
+                            isEditMode={isEditMode}
+                            isPreview={isPreview}
+                            onEditBanner={onEditBanner}
+                            compact
+                        />
+                    )}
                 </div>
 
-                {/* ── CAPA INFERIOR DE PROFUNDIDAD: DATOS TÉCNICOS, PRECIO Y COMPRA ── */}
-                <div className="p-4 sm:p-5 flex flex-col flex-1 bg-gradient-to-b from-white via-white to-slate-50/80">
-                    {/* Calificación de Estrellas y Reseñas */}
-                    <div className="flex items-center justify-between gap-2 mb-3">
-                        <div className="flex items-center gap-1.5">
-                            <StarRating rating={p.rating} count={p.reviewCount} />
-                        </div>
-                        <button
-                            type="button"
-                            onClick={() => onOpenDetails(p)}
-                            className="text-[11px] font-bold text-sky-600 hover:text-sky-700 transition-colors flex items-center gap-0.5"
-                        >
-                            <MessageSquare size={12} /> Reseñas
-                        </button>
+                {/* ── 2. FRANJA INFERIOR COMPACTA (54.93px): PRECIO Y DISPONIBILIDAD ── */}
+                <div
+                    style={{ height: '54.93px' }}
+                    className="px-3.5 sm:px-4 flex items-center justify-between gap-2 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800"
+                >
+                    <div className="text-base sm:text-lg font-black text-slate-950 dark:text-white tracking-tight tabular-nums truncate">
+                        ${p.price.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        <span className="text-[10px] font-bold text-slate-400 ml-1">MXN</span>
                     </div>
 
-                    {/* Ubicación física en anaquel si existe */}
-                    {(p.estante || p.fila || p.location?.estante) && (
-                        <div className="mb-3 flex items-center gap-1.5 text-[11px] font-semibold text-slate-500 bg-slate-100/80 px-2.5 py-1 rounded-lg border border-slate-200/60 w-fit">
-                            <MapPin size={12} className="text-slate-400 shrink-0" />
-                            <span className="truncate">
-                                Estante {p.estante || p.location?.estante || 'A-1'} · {p.fila || p.location?.fila || 'Nivel 1'}
-                            </span>
-                        </div>
-                    )}
-
-                    {/* Precio y Disponibilidad Garantizada */}
-                    <div className="mt-auto pt-3 border-t border-slate-100">
-                        <div className="flex justify-between items-baseline mb-3">
-                            <div className="text-xl sm:text-2xl font-black text-slate-950 tracking-tight">
-                                ${p.price.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                <span className="text-[10px] font-extrabold text-slate-400 ml-1">MXN</span>
-                            </div>
-
-                            {/* Insignia de Disponibilidad Garantizada */}
-                            <div className="text-right">
-                                {availableStock >= 3 ? (
-                                    <span 
-                                        className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-md border border-emerald-500/30 shadow-xs" 
-                                        title="Disponibilidad física garantizada en anaquel"
-                                    >
-                                        <ShieldCheck size={12} className="text-emerald-600" />
-                                        {availableStock} garantizados
-                                    </span>
-                                ) : availableStock > 0 ? (
-                                    <span 
-                                        className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-md border border-amber-500/30 shadow-xs" 
-                                        title="Últimas piezas en anaquel"
-                                    >
-                                        ⚡ ¡Últimas {availableStock} uds!
-                                    </span>
-                                ) : (
-                                    <span className="text-[11px] font-bold text-slate-400">Sin stock</span>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Acciones de Carrito estilo Shopify Quick-Add */}
-                        {inCartQty > 0 ? (
-                            <div className="space-y-2">
-                                <div className="flex items-center justify-between bg-emerald-50 border border-emerald-200 rounded-xl p-1">
-                                    <button
-                                        type="button"
-                                        className="w-8 h-8 flex items-center justify-center text-emerald-800 hover:bg-emerald-100 active:scale-95 rounded-lg transition-all font-bold cursor-pointer"
-                                        onClick={handleDecrementFromCart}
-                                        title="Quitar 1 pieza"
-                                        aria-label="Disminuir cantidad"
-                                    >
-                                        <Minus size={14} />
-                                    </button>
-                                    <div className="text-center">
-                                        <span className="text-xs font-bold text-emerald-950">{inCartQty} en carrito</span>
-                                        <span className="text-[10px] text-emerald-700 block font-semibold">
-                                            (${(p.price * inCartQty).toFixed(2)})
-                                        </span>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all font-bold cursor-pointer ${
-                                            availableStock > 0 
-                                                ? 'text-emerald-800 hover:bg-emerald-100 active:scale-95' 
-                                                : 'text-slate-400 opacity-40 cursor-not-allowed'
-                                        }`}
-                                        onClick={handleIncrementToCart}
-                                        disabled={availableStock <= 0}
-                                        title={availableStock > 0 ? "Sumar 1 pieza" : "Sin más stock disponible"}
-                                        aria-label="Aumentar cantidad"
-                                    >
-                                        <Plus size={14} />
-                                    </button>
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        if (typeof window !== 'undefined') window.location.href = '/carrito';
-                                    }}
-                                    className="w-full py-2.5 px-3 bg-[#008060] hover:bg-[#006e52] text-white font-extrabold text-xs rounded-xl flex items-center justify-center gap-2 shadow-xs transition-all active:scale-[0.98] cursor-pointer"
-                                >
-                                    <ShoppingCart size={14} /> Proceder al Pago (${(p.price * inCartQty).toFixed(2)})
-                                </button>
-                            </div>
-                        ) : (
-                            <button
-                                type="button"
-                                className={`w-full py-2.5 px-4 rounded-xl font-black text-xs flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                                    availableStock === 0
-                                        ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
-                                        : 'bg-[#008060] hover:bg-[#006e52] text-white shadow-xs hover:shadow-md active:scale-[0.98]'
-                                }`}
-                                onClick={() => {
-                                    if (availableStock > 0) {
-                                        addToCart(p, 1);
-                                        toast.success(`${p.name} agregado al carrito.`, '🛒 Carrito');
-                                    }
-                                }}
-                                disabled={availableStock === 0}
+                    <div className="shrink-0 text-right">
+                        {availableStock >= 3 ? (
+                            <span
+                                className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 tabular-nums whitespace-nowrap"
+                                title="Disponibilidad física garantizada en anaquel"
                             >
-                                <ShoppingCart size={15} />
-                                {availableStock === 0 ? 'Sin Stock' : '+ Agregar al Carrito'}
-                            </button>
+                                <ShieldCheck size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                {availableStock} disp.
+                            </span>
+                        ) : availableStock > 0 ? (
+                            <span
+                                className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-700 dark:text-amber-400 tabular-nums whitespace-nowrap"
+                                title="Últimas piezas en anaquel"
+                            >
+                                Últ. {availableStock}
+                            </span>
+                        ) : (
+                            <span className="text-[11px] font-semibold text-slate-400 whitespace-nowrap">Sin stock</span>
                         )}
                     </div>
                 </div>

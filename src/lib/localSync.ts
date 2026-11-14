@@ -106,11 +106,25 @@ export function triggerManualDiscovery() {
  * CONEXIÓN: Establece el túnel de WebSockets con el Maestro.
  * Reintenta automáticamente con backoff exponencial si se corta.
  */
+function isSecureWebOrigin(): boolean {
+    return typeof window !== 'undefined' && window.location.protocol === 'https:' && !(window as any).electronAPI;
+}
+
 function connectToMaster(ip: string) {
+    if (isSecureWebOrigin()) {
+        // En páginas HTTPS el canal seguro es SSE (/api/sync/events); evitar ws:// inseguro (SecurityError)
+        return;
+    }
     if (localSocket && localSocket.readyState === WebSocket.OPEN) return;
 
     _masterIp = ip;
-    localSocket = new WebSocket(`ws://${ip}:${PORT}`);
+    try {
+        localSocket = new WebSocket(`ws://${ip}:${PORT}`);
+    } catch (err) {
+        console.warn('[P2P] No se pudo abrir WebSocket local:', err);
+        localSocket = null;
+        return;
+    }
 
     localSocket.onopen = () => {
         _wsBackoffMs = 1_000; // reset al conectar
@@ -120,9 +134,12 @@ function connectToMaster(ip: string) {
     };
 
     localSocket.onmessage = (event) => {
-        const payload = JSON.parse(event.data);
-        console.log("Cambio recibido desde el Maestro:", payload);
-        // Aquí llamarías a electronAPI.inventory.updateLocalStock(payload.data)
+        try {
+            const payload = JSON.parse(event.data);
+            console.log("Cambio recibido desde el Maestro:", payload);
+        } catch (err) {
+            console.warn("[P2P] Payload inválido recibido:", err);
+        }
     };
 
     localSocket.onclose = () => {
@@ -153,8 +170,10 @@ export function emitToMaster(type: string, data: any) {
     const payload = { txId, timestamp, type, data };
 
     if (!localSocket || localSocket.readyState !== WebSocket.OPEN) {
-        console.warn(`[P2P/WAL] Sin conexión activa. Encolando transacción: ${type} (${txId})`);
-        queueOfflineTransaction(payload);
+        if (!isSecureWebOrigin()) {
+            console.warn(`[P2P/WAL] Sin conexión activa. Encolando transacción: ${type} (${txId})`);
+            queueOfflineTransaction(payload);
+        }
         return;
     }
     
@@ -225,9 +244,15 @@ function flushOfflineQueue() {
     }
 }
 
-// Iniciar el Auto-Retry Loop en el cliente
-if (typeof window !== 'undefined') {
-    setInterval(flushOfflineQueue, 3000);
+// Iniciar el Auto-Retry Loop en el cliente solo cuando no es origen web HTTPS y hay elementos en cola
+if (typeof window !== 'undefined' && !isSecureWebOrigin()) {
+    setInterval(() => {
+        try {
+            if (localStorage.getItem('bunkker_offline_queue')) {
+                flushOfflineQueue();
+            }
+        } catch {}
+    }, 5000);
 }
 
 function getLocalIP() {

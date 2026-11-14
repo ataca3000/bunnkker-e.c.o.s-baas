@@ -3,9 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import {
   ShieldCheck, Lock, Loader2, ArrowRight, Store, User,
-  ChevronRight, KeyRound, Mail, Phone, Building2
+  ChevronRight, KeyRound, Mail, Phone, Building2, QrCode
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { saveCustomerSession } from '@/lib/customerAuth';
@@ -62,18 +63,34 @@ export default function LoginPage() {
   const [clientError, setClientError] = useState('');
   const [clientSuccess, setClientSuccess] = useState('');
 
-  // Detección de parámetros en URL (error de sesión o pase QR ?pin=...&auto=true)
+  // Detección de parámetros en URL (error de sesión, pase QR ?pair=... o ?pin=...&auto=true)
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const errorParam = params.get('error');
+      const pairToken = params.get('pair');
       const urlPin = params.get('pin');
       const isAuto = params.get('auto') === 'true';
 
-      if (errorParam === 'unauthorized') {
-        setStaffError('Tu sesión expiró o requieres ingresar tu PIN de acceso para entrar al Dashboard.');
-      } else if (errorParam === 'tampered') {
-        setStaffError('Firma de seguridad inválida. Por favor ingresa nuevamente tu PIN.');
+      if (pairToken) {
+        router.replace(`/pair?token=${encodeURIComponent(pairToken)}`);
+        return;
+      }
+
+      const errorMessages: Record<string, string> = {
+        unauthorized: '[ERR_SESSION_EXPIRED] Tu sesión expiró o requieres ingresar tu PIN de acceso para entrar al Dashboard.',
+        tampered: '[ERR_SESSION_EXPIRED] Firma de seguridad inválida. Por favor ingresa nuevamente tu PIN.',
+        expired_magic_link: '[ERR_PAIRING_EXPIRED] El enlace QR expiró. Solicita un pase nuevo en Administración.',
+        invalid_magic_link: '[ERR_PAIRING_INVALID] El enlace QR de vinculación no es válido.',
+        qr_already_used: '[ERR_PAIRING_INVALID] Esta llave QR de un solo uso ya fue utilizada.',
+        node_mismatch: '[ERR_PAIRING_INVALID] Este código QR pertenece a otra terminal o sucursal.',
+        user_not_found: '[ERR_SESSION_EXPIRED] El usuario asignado a este acceso no existe.',
+        user_inactive: '[ERR_SESSION_EXPIRED] Esta cuenta de personal está desactivada.',
+        device_revoked: '[ERR_DEVICE_REVOKED] Esta terminal fue desvinculada por el administrador. Escanea un nuevo QR para volver a conectarte.',
+      };
+
+      if (errorParam) {
+        setStaffError(errorMessages[errorParam] || `Error de autenticación (${errorParam}).`);
       }
 
       if (urlPin) {
@@ -83,7 +100,7 @@ export default function LoginPage() {
         }
       }
     }
-  }, []);
+  }, [router]);
 
   // Una sola regla de destino evita saltos distintos entre login y middleware.
   useEffect(() => {
@@ -149,7 +166,10 @@ export default function LoginPage() {
         setStaffSuccess('Acceso verificado. Abriendo el panel...');
         window.location.assign(targetUrl);
       } else {
-        setStaffError(data.error || 'PIN incorrecto o no autorizado.');
+        const errCode = res.status === 403 && String(data?.error || '').toLowerCase().includes('dispositivo')
+          ? '[ERR_DEVICE_MISMATCH] '
+          : '';
+        setStaffError(`${errCode}${data.error || 'PIN incorrecto o no autorizado.'}`);
       }
     } catch {
       setStaffError('Error de conexión con el servidor. Intenta de nuevo.');
@@ -361,9 +381,15 @@ export default function LoginPage() {
             </form>
           </div>
 
-          <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between text-[11px] text-slate-500">
-            <span>Seguridad HMAC Activa</span>
-            <span>Acceso restringido a personal</span>
+          <div className="mt-6 pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
+            <Link
+              href="/pair"
+              className="inline-flex items-center gap-1.5 text-purple-300 hover:text-purple-200 font-bold transition-colors"
+            >
+              <QrCode className="w-3.5 h-3.5" />
+              Vincular terminal con código de 6 dígitos
+            </Link>
+            <span className="text-slate-500">Seguridad HMAC Activa</span>
           </div>
         </motion.div>
 

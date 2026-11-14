@@ -4,62 +4,15 @@ import { getTenantId, validateApiSession } from '@/lib/apiAuth';
 
 export const dynamic = 'force-dynamic';
 
-export interface LeaseEntry {
-    sessionId: string;
-    ownerName: string;
-    productId: string;
-    chunkId: string;
-    layerId: string;
-    qty: number;
-    reservedAt: number;
-    expiresAt: number;
-}
+import {
+    leasesByProduct,
+    DEFAULT_LEASE_TTL_MS,
+    purgeExpiredLeases,
+    getActiveLeasesSnapshot,
+    type LeaseEntry,
+} from '@/lib/chunkLeases';
 
-// Singleton in-memory RAM Lease & Chunk State Engine (0ms synchronous concurrency check)
-const globalForChunks = globalThis as unknown as {
-    __bunkkerChunkLeases?: Map<string, Map<string, LeaseEntry>>;
-};
-
-if (!globalForChunks.__bunkkerChunkLeases) {
-    globalForChunks.__bunkkerChunkLeases = new Map();
-}
-
-const leasesByProduct = globalForChunks.__bunkkerChunkLeases;
-
-// Default TTL: 180 seconds (3 minutes)
-const DEFAULT_LEASE_TTL_MS = 180 * 1000;
-
-function purgeExpiredLeases(now = Date.now()) {
-    for (const [productId, sessionMap] of leasesByProduct.entries()) {
-        for (const [sessionId, entry] of sessionMap.entries()) {
-            if (entry.expiresAt <= now) {
-                sessionMap.delete(sessionId);
-            }
-        }
-        if (sessionMap.size === 0) {
-            leasesByProduct.delete(productId);
-        }
-    }
-}
-
-function getActiveLeasesSnapshot(now = Date.now()) {
-    purgeExpiredLeases(now);
-    const floatingStock: Record<string, number> = {};
-    const activeLeases: LeaseEntry[] = [];
-
-    for (const [productId, sessionMap] of leasesByProduct.entries()) {
-        let sum = 0;
-        for (const entry of sessionMap.values()) {
-            sum += entry.qty;
-            activeLeases.push(entry);
-        }
-        if (sum > 0) {
-            floatingStock[productId] = sum;
-        }
-    }
-
-    return { floatingStock, activeLeases };
-}
+export type { LeaseEntry };
 
 export async function GET() {
     const now = Date.now();

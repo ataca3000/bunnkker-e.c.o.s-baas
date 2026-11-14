@@ -4,6 +4,11 @@ import type { ERPState, UISlice } from './types';
 export const createUISlice: StateCreator<ERPState, [['zustand/immer', never]], [], UISlice> = (set) => ({
     loading: true,
     firebaseStatus: 'connecting',
+    syncErrorCode: null,
+    syncErrorDetail: null,
+    pendingOfflineCount: 0,
+    lastSyncAt: null,
+    reconnectAttempt: 0,
     guidedTourActive: false,
     guidedTourStep: 1,
     hasCustomizedCanvas: false,
@@ -13,6 +18,13 @@ export const createUISlice: StateCreator<ERPState, [['zustand/immer', never]], [
 
     setLoading: (loading) => set((state) => { state.loading = loading; }),
     setFirebaseStatus: (status) => set((state) => { state.firebaseStatus = status; }),
+    setSyncHealth: (health) => set((state) => {
+        if (health.syncErrorCode !== undefined) state.syncErrorCode = health.syncErrorCode;
+        if (health.syncErrorDetail !== undefined) state.syncErrorDetail = health.syncErrorDetail;
+        if (health.pendingOfflineCount !== undefined) state.pendingOfflineCount = health.pendingOfflineCount;
+        if (health.lastSyncAt !== undefined) state.lastSyncAt = health.lastSyncAt;
+        if (health.reconnectAttempt !== undefined) state.reconnectAttempt = health.reconnectAttempt;
+    }),
 
     startGuidedTour: () => set((state) => {
         state.guidedTourActive = true;

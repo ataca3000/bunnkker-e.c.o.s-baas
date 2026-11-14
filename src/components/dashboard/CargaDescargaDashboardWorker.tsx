@@ -1,9 +1,10 @@
 "use client";
 import { motion } from 'framer-motion';
 import { useState } from 'react';
-import { Truck, LogOut, CheckCircle, MapPin, Clock, Loader2, Play, QrCode } from 'lucide-react';
+import { Truck, LogOut, CheckCircle, MapPin, Clock, Loader2, Play, QrCode, PauseCircle, LockKeyhole } from 'lucide-react';
 import BarcodeScanner from '@/components/BarcodeScanner';
 import { toast } from '@/lib/toast';
+import PinAuthorizationModal, { type PinAuthorizationResult } from '@/components/security/PinAuthorizationModal';
 
 /* ─── 3.5. CARGA Y DESCARGA DASHBOARD ────────────────────────────────────── */
 export default function CargaDescargaDashboardWorker({ userName, greeting, orders = [], startLoading, completeLoading, profile, signOut, formatCurrency }: any) {
@@ -11,26 +12,37 @@ export default function CargaDescargaDashboardWorker({ userName, greeting, order
     const [processingId, setProcessingId]   = useState<string | null>(null);
     const [showScanner, setShowScanner]     = useState(false);
     const [scanTargetId, setScanTargetId]   = useState<string | null>(null);
+    const [abandonTargetOrder, setAbandonTargetOrder] = useState<any | null>(null);
 
     const pendingLoads = orders.filter((o: any) => {
-        const validStatus = ['paid', 'pending_payment', 'pending_confirmation', 'paid_pending_delivery', 'PREPARANDO', 'READY_TO_SHIP', 'READY_FOR_PICKUP', 'NIGHT_QUEUE', 'PENDIENTE_LLEGADA'].includes(o.status);
+        const validStatus = ['paid', 'pending_payment', 'pending_confirmation', 'paid_pending_delivery', 'PREPARANDO', 'EN_ESPERA', 'READY_TO_SHIP', 'READY_FOR_PICKUP', 'NIGHT_QUEUE', 'PENDIENTE_LLEGADA'].includes(o.status);
         const notLoaded = !(o as any).isLoaded && !['DELIVERED', 'READY_FOR_PICKUP_PAID', 'OUT_FOR_DELIVERY', 'COMPLETED'].includes(o.status);
         const custName     = o.customer?.name || o.customerName || 'Cliente';
         const matchesSearch = o.id.toLowerCase().includes(searchTerm.toLowerCase()) || custName.toLowerCase().includes(searchTerm.toLowerCase());
         return validStatus && notLoaded && matchesSearch;
     }).sort((a: any, b: any) => {
+        if (a.status === 'EN_ESPERA' && b.status !== 'EN_ESPERA') return -1;
+        if (b.status === 'EN_ESPERA' && a.status !== 'EN_ESPERA') return 1;
         if (a.status === 'NIGHT_QUEUE' || a.status === 'PENDIENTE_LLEGADA') return 1;
         if (b.status === 'NIGHT_QUEUE' || b.status === 'PENDIENTE_LLEGADA') return -1;
         return 0;
     });
 
-    const handleAction = async (orderId: string, action: 'start' | 'complete' | 'postpone' | 'resume') => {
+    const handleAction = async (orderId: string, action: 'start' | 'complete' | 'postpone' | 'resume' | 'hold') => {
         setProcessingId(orderId);
         try {
             if (action === 'start') {
                 await startLoading(orderId);
             } else if (action === 'complete') {
                 setScanTargetId(orderId);
+            } else if (action === 'hold') {
+                await fetch('/api/orders', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ id: orderId, action: 'hold_preparation', reason: 'En espera en bahía de carga' })
+                });
+                toast.success('Carga pausada en espera.');
             } else if (action === 'postpone') {
                 await fetch('/api/orders', {
                     method: 'PATCH',
@@ -38,14 +50,49 @@ export default function CargaDescargaDashboardWorker({ userName, greeting, order
                     body: JSON.stringify({ id: orderId, status: 'PENDIENTE_LLEGADA' })
                 });
             } else if (action === 'resume') {
+                const target = orders.find((o: any) => o.id === orderId);
                 await fetch('/api/orders', {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id: orderId, status: 'PREPARANDO' })
+                    credentials: 'include',
+                    body: JSON.stringify(
+                        target?.status === 'EN_ESPERA'
+                            ? { id: orderId, action: 'resume_preparation' }
+                            : { id: orderId, status: 'PREPARANDO' }
+                    )
                 });
+                toast.success('Carga retomada.');
             }
         } catch {
             toast.error('Error al procesar la acción de carga.');
+        } finally {
+            setProcessingId(null);
+        }
+    };
+
+    const handleAuthorizedAbandon = async (authResult: PinAuthorizationResult) => {
+        if (!abandonTargetOrder) return;
+        const targetId = abandonTargetOrder.id;
+        setProcessingId(targetId);
+        try {
+            const res = await fetch('/api/orders', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({
+                    id: targetId,
+                    action: 'abandon_preparation',
+                    verificationPin: authResult.pin,
+                    reason: authResult.reason || 'Carga abandonada con NIP',
+                })
+            });
+            const data = await res.json().catch(() => null);
+            if (!res.ok || !data?.success) {
+                toast.error(data?.error || 'Error al liberar la carga.');
+                return;
+            }
+            toast.success(`Carga liberada con NIP por ${authResult.verifiedBy.name}.`);
+            setAbandonTargetOrder(null);
         } finally {
             setProcessingId(null);
         }
@@ -140,7 +187,8 @@ export default function CargaDescargaDashboardWorker({ userName, greeting, order
                         pendingLoads.map((order: any) => {
                             const isNight   = order.status === 'NIGHT_QUEUE';
                             const isPending = order.status === 'PENDIENTE_LLEGADA';
-                            const isDelayed = isNight || isPending;
+                            const isOnHold  = order.status === 'EN_ESPERA';
+                            const isDelayed = isNight || isPending || isOnHold;
                             const isTakenByOther = order.loadedByUid && order.loadedByUid !== profile?.uid;
                             const isTakenByMe = order.loadedByUid && order.loadedByUid === profile?.uid;
 
@@ -194,22 +242,34 @@ export default function CargaDescargaDashboardWorker({ userName, greeting, order
 
                                     <div className="flex flex-col gap-2 w-full md:w-auto">
                                         {isDelayed ? (
-                                            <motion.button
-                                                whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                                                onClick={() => handleAction(order.id, 'resume')}
-                                                disabled={!!processingId}
-                                                className="bg-indigo-600 text-white px-5 py-2.5 rounded-[5px] font-bold text-xs uppercase flex items-center gap-2 justify-center hover:bg-indigo-700 transition-all shadow-md"
-                                            >
-                                                {processingId === order.id ? <Loader2 size={12} className="animate-spin" /> : <Play size={12} />}
-                                                Retomar
-                                            </motion.button>
+                                            <div className="flex flex-col gap-2">
+                                                <motion.button
+                                                    whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                                                    onClick={() => handleAction(order.id, 'resume')}
+                                                    disabled={!!processingId}
+                                                    className="min-h-[44px] bg-indigo-600 text-white px-5 py-2.5 rounded-[5px] font-bold text-xs uppercase flex items-center gap-2 justify-center hover:bg-indigo-700 transition-all shadow-md"
+                                                >
+                                                    {processingId === order.id ? <Loader2 size={12} className="animate-spin" /> : <Play size={12} />}
+                                                    {isOnHold ? 'Retomar en Espera' : 'Retomar'}
+                                                </motion.button>
+                                                {order.loadedBy && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setAbandonTargetOrder(order)}
+                                                        disabled={!!processingId}
+                                                        className="min-h-[44px] bg-red-600/20 hover:bg-red-600/30 border border-red-500/40 text-red-200 px-4 py-2 rounded-[5px] font-semibold text-xs flex items-center justify-center gap-1.5"
+                                                    >
+                                                        <LockKeyhole size={13} /> Soltar (NIP)
+                                                    </button>
+                                                )}
+                                            </div>
                                         ) : !order.loadedBy ? (
                                             <>
                                                 <motion.button
                                                     whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                                                     onClick={() => handleAction(order.id, 'start')}
                                                     disabled={!!processingId}
-                                                    className="bg-blue-600 text-white px-5 py-2.5 rounded-[5px] font-bold text-xs uppercase flex items-center gap-2 justify-center hover:bg-blue-700 transition-all shadow-md w-full"
+                                                    className="min-h-[44px] bg-blue-600 text-white px-5 py-2.5 rounded-[5px] font-bold text-xs uppercase flex items-center gap-2 justify-center hover:bg-blue-700 transition-all shadow-md w-full"
                                                 >
                                                     {processingId === order.id ? <Loader2 size={12} className="animate-spin" /> : <Play size={12} />} INICIAR CARGA
                                                 </motion.button>
@@ -217,20 +277,40 @@ export default function CargaDescargaDashboardWorker({ userName, greeting, order
                                                     whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                                                     onClick={() => handleAction(order.id, 'postpone')}
                                                     disabled={!!processingId}
-                                                    className="bg-amber-500 text-white px-5 py-1.5 rounded-[5px] font-bold text-[10px] uppercase hover:bg-amber-600 transition-all"
+                                                    className="min-h-[44px] bg-amber-500 text-white px-5 py-1.5 rounded-[5px] font-bold text-[10px] uppercase hover:bg-amber-600 transition-all"
                                                 >
                                                     Posponer
                                                 </motion.button>
                                             </>
                                         ) : (
-                                            <motion.button
-                                                whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                                                onClick={() => handleAction(order.id, 'complete')}
-                                                disabled={!!processingId || (order.loadedByUid !== profile?.uid && profile?.role !== 'superadmin')}
-                                                className="bg-emerald-600 text-white px-6 py-3 rounded-[5px] font-bold text-xs uppercase flex items-center justify-center gap-2 hover:bg-emerald-700 transition-all shadow-md disabled:opacity-40"
-                                            >
-                                                {processingId === order.id ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle size={12} />} FINALIZAR
-                                            </motion.button>
+                                            <div className="flex flex-col gap-2">
+                                                <motion.button
+                                                    whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                                                    onClick={() => handleAction(order.id, 'complete')}
+                                                    disabled={!!processingId || (order.loadedByUid !== profile?.uid && profile?.role !== 'superadmin')}
+                                                    className="min-h-[44px] bg-emerald-600 text-white px-6 py-3 rounded-[5px] font-bold text-xs uppercase flex items-center justify-center gap-2 hover:bg-emerald-700 transition-all shadow-md disabled:opacity-40"
+                                                >
+                                                    {processingId === order.id ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle size={12} />} FINALIZAR
+                                                </motion.button>
+                                                <div className="grid grid-cols-2 gap-1.5">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleAction(order.id, 'hold')}
+                                                        disabled={!!processingId}
+                                                        className="min-h-[40px] bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-200 px-3 py-1.5 rounded-[5px] font-semibold text-xs flex items-center justify-center gap-1"
+                                                    >
+                                                        <PauseCircle size={13} /> Espera
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setAbandonTargetOrder(order)}
+                                                        disabled={!!processingId}
+                                                        className="min-h-[40px] bg-red-600/20 hover:bg-red-600/30 border border-red-500/40 text-red-200 px-3 py-1.5 rounded-[5px] font-semibold text-xs flex items-center justify-center gap-1"
+                                                    >
+                                                        <LockKeyhole size={13} /> Soltar (NIP)
+                                                    </button>
+                                                </div>
+                                            </div>
                                         )}
                                     </div>
                                 </motion.div>
@@ -256,6 +336,18 @@ export default function CargaDescargaDashboardWorker({ userName, greeting, order
                     }}
                 />
             )}
+
+            <PinAuthorizationModal
+                isOpen={Boolean(abandonTargetOrder)}
+                title="Autorizar Abandono de Carga"
+                description={`Ingresa tu NIP de operador o supervisor para soltar la carga #${abandonTargetOrder?.id?.slice(-6) || ''}.`}
+                actionLabel="Soltar Carga"
+                actionTone="danger"
+                requireReason={true}
+                defaultReason="Carga liberada con NIP en terminal"
+                onClose={() => setAbandonTargetOrder(null)}
+                onAuthorized={handleAuthorizedAbandon}
+            />
         </main>
     );
 };

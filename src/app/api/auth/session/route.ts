@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { generateSecureRandomInt, signRole, hashPinSha256, getTenantId } from '@/lib/apiAuth';
+import { isDeviceAuthorizedForTenant, recordDeviceHeartbeat } from '@/lib/devicePairing';
 import { redis } from '@/lib/redis';
 import { prisma } from '@/lib/prisma';
 import { INITIAL_STAFF_PINS, INITIAL_STAFF_PIN_VALUES } from '@/lib/initialStaffPins';
@@ -316,15 +317,16 @@ export async function POST(request: NextRequest) {
 
       const matchedUser = user;
       
-      // CANDADO ESTRICTO DE DISPOSITIVO (Device Binding)
+      // CANDADO DE DISPOSITIVO MULTITERMINAL: Permite el dispositivo maestro vinculado o cualquier terminal vinculada mediante QR/código.
       const isDemoAccount = String(matchedUser.id || '').startsWith('demo-') || INITIAL_STAFF_PIN_VALUES.includes(cleanPin);
       const OPERATIONAL_ROLES = ['inventory', 'carga_descarga', 'driver', 'sales'];
       if (!isDemoAccount && OPERATIONAL_ROLES.includes(matchedUser.role)) {
-        if (matchedUser.deviceId && deviceId && matchedUser.deviceId !== deviceId) {
+        const isPairedTerminal = deviceId ? isDeviceAuthorizedForTenant(tenantId, deviceId, matchedUser.id) : false;
+        if (matchedUser.deviceId && deviceId && matchedUser.deviceId !== deviceId && !isPairedTerminal) {
           return NextResponse.json(
             { 
               success: false, 
-              error: 'Dispositivo no autorizado. Tu usuario está vinculado a otra terminal. Solicita desbloqueo al Administrador.',
+              error: 'Dispositivo no autorizado. Tu usuario está vinculado a otra terminal. Solicita vinculación QR o desbloqueo al Administrador.',
               code: 'DEVICE_MISMATCH'
             }, 
             { status: 403 }
@@ -338,6 +340,19 @@ export async function POST(request: NextRequest) {
         } catch (e) {
           console.warn("[AUTH SESSION] Error guardando deviceId:", e);
         }
+      }
+
+      if (deviceId) {
+        try {
+          recordDeviceHeartbeat({
+            tenantId,
+            deviceId,
+            role: matchedUser.role,
+            userId: matchedUser.id,
+            userName: matchedUser.name,
+            ip: clientIp,
+          });
+        } catch {}
       }
 
       finalUid = matchedUser.id;

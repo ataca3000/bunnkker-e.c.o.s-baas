@@ -3,6 +3,7 @@ import { db, hasRealCredentials } from '@/lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { requireActiveRole, getTenantId } from '@/lib/apiAuth';
 import { loadPersistentSiteConfig, savePersistentSiteConfig } from '@/lib/persistentSettings';
+import { publishRealtimeEvent } from '@/lib/realtimeBus';
 
 export const dynamic = 'force-dynamic';
 
@@ -81,6 +82,12 @@ export async function POST(req: NextRequest) {
         console.warn('[SETTINGS CLOUD MIRROR ERROR]: No se pudo espejar en Firestore (modo offline/red lenta):', err?.message);
       });
     }
+
+    publishRealtimeEvent({
+      tenantId,
+      scope: 'settings',
+      action: 'SITE_CONFIG_PUBLISHED',
+    });
 
     return NextResponse.json({ success: true, data: withoutPrivateConfig(updated) });
   } catch (error: any) {

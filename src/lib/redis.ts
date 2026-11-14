@@ -83,3 +83,25 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 export const redis = redisClient;
+
+export function purgeExpiredRedisMemory(forceCleanTransient = false): {
+  purgedKeys: number;
+  remainingKeys: number;
+} {
+  const now = Date.now();
+  let purgedKeys = 0;
+
+  for (const [key, item] of memoryStore.entries()) {
+    const isExpired = Boolean(item.expiresAt && now >= item.expiresAt);
+    const isTransientBucket = forceCleanTransient && (key.startsWith('rate_limit:') || key.startsWith('verify_pin_attempts:'));
+    if (isExpired || isTransientBucket) {
+      memoryStore.delete(key);
+      purgedKeys++;
+    }
+  }
+
+  return {
+    purgedKeys,
+    remainingKeys: memoryStore.size,
+  };
+}

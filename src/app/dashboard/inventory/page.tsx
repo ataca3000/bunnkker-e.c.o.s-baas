@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { useCart, type Product } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
@@ -11,7 +11,8 @@ import {
     Barcode, ArrowRight, ArrowLeft, Save, Loader2, X,
     Folder, FolderOpen, ChevronDown, ChevronUp, Shield, QrCode,
     Download, Upload, AlertTriangle, TrendingDown, History, Sparkles, Database, FileText,
-    Mic, Printer, Trash2, FileSpreadsheet, Layers, CheckCircle2, Filter, Clock
+    Mic, Printer, Trash2, FileSpreadsheet, Layers, CheckCircle2, Filter, Clock,
+    PauseCircle, Play, LockKeyhole
 } from 'lucide-react';
 import { exportToExcel } from '@/lib/excelExport';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -32,6 +33,20 @@ import { broadcastSync } from '@/lib/syncNotifier';
 import CloudBackupConfigWidget from '@/components/admin/CloudBackupConfigWidget';
 import OrderPickingAssistant from '@/components/orders/OrderPickingAssistant';
 import MultiOrderPickingAssistant from '@/components/orders/MultiOrderPickingAssistant';
+import StockThresholdConfigPanel from '@/components/inventory/StockThresholdConfigPanel';
+import StockThresholdAlertModal from '@/components/inventory/StockThresholdAlertModal';
+import StockThresholdAlertToast from '@/components/inventory/StockThresholdAlertToast';
+import {
+    computeInventoryStockAlerts,
+    loadStockThresholdConfig,
+    saveStockThresholdConfig,
+    isAlertSnoozed,
+    type StockAlertSummary,
+    type StockThresholdConfig
+} from '@/lib/stockThresholds';
+import { playErrorBeep } from '@/lib/scannerAudio';
+import PinAuthorizationModal from '@/components/security/PinAuthorizationModal';
+import { clearPickingDraft } from '@/lib/operationGuard';
 
 export default function InventoryDashboard() {
     const { products, formatCurrency, orders, startLoading, completeLoading } = useCart();
@@ -51,6 +66,8 @@ export default function InventoryDashboard() {
     const [selectedOrderIdsForBatch, setSelectedOrderIdsForBatch] = useState<string[]>([]);
     const [deconstructingOrder, setDeconstructingOrder] = useState<any | null>(null);
     const [onlyMyOrders, setOnlyMyOrders] = useState(false);
+    const [abandonTargetOrder, setAbandonTargetOrder] = useState<any | null>(null);
+    const [busyOrderId, setBusyOrderId] = useState<string | null>(null);
 
     useEffect(() => {
         if (mutationInFlight.current > 0) return;
@@ -60,7 +77,34 @@ export default function InventoryDashboard() {
     }, [products]);
 
     // Tabs
-    const [activeTab, setActiveTab] = useState<'catalog' | 'shelves' | 'transfer' | 'backup' | 'shrinkage' | 'trash' | 'orders'>('catalog');
+    const [activeTab, setActiveTab] = useState<'catalog' | 'shelves' | 'transfer' | 'backup' | 'shrinkage' | 'trash' | 'orders' | 'thresholds'>('catalog');
+    
+    // Estados de umbrales y alertas automáticas de stock
+    const [thresholdConfig, setThresholdConfig] = useState<StockThresholdConfig>(() => loadStockThresholdConfig());
+    const [isThresholdAlertModalOpen, setIsThresholdAlertModalOpen] = useState(false);
+    const [isThresholdToastVisible, setIsThresholdToastVisible] = useState(true);
+    const lastAlertedCountRef = useRef<number>(0);
+
+    // Resumen reactivo de alertas de stock
+    const alertSummary: StockAlertSummary = useMemo(() => {
+        return computeInventoryStockAlerts(localProducts, thresholdConfig);
+    }, [localProducts, thresholdConfig]);
+
+    // Disparo de alerta auditiva y toast si hay productos bajo umbral y no está en snooze
+    useEffect(() => {
+        if (!thresholdConfig.alertsEnabled) return;
+        if (alertSummary.totalAlerts === 0) return;
+        if (isAlertSnoozed()) return;
+
+        // Solo sonar si el conteo de alertas aumentó o es la primera vez que se detectan
+        if (alertSummary.totalAlerts > lastAlertedCountRef.current) {
+            if (thresholdConfig.soundAlerts) {
+                playErrorBeep(0.35);
+            }
+            setIsThresholdToastVisible(true);
+        }
+        lastAlertedCountRef.current = alertSummary.totalAlerts;
+    }, [alertSummary.totalAlerts, thresholdConfig.alertsEnabled, thresholdConfig.soundAlerts]);
     const [hydratedChunksMap, setHydratedChunksMap] = useState<Record<string, boolean>>({});
     const [trashedProducts, setTrashedProducts] = useState<Product[]>([]);
     const [trashLoading, setTrashLoading] = useState(false);
@@ -239,6 +283,7 @@ export default function InventoryDashboard() {
         barcode: '', image: '',
         estante: '', fila: '',
         price: '', confirmPrice: '', stock: '',
+        minStock: '',
         warranty: '', unitType: 'PZA', isBulk: false
     });
     const [priceMismatchCount, setPriceMismatchCount] = useState(0);
@@ -661,6 +706,7 @@ export default function InventoryDashboard() {
             estante: shelfName === 'Sin Asignar' ? '' : shelfName,
             fila: levelName,
             price: '', confirmPrice: '', stock: '',
+            minStock: '',
             warranty: '', unitType: 'PZA',
             isBulk: false
         });
@@ -683,6 +729,7 @@ export default function InventoryDashboard() {
             price: String(p.price),
             confirmPrice: String(p.price),
             stock: String(p.stock),
+            minStock: p.minStock !== undefined && p.minStock !== null ? String(p.minStock) : '',
             warranty: (p as any).warranty || '',
             unitType: p.unitType || 'PZA',
             isBulk: !!p.isBulk
@@ -732,6 +779,10 @@ export default function InventoryDashboard() {
         mutationInFlight.current += 1;
         const productId = editingProductId || `PROD-${Date.now().toString().slice(-6)}`;
         
+        const parsedMinStock = (formData as any).minStock !== '' && !isNaN(Number((formData as any).minStock))
+            ? Number((formData as any).minStock)
+            : undefined;
+
         const newProduct: Product = {
             id: productId,
             name: formData.name,
@@ -741,6 +792,7 @@ export default function InventoryDashboard() {
             image: formData.image || 'https://images.unsplash.com/photo-1586864387967-d02ef85d93e8?auto=format&fit=crop&w=400&q=80',
             price: parseFloat(formData.price),
             stock: parseFloat(formData.stock), // Acepta decimales para granel
+            minStock: parsedMinStock,
             location: {
                 estante: formData.estante || 'PISO/GRANEL',
                 fila: formData.fila || 'PISO/GRANEL'
@@ -782,6 +834,7 @@ export default function InventoryDashboard() {
 
             const savedProduct: Product = {
                 ...result.data,
+                minStock: result.data.minStock ?? newProduct.minStock,
                 location: {
                     estante: result.data.estante || newProduct.location?.estante || '',
                     fila: result.data.fila || newProduct.location?.fila || ''
@@ -800,8 +853,8 @@ export default function InventoryDashboard() {
                 userName: profile?.displayName || 'Almacenista',
                 userRole: profile?.role || 'almacen',
                 description: editingProductId 
-                    ? `Producto Modificado: ${newProduct.name} (${newProduct.stock} uds)`
-                    : `Nuevo Producto Ingresado: ${newProduct.name} (${newProduct.stock} uds)`,
+                    ? `Producto Modificado: ${newProduct.name} (${newProduct.stock} uds, mín: ${newProduct.minStock ?? 'N/A'})`
+                    : `Nuevo Producto Ingresado: ${newProduct.name} (${newProduct.stock} uds, mín: ${newProduct.minStock ?? 'N/A'})`,
                 metadata: { productId, action: editingProductId ? 'update_product' : 'create_product' }
             });
 
@@ -814,13 +867,52 @@ export default function InventoryDashboard() {
             setIsCreating(false);
             setEditingProductId(null);
             setStep(1);
-            setFormData({ name: '', category: '', description: '', barcode: '', image: '', estante: '', fila: '', price: '', confirmPrice: '', stock: '', warranty: '', unitType: 'PZA', isBulk: false });
+            setFormData({ name: '', category: '', description: '', barcode: '', image: '', estante: '', fila: '', price: '', confirmPrice: '', stock: '', minStock: '', warranty: '', unitType: 'PZA', isBulk: false });
         } catch (error: any) {
             console.error(error);
             toast.error('Error al guardar el producto: ' + (error.message || 'Error desconocido'), 'Error');
         } finally {
             setLoading(false);
             mutationInFlight.current = Math.max(0, mutationInFlight.current - 1);
+        }
+    };
+
+    const handleUpdateProductThreshold = async (productId: string, newThreshold: number) => {
+        if (isReadOnly) {
+            toast.warning('Operación no permitida en Modo Demostración.', '🔒 Demo');
+            return;
+        }
+        try {
+            const res = await fetch('/api/products', {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-user-role': profile?.role || 'superadmin',
+                    'x-user-id': profile?.uid || 'local_owner'
+                },
+                body: JSON.stringify({
+                    id: productId,
+                    minStock: newThreshold
+                })
+            });
+            const data = await res.json().catch(() => null);
+            if (!res.ok || !data?.success) {
+                throw new Error(data?.error || 'Error al actualizar el umbral mínimo');
+            }
+
+            // Sincronizar estado local y store ERP
+            setLocalProducts(prev => prev.map(p => p.id === productId ? { ...p, minStock: newThreshold } : p));
+            const store = useERPStore.getState();
+            store.setProducts(store.products.map(p => p.id === productId ? { ...p, minStock: newThreshold } : p));
+
+            toast.success(`Umbral mínimo actualizado a ${newThreshold} uds`);
+            broadcastSync({ action: 'PRODUCT_SAVED', id: productId });
+            if (typeof window !== 'undefined' && (window as any).__inventorySocket) {
+                (window as any).__inventorySocket.emit('sync_db_event', { action: 'PRODUCT_SAVED', id: productId });
+            }
+        } catch (err: any) {
+            console.error(err);
+            toast.error(err.message || 'Error al actualizar umbral de producto');
         }
     };
 
@@ -965,7 +1057,9 @@ export default function InventoryDashboard() {
                 name: '', category: '', description: '',
                 barcode: code, image: '',
                 estante: '', fila: '',
-                price: '', confirmPrice: '', stock: '', warranty: '', unitType: 'PZA', isBulk: false
+                price: '', confirmPrice: '', stock: '',
+                minStock: '',
+                warranty: '', unitType: 'PZA', isBulk: false
             });
             setIsCreating(true);
             setStep(1);
@@ -1016,17 +1110,110 @@ export default function InventoryDashboard() {
         const isNotLoaded = !o.isLoaded && !['DELIVERED', 'COMPLETED', 'cancelled', 'refunded'].includes(o.status);
         if (onlyMyOrders && o.loadedByUid && o.loadedByUid !== profile?.uid) return false;
         return isNotLoaded;
+    }).sort((a, b) => {
+        const aMine = a.loadedByUid === profile?.uid ? 0 : 1;
+        const bMine = b.loadedByUid === profile?.uid ? 0 : 1;
+        if (aMine !== bMine) return aMine - bMine;
+        const aHold = a.status === 'EN_ESPERA' ? 0 : 1;
+        const bHold = b.status === 'EN_ESPERA' ? 0 : 1;
+        return aHold - bHold;
     });
+
+    const applyServerOrderUpdate = (orderId: string, updatedOrder?: any) => {
+        if (!updatedOrder) return;
+        const st = useERPStore.getState();
+        st.setOrders(st.orders.map((o) => (o.id === orderId ? { ...o, ...updatedOrder } : o)));
+    };
 
     const handleStartPicking = async (order: any) => {
         try {
             if (!order.loadedByUid || order.loadedByUid !== profile?.uid) {
                 await startLoading(order.id);
+            } else if (order.status === 'EN_ESPERA') {
+                const res = await fetch('/api/orders', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: order.id, action: 'resume_preparation' })
+                });
+                const data = await res.json().catch(() => null);
+                applyServerOrderUpdate(order.id, data?.order);
             }
             setPickingOrder(order);
         } catch (err: any) {
             toast.error(err.message || 'No se pudo tomar el pedido. Puede que otro operador ya lo haya tomado.');
         }
+    };
+
+    const handleHoldOrder = async (order: any) => {
+        setBusyOrderId(order.id);
+        try {
+            const res = await fetch('/api/orders', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id: order.id,
+                    action: 'hold_preparation',
+                    reason: 'En espera temporal en almacén'
+                })
+            });
+            const data = await res.json().catch(() => null);
+            if (!res.ok || !data?.success) {
+                throw new Error(data?.error || 'No se pudo poner en espera');
+            }
+            applyServerOrderUpdate(order.id, data.order);
+            broadcastSync({ action: 'ORDER_HOLD_UPDATED', id: order.id });
+            toast.info(`Pedido #${order.id.slice(-6).toUpperCase()} en pausa operativa (En Espera).`);
+        } catch (err: any) {
+            toast.error(err?.message || 'Error al poner en espera');
+        } finally {
+            setBusyOrderId(null);
+        }
+    };
+
+    const handleResumeOrder = async (order: any) => {
+        setBusyOrderId(order.id);
+        try {
+            const res = await fetch('/api/orders', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: order.id, action: 'resume_preparation' })
+            });
+            const data = await res.json().catch(() => null);
+            if (!res.ok || !data?.success) {
+                throw new Error(data?.error || 'No se pudo retomar el pedido');
+            }
+            applyServerOrderUpdate(order.id, data.order);
+            broadcastSync({ action: 'ORDER_RESUMED', id: order.id });
+            setPickingOrder({ ...order, status: data.order?.status || 'IN_PROGRESS' });
+        } catch (err: any) {
+            toast.error(err?.message || 'Error al retomar');
+        } finally {
+            setBusyOrderId(null);
+        }
+    };
+
+    const handleAuthorizedAbandon = async (authResult: { pin: string; reason?: string; verifiedBy: { uid: string; name: string; role: string } }) => {
+        if (!abandonTargetOrder) return;
+        const target = abandonTargetOrder;
+        const res = await fetch('/api/orders', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                id: target.id,
+                action: 'abandon_preparation',
+                verificationPin: authResult.pin,
+                reason: authResult.reason || 'Liberado desde tablero de almacén'
+            })
+        });
+        const data = await res.json().catch(() => null);
+        if (!res.ok || !data?.success) {
+            throw new Error(data?.error || 'No se pudo liberar el pedido');
+        }
+        clearPickingDraft(target.id, 'picking');
+        applyServerOrderUpdate(target.id, data.order);
+        broadcastSync({ action: 'ORDER_ABANDONED', id: target.id });
+        toast.warning(`Pedido #${target.id.slice(-6).toUpperCase()} liberado por ${authResult.verifiedBy.name}.`);
+        setAbandonTargetOrder(null);
     };
 
     const cancelledRestockOrders = (orders || []).filter(o => 
@@ -1332,6 +1519,29 @@ export default function InventoryDashboard() {
                                             <label className="text-xs font-black text-amber-400 uppercase tracking-widest mb-2 block">Stock Físico *</label>
                                             <input type="number" step="any" disabled={profile?.role === 'marketing'} value={formData.stock} onChange={e => setFormData({...formData, stock: e.target.value})} className="w-full bg-slate-900 border border-amber-500/30 p-4 rounded-xl font-black text-2xl text-amber-400 placeholder-amber-900/50 outline-none transition-all disabled:opacity-50" placeholder="0" />
                                         </div>
+                                        <div className="bg-rose-950/30 border border-rose-500/40 p-[8px] rounded-[5px]">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <label className="text-xs font-black text-rose-400 uppercase tracking-widest flex items-center gap-1.5">
+                                                    <AlertTriangle size={14} /> Umbral Mínimo de Alerta
+                                                </label>
+                                                <span className="text-[10px] text-zinc-400 font-bold bg-slate-900 px-2 py-0.5 rounded border border-rose-500/20">
+                                                    Opcional (predet: 5)
+                                                </span>
+                                            </div>
+                                            <input 
+                                                type="number" 
+                                                step="any" 
+                                                min="0"
+                                                disabled={profile?.role === 'marketing'}
+                                                value={(formData as any).minStock} 
+                                                onChange={e => setFormData({...formData, minStock: e.target.value})} 
+                                                className="w-full bg-slate-900 border border-rose-500/40 p-4 rounded-xl font-black text-2xl text-rose-300 placeholder-rose-900/50 outline-none transition-all focus:border-rose-400 disabled:opacity-50" 
+                                                placeholder="Ej. 5" 
+                                            />
+                                            <p className="text-[10px] text-zinc-400 mt-1.5 leading-tight">
+                                                Dispara alertas audibles y visuales cuando el stock físico sea menor o igual a este valor.
+                                            </p>
+                                        </div>
                                     </div>
                                     <div className="bg-indigo-900/20 border border-indigo-500/20 p-[8px] rounded-[5px]">
                                         <div className="flex items-center gap-3 mb-4">
@@ -1402,6 +1612,56 @@ export default function InventoryDashboard() {
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                         >
+                            {/* BANNER DE ALERTA DE STOCK CRÍTICO */}
+                            {alertSummary.totalAlerts > 0 && (
+                                <div className="mb-4 bg-gradient-to-r from-rose-950/70 via-red-900/40 to-slate-900/90 border border-rose-500/50 rounded-2xl p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg shadow-rose-950/30">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-9 h-9 rounded-xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400 shrink-0 animate-pulse">
+                                            <AlertTriangle size={18} />
+                                        </div>
+                                        <div>
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                <span className="text-xs font-black uppercase text-rose-300 tracking-wide">
+                                                    Alerta de Stock Crítico / Mínimo
+                                                </span>
+                                                <span className="px-2 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-black">
+                                                    {alertSummary.totalAlerts} {alertSummary.totalAlerts === 1 ? 'producto' : 'productos'}
+                                                </span>
+                                                {alertSummary.criticalCount > 0 && (
+                                                    <span className="px-2 py-0.5 rounded-full bg-red-950 text-red-300 border border-red-700 text-[10px] font-bold">
+                                                        {alertSummary.criticalCount} agotados
+                                                    </span>
+                                                )}
+                                                {alertSummary.lowStockCount > 0 && (
+                                                    <span className="px-2 py-0.5 rounded-full bg-amber-950 text-amber-300 border border-amber-700 text-[10px] font-bold">
+                                                        {alertSummary.lowStockCount} bajo umbral
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <p className="text-[11px] text-zinc-300 mt-0.5">
+                                                Hay existencias por debajo del umbral mínimo definido. Se requiere resurtido para evitar quiebres de inventario.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsThresholdAlertModalOpen(true)}
+                                            className="flex-1 sm:flex-none px-3.5 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-md active:scale-95 flex items-center justify-center gap-1.5"
+                                        >
+                                            <Shield size={14} /> Ver Alertas
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setActiveTab('thresholds')}
+                                            className="flex-1 sm:flex-none px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-xl text-xs font-bold transition-all border border-zinc-700 whitespace-nowrap"
+                                        >
+                                            ⚙️ Gestionar Umbrales
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
                             {/* TAB NAVIGATION: Compact Single-Row Toolbar with Colored Indicators */}
                             <div className="flex items-center gap-1.5 mb-5 bg-slate-900/80 p-1.5 rounded-xl border border-cyan-500/30 overflow-x-auto hide-scrollbar backdrop-blur-md shadow-lg">
                                 <button
@@ -1424,6 +1684,31 @@ export default function InventoryDashboard() {
                                 >
                                     <span className="w-2.5 h-2.5 rounded-full bg-yellow-400 shadow-[0_0_8px_rgba(250,204,21,0.9)] shrink-0"></span>
                                     <Package size={14} /> Productos ({filteredProducts.length})
+                                </button>
+                                <button 
+                                    type="button"
+                                    onClick={() => setActiveTab('thresholds')}
+                                    className={`py-1.5 px-3.5 font-bold text-xs rounded-lg transition-all flex items-center gap-2 whitespace-nowrap ${
+                                        activeTab === 'thresholds'
+                                            ? 'bg-rose-600 text-white font-black shadow-sm'
+                                            : alertSummary.totalAlerts > 0
+                                                ? 'text-rose-300 hover:text-white hover:bg-rose-950/30 border border-rose-500/30'
+                                                : 'text-slate-300 hover:text-white hover:bg-white/5'
+                                    }`}
+                                >
+                                    <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+                                        alertSummary.criticalCount > 0
+                                            ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.9)] animate-pulse'
+                                            : alertSummary.lowStockCount > 0
+                                                ? 'bg-amber-400 shadow-[0_0_8px_rgba(250,204,21,0.9)]'
+                                                : 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)]'
+                                    }`}></span>
+                                    <Shield size={14} /> Umbrales y Alertas
+                                    {alertSummary.totalAlerts > 0 && (
+                                        <span className="bg-rose-500 text-white text-[10px] font-black px-1.5 py-0.2 rounded-full animate-pulse">
+                                            {alertSummary.totalAlerts}
+                                        </span>
+                                    )}
                                 </button>
                                 <button 
                                     type="button"
@@ -1577,16 +1862,20 @@ export default function InventoryDashboard() {
                                             {pendingPrepOrders.map(order => {
                                                 const isClaimedByMe = order.loadedByUid === profile?.uid;
                                                 const isClaimedByOther = order.loadedByUid && order.loadedByUid !== profile?.uid;
+                                                const isOnHold = order.status === 'EN_ESPERA';
+                                                const isBusy = busyOrderId === order.id;
 
                                                 return (
                                                     <div 
                                                         key={order.id}
                                                         className={`bg-slate-900/90 border rounded-2xl p-5 shadow-xl flex flex-col justify-between transition-all ${
-                                                            isClaimedByMe 
-                                                                ? 'border-sky-500 ring-1 ring-sky-400/50' 
-                                                                : isClaimedByOther 
-                                                                    ? 'border-slate-800 opacity-60' 
-                                                                    : 'border-slate-700/80 hover:border-amber-400/50'
+                                                            isOnHold
+                                                                ? 'border-amber-500/70 ring-1 ring-amber-400/30'
+                                                                : isClaimedByMe 
+                                                                    ? 'border-sky-500 ring-1 ring-sky-400/50' 
+                                                                    : isClaimedByOther 
+                                                                        ? 'border-slate-800 opacity-60' 
+                                                                        : 'border-slate-700/80 hover:border-amber-400/50'
                                                         }`}
                                                     >
                                                         <div>
@@ -1608,12 +1897,14 @@ export default function InventoryDashboard() {
                                                                         {order.id}
                                                                     </span>
                                                                 </div>
-                                                                <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full border ${
-                                                                    order.status === 'paid' 
-                                                                        ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' 
-                                                                        : 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+                                                                <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md border ${
+                                                                    isOnHold
+                                                                        ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                                                                        : order.status === 'paid' 
+                                                                            ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' 
+                                                                            : 'bg-sky-500/20 text-sky-300 border-sky-500/30'
                                                                 }`}>
-                                                                    {order.status === 'paid' ? 'Pagado · Surtir' : 'Por Cobrar'}
+                                                                    {isOnHold ? 'En Espera' : order.status === 'paid' ? 'Pagado · Surtir' : 'Por Cobrar'}
                                                                 </span>
                                                             </div>
 
@@ -1645,16 +1936,60 @@ export default function InventoryDashboard() {
                                                         {/* Acciones */}
                                                         <div className="mt-4 pt-3 border-t border-slate-800 flex flex-col gap-2">
                                                             {isClaimedByOther ? (
-                                                                <div className="text-center py-2 text-xs text-slate-400 font-bold bg-slate-800/40 rounded-xl">
-                                                                    🔒 Tomado por {order.loadedBy || 'otro operador'}
+                                                                <div className="space-y-2">
+                                                                    <div className="text-center py-2 text-xs text-slate-400 font-bold bg-slate-800/40 rounded-xl">
+                                                                        🔒 Tomado por {order.loadedBy || 'otro operador'}{isOnHold ? ' (En Espera)' : ''}
+                                                                    </div>
+                                                                    {['admin', 'superadmin'].includes(profile?.role || '') && (
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => setAbandonTargetOrder(order)}
+                                                                            disabled={isBusy}
+                                                                            className="w-full min-h-[44px] py-2 bg-rose-950/50 hover:bg-rose-900/60 text-rose-200 border border-rose-500/40 font-black text-xs uppercase rounded-xl flex items-center justify-center gap-1.5 transition-all"
+                                                                        >
+                                                                            <LockKeyhole size={14} /> Liberar con NIP
+                                                                        </button>
+                                                                    )}
+                                                                </div>
+                                                            ) : isClaimedByMe ? (
+                                                                <div className="flex flex-col gap-2">
+                                                                    <button
+                                                                        type="button"
+                                                                        disabled={isBusy}
+                                                                        onClick={() => isOnHold ? handleResumeOrder(order) : handleStartPicking(order)}
+                                                                        className="w-full min-h-[44px] py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-md active:scale-95 flex items-center justify-center gap-1.5"
+                                                                    >
+                                                                        {isOnHold ? <Play size={15} /> : <span>📦</span>}
+                                                                        {isOnHold ? 'Retomar Surtido' : 'Continuar Surtido (1 a 1)'}
+                                                                    </button>
+                                                                    <div className="grid grid-cols-2 gap-2">
+                                                                        {!isOnHold && (
+                                                                            <button
+                                                                                type="button"
+                                                                                disabled={isBusy}
+                                                                                onClick={() => handleHoldOrder(order)}
+                                                                                className="min-h-[44px] py-2 px-2 bg-amber-950/50 hover:bg-amber-900/60 text-amber-200 border border-amber-500/40 font-bold text-xs rounded-xl flex items-center justify-center gap-1 transition-all"
+                                                                            >
+                                                                                <PauseCircle size={14} /> En Espera
+                                                                            </button>
+                                                                        )}
+                                                                        <button
+                                                                            type="button"
+                                                                            disabled={isBusy}
+                                                                            onClick={() => setAbandonTargetOrder(order)}
+                                                                            className={`${isOnHold ? 'col-span-2' : ''} min-h-[44px] py-2 px-2 bg-rose-950/50 hover:bg-rose-900/60 text-rose-200 border border-rose-500/40 font-bold text-xs rounded-xl flex items-center justify-center gap-1 transition-all`}
+                                                                        >
+                                                                            <LockKeyhole size={14} /> Soltar (NIP)
+                                                                        </button>
+                                                                    </div>
                                                                 </div>
                                                             ) : (
                                                                 <button
                                                                     type="button"
                                                                     onClick={() => handleStartPicking(order)}
-                                                                    className="w-full py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-md active:scale-95 flex items-center justify-center gap-1.5"
+                                                                    className="w-full min-h-[44px] py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-md active:scale-95 flex items-center justify-center gap-1.5"
                                                                 >
-                                                                    <span>📦</span> {isClaimedByMe ? 'Continuar Surtido (1 a 1)' : 'Tomar Pedido y Surtir (1 a 1)'}
+                                                                    <span>📦</span> Tomar Pedido y Surtir (1 a 1)
                                                                 </button>
                                                             )}
                                                         </div>
@@ -1663,6 +1998,22 @@ export default function InventoryDashboard() {
                                             })}
                                         </div>
                                     )}
+                                </section>
+                            )}
+
+                            {activeTab === 'thresholds' && (
+                                <section>
+                                    <StockThresholdConfigPanel
+                                        products={localProducts}
+                                        config={thresholdConfig}
+                                        onSaveConfig={(newConfig) => {
+                                            setThresholdConfig(newConfig);
+                                            saveStockThresholdConfig(newConfig);
+                                            toast.success('Configuración de umbrales guardada correctamente', '⚙️ Almacén');
+                                        }}
+                                        onUpdateProductThreshold={handleUpdateProductThreshold}
+                                        onOpenAlertModal={() => setIsThresholdAlertModalOpen(true)}
+                                    />
                                 </section>
                             )}
 
@@ -2682,6 +3033,31 @@ export default function InventoryDashboard() {
                         }}
                     />
                 )}
+
+                {/* MODAL DE ALERTA DE STOCK CRÍTICO */}
+                <StockThresholdAlertModal
+                    isOpen={isThresholdAlertModalOpen}
+                    onClose={() => setIsThresholdAlertModalOpen(false)}
+                    summary={alertSummary}
+                    onConfigureThresholds={() => {
+                        setIsThresholdAlertModalOpen(false);
+                        setActiveTab('thresholds');
+                    }}
+                    onEditProduct={(product) => {
+                        setIsThresholdAlertModalOpen(false);
+                        handleEditProduct(product);
+                    }}
+                />
+
+                {/* TOAST FLOTANTE DE ALERTA DE STOCK */}
+                {isThresholdToastVisible && alertSummary.totalAlerts > 0 && !isAlertSnoozed() && (
+                    <StockThresholdAlertToast
+                        summary={alertSummary}
+                        onOpenModal={() => setIsThresholdAlertModalOpen(true)}
+                        onNavigateToThresholds={() => setActiveTab('thresholds')}
+                        onDismiss={() => setIsThresholdToastVisible(false)}
+                    />
+                )}
             </AnimatePresence>
 
             {/* CÁMARA ESCÁNER */}
@@ -2692,6 +3068,17 @@ export default function InventoryDashboard() {
                     isOpen={isScannerOpen}
                 />
             )}
+
+            <PinAuthorizationModal
+                isOpen={Boolean(abandonTargetOrder)}
+                onClose={() => setAbandonTargetOrder(null)}
+                title="Autorizar Abandono de Surtido"
+                description={`Ingresa tu NIP de operador o supervisor para liberar el pedido #${(abandonTargetOrder?.id || '').slice(-6).toUpperCase()} y devolverlo a la cola disponible.`}
+                actionLabel="Liberar Pedido"
+                actionTone="danger"
+                requireReason={true}
+                onAuthorized={handleAuthorizedAbandon}
+            />
         </div>
     );
 }

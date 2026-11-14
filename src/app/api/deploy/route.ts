@@ -1,60 +1,123 @@
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'node:crypto';
 import { requireRole } from '@/lib/apiAuth';
-import { db } from '@/lib/firebase';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { prisma } from '@/lib/prisma';
+import { adminDb } from '@/lib/firebase-admin';
+
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
     const auth = requireRole(request, ['superadmin']);
     if (!auth.ok) return auth.response;
+
     try {
         const body = await request.json();
-        const { clientName, adminEmail, modules, country, currency } = body;
+        const clientName = typeof body?.clientName === 'string' ? body.clientName.trim() : '';
+        const adminEmail = typeof body?.adminEmail === 'string' ? body.adminEmail.trim().toLowerCase() : '';
+        const modules = Array.isArray(body?.modules) ? body.modules.filter((m: unknown) => typeof m === 'string') : [];
+        const country = typeof body?.country === 'string' && body.country.trim() ? body.country.trim() : 'MX';
+        const currency = typeof body?.currency === 'string' && body.currency.trim() ? body.currency.trim() : 'MXN';
 
         if (!clientName || !adminEmail) {
-            return NextResponse.json({ error: "Faltan datos requeridos (clientName, adminEmail)" }, { status: 400 });
+            return NextResponse.json(
+                { error: 'Faltan datos requeridos (clientName, adminEmail)' },
+                { status: 400 }
+            );
         }
 
-        // 1. Generar un Tenant ID único y seguro
-        const tenantId = clientName.toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + Math.floor(Math.random() * 10000);
-        const domain = `${tenantId}.admin.com`; // Subdominio asignado
-        const port = Math.floor(Math.random() * (9000 - 8000 + 1)) + 8000; // Puerto simulado
+        const slug = clientName
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '') || 'tenant';
+        const suffix = crypto.randomBytes(3).toString('hex');
+        const tenantId = `${slug}-${suffix}`;
 
-        // 2. Simulamos la Orquestación de Contenedores y Red (Mini Kubernetes)
-        // En un entorno real aquí llamarías a Vercel API, Docker API o crearías el namespace.
-        await new Promise(resolve => setTimeout(resolve, 2000)); // Simula tiempo de provisionamiento
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/+$/, '') || 'http://localhost:3000';
+        const domain = `${tenantId}.bunkker.local`;
+        const accessUrl = `${baseUrl}/?tenant=${encodeURIComponent(tenantId)}`;
+        const createdAt = new Date().toISOString();
 
-        // 3. Inyectar Configuración Base de Datos (Firebase Multi-Tenant)
-        // Guardamos el registro del tenant en una colección maestra "tenants_registry"
-        const tenantRef = doc(db, 'tenants_registry', tenantId);
-        await setDoc(tenantRef, {
+        const tenantRecord = {
+            tenantId,
             clientName,
             adminEmail,
             modules,
             country,
             currency,
             domain,
-            port,
+            accessUrl,
             status: 'ACTIVE',
             dbNamespace: `tenants/${tenantId}`,
-            createdAt: serverTimestamp()
-        });
+            createdAt,
+            createdBy: auth.uid,
+        };
 
-        // 4. Retornar Estado de Orquestación
-        return NextResponse.json({
-            status: "SUCCESS",
-            message: "Instancia desplegada y orquestada correctamente",
+        // 1. Persistir registro real de tenant en base de datos local (Prisma)
+        const existingConfig = await prisma.integrationConfig.findFirst({
+            where: { tenantId, provider: 'tenant_registry' },
+        });
+        if (existingConfig) {
+            await prisma.integrationConfig.update({
+                where: { id: existingConfig.id },
+                data: {
+                    settings: JSON.stringify(tenantRecord),
+                    status: 'connected',
+                    updatedBy: auth.uid,
+                },
+            });
+        } else {
+            await prisma.integrationConfig.create({
+                data: {
+                    tenantId,
+                    provider: 'tenant_registry',
+                    settings: JSON.stringify(tenantRecord),
+                    status: 'connected',
+                    updatedBy: auth.uid,
+                },
+            });
+        }
+
+        await prisma.auditLog.create({
             data: {
                 tenantId,
-                domain: `https://${domain}`,
-                port,
-                databasePath: `tenants/${tenantId}`,
-                modulesActivated: modules,
-                orchestrator: "AdminDeploy Engine v1.0"
-            }
+                action: 'TENANT_DEPLOYED',
+                details: JSON.stringify({ tenantId, clientName, adminEmail, modules, country, currency }),
+                userId: auth.uid || 'superadmin',
+            },
         });
 
+        // 2. Sincronizar en Firestore Admin si existen credenciales configuradas
+        const hasAdminCreds = Boolean(
+            process.env.FIREBASE_SERVICE_ACCOUNT_KEY ||
+            process.env.FIREBASE_SERVICE_ACCOUNT ||
+            (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY)
+        );
+        if (hasAdminCreds) {
+            await adminDb.collection('tenants_registry').doc(tenantId).set(tenantRecord).catch((err: unknown) => {
+                console.warn('[DEPLOY] Aviso sincronizando tenant en Firestore Admin:', err);
+            });
+        }
+
+        return NextResponse.json({
+            status: 'SUCCESS',
+            message: 'Instancia registrada y aprovisionada en base de datos',
+            data: {
+                tenantId,
+                domain,
+                accessUrl,
+                databasePath: `tenants/${tenantId}`,
+                modulesActivated: modules,
+                createdAt,
+            },
+        });
     } catch (error: any) {
-        console.error("Error en AdminDeploy:", error);
-        return NextResponse.json({ error: "Fallo crítico en el orquestador: " + error.message }, { status: 500 });
+        console.error('Error en AdminDeploy:', error);
+        return NextResponse.json(
+            { error: 'Error aprovisionando tenant: ' + (error?.message || 'desconocido') },
+            { status: 500 }
+        );
     }
 }
