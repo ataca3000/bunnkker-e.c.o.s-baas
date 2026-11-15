@@ -4,7 +4,7 @@ import React, { useState, useMemo } from 'react';
 import { 
   Bell, BellOff, Volume2, VolumeX, ShieldAlert, AlertTriangle, 
   CheckCircle2, Search, Filter, Save, RefreshCw, Sliders, 
-  Sparkles, Package, Layers, Info, Check, ArrowRight
+  Sparkles, Package, Layers, Info, Check, ArrowRight, PackagePlus
 } from 'lucide-react';
 import type { Product } from '@/lib/types';
 import { 
@@ -26,6 +26,7 @@ interface StockThresholdConfigPanelProps {
   onProductUpdated?: (productId: string, newMinStock: number) => void;
   onUpdateProductThreshold?: (productId: string, newMinStock: number) => void;
   onOpenAlertModal?: () => void;
+  onQuickRestock?: (product: Product) => void;
   formatCurrency?: (val: number) => string;
 }
 
@@ -36,6 +37,7 @@ export default function StockThresholdConfigPanel({
   onProductUpdated,
   onUpdateProductThreshold,
   onOpenAlertModal,
+  onQuickRestock,
   formatCurrency = (v) => `$${v.toFixed(2)}`
 }: StockThresholdConfigPanelProps) {
   const [config, setConfig] = useState<StockThresholdConfig>(() => initialConfig || loadStockThresholdConfig());
@@ -628,24 +630,38 @@ export default function StockThresholdConfigPanel({
                         </div>
                       </td>
 
-                      {/* Botón Guardar individual */}
+                      {/* Botón Guardar individual + Recarga rápida */}
                       <td className="py-3 px-4 text-center whitespace-nowrap">
-                        <button
-                          onClick={() => handleSaveProductMinStock(product, currentDraft)}
-                          disabled={isSavingThis || (!isModified && product.minStock === currentDraft)}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 mx-auto ${
-                            isModified
-                              ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 font-black shadow-md shadow-amber-500/30 animate-pulse'
-                              : 'bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700'
-                          } disabled:opacity-40 disabled:pointer-events-none`}
-                        >
-                          {isSavingThis ? (
-                            <RefreshCw size={13} className="animate-spin text-cyan-400" />
-                          ) : (
-                            <Save size={13} />
+                        <div className="inline-flex items-center gap-1.5">
+                          {onQuickRestock && (
+                            <button
+                              type="button"
+                              onClick={() => onQuickRestock(product)}
+                              className="px-2.5 py-1.5 rounded-lg text-xs font-black bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-slate-950 border border-emerald-500/40 transition-all flex items-center gap-1"
+                              title="Agregar piezas rápido con doble confirmación"
+                            >
+                              <PackagePlus size={13} />
+                              <span>+ Pzas</span>
+                            </button>
                           )}
-                          <span>Guardar</span>
-                        </button>
+                          <button
+                            type="button"
+                            onClick={() => handleSaveProductMinStock(product, currentDraft)}
+                            disabled={isSavingThis || (!isModified && product.minStock === currentDraft)}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${
+                              isModified
+                                ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 font-black shadow-md shadow-amber-500/30 animate-pulse'
+                                : 'bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700'
+                            } disabled:opacity-40 disabled:pointer-events-none`}
+                          >
+                            {isSavingThis ? (
+                              <RefreshCw size={13} className="animate-spin text-cyan-400" />
+                            ) : (
+                              <Save size={13} />
+                            )}
+                            <span>Guardar</span>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );

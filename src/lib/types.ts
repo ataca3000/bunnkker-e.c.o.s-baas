@@ -1,4 +1,5 @@
 // src/lib/types.ts
+import type { ProductMediaItem } from './productMedia';
 
 export interface Product {
   id: string;
@@ -8,6 +9,7 @@ export interface Product {
   category?: string;
   image?: string;
   imageUrl?: string;
+  media?: ProductMediaItem[];
   description?: string;
   estante?: string;
   fila?: string;

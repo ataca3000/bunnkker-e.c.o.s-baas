@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 
-export type SyncScope = 'orders' | 'products' | 'settings' | 'devices' | 'all';
+export type SyncScope = 'orders' | 'products' | 'settings' | 'devices' | 'audit' | 'all';
 
 export interface RealtimeSyncEvent {
   txId: string;

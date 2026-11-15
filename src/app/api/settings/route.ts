@@ -87,6 +87,7 @@ export async function POST(req: NextRequest) {
       tenantId,
       scope: 'settings',
       action: 'SITE_CONFIG_PUBLISHED',
+      payload: { details: 'Configuración del sitio actualizada y publicada.' },
     });
 
     return NextResponse.json({ success: true, data: withoutPrivateConfig(updated) });

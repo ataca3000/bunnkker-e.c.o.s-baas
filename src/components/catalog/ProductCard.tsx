@@ -20,9 +20,13 @@ import {
     Send, 
     Barcode, 
     Maximize2,
-    Check
+    Check,
+    ChevronLeft,
+    ChevronRight,
+    Film
 } from 'lucide-react';
 import { useCart, type Product } from '@/context/CartContext';
+import { normalizeProductMedia } from '@/lib/productMedia';
 import { useAuth } from '@/context/AuthContext';
 import { getCustomerProfile } from '@/lib/customerAuth';
 import { StarRating } from './CatalogUtils';
@@ -73,7 +77,13 @@ export function ProductCard({
     const { addToCart, decrementFromCart, removeFromCart, floatingStock = {}, cart = [], siteConfig } = useCart() as any;
     const [isImageLightboxOpen, setIsImageLightboxOpen] = useState(false);
     const [isPressedOrTouched, setIsPressedOrTouched] = useState(false);
+    const [activeMediaIdx, setActiveMediaIdx] = useState(0);
     const activeTimedBanners: TimedOfferBanner[] = timedBannersOverride ?? siteConfig?.timedBanners ?? [];
+
+    const mediaItems = useMemo(() => normalizeProductMedia(p), [p]);
+    const safeMediaIdx = mediaItems.length > 0 ? activeMediaIdx % mediaItems.length : 0;
+    const activeMedia = mediaItems[safeMediaIdx] || null;
+    const hasVideoMedia = mediaItems.some((m) => m.type === 'video');
 
     const cartItem = (cart || []).find((item: any) => item.id === p.id);
     const inCartQty = cartItem ? cartItem.quantity : 0;
@@ -123,25 +133,40 @@ export function ProductCard({
                         : 'border-slate-200/90 dark:border-slate-800 shadow-[0_10px_28px_-6px_rgba(0,0,0,0.08)] hover:shadow-[0_22px_44px_-8px_rgba(0,0,0,0.18)] hover:border-slate-300 dark:hover:border-slate-600'
                 }`}
             >
-                {/* ── 1. CONTENEDOR DOMINANTE DE IMAGEN CON CONTROLES SUPERPUESTOS ── */}
+                {/* ── 1. CONTENEDOR DOMINANTE DE MEDIA (FOTOS / VIDEO MULTI-VISTA) CON CONTROLES SUPERPUESTOS ── */}
                 <div className="relative w-full h-[300px] sm:h-[340px] overflow-hidden bg-slate-900">
-                    {p.image ? (
-                        <img
-                            src={p.image}
-                            alt={p.name}
-                            referrerPolicy="no-referrer"
-                            className={`w-full h-full object-cover transition-transform duration-300 ease-out will-change-transform group-hover:scale-110 ${
-                                isPressedOrTouched ? 'scale-105' : 'scale-100'
-                            }`}
-                            onError={e => {
-                                e.currentTarget.style.display = 'none';
-                                (e.currentTarget.nextElementSibling as HTMLElement | null)?.style?.setProperty('display', 'flex');
-                            }}
-                        />
+                    {activeMedia ? (
+                        activeMedia.type === 'video' ? (
+                            <video
+                                key={activeMedia.url}
+                                src={activeMedia.url}
+                                muted
+                                loop
+                                playsInline
+                                autoPlay
+                                preload="metadata"
+                                className={`w-full h-full object-cover transition-transform duration-300 ease-out will-change-transform group-hover:scale-105 ${
+                                    isPressedOrTouched ? 'scale-105' : 'scale-100'
+                                }`}
+                            />
+                        ) : (
+                            <img
+                                src={activeMedia.url}
+                                alt={`${p.name} - vista ${safeMediaIdx + 1}`}
+                                referrerPolicy="no-referrer"
+                                className={`w-full h-full object-cover transition-transform duration-300 ease-out will-change-transform group-hover:scale-110 ${
+                                    isPressedOrTouched ? 'scale-105' : 'scale-100'
+                                }`}
+                                onError={e => {
+                                    e.currentTarget.style.display = 'none';
+                                    (e.currentTarget.nextElementSibling as HTMLElement | null)?.style?.setProperty('display', 'flex');
+                                }}
+                            />
+                        )
                     ) : null}
 
                     {/* div:nth-of-type(1) Fallback visual */}
-                    <div className={`absolute inset-0 items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900 ${p.image ? 'hidden' : 'flex'}`}>
+                    <div className={`absolute inset-0 items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900 ${activeMedia ? 'hidden' : 'flex'}`}>
                         <Package size={48} className="text-slate-500" />
                     </div>
 
@@ -153,7 +178,7 @@ export function ProductCard({
                     />
 
                     {/* div:nth-of-type(3) Metadato superior izquierdo sin pill excesivo */}
-                    <div className="absolute top-3 left-3 right-14 z-20 pointer-events-none flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-white/95 drop-shadow-[0_1px_3px_rgba(0,0,0,0.85)]">
+                    <div className="absolute top-3 left-3 right-24 z-20 pointer-events-none flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-white/95 drop-shadow-[0_1px_3px_rgba(0,0,0,0.85)]">
                         <span className="truncate">{p.category || 'General'}</span>
                         {(p.rating ?? 0) > 0 && (
                             <>
@@ -163,10 +188,52 @@ export function ProductCard({
                                 </span>
                             </>
                         )}
+                        {hasVideoMedia && (
+                            <>
+                                <span aria-hidden="true" className="text-white/60">·</span>
+                                <span className="inline-flex items-center gap-0.5 text-cyan-300 shrink-0">
+                                    <Film size={11} /> Video
+                                </span>
+                            </>
+                        )}
                     </div>
 
-                    {/* div:nth-of-type(4) Botones rápidos flotantes sobre imagen (Zoom y Detalles) */}
+                    {/* div:nth-of-type(4) Botones rápidos flotantes sobre media (Cambio de vista + Zoom) */}
                     <div className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1.5">
+                        {mediaItems.length > 1 && (
+                            <div
+                                className="flex items-center gap-1 bg-slate-950/65 backdrop-blur-md border border-white/20 rounded-xl px-1.5 h-10 shadow-lg"
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setActiveMediaIdx((prev) => (prev - 1 + mediaItems.length) % mediaItems.length);
+                                    }}
+                                    className="w-7 h-7 rounded-lg text-white hover:bg-white/20 active:scale-90 flex items-center justify-center transition-all cursor-pointer"
+                                    title="Vista anterior"
+                                    aria-label="Vista anterior"
+                                >
+                                    <ChevronLeft size={14} />
+                                </button>
+                                <span className="text-[11px] font-bold text-white/95 tabular-nums px-0.5">
+                                    {safeMediaIdx + 1}/{mediaItems.length}
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setActiveMediaIdx((prev) => (prev + 1) % mediaItems.length);
+                                    }}
+                                    className="w-7 h-7 rounded-lg text-white hover:bg-white/20 active:scale-90 flex items-center justify-center transition-all cursor-pointer"
+                                    title="Siguiente vista"
+                                    aria-label="Siguiente vista"
+                                >
+                                    <ChevronRight size={14} />
+                                </button>
+                            </div>
+                        )}
                         <button
                             type="button"
                             onClick={(e) => {
@@ -178,12 +245,37 @@ export function ProductCard({
                                     ? 'bg-emerald-500/85 scale-105 border-emerald-300'
                                     : 'bg-slate-950/55 hover:bg-white hover:text-slate-950 hover:scale-110 active:scale-95'
                             }`}
-                            title="Ampliar imagen"
-                            aria-label={`Ampliar imagen de ${p.name}`}
+                            title="Ampliar media"
+                            aria-label={`Ampliar galería de ${p.name}`}
                         >
                             <ZoomIn size={16} />
                         </button>
                     </div>
+
+                    {/* Selector táctil de vistas (hasta 4 miniaturas/puntos) sobre la imagen */}
+                    {mediaItems.length > 1 && (
+                        <div
+                            className="absolute inset-x-3 bottom-[204px] z-20 flex items-center justify-center gap-1.5"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {mediaItems.map((item, idx) => (
+                                <button
+                                    key={`${item.url}-${idx}`}
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setActiveMediaIdx(idx);
+                                    }}
+                                    aria-label={`Ver vista ${idx + 1} de ${p.name}`}
+                                    className={`h-2 rounded-full transition-all cursor-pointer ${
+                                        idx === safeMediaIdx
+                                            ? 'w-7 bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]'
+                                            : 'w-2.5 bg-white/45 hover:bg-white/80'
+                                    }`}
+                                />
+                            ))}
+                        </div>
+                    )}
 
                     {/* div:nth-of-type(5) Superposición inferior sobre imagen (201.714px) con título y botones táctiles/hover */}
                     <div
@@ -360,25 +452,85 @@ export function ProductCard({
                 </div>
             </motion.div>
 
-            {/* Modal Lightbox de Imagen si se activa */}
+            {/* Modal Lightbox de Media (Fotos y Video Multi-Vista) */}
             {isImageLightboxOpen && (
                 <div 
                     className="fixed inset-0 z-[1200] bg-black/90 backdrop-blur-md flex items-center justify-center p-4"
                     onClick={() => setIsImageLightboxOpen(false)}
                 >
                     <div 
-                        className="relative max-w-4xl w-full bg-slate-900 border border-white/20 rounded-3xl overflow-hidden p-6 text-white"
+                        className="relative max-w-4xl w-full bg-slate-900 border border-white/20 rounded-3xl overflow-hidden p-5 sm:p-6 text-white"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <button
                             onClick={() => setIsImageLightboxOpen(false)}
-                            className="absolute top-4 right-4 p-2.5 rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors z-20"
+                            className="absolute top-4 right-4 min-w-[40px] min-h-[40px] p-2.5 rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors z-20 flex items-center justify-center cursor-pointer"
+                            aria-label="Cerrar visor"
                         >
                             <X size={20} />
                         </button>
-                        <div className="w-full aspect-video sm:aspect-[16/10] overflow-hidden rounded-2xl bg-black mb-4 flex items-center justify-center">
-                            <img src={p.image} alt={p.name} className="max-w-full max-h-full object-contain" />
+                        <div className="relative w-full aspect-video sm:aspect-[16/10] overflow-hidden rounded-2xl bg-black mb-4 flex items-center justify-center">
+                            {activeMedia?.type === 'video' ? (
+                                <video
+                                    key={activeMedia.url}
+                                    src={activeMedia.url}
+                                    controls
+                                    autoPlay
+                                    loop
+                                    playsInline
+                                    className="max-w-full max-h-full object-contain"
+                                />
+                            ) : activeMedia ? (
+                                <img src={activeMedia.url} alt={p.name} className="max-w-full max-h-full object-contain" />
+                            ) : (
+                                <Package size={48} className="text-slate-500" />
+                            )}
+                            {mediaItems.length > 1 && (
+                                <>
+                                    <button
+                                        type="button"
+                                        onClick={() => setActiveMediaIdx((prev) => (prev - 1 + mediaItems.length) % mediaItems.length)}
+                                        className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center border border-white/20 cursor-pointer"
+                                        aria-label="Vista anterior"
+                                    >
+                                        <ChevronLeft size={20} />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setActiveMediaIdx((prev) => (prev + 1) % mediaItems.length)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center border border-white/20 cursor-pointer"
+                                        aria-label="Siguiente vista"
+                                    >
+                                        <ChevronRight size={20} />
+                                    </button>
+                                </>
+                            )}
                         </div>
+                        {mediaItems.length > 1 && (
+                            <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-2">
+                                {mediaItems.map((item, idx) => (
+                                    <button
+                                        key={`${item.url}-lb-${idx}`}
+                                        type="button"
+                                        onClick={() => setActiveMediaIdx(idx)}
+                                        className={`relative w-16 h-16 rounded-xl overflow-hidden border-2 shrink-0 cursor-pointer transition-all ${
+                                            idx === safeMediaIdx
+                                                ? 'border-emerald-400 scale-105'
+                                                : 'border-white/15 opacity-70 hover:opacity-100'
+                                        }`}
+                                    >
+                                        {item.type === 'video' ? (
+                                            <div className="w-full h-full bg-slate-800 flex flex-col items-center justify-center text-cyan-300 text-[10px] font-bold">
+                                                <Film size={16} />
+                                                <span>Video</span>
+                                            </div>
+                                        ) : (
+                                            <img src={item.url} alt={`Vista ${idx + 1}`} className="w-full h-full object-cover" />
+                                        )}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                         <h3 className="text-xl font-black text-white">{p.name}</h3>
                         <p className="text-sm text-slate-300 mt-2 leading-relaxed">{p.description}</p>
                     </div>
@@ -409,6 +561,15 @@ export function ProductDetailDrawer({ product, onClose }: ProductDetailDrawerPro
     // Reseñas en vivo
     const [reviews, setReviews] = useState<ProductReview[]>([]);
     const [isLightboxActive, setIsLightboxActive] = useState(false);
+    const [activeDrawerMediaIdx, setActiveDrawerMediaIdx] = useState(0);
+
+    const drawerMediaItems = useMemo(() => normalizeProductMedia(product), [product]);
+    const safeDrawerMediaIdx = drawerMediaItems.length > 0 ? activeDrawerMediaIdx % drawerMediaItems.length : 0;
+    const activeDrawerMedia = drawerMediaItems[safeDrawerMediaIdx] || null;
+
+    useEffect(() => {
+        setActiveDrawerMediaIdx(0);
+    }, [product?.id]);
 
     // Formulario de nueva reseña
     const [selectedScore, setSelectedScore] = useState<number>(5);
@@ -576,26 +737,68 @@ export function ProductDetailDrawer({ product, onClose }: ProductDetailDrawerPro
                     </button>
 
                     <div className="flex flex-col gap-6 mt-2">
-                        {/* ── 1. VISUALIZADOR DE IMAGEN CON MODO LIGHTBOX / ZOOM ── */}
-                        <div className="relative w-full h-[260px] sm:h-[320px] rounded-3xl overflow-hidden bg-slate-100 border border-slate-200 group/img shadow-inner">
-                            <img
-                                src={product.image}
-                                alt={product.name}
-                                className="w-full h-full object-cover transition-transform duration-500 group-hover/img:scale-105"
-                            />
-                            {/* Botón para abrir Lightbox en Pantalla Completa */}
-                            <button
-                                type="button"
-                                onClick={() => setIsLightboxActive(true)}
-                                className="absolute bottom-3 right-3 px-3.5 py-2 rounded-xl bg-slate-950/80 hover:bg-slate-950 text-white backdrop-blur-md border border-white/20 text-xs font-bold flex items-center gap-1.5 shadow-lg transition-transform active:scale-95 cursor-pointer"
-                            >
-                                <Maximize2 size={14} /> Ampliar Imagen
-                            </button>
+                        {/* ── 1. VISUALIZADOR MULTI-VISTA (FOTOS / VIDEO) CON LIGHTBOX ── */}
+                        <div className="space-y-2.5">
+                            <div className="relative w-full h-[260px] sm:h-[320px] rounded-3xl overflow-hidden bg-slate-900 border border-slate-200 group/img shadow-inner flex items-center justify-center">
+                                {activeDrawerMedia?.type === 'video' ? (
+                                    <video
+                                        key={activeDrawerMedia.url}
+                                        src={activeDrawerMedia.url}
+                                        controls
+                                        autoPlay
+                                        loop
+                                        playsInline
+                                        className="w-full h-full object-cover"
+                                    />
+                                ) : activeDrawerMedia ? (
+                                    <img
+                                        src={activeDrawerMedia.url}
+                                        alt={`${product.name} - vista ${safeDrawerMediaIdx + 1}`}
+                                        className="w-full h-full object-cover transition-transform duration-500 group-hover/img:scale-105"
+                                    />
+                                ) : (
+                                    <Package size={48} className="text-slate-400" />
+                                )}
+                                {/* Botón para abrir Lightbox en Pantalla Completa */}
+                                <button
+                                    type="button"
+                                    onClick={() => setIsLightboxActive(true)}
+                                    className="absolute bottom-3 right-3 px-3.5 py-2 rounded-xl bg-slate-950/80 hover:bg-slate-950 text-white backdrop-blur-md border border-white/20 text-xs font-bold flex items-center gap-1.5 shadow-lg transition-transform active:scale-95 cursor-pointer"
+                                >
+                                    <Maximize2 size={14} /> Ampliar
+                                </button>
 
-                            {/* Badge flotante de apartado */}
-                            {inCartQty > 0 && (
-                                <div className="absolute top-4 left-4 bg-[#008060] text-white text-xs font-black uppercase px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5">
-                                    <ShoppingCart size={13} /> {inCartQty} pz en tu carrito
+                                {/* Badge flotante de apartado */}
+                                {inCartQty > 0 && (
+                                    <div className="absolute top-4 left-4 bg-[#008060] text-white text-xs font-black uppercase px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5">
+                                        <ShoppingCart size={13} /> {inCartQty} pz en tu carrito
+                                    </div>
+                                )}
+                            </div>
+
+                            {drawerMediaItems.length > 1 && (
+                                <div className="grid grid-cols-4 gap-2">
+                                    {drawerMediaItems.map((item, idx) => (
+                                        <button
+                                            key={`${item.url}-drawer-${idx}`}
+                                            type="button"
+                                            onClick={() => setActiveDrawerMediaIdx(idx)}
+                                            className={`relative h-16 rounded-xl overflow-hidden border-2 cursor-pointer transition-all ${
+                                                idx === safeDrawerMediaIdx
+                                                    ? 'border-[#008060] ring-2 ring-[#008060]/30'
+                                                    : 'border-slate-200 opacity-75 hover:opacity-100'
+                                            }`}
+                                        >
+                                            {item.type === 'video' ? (
+                                                <div className="w-full h-full bg-slate-900 text-cyan-300 flex flex-col items-center justify-center text-[10px] font-bold">
+                                                    <Film size={15} />
+                                                    <span>Video {idx + 1}</span>
+                                                </div>
+                                            ) : (
+                                                <img src={item.url} alt={`Miniatura ${idx + 1}`} className="w-full h-full object-cover" />
+                                            )}
+                                        </button>
+                                    ))}
                                 </div>
                             )}
                         </div>
@@ -923,9 +1126,45 @@ export function ProductDetailDrawer({ product, onClose }: ProductDetailDrawerPro
                         >
                             <X size={20} />
                         </button>
-                        <div className="w-full max-h-[70vh] flex items-center justify-center overflow-hidden rounded-2xl bg-black mb-4">
-                            <img src={product.image} alt={product.name} className="max-w-full max-h-[70vh] object-contain" />
+                        <div className="relative w-full max-h-[70vh] flex items-center justify-center overflow-hidden rounded-2xl bg-black mb-4">
+                            {activeDrawerMedia?.type === 'video' ? (
+                                <video
+                                    key={activeDrawerMedia.url}
+                                    src={activeDrawerMedia.url}
+                                    controls
+                                    autoPlay
+                                    loop
+                                    playsInline
+                                    className="max-w-full max-h-[70vh] object-contain"
+                                />
+                            ) : activeDrawerMedia ? (
+                                <img src={activeDrawerMedia.url} alt={product.name} className="max-w-full max-h-[70vh] object-contain" />
+                            ) : (
+                                <img src={product.image} alt={product.name} className="max-w-full max-h-[70vh] object-contain" />
+                            )}
                         </div>
+                        {drawerMediaItems.length > 1 && (
+                            <div className="flex items-center gap-2 overflow-x-auto pb-3">
+                                {drawerMediaItems.map((item, idx) => (
+                                    <button
+                                        key={`${item.url}-drawer-lb-${idx}`}
+                                        type="button"
+                                        onClick={() => setActiveDrawerMediaIdx(idx)}
+                                        className={`w-14 h-14 rounded-xl overflow-hidden border-2 shrink-0 cursor-pointer ${
+                                            idx === safeDrawerMediaIdx ? 'border-emerald-400' : 'border-white/20 opacity-70'
+                                        }`}
+                                    >
+                                        {item.type === 'video' ? (
+                                            <div className="w-full h-full bg-slate-800 flex items-center justify-center text-cyan-300">
+                                                <Film size={16} />
+                                            </div>
+                                        ) : (
+                                            <img src={item.url} alt={`Vista ${idx + 1}`} className="w-full h-full object-cover" />
+                                        )}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2 border-t border-white/10">
                             <div>
                                 <span className="text-xs font-bold text-sky-400 uppercase tracking-widest">{product.category}</span>

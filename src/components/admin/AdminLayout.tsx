@@ -45,6 +45,7 @@ import { toast } from '@/lib/toast';
 import ThemeToggle from '@/components/ThemeToggle';
 import LanguageSelector from '@/components/LanguageSelector';
 import AdminDock, { type AdminDockItem } from './AdminDock';
+import SuperAdminAuditNotifier from './SuperAdminAuditNotifier';
 import { useTranslation } from '@/context/LanguageContext';
 /* ─── Navegación canónica del dashboard ───────────────────────────────────── */
 type DashboardMenuItem = {
@@ -444,6 +445,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
                     {/* Status Indicators & Profile */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {/* Notificaciones de Auditoría (únicamente SuperAdmin, con Activar/Silenciar) */}
+                        <SuperAdminAuditNotifier />
+
                         {/* Selector de Idioma (Español, Inglés, Francés, Chino) */}
                         <LanguageSelector />
 

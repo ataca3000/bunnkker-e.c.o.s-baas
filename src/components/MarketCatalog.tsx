@@ -20,6 +20,7 @@ import BarcodeScanner from './BarcodeScanner';
 import { CategoryFilter, PromoBanners } from './catalog/CatalogFilters';
 import { ProductCard, ProductDetailDrawer } from './catalog/ProductCard';
 import { toast } from '@/lib/toast';
+import { findProductByBarcodeOrCode, matchesProductSearch } from '@/lib/barcodeLookup';
 import type { TimedOfferBanner, StorefrontPageId } from '@/lib/storefrontBuilder';
 
 export default function MarketCatalog({
@@ -66,12 +67,18 @@ export default function MarketCatalog({
     }
 
     const handleScan = (decodedText: string) => {
-        const product = contextProducts.find(p => p.id === decodedText || p.barcode === decodedText);
+        const clean = decodedText.trim();
+        const product = findProductByBarcodeOrCode(contextProducts, clean);
+        setFilter('Todos');
+        setSearch(product?.barcode || clean);
         if (product) {
-            addToCart(product, 1);
-            toast.success(`${product.name} agregado al carrito.`, '✅ Escaneo');
+            setSelectedProduct(product);
+            toast.success(
+                `${product.name} · $${Number(product.price || 0).toLocaleString('es-MX')} MXN (${product.stock} disp.)`,
+                '🔍 Código Identificado'
+            );
         } else {
-            toast.error('Producto no encontrado en el catálogo.', '❌ Escaneo');
+            toast.warning(`No se encontró un producto con código "${clean}".`, '🔍 Búsqueda por Escáner');
         }
         setShowScanner(false);
     };
@@ -100,12 +107,7 @@ export default function MarketCatalog({
     const filtered = sorted.filter(p => {
         const prodCat = p.category || 'General';
         const matchFilter = filter === 'Todos' || prodCat === filter;
-        const term = search.toLowerCase().trim();
-        const matchSearch = !term || 
-            p.name.toLowerCase().includes(term) || 
-            (p.barcode && p.barcode.toLowerCase().includes(term)) ||
-            (p.description && p.description.toLowerCase().includes(term)) ||
-            p.id.toLowerCase().includes(term);
+        const matchSearch = matchesProductSearch(p, search);
         return matchFilter && matchSearch;
     });
 

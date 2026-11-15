@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => ({}));
     const action = typeof body.action === 'string' ? body.action.slice(0, 80) : 'GLOBAL_SYNC';
-    const scope: SyncScope = ['orders', 'products', 'settings', 'devices', 'all'].includes(body.scope)
+    const scope: SyncScope = ['orders', 'products', 'settings', 'devices', 'audit', 'all'].includes(body.scope)
       ? body.scope
       : 'all';
 
@@ -106,6 +106,7 @@ export async function POST(request: NextRequest) {
       entityId: typeof body.id === 'string' ? body.id : undefined,
       sourceDeviceId: typeof body.sourceDeviceId === 'string' ? body.sourceDeviceId : undefined,
       txId: typeof body.txId === 'string' ? body.txId : undefined,
+      payload: typeof body.details === 'string' ? { details: body.details } : undefined,
     });
 
     return NextResponse.json({

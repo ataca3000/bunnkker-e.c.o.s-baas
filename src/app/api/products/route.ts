@@ -1,9 +1,50 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireRole, validateApiSession, getTenantId, WRITE_ROLES } from '@/lib/apiAuth';
+import { requireRole, getTenantId, WRITE_ROLES } from '@/lib/apiAuth';
 import { publishRealtimeEvent } from '@/lib/realtimeBus';
+import { loadPersistentSiteConfig, savePersistentSiteConfig } from '@/lib/persistentSettings';
+import {
+    getPrimaryProductImage,
+    normalizeProductMedia,
+    normalizeProductMediaList,
+    type ProductMediaItem,
+} from '@/lib/productMedia';
 
 export const dynamic = 'force-dynamic';
+
+function getProductMediaMap(tenantId: string): Record<string, ProductMediaItem[]> {
+    const cfg = loadPersistentSiteConfig(tenantId);
+    const map = cfg?.productMediaMap;
+    return map && typeof map === 'object' ? (map as Record<string, ProductMediaItem[]>) : {};
+}
+
+function saveProductMediaForId(tenantId: string, productId: string, media: ProductMediaItem[]): void {
+    const cfg = loadPersistentSiteConfig(tenantId);
+    const existingMap = cfg?.productMediaMap && typeof cfg.productMediaMap === 'object' ? cfg.productMediaMap : {};
+    savePersistentSiteConfig(tenantId, {
+        ...cfg,
+        productMediaMap: {
+            ...existingMap,
+            [productId]: media,
+        },
+    });
+}
+
+function enrichProductWithMedia<T extends { id: string; image?: string | null; imageUrl?: string | null }>(
+    product: T,
+    mediaMap: Record<string, ProductMediaItem[]>
+): T & { media: ProductMediaItem[] } {
+    const stored = mediaMap[product.id];
+    const media = normalizeProductMedia({
+        media: stored,
+        image: product.image,
+        imageUrl: product.imageUrl,
+    });
+    return {
+        ...product,
+        media,
+    };
+}
 
 
 export async function GET(request: NextRequest) {
@@ -45,7 +86,10 @@ export async function GET(request: NextRequest) {
             });
         }
 
-        return NextResponse.json({ success: true, data: products });
+        const mediaMap = getProductMediaMap(tenantId);
+        const enriched = products.map((product) => enrichProductWithMedia(product, mediaMap));
+
+        return NextResponse.json({ success: true, data: enriched });
     } catch (error: any) {
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
@@ -84,9 +128,6 @@ export async function POST(request: NextRequest) {
             data.fila = body.location?.fila ?? body.fila ?? null;
         }
         if (typeof body.orderIndex === 'number') data.orderIndex = body.orderIndex;
-        if (body.minStock !== undefined && body.minStock !== null && body.minStock !== '') {
-            data.minStock = Math.max(0, Math.floor(Number(body.minStock)));
-        }
 
         // REGLA DOBLE CIEGO: Almacén solo cuenta materia física (stock/ubicación).
         // El precio solo puede ser asignado y sellado por SuperAdmin / Admin.
@@ -115,11 +156,52 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ success: false, error: 'Stock inválido' }, { status: 400 });
         }
 
+        const hasMediaPayload = Array.isArray(body.media);
+        const normalizedMedia = hasMediaPayload ? normalizeProductMediaList(body.media) : null;
+        if (normalizedMedia !== null) {
+            const primaryImg = getPrimaryProductImage(normalizedMedia, body.image);
+            data.image = primaryImg || null;
+        }
+
         const existing = await prisma.product.findFirst({ where: { id, tenantId } });
         if (existing) {
             const product = await prisma.product.update({ where: { id }, data });
-            publishRealtimeEvent({ tenantId, scope: 'products', action: 'PRODUCT_UPDATED', entityId: product.id });
-            return NextResponse.json({ success: true, data: product });
+            const finalMedia =
+                normalizedMedia !== null
+                    ? normalizedMedia
+                    : normalizeProductMedia({
+                          media: getProductMediaMap(tenantId)[product.id],
+                          image: product.image,
+                      });
+            if (normalizedMedia !== null) {
+                saveProductMediaForId(tenantId, product.id, normalizedMedia);
+            }
+
+            const priceChanged = data.price !== undefined && Math.abs(Number(data.price) - Number(existing.price)) > 0.001;
+            const auditAction = priceChanged ? 'PRICE_CHANGE' : 'PRODUCT_UPDATED';
+            const auditSummary = priceChanged
+                ? `${product.name}: precio $${existing.price} -> $${product.price}`
+                : `${product.name} actualizado (stock: ${product.stock})`;
+
+            try {
+                await prisma.auditLog.create({
+                    data: {
+                        tenantId,
+                        action: auditAction,
+                        userId: auth.uid,
+                        details: auditSummary,
+                    },
+                });
+            } catch {}
+
+            publishRealtimeEvent({
+                tenantId,
+                scope: 'products',
+                action: auditAction,
+                entityId: product.id,
+                payload: { details: auditSummary },
+            });
+            return NextResponse.json({ success: true, data: { ...product, media: finalMedia } });
         }
 
         if (!data.name || data.price === undefined) {
@@ -138,8 +220,34 @@ export async function POST(request: NextRequest) {
                 ...(data as any) 
             },
         });
-        publishRealtimeEvent({ tenantId, scope: 'products', action: 'PRODUCT_CREATED', entityId: product.id });
-        return NextResponse.json({ success: true, data: product });
+        const finalMedia =
+            normalizedMedia !== null
+                ? normalizedMedia
+                : normalizeProductMedia({ image: product.image });
+        if (normalizedMedia !== null) {
+            saveProductMediaForId(tenantId, product.id, normalizedMedia);
+        }
+
+        const createSummary = `Nuevo producto: ${product.name} ($${product.price}, stock: ${product.stock})`;
+        try {
+            await prisma.auditLog.create({
+                data: {
+                    tenantId,
+                    action: 'PRODUCT_CREATED',
+                    userId: auth.uid,
+                    details: createSummary,
+                },
+            });
+        } catch {}
+
+        publishRealtimeEvent({
+            tenantId,
+            scope: 'products',
+            action: 'PRODUCT_CREATED',
+            entityId: product.id,
+            payload: { details: createSummary },
+        });
+        return NextResponse.json({ success: true, data: { ...product, media: finalMedia } });
     } catch (error: any) {
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
@@ -184,7 +292,6 @@ export async function PATCH(request: NextRequest) {
                     if (u.estante !== undefined) dataToUpdate.estante = u.estante;
                     if (u.fila !== undefined) dataToUpdate.fila = u.fila;
                     if (typeof u.orderIndex === 'number') dataToUpdate.orderIndex = u.orderIndex;
-                    if (typeof u.minStock === 'number') dataToUpdate.minStock = Math.max(0, Math.floor(u.minStock));
 
                     return prisma.product.update({
                         where: { id: u.id, tenantId },
@@ -197,33 +304,105 @@ export async function PATCH(request: NextRequest) {
             return NextResponse.json({ success: true, count: results.length, data: results });
         }
 
-        const { id, stockIncrement, estante, fila, minStock } = body;
+        const {
+            id,
+            stockIncrement,
+            confirmStockIncrement,
+            estante,
+            fila,
+            minStock,
+            unitType,
+            isBulk,
+            mode,
+            notes,
+            operatorName,
+        } = body;
 
         if (!id) {
             throw new Error('id is required');
         }
 
-        const dataToUpdate: any = {};
+        const isQuickRestock = mode === 'quick_restock' || confirmStockIncrement !== undefined;
+        let existingProduct: {
+            id: string;
+            name: string;
+            stock: number;
+            reservedStock: number;
+            estante: string | null;
+            fila: string | null;
+        } | null = null;
+
         if (typeof stockIncrement === 'number') {
+            if (!Number.isFinite(stockIncrement)) {
+                return NextResponse.json({ success: false, error: 'Cantidad de ajuste de stock inválida.' }, { status: 400 });
+            }
+
+            existingProduct = await prisma.product.findUnique({
+                where: { id, tenantId },
+                select: {
+                    id: true,
+                    name: true,
+                    stock: true,
+                    reservedStock: true,
+                    estante: true,
+                    fila: true,
+                },
+            });
+
+            if (!existingProduct) {
+                return NextResponse.json({ success: false, error: 'Producto no encontrado.' }, { status: 404 });
+            }
+
+            if (isQuickRestock) {
+                if (stockIncrement <= 0) {
+                    return NextResponse.json({
+                        success: false,
+                        error: 'La cantidad de piezas a recargar debe ser mayor a 0.'
+                    }, { status: 400 });
+                }
+                if (!Number.isInteger(stockIncrement)) {
+                    return NextResponse.json({
+                        success: false,
+                        error: isBulk
+                            ? 'El inventario registrado en base de datos requiere piezas enteras.'
+                            : 'Este producto se recarga en piezas enteras.'
+                    }, { status: 400 });
+                }
+                const confirmVal = Number(confirmStockIncrement);
+                if (
+                    confirmStockIncrement === undefined ||
+                    !Number.isFinite(confirmVal) ||
+                    Math.abs(confirmVal - stockIncrement) > 0.0001
+                ) {
+                    return NextResponse.json({
+                        success: false,
+                        error: 'Las cantidades de piezas no coinciden. Debes confirmar exactamente dos veces las piezas a agregar.'
+                    }, { status: 400 });
+                }
+            } else if (!Number.isInteger(stockIncrement)) {
+                return NextResponse.json({
+                    success: false,
+                    error: 'El ajuste de stock en base de datos debe ser un número entero.'
+                }, { status: 400 });
+            }
+
             if (stockIncrement < 0) {
-                const existing = await prisma.product.findUnique({ where: { id, tenantId }, select: { stock: true, reservedStock: true } });
-                if (existing) {
-                    const newStock = existing.stock + stockIncrement;
-                    if (newStock < (existing.reservedStock || 0)) {
-                        return NextResponse.json({ 
-                            success: false, 
-                            error: `Ajuste inválido: el stock resultante (${newStock}) no puede ser menor a las unidades ya reservadas (${existing.reservedStock || 0}).` 
-                        }, { status: 400 });
-                    }
+                const newStock = existingProduct.stock + stockIncrement;
+                if (newStock < (existingProduct.reservedStock || 0)) {
+                    return NextResponse.json({
+                        success: false,
+                        error: `Ajuste inválido: el stock resultante (${newStock}) no puede ser menor a las unidades ya reservadas (${existingProduct.reservedStock || 0}).`
+                    }, { status: 400 });
                 }
             }
+        }
+
+        const dataToUpdate: any = {};
+        if (typeof stockIncrement === 'number') {
             dataToUpdate.stock = { increment: stockIncrement };
         }
         if (estante !== undefined) dataToUpdate.estante = estante;
         if (fila !== undefined) dataToUpdate.fila = fila;
-        if (minStock !== undefined && minStock !== null) {
-            dataToUpdate.minStock = Math.max(0, Math.floor(Number(minStock)));
-        }
         // BUG-SYNC-1 FIX: Aceptar orderIndex para persistir el orden del drag & drop
         if (typeof body.orderIndex === 'number') dataToUpdate.orderIndex = body.orderIndex;
         if (body.restore === true) dataToUpdate.deletedAt = null;
@@ -233,8 +412,61 @@ export async function PATCH(request: NextRequest) {
             where: { id, tenantId },
             data: dataToUpdate
         });
-        publishRealtimeEvent({ tenantId, scope: 'products', action: 'PRODUCT_UPDATED', entityId: product.id });
-        return NextResponse.json({ success: true, data: product });
+
+        let restockAudit = null;
+        if (typeof stockIncrement === 'number' && stockIncrement !== 0 && existingProduct) {
+            const parsedMin = typeof minStock === 'number' && Number.isFinite(minStock) ? minStock : null;
+            const auditPayload = {
+                event: isQuickRestock ? 'QUICK_RESTOCK_LOW_STOCK' : 'STOCK_INCREMENT',
+                productId: product.id,
+                productName: existingProduct.name,
+                unitType: typeof unitType === 'string' && unitType.trim() ? unitType.trim() : 'PZA',
+                previousStock: existingProduct.stock,
+                addedQty: stockIncrement,
+                newStock: product.stock,
+                minStock: parsedMin,
+                estante: existingProduct.estante || '',
+                fila: existingProduct.fila || '',
+                operatorUid: auth.uid,
+                operatorName: typeof operatorName === 'string' && operatorName.trim() ? operatorName.trim() : auth.uid,
+                operatorRole: auth.role,
+                notes: typeof notes === 'string' ? notes.trim() : '',
+                doubleConfirmed: isQuickRestock,
+            };
+
+            try {
+                const createdLog = await prisma.auditLog.create({
+                    data: {
+                        tenantId,
+                        action: 'STOCK_UPDATE',
+                        userId: auth.uid,
+                        details: JSON.stringify(auditPayload),
+                    }
+                });
+                restockAudit = {
+                    id: createdLog.id,
+                    timestamp: createdLog.timestamp instanceof Date ? createdLog.timestamp.toISOString() : new Date().toISOString(),
+                    ...auditPayload,
+                };
+            } catch (auditErr: any) {
+                console.warn('[PRODUCTS PATCH AUDIT WARN]:', auditErr?.message);
+            }
+        }
+
+        const mediaMap = getProductMediaMap(tenantId);
+        const enrichedProduct = enrichProductWithMedia(product, mediaMap);
+        const patchDetails = restockAudit
+            ? `Recarga de stock: ${restockAudit.productName} (+${restockAudit.addedQty} ${restockAudit.unitType} -> ${restockAudit.newStock})`
+            : `Producto actualizado: ${product.name}`;
+
+        publishRealtimeEvent({
+            tenantId,
+            scope: 'products',
+            action: restockAudit ? 'STOCK_UPDATE' : 'PRODUCT_UPDATED',
+            entityId: product.id,
+            payload: { details: patchDetails },
+        });
+        return NextResponse.json({ success: true, data: enrichedProduct, ...(restockAudit ? { restockAudit } : {}) });
     } catch (error: any) {
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
@@ -277,7 +509,27 @@ export async function DELETE(request: NextRequest) {
             await prisma.product.update({ where: { id, tenantId }, data: { deletedAt: new Date() } });
         }
 
-        publishRealtimeEvent({ tenantId, scope: 'products', action: 'PRODUCT_DELETED', entityId: id });
+        const deleteSummary = permanent
+            ? `Producto eliminado definitivamente: ${id}`
+            : `Producto movido a papelera: ${id}`;
+        try {
+            await prisma.auditLog.create({
+                data: {
+                    tenantId,
+                    action: permanent ? 'PRODUCT_DELETED' : 'PRODUCT_ARCHIVED',
+                    userId: auth.uid,
+                    details: deleteSummary,
+                },
+            });
+        } catch {}
+
+        publishRealtimeEvent({
+            tenantId,
+            scope: 'products',
+            action: permanent ? 'PRODUCT_DELETED' : 'PRODUCT_ARCHIVED',
+            entityId: id,
+            payload: { details: deleteSummary },
+        });
         return NextResponse.json({ success: true, permanent });
     } catch (error: any) {
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });

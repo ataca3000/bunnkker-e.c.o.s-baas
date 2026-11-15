@@ -507,10 +507,10 @@ export function validateMediaFileMetadata(mimeType: string, sizeBytes: number): 
   if (mime === 'image/jpeg' || mime === 'image/png' || mime === 'image/webp' || mime === 'image/svg+xml') {
     return { ok: true, mediaType: 'image' };
   }
-  if (mime === 'video/mp4' || mime === 'video/webm') {
+  if (mime === 'video/mp4' || mime === 'video/webm' || mime === 'video/quicktime' || mime === 'video/x-m4v') {
     return { ok: true, mediaType: 'video' };
   }
-  return { ok: false, error: 'Formato no soportado. Usa JPG, PNG, WEBP, GIF, MP4 o WEBM.' };
+  return { ok: false, error: 'Formato no soportado. Usa JPG, PNG, WEBP, GIF, MP4, MOV o WEBM.' };
 }
 
 /* ─── Aislamiento estricto de Borrador Local (Nunca visible a clientes) ─── */

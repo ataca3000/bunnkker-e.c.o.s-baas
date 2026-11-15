@@ -1,10 +1,25 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Html5Qrcode } from "html5-qrcode";
-import { X, Loader2, Zap, CheckCircle2, Repeat, Camera } from "lucide-react";
+import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
+import { X, Loader2, Zap, CheckCircle2, Repeat, Camera, Search } from "lucide-react";
 import { playSupermarketBeep } from "@/lib/scannerAudio";
 import { loadHardwareConfig } from "@/lib/hardwareConfig";
+
+const COMMERCIAL_BARCODE_FORMATS = [
+    Html5QrcodeSupportedFormats.EAN_13,
+    Html5QrcodeSupportedFormats.EAN_8,
+    Html5QrcodeSupportedFormats.UPC_A,
+    Html5QrcodeSupportedFormats.UPC_E,
+    Html5QrcodeSupportedFormats.UPC_EAN_EXTENSION,
+    Html5QrcodeSupportedFormats.CODE_128,
+    Html5QrcodeSupportedFormats.CODE_39,
+    Html5QrcodeSupportedFormats.CODE_93,
+    Html5QrcodeSupportedFormats.ITF,
+    Html5QrcodeSupportedFormats.CODABAR,
+    Html5QrcodeSupportedFormats.QR_CODE,
+    Html5QrcodeSupportedFormats.DATA_MATRIX,
+];
 
 interface BarcodeScannerProps {
     onScanSuccess?: (decodedText: string) => void;
@@ -26,6 +41,7 @@ export default function BarcodeScanner({
     const [hwConfig] = useState(() => loadHardwareConfig());
     const [isStarting, setIsStarting] = useState(true);
     const [cameraError, setCameraError] = useState<string | null>(null);
+    const [manualCode, setManualCode] = useState('');
     const [isContinuous, setIsContinuous] = useState(
         continuousModeDefault !== undefined ? continuousModeDefault : hwConfig.qrContinuousMode
     );
@@ -38,14 +54,17 @@ export default function BarcodeScanner({
     const lastCodeRef = useRef<string>('');
 
     const handleScan = useCallback((decodedText: string) => {
+        const cleaned = (decodedText || '').trim();
+        if (!cleaned) return;
+
         const now = Date.now();
-        if (decodedText === lastCodeRef.current && (now - lastScanTimeRef.current < 900)) {
+        if (cleaned === lastCodeRef.current && (now - lastScanTimeRef.current < 900)) {
             return;
         }
 
         lastScanTimeRef.current = now;
-        lastCodeRef.current = decodedText;
-        setLastScanned(decodedText);
+        lastCodeRef.current = cleaned;
+        setLastScanned(cleaned);
         setScanCount(prev => prev + 1);
 
         if (playBeepOnScan && hwConfig.scannerBeep) {
@@ -53,7 +72,7 @@ export default function BarcodeScanner({
         }
 
         if (onScanSuccess) {
-            onScanSuccess(decodedText);
+            onScanSuccess(cleaned);
         }
 
         if (!isContinuous) {
@@ -71,13 +90,22 @@ export default function BarcodeScanner({
         let isMounted = true;
         setIsStarting(true);
         setCameraError(null);
-        const html5QrCode = new Html5Qrcode("reader");
+        const html5QrCode = new Html5Qrcode("reader", {
+            formatsToSupport: COMMERCIAL_BARCODE_FORMATS,
+            verbose: false,
+            experimentalFeatures: {
+                useBarCodeDetectorIfSupported: true,
+            },
+        });
         scannerRef.current = html5QrCode;
 
         const scanConfig = {
             fps: 15,
-            qrbox: { width: 260, height: 260 },
-            aspectRatio: 1.0,
+            qrbox: (viewfinderWidth: number, viewfinderHeight: number) => ({
+                width: Math.max(220, Math.min(340, Math.floor(viewfinderWidth * 0.86))),
+                height: Math.max(130, Math.min(200, Math.floor(viewfinderHeight * 0.52))),
+            }),
+            aspectRatio: 1.333334,
         };
 
         const onDecoded = (decodedText: string) => {
@@ -127,10 +155,10 @@ export default function BarcodeScanner({
                     <div>
                         <h3 className="font-bold text-base text-white flex items-center gap-2">
                             <Zap className="w-5 h-5 text-cyan-400" />
-                            Escáner QR y de barras
+                            Escáner de Barras Original y QR
                         </h3>
                         <p className="text-xs text-zinc-400">
-                            {isContinuous ? 'Modo Pasillo / Continuo activo (+1 por escaneo)' : 'Modo unitario'}
+                            {isContinuous ? 'Modo Pasillo / Continuo activo' : 'EAN-13, UPC, Code-128 y QR'}
                         </p>
                     </div>
 
@@ -138,7 +166,7 @@ export default function BarcodeScanner({
                         <button
                             type="button"
                             onClick={() => setFacingMode(prev => (prev === 'environment' ? 'user' : 'environment'))}
-                            className="px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 transition-all"
+                            className="min-h-[38px] px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 transition-all cursor-pointer"
                             title="Cambiar cámara frontal / trasera"
                         >
                             <Camera className="w-3.5 h-3.5 text-cyan-300" />
@@ -148,7 +176,7 @@ export default function BarcodeScanner({
                         <button
                             type="button"
                             onClick={() => setIsContinuous(!isContinuous)}
-                            className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-all ${
+                            className={`min-h-[38px] px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-all cursor-pointer ${
                                 isContinuous
                                     ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'
                                     : 'bg-zinc-800 text-zinc-400'
@@ -168,7 +196,7 @@ export default function BarcodeScanner({
                                     onClose();
                                 }
                             }}
-                            className="p-1.5 text-zinc-400 hover:text-white rounded-lg hover:bg-white/10"
+                            className="min-h-[38px] min-w-[38px] p-1.5 text-zinc-400 hover:text-white rounded-lg hover:bg-white/10 flex items-center justify-center cursor-pointer"
                             aria-label="Cerrar escáner"
                         >
                             <X size={20} />
@@ -176,7 +204,7 @@ export default function BarcodeScanner({
                     </div>
                 </div>
 
-                <div className="relative w-full rounded-xl overflow-hidden bg-black min-h-[300px] flex items-center justify-center border border-cyan-500/30">
+                <div className="relative w-full rounded-xl overflow-hidden bg-black min-h-[280px] flex items-center justify-center border border-cyan-500/30">
                     {isStarting && (
                         <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-900 text-white z-20">
                             <Loader2 className="animate-spin mb-2 text-cyan-400" size={32} />
@@ -208,10 +236,36 @@ export default function BarcodeScanner({
                     </div>
                 )}
 
+                <form
+                    onSubmit={(e) => {
+                        e.preventDefault();
+                        if (manualCode.trim()) {
+                            handleScan(manualCode.trim());
+                        }
+                    }}
+                    className="mt-3 flex items-center gap-2"
+                >
+                    <input
+                        type="text"
+                        value={manualCode}
+                        onChange={(e) => setManualCode(e.target.value)}
+                        placeholder="O ingresa el código de barras original (EAN/UPC)..."
+                        className="flex-1 min-h-[42px] px-3 py-2 rounded-xl bg-zinc-900 border border-white/15 text-xs text-white placeholder-zinc-500 outline-none focus:border-cyan-400 font-mono"
+                    />
+                    <button
+                        type="submit"
+                        disabled={!manualCode.trim()}
+                        className="min-h-[42px] px-3.5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 disabled:opacity-40 text-slate-950 font-bold text-xs flex items-center gap-1.5 cursor-pointer"
+                    >
+                        <Search size={14} /> Buscar
+                    </button>
+                </form>
+
                 <p className="text-center text-xs text-zinc-400 mt-3">
-                    Apunta la cámara al QR o código de barras del producto o ticket.
+                    Apunta la cámara al código de barras de fábrica (EAN/UPC/Code128) o QR.
                 </p>
             </div>
         </div>
     );
 }
+

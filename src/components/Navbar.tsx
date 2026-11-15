@@ -14,6 +14,7 @@ import ThemeToggle from "./ThemeToggle";
 import LanguageSelector from "./LanguageSelector";
 import styles from "./Navbar.module.css";
 import { toast } from "@/lib/toast";
+import { findProductByBarcodeOrCode } from "@/lib/barcodeLookup";
 
 export default function Navbar() {
     const { cart, products, siteConfig } = useCart();
@@ -38,21 +39,21 @@ export default function Navbar() {
         e.preventDefault();
         if (!searchQuery.trim()) return;
 
-        // Unificación: Si es código de barras o ID exacto de producto, hacer consulta de precio
-        const found = products.find(p => p.id === searchQuery.trim() || p.barcode === searchQuery.trim());
+        // Unificación: Si es código de barras original (EAN/UPC/Code128) o ID exacto, identificar producto
+        const found = findProductByBarcodeOrCode(products, searchQuery.trim());
         if (found) {
             toast.info(`$${found.price.toLocaleString()} MXN · Stock: ${found.stock} uds`, `🔍 ${found.name}`);
             setSearchQuery("");
         } else {
             // Búsqueda normal en catálogo
-            window.location.href = `/catalogo?search=${encodeURIComponent(searchQuery)}`;
+            window.location.href = `/catalogo?search=${encodeURIComponent(searchQuery.trim())}`;
         }
     };
 
     const handlePriceScan = (code: string) => {
-        const product = products.find(p => p.id === code || p.barcode === code);
+        const product = findProductByBarcodeOrCode(products, code);
         if (product) {
-            window.location.href = `/catalogo?search=${encodeURIComponent(code)}`;
+            window.location.href = `/catalogo?search=${encodeURIComponent(product.barcode || code)}`;
         } else {
             toast.warning(`El código ${code} no existe en el catálogo.`);
         }

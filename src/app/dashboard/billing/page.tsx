@@ -8,6 +8,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { db, auth } from '@/lib/firebase';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { toast } from '@/lib/toast';
+import { BILLING_TIMBRE_PACKAGES, TIMBRE_UNIT_PRICE_MXN } from '@/lib/billingPackages';
 
 function FacturacionContent() {
     const { ownerCredits, purchaseCredits, siteConfig, orders } = useCart();
@@ -154,17 +155,17 @@ function FacturacionContent() {
         }
     };
 
-    const handleBuyCredits = (monto: number) => {
+    const handleBuyCredits = (timbres: number, monto: number) => {
         const busName = siteConfig.businessName || 'Sistema ERP';
-        const paypalUrl = `https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=luishalo69@gmail.com&currency_code=MXN&amount=${monto}&item_name=Recarga%20Creditos%20${encodeURIComponent(busName)}`;
+        const paypalUrl = `https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=luishalo69@gmail.com&currency_code=MXN&amount=${monto}&item_name=${encodeURIComponent(`Recarga ${timbres} Timbres - ${busName}`)}`;
         window.open(paypalUrl, '_blank');
         toast.info(
-            `Realiza el pago de $${monto} MXN en PayPal, luego envía el comprobante por WhatsApp. Tus créditos se reflejarán en minutos.`,
+            `Realiza el pago de $${monto} MXN por ${timbres} timbres en PayPal y envía el comprobante por WhatsApp. Tus timbres se abonarán en minutos.`,
             '🔔 Instrucciones de Recarga',
             10000
         );
         setTimeout(() => {
-            const message = `Hola, acabo de realizar el pago de $${monto} MXN en PayPal para recarga de créditos del sistema de ${busName}. Anexo comprobante.`;
+            const message = `Hola, acabo de realizar el pago de $${monto} MXN en PayPal para recarga de ${timbres} timbres de facturación (${busName}). Anexo comprobante.`;
             window.open(`https://wa.me/522411354984?text=${encodeURIComponent(message)}`, '_blank');
         }, 3000);
     };
@@ -211,24 +212,23 @@ function FacturacionContent() {
                 <header style={{ marginBottom: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
                         <h1 className="bunkker-heading text-2xl font-black text-white">Facturación y Créditos</h1>
-                        <p style={{ color: '#666' }}>Timbrado de facturas SAT 4.0 y gestión de saldo.</p>
-                        <div style={{ background: 'rgba(39, 174, 96, 0.1)', padding: '10px 15px', borderRadius: '8px', marginTop: '10px', borderLeft: '4px solid #27ae60', fontSize: '0.85rem', color: '#4ade80' }}>
-                            💡 <b>Modelo de Negocio:</b> Genera <b>$5.00 MXN</b> de ganancia neta por cada factura emitida cobrando $10 al cliente final.
+                        <p style={{ color: '#94a3b8' }}>Timbrado de facturas SAT 4.0 y gestión de saldo por paquete.</p>
+                        <div className="bg-emerald-950/35 px-4 py-2.5 rounded-lg mt-2.5 border-l-4 border-emerald-500 text-xs sm:text-sm text-emerald-300 tabular-nums">
+                            💡 <b>Tarifa de Timbrado API:</b> Paquetes de <b>100 timbres × $300 MXN</b> o <b>200 timbres × $600 MXN</b> ($3.00 MXN por timbre).
                         </div>
                     </div>
 
-                    <div className="bunkker-card bg-slate-800/80 shadow-lg rounded-xl" style={{ padding: '0.8rem 1.5rem', borderLeft: '4px solid #FFCB05', display: 'flex', alignItems: 'center', gap: '15px' }}>
-                        <div style={{ backgroundColor: 'rgba(245, 127, 23, 0.2)', padding: '8px', borderRadius: '50%' }}>
+                    <div className="bunkker-card bg-slate-800/80 shadow-lg rounded-xl px-5 py-3 border-l-4 border-amber-400 flex items-center gap-4">
+                        <div className="bg-amber-500/20 p-2 rounded-full">
                             <Coins color="#Fcd34d" size={24} />
                         </div>
                         <div>
-                            <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 'bold', display: 'block' }}>SALDO DISPONIBLE</span>
-                            <span style={{ fontSize: '1.2rem', fontWeight: '900', color: '#f8fafc' }}>{ownerCredits} Facturas</span>
+                            <span className="text-[11px] text-slate-400 font-bold block uppercase">SALDO DISPONIBLE</span>
+                            <span className="text-lg font-black text-slate-50 tabular-nums">{ownerCredits} Timbres</span>
                         </div>
                         <button
                             onClick={() => setShowCreditModal(true)}
-                            className="bunkker-btn bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-lg transition-colors"
-                            style={{ padding: '8px 12px', fontSize: '0.8rem' }}
+                            className="bunkker-btn min-h-[44px] px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-lg transition-colors text-xs uppercase cursor-pointer"
                         >
                             RECARGAR
                         </button>
@@ -368,8 +368,11 @@ function FacturacionContent() {
                                     <span className="font-black text-lg text-white">{invoiceCount}</span>
                                 </div>
                                 <div className="flex justify-between items-center p-3 bg-emerald-900/20 rounded-lg border border-emerald-900/50">
-                                    <span className="text-sm text-emerald-400 font-medium">Costo por timbre</span>
-                                    <span className="font-black text-lg text-emerald-300">$10.00 MXN</span>
+                                    <div>
+                                        <span className="text-sm text-emerald-400 font-medium block">Costo por timbre</span>
+                                        <span className="text-[11px] text-emerald-300/75">100 timbres × $300 MXN</span>
+                                    </div>
+                                    <span className="font-black text-lg text-emerald-300 tabular-nums">${TIMBRE_UNIT_PRICE_MXN.toFixed(2)} MXN</span>
                                 </div>
                             </div>
                             
@@ -404,42 +407,51 @@ function FacturacionContent() {
                 {showCreditModal && (
                     <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }}>
                         <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} style={{ background: '#0F172A', border: '1px solid #1E293B', padding: '2.5rem', borderRadius: '20px', width: '100%', maxWidth: '500px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}>
-                            <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-                                <div style={{ backgroundColor: 'rgba(245, 127, 23, 0.2)', padding: '15px', borderRadius: '50%', display: 'inline-block', marginBottom: '1rem' }}>
+                            <div className="text-center mb-6">
+                                <div className="bg-amber-500/20 p-3.5 rounded-full inline-block mb-3">
                                     <Zap color="#Fcd34d" size={32} />
                                 </div>
-                                <h2 style={{ fontWeight: '900', color: '#fff' }}>RECARGAR CRÉDITOS</h2>
-                                <p style={{ color: '#94a3b8' }}>Selecciona un paquete para facturar sin límites.</p>
+                                <h2 className="font-black text-xl text-white">RECARGAR TIMBRES</h2>
+                                <p className="text-sm text-slate-400 mt-1">
+                                    Elige tu recarga de 100 o 200 timbres fiscales ($3.00 MXN por timbre).
+                                </p>
                             </div>
 
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                <button onClick={() => handleBuyCredits(200)} style={{ border: '2px solid #334155', padding: '1.5rem', borderRadius: '12px', textAlign: 'left', cursor: 'pointer', background: 'rgba(30,41,59,0.5)', transition: 'all 0.2s', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <div>
-                                        <b style={{ fontSize: '1.1rem', color: '#fff' }}>Paquete Inicial</b>
-                                        <p style={{ fontSize: '0.8rem', color: '#4ade80', fontWeight: 'bold' }}>+2 Créditos de REGALO</p>
-                                    </div>
-                                    <div style={{ textAlign: 'right' }}>
-                                        <div style={{ fontWeight: '900', fontSize: '1.2rem', color: '#38bdf8' }}>$200 MXN</div>
-                                        <div style={{ fontSize: '0.7rem', color: '#64748b' }}>PayPal / Tarjeta</div>
-                                    </div>
-                                </button>
-
-                                <button onClick={() => handleBuyCredits(500)} style={{ border: '3px solid #0ea5e9', padding: '1.5rem', borderRadius: '12px', textAlign: 'left', cursor: 'pointer', background: 'rgba(14,165,233,0.1)', position: 'relative', overflow: 'hidden' }}>
-                                    <div style={{ background: '#E30613', color: 'white', fontSize: '0.6rem', padding: '2px 10px', position: 'absolute', top: '10px', right: '-20px', transform: 'rotate(45deg)', width: '100px', textAlign: 'center', fontWeight: 'bold' }}>RECOMENDADO</div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div className="flex flex-col gap-3.5">
+                                {BILLING_TIMBRE_PACKAGES.map((pkg) => (
+                                    <button
+                                        key={pkg.id}
+                                        type="button"
+                                        onClick={() => handleBuyCredits(pkg.timbres, pkg.priceMxn)}
+                                        className={`min-h-[84px] p-5 rounded-xl text-left cursor-pointer transition-all relative overflow-hidden flex justify-between items-center gap-4 ${
+                                            pkg.recommended
+                                                ? 'border-2 border-sky-500 bg-sky-500/10 hover:bg-sky-500/20'
+                                                : 'border-2 border-slate-700 bg-slate-800/60 hover:bg-slate-800'
+                                        }`}
+                                    >
                                         <div>
-                                            <b style={{ fontSize: '1.2rem', color: '#fff' }}>Punto de Venta Pro</b>
-                                            <p style={{ fontSize: '0.8rem', color: '#f87171', fontWeight: 'bold' }}>+10 Créditos de REGALO 🔥</p>
+                                            <b className="text-base sm:text-lg text-white block">{pkg.name}</b>
+                                            <p className="text-xs text-emerald-400 font-bold mt-0.5 tabular-nums">
+                                                {pkg.badgeText} · ${pkg.unitPriceMxn.toFixed(2)} c/u
+                                            </p>
                                         </div>
-                                        <div style={{ textAlign: 'right' }}>
-                                            <div style={{ fontWeight: '900', fontSize: '1.5rem', color: '#38bdf8' }}>$500 MXN</div>
-                                            <div style={{ fontSize: '0.7rem', color: '#64748b' }}>PayPal / Tarjeta</div>
+                                        <div className="text-right shrink-0">
+                                            <div className="font-black text-xl sm:text-2xl text-sky-400 tabular-nums">
+                                                ${pkg.priceMxn} MXN
+                                            </div>
+                                            <div className="text-[11px] text-slate-400">
+                                                {pkg.recommended ? 'Más popular · PayPal' : 'PayPal / Tarjeta'}
+                                            </div>
                                         </div>
-                                    </div>
-                                </button>
+                                    </button>
+                                ))}
                             </div>
 
-                            <button onClick={() => setShowCreditModal(false)} style={{ width: '100%', marginTop: '2rem', padding: '12px', border: 'none', background: 'none', color: '#64748b', fontWeight: 'bold', cursor: 'pointer' }}>
+                            <button
+                                type="button"
+                                onClick={() => setShowCreditModal(false)}
+                                className="w-full min-h-[44px] mt-6 px-4 py-3 text-slate-400 hover:text-white font-bold cursor-pointer rounded-xl hover:bg-white/5 transition-colors"
+                            >
                                 Tal vez más tarde
                             </button>
                         </motion.div>

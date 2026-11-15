@@ -12,7 +12,7 @@ import {
     Folder, FolderOpen, ChevronDown, ChevronUp, Shield, QrCode,
     Download, Upload, AlertTriangle, TrendingDown, History, Sparkles, Database, FileText,
     Mic, Printer, Trash2, FileSpreadsheet, Layers, CheckCircle2, Filter, Clock,
-    PauseCircle, Play, LockKeyhole
+    PauseCircle, Play, LockKeyhole, PackagePlus, RefreshCw, Film, Link2, Star
 } from 'lucide-react';
 import { exportToExcel } from '@/lib/excelExport';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -44,12 +44,24 @@ import {
     setAlertSnooze,
     findNewlyBreachedProducts,
     formatBreachToastMessage,
+    getProductEffectiveThreshold,
     type StockAlertSummary,
     type StockThresholdConfig
 } from '@/lib/stockThresholds';
 import { playErrorBeep } from '@/lib/scannerAudio';
 import PinAuthorizationModal from '@/components/security/PinAuthorizationModal';
+import QuickRestockModal from '@/components/inventory/QuickRestockModal';
+import { type RestockAuditEntry } from '@/lib/restockConfirmation';
 import { clearPickingDraft } from '@/lib/operationGuard';
+import { findProductByBarcodeOrCode, matchesProductSearch } from '@/lib/barcodeLookup';
+import {
+    MAX_PRODUCT_MEDIA_ITEMS,
+    getPrimaryProductImage,
+    inferProductMediaType,
+    normalizeProductMedia,
+    normalizeProductMediaList,
+    type ProductMediaItem,
+} from '@/lib/productMedia';
 
 export default function InventoryDashboard() {
     const { products, formatCurrency, orders, startLoading, completeLoading } = useCart();
@@ -80,7 +92,13 @@ export default function InventoryDashboard() {
     }, [products]);
 
     // Tabs
-    const [activeTab, setActiveTab] = useState<'catalog' | 'shelves' | 'transfer' | 'backup' | 'shrinkage' | 'trash' | 'orders' | 'thresholds'>('catalog');
+    const [activeTab, setActiveTab] = useState<'catalog' | 'shelves' | 'transfer' | 'backup' | 'shrinkage' | 'trash' | 'orders' | 'thresholds' | 'restock'>('catalog');
+
+    // Recarga Rápida de Stock Bajo + Auditoría
+    const [restockTargetProduct, setRestockTargetProduct] = useState<Product | null>(null);
+    const [restockHistory, setRestockHistory] = useState<RestockAuditEntry[]>([]);
+    const [restockHistoryLoading, setRestockHistoryLoading] = useState(false);
+    const [restockSearch, setRestockSearch] = useState('');
     
     // Estados de umbrales y alertas automáticas de stock
     const [thresholdConfig, setThresholdConfig] = useState<StockThresholdConfig>(() => loadStockThresholdConfig());
@@ -293,16 +311,18 @@ export default function InventoryDashboard() {
         }
     };
 
-    // Formulario de Nuevo Producto con Doble Confirmación de Precio (Anti-Dedos)
+    // Formulario de Nuevo Producto con Doble Confirmación de Precio (Anti-Dedos) y Media Multi-Vista (hasta 4)
     const [formData, setFormData] = useState({
         name: '', category: '', description: '',
-        barcode: '', image: '',
+        barcode: '', image: '', media: [] as ProductMediaItem[],
         estante: '', fila: '',
         price: '', confirmPrice: '', stock: '',
         minStock: '',
         warranty: '', unitType: 'PZA', isBulk: false
     });
     const [priceMismatchCount, setPriceMismatchCount] = useState(0);
+    const [mediaUrlInput, setMediaUrlInput] = useState('');
+    const [uploadingMedia, setUploadingMedia] = useState(false);
 
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { delay: 250, tolerance: 5 } }),
@@ -718,7 +738,7 @@ export default function InventoryDashboard() {
         setEditingProductId(null);
         setFormData({
             name: '', category: '', description: '',
-            barcode: '', image: '',
+            barcode: '', image: '', media: [],
             estante: shelfName === 'Sin Asignar' ? '' : shelfName,
             fila: levelName,
             price: '', confirmPrice: '', stock: '',
@@ -726,6 +746,7 @@ export default function InventoryDashboard() {
             warranty: '', unitType: 'PZA',
             isBulk: false
         });
+        setMediaUrlInput('');
         setPriceMismatchCount(0);
         setIsCreating(true);
         setStep(1);
@@ -734,12 +755,14 @@ export default function InventoryDashboard() {
     const handleEditProduct = (p: Product) => {
         setEditingProductId(p.id);
         setPriceMismatchCount(0);
+        const initialMedia = normalizeProductMedia(p);
         setFormData({
             name: p.name,
             category: p.category || '',
             description: p.description || '',
             barcode: p.barcode || '',
-            image: p.image || '',
+            image: p.image || getPrimaryProductImage(initialMedia),
+            media: initialMedia,
             estante: p.location?.estante || '',
             fila: p.location?.fila || '',
             price: String(p.price),
@@ -750,8 +773,155 @@ export default function InventoryDashboard() {
             unitType: p.unitType || 'PZA',
             isBulk: !!p.isBulk
         });
+        setMediaUrlInput('');
         setIsCreating(true);
         setStep(1);
+    };
+
+    const compressImageFileToWebP = (file: File): Promise<string> =>
+        new Promise((resolve, reject) => {
+            const img = new Image();
+            const objectUrl = URL.createObjectURL(file);
+            img.onload = () => {
+                try {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 900;
+                    const MAX_HEIGHT = 900;
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > height && width > MAX_WIDTH) {
+                        height *= MAX_WIDTH / width;
+                        width = MAX_WIDTH;
+                    } else if (height > MAX_HEIGHT) {
+                        width *= MAX_HEIGHT / height;
+                        height = MAX_HEIGHT;
+                    }
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx?.drawImage(img, 0, 0, width, height);
+                    const dataUrl = canvas.toDataURL('image/webp', 0.75);
+                    URL.revokeObjectURL(objectUrl);
+                    resolve(dataUrl);
+                } catch (err) {
+                    URL.revokeObjectURL(objectUrl);
+                    reject(err);
+                }
+            };
+            img.onerror = () => {
+                URL.revokeObjectURL(objectUrl);
+                reject(new Error('No se pudo procesar la imagen seleccionada.'));
+            };
+            img.src = objectUrl;
+        });
+
+    const handleProductMediaFilesSelected = async (files: FileList | null) => {
+        if (!files || files.length === 0) return;
+        const currentMedia = normalizeProductMediaList(formData.media);
+        const remainingSlots = MAX_PRODUCT_MEDIA_ITEMS - currentMedia.length;
+
+        if (remainingSlots <= 0) {
+            toast.warning(`Máximo ${MAX_PRODUCT_MEDIA_ITEMS} archivos multimedia por producto (fotos o videos).`);
+            return;
+        }
+
+        const selectedFiles = Array.from(files).slice(0, remainingSlots);
+        setUploadingMedia(true);
+
+        try {
+            const addedItems: ProductMediaItem[] = [];
+            for (const file of selectedFiles) {
+                const isVideoOrGif = file.type.startsWith('video/') || file.type === 'image/gif';
+                if (isVideoOrGif) {
+                    const uploadBody = new FormData();
+                    uploadBody.append('file', file);
+                    const uploadRes = await fetch('/api/media/upload', {
+                        method: 'POST',
+                        headers: {
+                            'x-user-role': profile?.role || 'superadmin',
+                            'x-user-id': profile?.uid || 'local_owner',
+                        },
+                        credentials: 'include',
+                        body: uploadBody,
+                    });
+                    const uploadData = await uploadRes.json().catch(() => null);
+                    if (!uploadRes.ok || !uploadData?.success || !uploadData?.url) {
+                        throw new Error(uploadData?.error || `No se pudo subir ${file.name}.`);
+                    }
+                    addedItems.push({
+                        url: uploadData.url,
+                        type: inferProductMediaType(file.type, uploadData.mediaType),
+                    });
+                } else if (file.type.startsWith('image/')) {
+                    const dataUrl = await compressImageFileToWebP(file);
+                    addedItems.push({ url: dataUrl, type: 'image' });
+                } else {
+                    toast.warning(`Formato no compatible en "${file.name}". Usa imágenes o videos MP4/WEBM/MOV.`);
+                }
+            }
+
+            if (addedItems.length > 0) {
+                setFormData((prev) => {
+                    const nextMedia = normalizeProductMediaList([...prev.media, ...addedItems]);
+                    return {
+                        ...prev,
+                        media: nextMedia,
+                        image: getPrimaryProductImage(nextMedia, prev.image),
+                    };
+                });
+                toast.success(`${addedItems.length} vista(s) multimedia agregada(s).`, '📸 Galería');
+            }
+        } catch (err: any) {
+            toast.error(err?.message || 'Error al cargar el archivo multimedia.');
+        } finally {
+            setUploadingMedia(false);
+        }
+    };
+
+    const handleAddProductMediaUrl = () => {
+        const cleanUrl = mediaUrlInput.trim();
+        if (!cleanUrl) return;
+        const currentMedia = normalizeProductMediaList(formData.media);
+        if (currentMedia.length >= MAX_PRODUCT_MEDIA_ITEMS) {
+            toast.warning(`Máximo ${MAX_PRODUCT_MEDIA_ITEMS} vistas por producto.`);
+            return;
+        }
+        const newItem: ProductMediaItem = {
+            url: cleanUrl,
+            type: inferProductMediaType(cleanUrl),
+        };
+        const nextMedia = normalizeProductMediaList([...currentMedia, newItem]);
+        setFormData((prev) => ({
+            ...prev,
+            media: nextMedia,
+            image: getPrimaryProductImage(nextMedia, prev.image),
+        }));
+        setMediaUrlInput('');
+    };
+
+    const handleRemoveMediaSlot = (indexToRemove: number) => {
+        setFormData((prev) => {
+            const nextMedia = prev.media.filter((_, idx) => idx !== indexToRemove);
+            return {
+                ...prev,
+                media: nextMedia,
+                image: getPrimaryProductImage(nextMedia),
+            };
+        });
+    };
+
+    const handleMakePrimaryMedia = (indexToPromote: number) => {
+        setFormData((prev) => {
+            const target = prev.media[indexToPromote];
+            if (!target) return prev;
+            const reordered = [target, ...prev.media.filter((_, idx) => idx !== indexToPromote)];
+            return {
+                ...prev,
+                media: reordered,
+                image: getPrimaryProductImage(reordered),
+            };
+        });
     };
 
     const handleSaveProduct = async () => {
@@ -799,13 +969,22 @@ export default function InventoryDashboard() {
             ? Number((formData as any).minStock)
             : undefined;
 
+        const normalizedMedia = normalizeProductMedia({
+            media: formData.media,
+            image: formData.image,
+        });
+        const primaryImage =
+            getPrimaryProductImage(normalizedMedia, formData.image) ||
+            'https://images.unsplash.com/photo-1586864387967-d02ef85d93e8?auto=format&fit=crop&w=400&q=80';
+
         const newProduct: Product = {
             id: productId,
             name: formData.name,
             category: formData.category || 'General',
             description: formData.description,
             barcode: formData.barcode,
-            image: formData.image || 'https://images.unsplash.com/photo-1586864387967-d02ef85d93e8?auto=format&fit=crop&w=400&q=80',
+            image: primaryImage,
+            media: normalizedMedia,
             price: parseFloat(formData.price),
             stock: parseFloat(formData.stock), // Acepta decimales para granel
             minStock: parsedMinStock,
@@ -824,6 +1003,7 @@ export default function InventoryDashboard() {
         try {
             const dataToSave: any = {
                 ...newProduct,
+                media: normalizedMedia,
                 confirmPrice: (formData as any).confirmPrice,
                 updatedAt: new Date().toISOString()
             };
@@ -883,7 +1063,8 @@ export default function InventoryDashboard() {
             setIsCreating(false);
             setEditingProductId(null);
             setStep(1);
-            setFormData({ name: '', category: '', description: '', barcode: '', image: '', estante: '', fila: '', price: '', confirmPrice: '', stock: '', minStock: '', warranty: '', unitType: 'PZA', isBulk: false });
+            setMediaUrlInput('');
+            setFormData({ name: '', category: '', description: '', barcode: '', image: '', media: [], estante: '', fila: '', price: '', confirmPrice: '', stock: '', minStock: '', warranty: '', unitType: 'PZA', isBulk: false });
         } catch (error: any) {
             console.error(error);
             toast.error('Error al guardar el producto: ' + (error.message || 'Error desconocido'), 'Error');
@@ -930,6 +1111,124 @@ export default function InventoryDashboard() {
             console.error(err);
             toast.error(err.message || 'Error al actualizar umbral de producto');
         }
+    };
+
+    const fetchRestockHistory = async () => {
+        setRestockHistoryLoading(true);
+        try {
+            const res = await fetch('/api/inventory/restock-history?limit=120', {
+                headers: {
+                    'x-user-role': profile?.role || 'superadmin',
+                    'x-user-id': profile?.uid || 'local_owner',
+                },
+                credentials: 'include',
+            });
+            const data = await res.json().catch(() => null);
+            if (res.ok && data?.success && Array.isArray(data.data)) {
+                setRestockHistory(data.data);
+            }
+        } catch (err) {
+            console.warn('[RestockHistory] Error cargando auditoría:', err);
+        } finally {
+            setRestockHistoryLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (activeTab === 'restock' || restockTargetProduct) {
+            fetchRestockHistory();
+        }
+    }, [activeTab, restockTargetProduct?.id]);
+
+    const handleConfirmQuickRestock = async ({
+        product,
+        qtyToAdd,
+        confirmQtyToAdd,
+        notes,
+    }: {
+        product: Product;
+        qtyToAdd: number;
+        confirmQtyToAdd: number;
+        notes: string;
+    }) => {
+        if (isReadOnly) {
+            toast.warning('Operación no permitida en Modo Demostración.', '🔒 Demo');
+            throw new Error('Operación no permitida en Modo Demostración.');
+        }
+
+        const previousStock = Number(product.stock) || 0;
+        const operatorName = profile?.displayName || profile?.uid || 'Operador Almacén';
+        const effectiveMin = getProductEffectiveThreshold(product, thresholdConfig);
+
+        const res = await fetch('/api/products', {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-user-role': profile?.role || 'superadmin',
+                'x-user-id': profile?.uid || 'local_owner',
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+                id: product.id,
+                stockIncrement: qtyToAdd,
+                confirmStockIncrement: confirmQtyToAdd,
+                unitType: product.unitType || 'PZA',
+                isBulk: Boolean(product.isBulk),
+                minStock: effectiveMin,
+                mode: 'quick_restock',
+                notes,
+                operatorName,
+            }),
+        });
+        const data = await res.json().catch(() => null);
+        if (!res.ok || !data?.success || !data?.data) {
+            throw new Error(data?.error || 'No se pudo aplicar la recarga de piezas.');
+        }
+
+        const updatedProduct: Product = {
+            ...product,
+            ...data.data,
+            stock: Number(data.data.stock),
+            location: {
+                estante: data.data.estante ?? product.location?.estante ?? '',
+                fila: data.data.fila ?? product.location?.fila ?? '',
+            },
+        };
+
+        setLocalProducts((prev) => prev.map((p) => (p.id === product.id ? updatedProduct : p)));
+        const store = useERPStore.getState();
+        store.setProducts(store.products.map((p) => (p.id === product.id ? updatedProduct : p)));
+
+        if (data.restockAudit) {
+            setRestockHistory((prev) => [data.restockAudit as RestockAuditEntry, ...prev.filter((x) => x.id !== data.restockAudit.id)]);
+        }
+
+        await logAudit({
+            type: 'STOCK_UPDATE',
+            userId: profile?.uid || 'SYSTEM',
+            userName: operatorName,
+            userRole: profile?.role || 'inventory',
+            description: `Recarga rápida de stock: ${product.name} (${previousStock} + ${qtyToAdd} = ${updatedProduct.stock} ${product.unitType || 'PZA'})${notes ? ` · Nota: ${notes}` : ''}`,
+            metadata: {
+                productId: product.id,
+                productName: product.name,
+                previousStock,
+                stockIncrement: qtyToAdd,
+                newStock: updatedProduct.stock,
+                doubleConfirmed: true,
+                notes,
+            },
+        });
+
+        broadcastSync({ action: 'PRODUCT_SAVED', id: product.id });
+        if (typeof window !== 'undefined' && (window as any).__inventorySocket) {
+            (window as any).__inventorySocket.emit('sync_db_event', { action: 'PRODUCT_SAVED', id: product.id });
+        }
+
+        toast.success(
+            `${product.name}: ${previousStock} + ${qtyToAdd} = ${updatedProduct.stock} ${product.unitType || 'PZA'}`,
+            '✅ Stock Recargado y Auditado'
+        );
     };
 
     const handleDeleteProduct = async (productId: string, productName: string) => {
@@ -1041,29 +1340,38 @@ export default function InventoryDashboard() {
 
     const handleScanSuccess = (code: string) => {
         setIsScannerOpen(false);
-        const normalizedCode = code.trim().toLocaleLowerCase();
-        const p = localProducts.find(prod =>
-            prod.id.toLocaleLowerCase() === normalizedCode || (prod.barcode || '').trim().toLocaleLowerCase() === normalizedCode
-        );
+        const cleanCode = code.trim();
+        const p = findProductByBarcodeOrCode(localProducts, cleanCode);
+
+        // Si el formulario está abierto en Paso 2 (Identidad), rellena el código de barras original directamente
+        if (isCreating && step === 2 && !p) {
+            setFormData((prev) => ({ ...prev, barcode: cleanCode }));
+            toast.success(`Código de barras capturado: ${cleanCode}`, '📦 Escáner');
+            return;
+        }
+
         if (p) {
+            if (activeTab === 'restock') {
+                setRestockSearch(p.barcode || cleanCode);
+                setRestockTargetProduct(p);
+                toast.info(`Producto localizado para recarga rápida: ${p.name}`, `✅ ${p.name}`);
+                return;
+            }
+
+            setSearchTerm(p.barcode || cleanCode);
             const estante = (p.location?.estante || 'GENERAL').toUpperCase().trim();
-            // Abrir la carpeta
             setExpandedEstantes(prev => ({ ...prev, [estante]: true }));
-            // Resaltar en verde
             setHighlightedProductId(p.id);
-            // Hacer scroll
             setTimeout(() => {
                 const element = document.getElementById(`product-${p.id}`);
                 if (element) {
                     element.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }
             }, 300);
-            // Quitar el resaltado
             setTimeout(() => {
                 setHighlightedProductId(null);
             }, 6000);
-            
-            // Auto-abrir la ficha técnica directamente en el Paso 3 (Stock) para agilizar recarga
+
             handleEditProduct(p);
             setStep(3);
             toast.info(`Listo para actualizar stock de ${p.name}.`, `✅ ${p.name}`);
@@ -1071,39 +1379,24 @@ export default function InventoryDashboard() {
             setEditingProductId(null);
             setFormData({
                 name: '', category: '', description: '',
-                barcode: code, image: '',
+                barcode: cleanCode, image: '', media: [],
                 estante: '', fila: '',
                 price: '', confirmPrice: '', stock: '',
                 minStock: '',
                 warranty: '', unitType: 'PZA', isBulk: false
             });
+            setMediaUrlInput('');
             setIsCreating(true);
             setStep(1);
-            toast.info(`Código "${code}" no registrado. Completa el formulario de nuevo ingreso.`, '🔍 Nuevo producto');
+            toast.info(`Código "${cleanCode}" no registrado. Completa el formulario de nuevo ingreso.`, '🔍 Nuevo producto');
         }
     };
 
     // Escáner láser nativo para Almacén (pistola hardware)
     useBarcodeScanner(handleScanSuccess);
 
-    // Filtrar y agrupar productos por Estante (Folder)
-    const normalizeSearchText = (value: unknown) => String(value || '')
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .toLocaleLowerCase();
-    const searchTokens = normalizeSearchText(searchTerm).trim().split(/\s+/).filter(Boolean);
-    const filteredProducts = localProducts.filter(product => {
-        const searchableFields = [
-            product.id,
-            product.name,
-            product.category,
-            product.barcode,
-            product.description,
-            product.location?.estante,
-            product.location?.fila
-        ].map(normalizeSearchText);
-        return searchTokens.every(token => searchableFields.some(field => field.includes(token)));
-    });
+    // Filtrar y agrupar productos por Estante (Folder) incluyendo búsqueda por código de barras original EAN/UPC
+    const filteredProducts = localProducts.filter(product => matchesProductSearch(product, searchTerm));
 
     const estantesMap = filteredProducts.reduce((acc: Record<string, Product[]>, p) => {
         const estante = (p.location?.estante || 'GENERAL').toUpperCase().trim();
@@ -1380,65 +1673,165 @@ export default function InventoryDashboard() {
                                 </motion.div>
                             )}
 
-                            {/* STEP 2: IDENTIDAD Y FOTO */}
+                            {/* STEP 2: IDENTIDAD Y MULTIMEDIA (HASTA 4 VISTAS: FOTOS / GIF / VIDEO) */}
                             {step === 2 && (
                                 <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
-                                    <div className="bg-blue-900/20 border border-blue-500/20 p-[8px] rounded-[5px] flex flex-col md:flex-row gap-[8px] items-center">
-                                        <div className="bg-slate-800/80 p-4 rounded-xl shadow-lg text-blue-500"><Barcode size={40}/></div>
+                                    <div className="bg-blue-900/20 border border-blue-500/20 p-3.5 rounded-xl flex flex-col md:flex-row gap-3 items-center">
+                                        <div className="bg-slate-800/80 p-3.5 rounded-xl shadow-lg text-blue-400 shrink-0"><Barcode size={34}/></div>
                                         <div className="flex-1 w-full">
-                                            <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Código de Barras / Serial</label>
-                                            <input type="text" value={formData.barcode} onChange={e => setFormData({...formData, barcode: e.target.value})} className="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl font-medium text-white placeholder-slate-500 focus:border-[#0ea5e9] outline-none transition-all" placeholder="Escanee o teclee el código" />
+                                            <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
+                                                Código de Barras Original / Serial (EAN-13, UPC, Code128)
+                                            </label>
+                                            <div className="flex gap-2">
+                                                <input
+                                                    type="text"
+                                                    value={formData.barcode}
+                                                    onChange={e => setFormData({...formData, barcode: e.target.value})}
+                                                    className="flex-1 bg-slate-900 border border-slate-700 p-3.5 rounded-xl font-mono font-medium text-white placeholder-slate-500 focus:border-[#0ea5e9] outline-none transition-all"
+                                                    placeholder="Escanea el código de fábrica o escríbelo"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setIsScannerOpen(true)}
+                                                    className="min-h-[46px] px-4 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 font-bold text-xs flex items-center gap-1.5 cursor-pointer shrink-0"
+                                                >
+                                                    <QrCode size={16} /> Escanear
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className="bg-slate-900/50 border border-slate-700/50 p-[8px] rounded-[5px] flex flex-col md:flex-row gap-[8px] items-center">
-                                        <div className="bg-slate-800/80 p-4 rounded-xl shadow-lg text-slate-400"><Camera size={40}/></div>
-                                        <div className="flex-1 w-full">
-                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">Cámara / Archivo</label>
-                                            <input 
-                                                type="file" 
-                                                accept="image/*"
-                                                capture="environment"
-                                                onChange={(e) => {
-                                                    const file = e.target.files?.[0];
-                                                    if (file) {
-                                                        const img = new Image();
-                                                        const objectUrl = URL.createObjectURL(file);
-                                                        img.src = objectUrl;
-                                                        img.onload = () => {
-                                                            const canvas = document.createElement('canvas');
-                                                            const MAX_WIDTH = 800;
-                                                            const MAX_HEIGHT = 800;
-                                                            let width = img.width;
-                                                            let height = img.height;
 
-                                                            if (width > height && width > MAX_WIDTH) {
-                                                                height *= MAX_WIDTH / width;
-                                                                width = MAX_WIDTH;
-                                                            } else if (height > MAX_HEIGHT) {
-                                                                width *= MAX_HEIGHT / height;
-                                                                height = MAX_HEIGHT;
-                                                            }
-                                                            canvas.width = width;
-                                                            canvas.height = height;
-                                                            const ctx = canvas.getContext('2d');
-                                                            ctx?.drawImage(img, 0, 0, width, height);
-                                                            
-                                                            // Comprimir a WEBP con 70% de calidad para ahorrar muchísimo espacio (Offline Friendly)
-                                                            const dataUrl = canvas.toDataURL('image/webp', 0.7);
-                                                            setFormData({ ...formData, image: dataUrl });
-                                                            URL.revokeObjectURL(objectUrl);
-                                                        };
-                                                    }
-                                                }}
-                                                className="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl font-medium text-white focus:border-[#0ea5e9] outline-none transition-all file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-[#0ea5e9] file:text-white hover:file:bg-[#0ea5e9]/80 cursor-pointer" 
-                                            />
-                                            {formData.image && (
-                                                <div className="mt-4 h-32 w-32 rounded-xl overflow-hidden border-2 border-[#0ea5e9] shadow-lg shadow-blue-500/20">
-                                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                    <img src={formData.image} alt="Preview" className="w-full h-full object-cover" />
+                                    <div className="bg-slate-900/60 border border-slate-700/60 p-4 rounded-xl space-y-4">
+                                        <div className="flex flex-wrap items-center justify-between gap-2">
+                                            <div className="flex items-center gap-2.5">
+                                                <div className="bg-slate-800 p-2.5 rounded-xl text-cyan-400">
+                                                    <Camera size={22}/>
                                                 </div>
-                                            )}
+                                                <div>
+                                                    <h3 className="text-xs font-black text-white uppercase tracking-wider">
+                                                        Galería Multimedia del Producto (Fotos, GIF o Video)
+                                                    </h3>
+                                                    <p className="text-[11px] text-slate-400">
+                                                        Carga hasta {MAX_PRODUCT_MEDIA_ITEMS} vistas distintas (ángulos, uso o video corto MP4/WEBM).
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <span className="text-xs font-black px-2.5 py-1 rounded-lg bg-slate-800 text-cyan-300 border border-cyan-500/30 tabular-nums">
+                                                {formData.media.length} / {MAX_PRODUCT_MEDIA_ITEMS} vistas
+                                            </span>
                                         </div>
+
+                                        <div className="flex flex-col sm:flex-row gap-2.5">
+                                            <label className={`flex-1 min-h-[46px] px-4 py-2.5 rounded-xl border border-dashed flex items-center justify-center gap-2 text-xs font-bold transition-all ${
+                                                formData.media.length >= MAX_PRODUCT_MEDIA_ITEMS || uploadingMedia
+                                                    ? 'bg-slate-800/40 border-slate-700 text-slate-500 cursor-not-allowed'
+                                                    : 'bg-sky-500/15 hover:bg-sky-500/25 border-sky-400/50 text-sky-300 cursor-pointer'
+                                            }`}>
+                                                {uploadingMedia ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+                                                <span>
+                                                    {uploadingMedia
+                                                        ? 'Subiendo archivo multimedia...'
+                                                        : formData.media.length >= MAX_PRODUCT_MEDIA_ITEMS
+                                                            ? 'Límite de 4 vistas alcanzado'
+                                                            : 'Subir Fotos o Video (hasta 4 vistas)'}
+                                                </span>
+                                                <input
+                                                    type="file"
+                                                    multiple
+                                                    accept="image/*,video/mp4,video/webm,video/quicktime"
+                                                    disabled={formData.media.length >= MAX_PRODUCT_MEDIA_ITEMS || uploadingMedia}
+                                                    onChange={(e) => {
+                                                        void handleProductMediaFilesSelected(e.target.files);
+                                                        e.currentTarget.value = '';
+                                                    }}
+                                                    className="sr-only"
+                                                />
+                                            </label>
+                                        </div>
+
+                                        <div className="flex flex-col sm:flex-row gap-2">
+                                            <div className="relative flex-1">
+                                                <Link2 size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                                                <input
+                                                    type="url"
+                                                    value={mediaUrlInput}
+                                                    onChange={(e) => setMediaUrlInput(e.target.value)}
+                                                    disabled={formData.media.length >= MAX_PRODUCT_MEDIA_ITEMS}
+                                                    placeholder="O pega URL directa de foto o video (.jpg, .png, .mp4)..."
+                                                    className="w-full min-h-[42px] pl-10 pr-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 outline-none focus:border-[#0ea5e9] disabled:opacity-50"
+                                                />
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={handleAddProductMediaUrl}
+                                                disabled={!mediaUrlInput.trim() || formData.media.length >= MAX_PRODUCT_MEDIA_ITEMS}
+                                                className="min-h-[42px] px-4 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-white text-xs font-bold border border-white/10 cursor-pointer shrink-0"
+                                            >
+                                                + Agregar URL
+                                            </button>
+                                        </div>
+
+                                        {formData.media.length > 0 ? (
+                                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
+                                                {formData.media.map((item, idx) => (
+                                                    <div
+                                                        key={`${item.url}-${idx}`}
+                                                        className={`relative rounded-xl overflow-hidden border bg-slate-950 flex flex-col ${
+                                                            idx === 0 ? 'border-emerald-400 ring-2 ring-emerald-500/20' : 'border-slate-700'
+                                                        }`}
+                                                    >
+                                                        <div className="relative h-28 bg-black flex items-center justify-center overflow-hidden">
+                                                            {item.type === 'video' ? (
+                                                                <video
+                                                                    src={item.url}
+                                                                    muted
+                                                                    loop
+                                                                    playsInline
+                                                                    autoPlay
+                                                                    className="w-full h-full object-cover"
+                                                                />
+                                                            ) : (
+                                                                /* eslint-disable-next-line @next/next/no-img-element */
+                                                                <img src={item.url} alt={`Vista ${idx + 1}`} className="w-full h-full object-cover" />
+                                                            )}
+                                                            <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded bg-slate-950/80 text-[10px] font-bold text-white flex items-center gap-1">
+                                                                {item.type === 'video' && <Film size={10} className="text-cyan-300" />}
+                                                                {idx === 0 ? 'Principal' : `Vista ${idx + 1}`}
+                                                            </span>
+                                                        </div>
+                                                        <div className="p-1.5 flex items-center justify-between gap-1 bg-slate-900">
+                                                            {idx > 0 ? (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => handleMakePrimaryMedia(idx)}
+                                                                    className="flex-1 py-1 px-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/30 text-emerald-300 text-[10px] font-bold flex items-center justify-center gap-1 cursor-pointer"
+                                                                    title="Usar como vista principal"
+                                                                >
+                                                                    <Star size={10} /> Principal
+                                                                </button>
+                                                            ) : (
+                                                                <span className="flex-1 text-center text-[10px] font-bold text-emerald-400">
+                                                                    Portada
+                                                                </span>
+                                                            )}
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleRemoveMediaSlot(idx)}
+                                                                className="p-1.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/35 text-rose-300 cursor-pointer"
+                                                                title="Quitar vista"
+                                                                aria-label={`Quitar vista ${idx + 1}`}
+                                                            >
+                                                                <Trash2 size={12} />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="p-5 rounded-xl border border-dashed border-slate-700 text-center text-xs text-slate-400">
+                                                Aún no agregas vistas multimedia. Puedes subir hasta 4 fotos, GIFs o videos del producto.
+                                            </div>
+                                        )}
                                     </div>
                                 </motion.div>
                             )}
@@ -1659,20 +2052,27 @@ export default function InventoryDashboard() {
                                             </p>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+                                    <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto shrink-0">
+                                        <button
+                                            type="button"
+                                            onClick={() => setActiveTab('restock')}
+                                            className="flex-1 sm:flex-none px-3.5 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-md active:scale-95 flex items-center justify-center gap-1.5"
+                                        >
+                                            <PackagePlus size={14} /> Recargar Piezas
+                                        </button>
                                         <button
                                             type="button"
                                             onClick={() => setIsThresholdAlertModalOpen(true)}
-                                            className="flex-1 sm:flex-none px-3.5 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-md active:scale-95 flex items-center justify-center gap-1.5"
+                                            className="flex-1 sm:flex-none px-3.5 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-md active:scale-95 flex items-center justify-center gap-1.5"
                                         >
                                             <Shield size={14} /> Ver Alertas
                                         </button>
                                         <button
                                             type="button"
                                             onClick={() => setActiveTab('thresholds')}
-                                            className="flex-1 sm:flex-none px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-xl text-xs font-bold transition-all border border-zinc-700 whitespace-nowrap"
+                                            className="flex-1 sm:flex-none px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-xl text-xs font-bold transition-all border border-zinc-700 whitespace-nowrap"
                                         >
-                                            ⚙️ Gestionar Umbrales
+                                            ⚙️ Umbrales
                                         </button>
                                     </div>
                                 </div>
@@ -1722,6 +2122,24 @@ export default function InventoryDashboard() {
                                     <Shield size={14} /> Umbrales y Alertas
                                     {alertSummary.totalAlerts > 0 && (
                                         <span className="bg-rose-500 text-white text-[10px] font-black px-1.5 py-0.2 rounded-full animate-pulse">
+                                            {alertSummary.totalAlerts}
+                                        </span>
+                                    )}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setActiveTab('restock')}
+                                    className={`py-1.5 px-3.5 font-bold text-xs rounded-lg transition-all flex items-center gap-2 whitespace-nowrap ${
+                                        activeTab === 'restock'
+                                            ? 'bg-emerald-500 text-slate-950 font-black shadow-sm'
+                                            : 'text-emerald-300 hover:text-white hover:bg-emerald-950/30 border border-emerald-500/20'
+                                    }`}
+                                >
+                                    <PackagePlus size={14} /> Recarga & Auditoría
+                                    {alertSummary.totalAlerts > 0 && (
+                                        <span className={`text-[10px] font-black px-1.5 py-0.2 rounded-md ${
+                                            activeTab === 'restock' ? 'bg-slate-950 text-emerald-300' : 'bg-amber-500/25 text-amber-300'
+                                        }`}>
                                             {alertSummary.totalAlerts}
                                         </span>
                                     )}
@@ -2029,7 +2447,237 @@ export default function InventoryDashboard() {
                                         }}
                                         onUpdateProductThreshold={handleUpdateProductThreshold}
                                         onOpenAlertModal={() => setIsThresholdAlertModalOpen(true)}
+                                        onQuickRestock={(prod) => setRestockTargetProduct(prod)}
                                     />
+                                </section>
+                            )}
+
+                            {activeTab === 'restock' && (
+                                <section className="space-y-6">
+                                    {/* Cabecera de Modo Recarga Rápida */}
+                                    <div className="bg-slate-900/90 border border-emerald-500/35 rounded-2xl p-4 sm:p-5 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                        <div className="flex items-start gap-3">
+                                            <div className="p-2.5 rounded-xl bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shrink-0">
+                                                <PackagePlus size={22} />
+                                            </div>
+                                            <div>
+                                                <h2 className="text-base sm:text-lg font-black uppercase text-white tracking-tight">
+                                                    Recarga Rápida de Productos Bajo Stock
+                                                </h2>
+                                                <p className="text-xs text-slate-400 mt-0.5">
+                                                    Agrega únicamente el número de piezas que entran a almacén con doble confirmación anti-error y registro automático en auditoría.
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="relative w-full sm:w-72">
+                                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
+                                            <input
+                                                type="search"
+                                                value={restockSearch}
+                                                onChange={(e) => setRestockSearch(e.target.value)}
+                                                placeholder="Filtrar producto o barra..."
+                                                className="w-full bg-slate-950 border border-slate-700 focus:border-emerald-400 rounded-xl py-2.5 pl-9 pr-3 text-xs text-white outline-none"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Lista de productos bajo mínimo (prioridad críticos + bajos; si busca, muestra coincidencias de todo el catálogo) */}
+                                    <div className="bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden shadow-lg">
+                                        <div className="px-4 py-3 border-b border-slate-800 flex items-center justify-between">
+                                            <h3 className="text-xs font-black uppercase tracking-wider text-amber-300 flex items-center gap-2">
+                                                <AlertTriangle size={15} />
+                                                {restockSearch.trim()
+                                                    ? 'Coincidencias de Catálogo para Recarga'
+                                                    : `Productos en Alerta de Stock (${alertSummary.criticalItems.length + alertSummary.lowStockItems.length})`}
+                                            </h3>
+                                            <span className="text-[11px] text-slate-400">
+                                                Click en &ldquo;+ Agregar Pzas&rdquo; para recargar con confirmación doble
+                                            </span>
+                                        </div>
+
+                                        {(() => {
+                                            const q = restockSearch.trim().toLowerCase();
+                                            const baseList = q
+                                                ? localProducts.filter((p) =>
+                                                    p.name.toLowerCase().includes(q) ||
+                                                    (p.barcode || '').toLowerCase().includes(q) ||
+                                                    (p.category || '').toLowerCase().includes(q)
+                                                )
+                                                : localProducts
+                                                    .filter((p) => {
+                                                        const analysis = alertSummary.itemsMap[p.id];
+                                                        return analysis && (analysis.status === 'out_of_stock' || analysis.status === 'low_stock');
+                                                    })
+                                                    .sort((a, b) => (Number(a.stock) || 0) - (Number(b.stock) || 0));
+
+                                            if (baseList.length === 0) {
+                                                return (
+                                                    <div className="p-10 text-center text-slate-400 text-xs">
+                                                        {q
+                                                            ? 'No hay productos que coincidan con esa búsqueda.'
+                                                            : 'Todos los productos cumplen su nivel mínimo configurado. Usa el buscador si deseas recargar otro producto.'}
+                                                    </div>
+                                                );
+                                            }
+
+                                            return (
+                                                <div className="divide-y divide-slate-800/80">
+                                                    {baseList.map((product) => {
+                                                        const analysis = alertSummary.itemsMap[product.id];
+                                                        const minLevel = analysis?.effectiveThreshold ?? getProductEffectiveThreshold(product, thresholdConfig);
+                                                        const isOut = (Number(product.stock) || 0) <= 0;
+                                                        const isLow = (Number(product.stock) || 0) <= minLevel;
+
+                                                        return (
+                                                            <div
+                                                                key={product.id}
+                                                                className="p-3.5 sm:px-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-800/30 transition-colors"
+                                                            >
+                                                                <div className="min-w-0">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase border ${
+                                                                            isOut
+                                                                                ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                                                                                : isLow
+                                                                                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                                                                                    : 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+                                                                        }`}>
+                                                                            {isOut ? 'Agotado' : isLow ? 'Bajo Mínimo' : 'Saludable'}
+                                                                        </span>
+                                                                        <h4 className="font-bold text-sm text-white truncate">{product.name}</h4>
+                                                                    </div>
+                                                                    <p className="text-[11px] text-slate-400 mt-1">
+                                                                        {product.category || 'General'} · Ubicación: {product.location?.estante || product.estante || 'Sin asignar'} / {product.location?.fila || product.fila || 'General'}
+                                                                    </p>
+                                                                </div>
+
+                                                                <div className="flex items-center justify-between sm:justify-end gap-4 shrink-0">
+                                                                    <div className="text-left sm:text-right font-mono tabular-nums">
+                                                                        <div className="text-xs font-black text-white">
+                                                                            Actual: <span className={isOut ? 'text-rose-400' : isLow ? 'text-amber-300' : 'text-emerald-300'}>{product.stock}</span> {product.unitType || 'PZA'}
+                                                                        </div>
+                                                                        <div className="text-[10px] text-slate-400">
+                                                                            Mínimo: {minLevel} {product.unitType || 'PZA'}
+                                                                        </div>
+                                                                    </div>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setRestockTargetProduct(product)}
+                                                                        className="min-h-[44px] px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition-all active:scale-95 shadow-md"
+                                                                    >
+                                                                        <PackagePlus size={15} />
+                                                                        <span>Agregar Pzas</span>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            );
+                                        })()}
+                                    </div>
+
+                                    {/* Historial de Auditoría de Recargas */}
+                                    <div className="bg-slate-900/80 border border-cyan-500/25 rounded-2xl overflow-hidden shadow-lg">
+                                        <div className="px-4 py-3 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                            <div className="flex items-center gap-2">
+                                                <History size={16} className="text-cyan-400" />
+                                                <h3 className="text-xs font-black uppercase tracking-wider text-cyan-300">
+                                                    Historial de Auditoría de Recargas ({restockHistory.length})
+                                                </h3>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={fetchRestockHistory}
+                                                disabled={restockHistoryLoading}
+                                                className="min-h-[38px] px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold flex items-center gap-1.5 transition-colors self-start sm:self-auto"
+                                            >
+                                                <RefreshCw size={13} className={restockHistoryLoading ? 'animate-spin' : ''} />
+                                                <span>Actualizar</span>
+                                            </button>
+                                        </div>
+
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full min-w-[740px] text-left text-xs">
+                                                <thead className="bg-slate-950/70 text-[10px] uppercase tracking-wider text-slate-400">
+                                                    <tr>
+                                                        <th className="px-4 py-2.5">Fecha y Hora</th>
+                                                        <th className="px-4 py-2.5">Producto</th>
+                                                        <th className="px-4 py-2.5 text-right">Stock Anterior</th>
+                                                        <th className="px-4 py-2.5 text-right">Agregado</th>
+                                                        <th className="px-4 py-2.5 text-right">Nuevo Stock</th>
+                                                        <th className="px-4 py-2.5">Operador</th>
+                                                        <th className="px-4 py-2.5">Validación / Nota</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-slate-800">
+                                                    {restockHistoryLoading && restockHistory.length === 0 ? (
+                                                        <tr>
+                                                            <td colSpan={7} className="px-4 py-10 text-center text-slate-400">
+                                                                Cargando historial de auditoría...
+                                                            </td>
+                                                        </tr>
+                                                    ) : restockHistory.length === 0 ? (
+                                                        <tr>
+                                                            <td colSpan={7} className="px-4 py-10 text-center text-slate-500">
+                                                                Aún no hay recargas auditadas registradas. Agrega piezas a un producto bajo mínimo para generar el primer registro.
+                                                            </td>
+                                                        </tr>
+                                                    ) : (
+                                                        restockHistory
+                                                            .filter((entry) => {
+                                                                const q = restockSearch.trim().toLowerCase();
+                                                                if (!q) return true;
+                                                                return (
+                                                                    entry.productName.toLowerCase().includes(q) ||
+                                                                    entry.operatorName.toLowerCase().includes(q) ||
+                                                                    entry.notes.toLowerCase().includes(q)
+                                                                );
+                                                            })
+                                                            .map((entry) => (
+                                                                <tr key={entry.id} className="hover:bg-slate-800/30 transition-colors">
+                                                                    <td className="px-4 py-2.5 font-mono text-[11px] text-slate-400 whitespace-nowrap">
+                                                                        {new Date(entry.timestamp).toLocaleString('es-MX', {
+                                                                            dateStyle: 'short',
+                                                                            timeStyle: 'short',
+                                                                        })}
+                                                                    </td>
+                                                                    <td className="px-4 py-2.5">
+                                                                        <div className="font-bold text-white">{entry.productName}</div>
+                                                                        {(entry.estante || entry.fila) && (
+                                                                            <div className="text-[10px] text-slate-500">
+                                                                                {entry.estante || 'N/A'} / {entry.fila || 'General'}
+                                                                            </div>
+                                                                        )}
+                                                                    </td>
+                                                                    <td className="px-4 py-2.5 text-right font-mono tabular-nums text-slate-300">
+                                                                        {entry.previousStock !== null ? `${entry.previousStock} ${entry.unitType}` : '—'}
+                                                                    </td>
+                                                                    <td className="px-4 py-2.5 text-right font-mono tabular-nums font-black text-emerald-400">
+                                                                        {entry.addedQty !== null ? `+${entry.addedQty} ${entry.unitType}` : '—'}
+                                                                    </td>
+                                                                    <td className="px-4 py-2.5 text-right font-mono tabular-nums font-bold text-cyan-300">
+                                                                        {entry.newStock !== null ? `${entry.newStock} ${entry.unitType}` : '—'}
+                                                                    </td>
+                                                                    <td className="px-4 py-2.5">
+                                                                        <div className="font-semibold text-slate-200">{entry.operatorName}</div>
+                                                                        <div className="text-[10px] uppercase text-slate-500">{entry.operatorRole}</div>
+                                                                    </td>
+                                                                    <td className="px-4 py-2.5 text-[11px] text-slate-300 max-w-xs">
+                                                                        {entry.doubleConfirmed && (
+                                                                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold mr-1.5">
+                                                                                <CheckCircle2 size={10} /> Doble Conf.
+                                                                            </span>
+                                                                        )}
+                                                                        <span className="text-slate-400">{entry.notes || 'Sin nota'}</span>
+                                                                    </td>
+                                                                </tr>
+                                                            ))
+                                                    )}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
                                 </section>
                             )}
 
@@ -2132,6 +2780,19 @@ export default function InventoryDashboard() {
                                                         {/* Columna Acción */}
                                                         <td className="px-4 py-2.5 text-right">
                                                             <div className="flex items-center justify-end gap-1">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => setRestockTargetProduct(product)}
+                                                                    className={`px-2 py-1 rounded-lg text-[11px] font-black flex items-center gap-1 transition-colors ${
+                                                                        alertSummary.itemsMap[product.id]?.isAlert
+                                                                            ? 'bg-emerald-500 text-slate-950 hover:bg-emerald-400'
+                                                                            : 'bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/30'
+                                                                    }`}
+                                                                    title="Agregar piezas rápido con doble confirmación"
+                                                                >
+                                                                    <PackagePlus size={13} />
+                                                                    <span>+ Pzas</span>
+                                                                </button>
                                                                 <button type="button" onClick={() => handleEditProduct(product)} className="p-1.5 text-slate-400 hover:bg-cyan-500/10 hover:text-cyan-300 rounded-lg transition-colors" title="Editar producto">
                                                                     <Edit3 size={15} />
                                                                 </button>
@@ -3063,8 +3724,30 @@ export default function InventoryDashboard() {
                         setIsThresholdAlertModalOpen(false);
                         handleEditProduct(product);
                     }}
+                    onQuickRestock={(productId) => {
+                        const found = localProducts.find((p) => p.id === productId);
+                        if (found) {
+                            setIsThresholdAlertModalOpen(false);
+                            setRestockTargetProduct(found);
+                        }
+                    }}
                 />
             </AnimatePresence>
+
+            {/* MODAL DE RECARGA RÁPIDA DE PIEZAS (DOBLE CONFIRMACIÓN + AUDITORÍA) */}
+            <QuickRestockModal
+                isOpen={Boolean(restockTargetProduct)}
+                product={restockTargetProduct}
+                effectiveThreshold={
+                    restockTargetProduct
+                        ? (alertSummary.itemsMap[restockTargetProduct.id]?.effectiveThreshold ??
+                           getProductEffectiveThreshold(restockTargetProduct, thresholdConfig))
+                        : 5
+                }
+                recentEntries={restockHistory}
+                onClose={() => setRestockTargetProduct(null)}
+                onConfirmRestock={handleConfirmQuickRestock}
+            />
 
             {/* TOAST FLOTANTE DE ALERTA DE STOCK MÍNIMO */}
             <StockThresholdAlertToast

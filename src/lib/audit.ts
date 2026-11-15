@@ -1,5 +1,6 @@
 import { db } from './firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { AUDIT_NOTIF_DOM_EVENT } from './auditNotifications';
 
 export type AuditAction =
     | 'LOGIN'
@@ -55,6 +56,22 @@ export async function logAudit(action: AuditLog) {
     const isNode = typeof window === 'undefined';
 
     try {
+        if (!isNode && typeof window !== 'undefined') {
+            try {
+                window.dispatchEvent(
+                    new CustomEvent(AUDIT_NOTIF_DOM_EVENT, {
+                        detail: {
+                            action: action.type,
+                            details: action.description,
+                            actorName: action.userName,
+                            entityId: action.metadata?.productId,
+                            txId: `audit-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+                        },
+                    })
+                );
+            } catch {}
+        }
+
         const logRef = collection(db, 'audit_logs');
         const firebasePromise = addDoc(logRef, {
             ...action,

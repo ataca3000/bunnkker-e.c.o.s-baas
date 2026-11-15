@@ -17,6 +17,7 @@ import { useBluetoothScale } from '@/hooks/useBluetoothScale';
 import { printReceipt, flushPendingPrintJobs } from '@/lib/thermalPrinter';
 import { logAudit } from '@/lib/audit';
 import { toast } from '@/lib/toast';
+import { findProductByBarcodeOrCode } from '@/lib/barcodeLookup';
 import { useERPStore } from '@/store/useERPStore';
 import { broadcastSync } from '@/lib/syncNotifier';
 import { playSupermarketBeep, playIncrementBeep, playErrorBeep, initAudioContextOnFirstGesture } from '@/lib/scannerAudio';
@@ -544,11 +545,9 @@ export default function SalesDashboard() {
             return;
         }
 
-        const product = products.find(p =>
-            p.barcode?.toLowerCase() === normalized ||
-            p.id.toLowerCase() === normalized ||
-            p.name.toLowerCase() === normalized
-        );
+        const product =
+            findProductByBarcodeOrCode(products, cleanCode) ||
+            products.find(p => p.name.toLowerCase() === normalized);
 
         if (product) {
             handleAddProduct(product);

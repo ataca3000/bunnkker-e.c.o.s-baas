@@ -59,6 +59,8 @@ const MIME_TO_EXT: Record<string, string> = {
   'image/svg+xml': 'svg',
   'video/mp4': 'mp4',
   'video/webm': 'webm',
+  'video/quicktime': 'mov',
+  'video/x-m4v': 'm4v',
 };
 
 const EXT_TO_MIME: Record<string, string> = {
@@ -70,6 +72,8 @@ const EXT_TO_MIME: Record<string, string> = {
   svg: 'image/svg+xml',
   mp4: 'video/mp4',
   webm: 'video/webm',
+  mov: 'video/quicktime',
+  m4v: 'video/x-m4v',
 };
 
 export function extensionFromMime(mimeType: string): string | null {

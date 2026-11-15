@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { validateApiSession, requireActiveRole, getTenantId } from '@/lib/apiAuth';
+import { publishRealtimeEvent } from '@/lib/realtimeBus';
 
 export const dynamic = 'force-dynamic';
 
@@ -45,13 +46,25 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ success: false, error: 'El campo action es requerido' }, { status: 400 });
         }
 
+        const serializedDetails = details ? (typeof details === 'string' ? details : JSON.stringify(details)) : '';
         const newLog = await prisma.auditLog.create({
             data: {
                 tenantId,
                 action: action.trim(),
-                details: details ? (typeof details === 'string' ? details : JSON.stringify(details)) : '',
+                details: serializedDetails,
                 userId: auth.uid,
             }
+        });
+
+        publishRealtimeEvent({
+            tenantId,
+            scope: 'audit',
+            action: action.trim(),
+            entityId: newLog.id,
+            payload: {
+                details: serializedDetails,
+                actorUid: auth.uid,
+            },
         });
 
         return NextResponse.json({ success: true, data: newLog });

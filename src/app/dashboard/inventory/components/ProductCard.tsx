@@ -2,8 +2,9 @@ import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { Product } from '@/lib/types';
-import { Package, Lock } from 'lucide-react';
+import { Film, Package, Lock } from 'lucide-react';
 import { useERPStore } from '@/store/useERPStore';
+import { getPrimaryProductImage, normalizeProductMedia } from '@/lib/productMedia';
 
 interface ProductCardProps {
   key?: React.Key;
@@ -15,6 +16,10 @@ export default function ProductCard({ product, onClick }: ProductCardProps) {
   const floatingStock = useERPStore((s) => s.floatingStock || {});
   const reservedQty = floatingStock[product.id] || 0;
   const availableQty = Math.max(0, product.stock - reservedQty);
+  const mediaList = normalizeProductMedia(product);
+  const primaryImage = getPrimaryProductImage(mediaList, product.image);
+  const hasVisualImage = Boolean(primaryImage) && mediaList.some((m) => m.type !== 'video');
+  const hasVideo = mediaList.some((m) => m.type === 'video');
 
   const {
     attributes,
@@ -65,13 +70,22 @@ export default function ProductCard({ product, onClick }: ProductCardProps) {
       className={`bg-slate-900 rounded-lg p-3 border flex gap-3 cursor-grab active:cursor-grabbing hover:border-sky-500 shadow-lg transition-colors ${borderClass} ${isDragging ? 'z-50 opacity-60' : ''}`}
     >
       <div className="w-12 h-12 bg-slate-800 rounded overflow-hidden flex-shrink-0 flex items-center justify-center relative">
-        {product.image && product.image.startsWith('http') ? (
-          <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+        {hasVisualImage ? (
+          <img src={primaryImage} alt={product.name} className="w-full h-full object-cover" />
+        ) : hasVideo ? (
+          <div className="w-full h-full flex items-center justify-center bg-slate-800 text-cyan-300">
+            <Film className="w-5 h-5" />
+          </div>
         ) : (
           <>
             <div className="absolute inset-0 bg-gradient-to-br from-slate-700 to-slate-800"></div>
             <Package className="w-5 h-5 text-slate-400 relative z-10" />
           </>
+        )}
+        {mediaList.length > 1 && (
+          <span className="absolute bottom-0.5 right-0.5 px-1 py-0.2 rounded bg-black/75 text-[9px] font-bold text-white leading-tight z-10 tabular-nums">
+            {mediaList.length}
+          </span>
         )}
         {reservedQty > 0 && (
           <div className="absolute inset-0 bg-amber-500/80 backdrop-blur-[1px] flex flex-col items-center justify-center z-20">

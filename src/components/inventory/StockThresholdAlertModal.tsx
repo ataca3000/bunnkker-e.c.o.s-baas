@@ -3,7 +3,7 @@
 import React from 'react';
 import { 
   AlertTriangle, ShieldAlert, X, ArrowRight, BellOff, Volume2, 
-  VolumeX, Package, MapPin, CheckCircle2, Sliders, ExternalLink 
+  VolumeX, Package, MapPin, CheckCircle2, Sliders, ExternalLink, PackagePlus
 } from 'lucide-react';
 import type { ProductStockAnalysis, StockAlertSummary } from '@/lib/stockThresholds';
 import { setAlertSnooze } from '@/lib/stockThresholds';
@@ -16,6 +16,7 @@ interface StockThresholdAlertModalProps {
   onNavigateToThresholds?: () => void;
   onConfigureThresholds?: () => void;
   onEditProduct?: (product: any) => void;
+  onQuickRestock?: (productId: string) => void;
   formatCurrency?: (val: number) => string;
 }
 
@@ -26,6 +27,7 @@ export default function StockThresholdAlertModal({
   onNavigateToThresholds,
   onConfigureThresholds,
   onEditProduct,
+  onQuickRestock,
   formatCurrency = (v) => `$${v.toFixed(2)}`
 }: StockThresholdAlertModalProps) {
   if (!isOpen || summary.totalAlerts === 0 || !summary.alertsEnabled) return null;
@@ -111,11 +113,23 @@ export default function StockThresholdAlertModal({
                   </div>
                 </div>
 
-                <div className="text-right shrink-0">
-                  <span className="inline-block bg-red-600 text-white font-black text-xs px-2.5 py-1 rounded-md uppercase tracking-wider">
-                    0 en stock
-                  </span>
-                  <span className="block text-[10px] text-slate-400 mt-0.5">Umbral: {item.effectiveThreshold}</span>
+                <div className="flex items-center gap-2.5 shrink-0">
+                  <div className="text-right">
+                    <span className="inline-block bg-red-600 text-white font-black text-xs px-2.5 py-1 rounded-md uppercase tracking-wider tabular-nums">
+                      0 en stock
+                    </span>
+                    <span className="block text-[10px] text-slate-400 mt-0.5 tabular-nums">Umbral: {item.effectiveThreshold}</span>
+                  </div>
+                  {onQuickRestock && (
+                    <button
+                      type="button"
+                      onClick={() => onQuickRestock(item.productId)}
+                      className="min-h-[40px] px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs flex items-center gap-1 transition-all active:scale-95"
+                      title="Agregar piezas rápidamente"
+                    >
+                      <PackagePlus size={14} /> Recargar
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
@@ -139,11 +153,23 @@ export default function StockThresholdAlertModal({
                   </div>
                 </div>
 
-                <div className="text-right shrink-0">
-                  <span className="inline-block bg-amber-500/30 text-amber-300 border border-amber-500/50 font-black text-xs px-2.5 py-1 rounded-md">
-                    {item.currentStock} disp.
-                  </span>
-                  <span className="block text-[10px] text-slate-400 mt-0.5">Mínimo: {item.effectiveThreshold}</span>
+                <div className="flex items-center gap-2.5 shrink-0">
+                  <div className="text-right">
+                    <span className="inline-block bg-amber-500/30 text-amber-300 border border-amber-500/50 font-black text-xs px-2.5 py-1 rounded-md tabular-nums">
+                      {item.currentStock} disp.
+                    </span>
+                    <span className="block text-[10px] text-slate-400 mt-0.5 tabular-nums">Mínimo: {item.effectiveThreshold}</span>
+                  </div>
+                  {onQuickRestock && (
+                    <button
+                      type="button"
+                      onClick={() => onQuickRestock(item.productId)}
+                      className="min-h-[40px] px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs flex items-center gap-1 transition-all active:scale-95"
+                      title="Agregar piezas rápidamente"
+                    >
+                      <PackagePlus size={14} /> Recargar
+                    </button>
+                  )}
                 </div>
               </div>
             ))}

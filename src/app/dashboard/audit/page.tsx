@@ -7,7 +7,12 @@ import VirtualizedAuditList, { type AuditRowData } from '@/components/Virtualize
 import { type AuditLog } from '@/types/audit';
 import { areEqual, type ListChildComponentProps } from 'react-window';
 import Link from 'next/link';
-import { Settings, ShieldCheck, Camera, PenTool, CheckCircle2, Clock, Eye, X, Package, FileText, Store, Truck, UserCheck, AlertTriangle } from 'lucide-react';
+import { Settings, ShieldCheck, Camera, PenTool, CheckCircle2, Clock, Eye, X, Package, FileText, Store, Truck, UserCheck, AlertTriangle, BellRing, BellOff } from 'lucide-react';
+import {
+    AUDIT_PREF_CHANGE_EVENT,
+    loadAuditNotificationPreference,
+    saveAuditNotificationPreference,
+} from '@/lib/auditNotifications';
 
 const isNode = typeof window === 'undefined' || !!(window as any).electronAPI;
 
@@ -56,6 +61,7 @@ export default function RadarAuditPage() {
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [userRole, setUserRole] = useState<string | null>(null);
+    const [auditNotifEnabled, setAuditNotifEnabled] = useState<boolean>(true);
 
     const LOGS_PER_PAGE = 20;
 
@@ -64,6 +70,16 @@ export default function RadarAuditPage() {
             setUserRole(profile.role);
         }
     }, [profile]);
+
+    useEffect(() => {
+        setAuditNotifEnabled(loadAuditNotificationPreference());
+        const onPref = (ev: Event) => {
+            const next = (ev as CustomEvent<{ enabled?: boolean }>).detail?.enabled;
+            setAuditNotifEnabled(typeof next === 'boolean' ? next : loadAuditNotificationPreference());
+        };
+        window.addEventListener(AUDIT_PREF_CHANGE_EVENT, onPref);
+        return () => window.removeEventListener(AUDIT_PREF_CHANGE_EVENT, onPref);
+    }, []);
 
     const fetchOrders = useCallback(async () => {
         try {
@@ -235,12 +251,31 @@ export default function RadarAuditPage() {
                         </select>
                     </div>
                     {userRole === 'superadmin' && (
-                        <Link 
-                            href="/dashboard/settings/history" 
-                            className="flex items-center gap-2 bg-[#0ea5e9] hover:bg-[#003d80] text-white text-[0.6rem] font-bold py-2 px-4 rounded-lg transition-all uppercase tracking-widest border border-white/10"
-                        >
-                            <Settings size={14} /> Historial Config
-                        </Link>
+                        <>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    const next = !auditNotifEnabled;
+                                    setAuditNotifEnabled(next);
+                                    saveAuditNotificationPreference(next);
+                                }}
+                                aria-pressed={auditNotifEnabled}
+                                className={`min-h-[40px] flex items-center gap-2 text-[0.65rem] font-bold py-2 px-3.5 rounded-lg transition-all uppercase tracking-wider border cursor-pointer ${
+                                    auditNotifEnabled
+                                        ? 'bg-emerald-600/20 hover:bg-emerald-600/35 text-emerald-300 border-emerald-500/40'
+                                        : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-white/15'
+                                }`}
+                            >
+                                {auditNotifEnabled ? <BellRing size={14} /> : <BellOff size={14} />}
+                                {auditNotifEnabled ? 'Notificaciones: Activas' : 'Notificaciones: Silenciadas'}
+                            </button>
+                            <Link 
+                                href="/dashboard/settings/history" 
+                                className="min-h-[40px] flex items-center gap-2 bg-[#0ea5e9] hover:bg-[#003d80] text-white text-[0.6rem] font-bold py-2 px-4 rounded-lg transition-all uppercase tracking-widest border border-white/10"
+                            >
+                                <Settings size={14} /> Historial Config
+                            </Link>
+                        </>
                     )}
                     <button onClick={signOut} className="text-white/20 hover:text-[#ff4d4d] text-[0.6rem] font-bold uppercase transition-colors">Cerrar Sesión Local</button>
                 </div>

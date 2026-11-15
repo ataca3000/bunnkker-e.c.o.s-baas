@@ -37,6 +37,7 @@ export function getSourceTabId(): string {
 export function inferSyncScope(action?: string, explicitScope?: SyncScope): SyncScope {
   if (explicitScope) return explicitScope;
   if (!action) return 'all';
+  if (action.includes('AUDIT') || action.includes('SECURITY')) return 'audit';
   if (action.includes('CONFIG') || action.includes('SETTING')) return 'settings';
   if (action.includes('DEVICE') || action.includes('PAIRING')) return 'devices';
   if (action.includes('PRODUCT') || action.includes('STOCK') || action.includes('INVENTORY')) return 'products';

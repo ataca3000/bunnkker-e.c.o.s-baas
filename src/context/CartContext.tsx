@@ -477,6 +477,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
                         id: ev?.entityId,
                         scope: ev?.scope || 'all',
                         txId: ev?.txId,
+                        payload: ev?.payload,
                         fromRemote: true,
                         skipServerPost: true,
                     });

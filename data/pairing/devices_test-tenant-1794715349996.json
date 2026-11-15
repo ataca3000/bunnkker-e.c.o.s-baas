@@ -1,0 +1,18 @@
+{
+  "devices": [],
+  "passes": [
+    {
+      "passId": "f0e2c1b4-b7fd-4d5c-971a-7426c080c210",
+      "code": "P2PTJM",
+      "tenantId": "test-tenant-1794715349996",
+      "role": "sales",
+      "label": "Caja Movil 2",
+      "createdBy": "owner-1",
+      "createdAt": "2026-11-15T04:02:29.997Z",
+      "expiresAt": 1794716249997,
+      "reusable": true,
+      "usedCount": 2,
+      "revoked": false
+    }
+  ]
+}
