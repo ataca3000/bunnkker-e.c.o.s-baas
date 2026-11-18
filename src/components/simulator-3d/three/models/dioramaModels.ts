@@ -3224,10 +3224,20 @@ export function createBunkkerControlBoardMesh(m: DioramaMaterials): THREE.Group 
   canvas.height = 512;
   const ctx = canvas.getContext('2d')!;
 
+  type BoardRow = {
+    id: string;
+    type: string;
+    status: string;
+    color: string;
+    icon: string;
+  };
+
   function drawBoard(
     p1Status = 'LISTO EN CARGA',
     p2Status = 'EN RUTA',
-    p3Status = 'ENTREGADO OK'
+    p3Status = 'ENTREGADO OK',
+    customRows?: BoardRow[],
+    subtitleText = '● FLUJO REAL E.C.O.S. ACTIVO'
   ) {
     // Background Dark Tech
     ctx.fillStyle = '#0a0f1d';
@@ -3237,22 +3247,31 @@ export function createBunkkerControlBoardMesh(m: DioramaMaterials): THREE.Group 
     ctx.fillStyle = '#0284c7';
     ctx.fillRect(0, 0, 1024, 64);
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 30px "Plus Jakarta Sans", sans-serif';
-    ctx.fillText('BUNKKER ERP • CEREBRO OPERATIVO & PUNTO DE CONTROL', 32, 44);
+    ctx.font = 'bold 28px "Plus Jakarta Sans", sans-serif';
+    ctx.fillText('BUNKKER ERP • CEREBRO OPERATIVO EN VIVO', 32, 43);
 
-    // Wi-Fi Status Tag
+    // Sync Status Tag
     ctx.fillStyle = '#10b981';
-    ctx.font = 'bold 20px monospace';
+    ctx.font = 'bold 19px monospace';
     ctx.textAlign = 'right';
-    ctx.fillText('● WI-FI LOCAL: ACTIVO (5.0 GHz)', 992, 42);
+    ctx.fillText(subtitleText, 992, 42);
     ctx.textAlign = 'left';
 
-    // 3 Order Status Cards
-    const cards = [
+    // 3 Order Status Cards (real orders or fallback defaults)
+    const defaultCards: BoardRow[] = [
       { id: 'PED-01', type: 'ENTREGA EN CARGA', status: p1Status, color: '#06b6d4', icon: '📲 ➔ 📦 ➔ 💳' },
       { id: 'PED-02', type: 'ENVÍO A DOMICILIO', status: p2Status, color: '#f97316', icon: '🚚 ➔ ✍️' },
       { id: 'PED-03', type: 'VENTA EN CAJA', status: p3Status, color: '#10b981', icon: '⚡ ➔ 🏪' },
     ];
+
+    const cards: BoardRow[] =
+      customRows && customRows.length > 0
+        ? customRows.slice(0, 3)
+        : customRows
+          ? [
+              { id: 'SIN COLA', type: 'ESPERANDO PEDIDOS REALES EN POS / TIENDA', status: 'EN ESPERA', color: '#38bdf8', icon: '📡 CONECTADO A SSE + SQLITE WAL' },
+            ]
+          : defaultCards;
 
     cards.forEach((c, idx) => {
       const y = 88 + idx * 130;
@@ -3272,17 +3291,18 @@ export function createBunkkerControlBoardMesh(m: DioramaMaterials): THREE.Group 
 
       // Order ID
       ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 26px monospace';
-      ctx.fillText(c.id, 54, y + 42);
+      ctx.font = 'bold 25px monospace';
+      ctx.fillText(c.id.slice(0, 10), 54, y + 42);
 
-      // Type
-      ctx.fillStyle = '#94a3b8';
-      ctx.font = 'bold 20px "Plus Jakarta Sans", sans-serif';
-      ctx.fillText(c.type, 180, y + 42);
+      // Type / Product Summary
+      ctx.fillStyle = '#cbd5e1';
+      ctx.font = 'bold 19px "Plus Jakarta Sans", sans-serif';
+      const typeTrunc = c.type.length > 36 ? `${c.type.slice(0, 34)}...` : c.type;
+      ctx.fillText(typeTrunc, 210, y + 42);
 
       // Flow Icon Journey
-      ctx.fillStyle = '#cbd5e1';
-      ctx.font = '20px sans-serif';
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '18px sans-serif';
       ctx.fillText(c.icon, 54, y + 84);
 
       // Status Badge
@@ -3295,9 +3315,9 @@ export function createBunkkerControlBoardMesh(m: DioramaMaterials): THREE.Group 
         ctx.fillRect(720, y + 26, 250, 58);
       }
       ctx.fillStyle = '#0f172a';
-      ctx.font = '900 20px "Plus Jakarta Sans", sans-serif';
+      ctx.font = '900 19px "Plus Jakarta Sans", sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(c.status, 845, y + 62);
+      ctx.fillText(c.status.slice(0, 16), 845, y + 62);
       ctx.textAlign = 'left';
     });
   }
@@ -3337,6 +3357,11 @@ export function createBunkkerControlBoardMesh(m: DioramaMaterials): THREE.Group 
 
   group.userData.updateBoard = (p1?: string, p2?: string, p3?: string) => {
     drawBoard(p1, p2, p3);
+    boardTex.needsUpdate = true;
+  };
+
+  group.userData.updateRealBoard = (rows: BoardRow[], subtitleText?: string) => {
+    drawBoard(undefined, undefined, undefined, rows, subtitleText);
     boardTex.needsUpdate = true;
   };
 

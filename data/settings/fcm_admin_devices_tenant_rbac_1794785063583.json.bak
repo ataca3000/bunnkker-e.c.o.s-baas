@@ -1,0 +1,28 @@
+{
+  "devices": [
+    {
+      "deviceId": "fcm_5298fb66_oken_001",
+      "tenantId": "tenant_rbac_1794785063583",
+      "userId": "admin-99",
+      "userName": "Jefe Sucursal",
+      "role": "admin",
+      "token": "dQw4w9WgXcQ:APA91bHun4MxP5egoKMwt2KZFBaFUH-1RYqxS0cR_android_sample_token_001",
+      "tokenMasked": "dQw4w9Wg…en_001",
+      "platform": "unknown",
+      "deviceLabel": "Moto Edge Admin",
+      "enabled": true,
+      "categories": [
+        "STOCK_CRITICAL",
+        "PANIC_ALERT",
+        "SECURITY_ALERT",
+        "PRICE_CHANGE",
+        "ORDER_ABANDONED",
+        "SYSTEM_ERROR",
+        "TEST_ALERT"
+      ],
+      "createdAt": "2026-11-15T23:24:23.594Z",
+      "updatedAt": "2026-11-15T23:24:23.596Z",
+      "lastDeliveryStatus": "pending"
+    }
+  ]
+}

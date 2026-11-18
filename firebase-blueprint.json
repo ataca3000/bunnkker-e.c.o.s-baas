@@ -1,0 +1,98 @@
+{
+  "entities": {
+    "FcmAdminDevice": {
+      "title": "FCM Admin Device",
+      "description": "Dispositivo Android o navegador administrativo registrado para recibir alertas tempranas via Firebase Cloud Messaging.",
+      "type": "object",
+      "properties": {
+        "deviceId": { "type": "string", "minLength": 4, "maxLength": 128 },
+        "userId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "role": { "type": "string", "enum": ["superadmin", "admin"] },
+        "tenantId": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "platform": { "type": "string", "enum": ["android", "desktop", "ios"] },
+        "deviceLabel": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "tokenPreview": { "type": "string", "minLength": 6, "maxLength": 32 },
+        "enabled": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["deviceId", "userId", "role", "tenantId", "platform", "deviceLabel", "enabled", "createdAt", "updatedAt"]
+    },
+    "EarlyWarningAlert": {
+      "title": "Early Warning Alert",
+      "description": "Alerta crítica de alerta temprana enviada por FCM a dispositivos administradores.",
+      "type": "object",
+      "properties": {
+        "alertId": { "type": "string", "minLength": 4, "maxLength": 128 },
+        "tenantId": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "category": { "type": "string", "enum": ["STOCK_CRITICAL", "PANIC_ALERT", "SECURITY_ALERT", "PRICE_CHANGE", "ORDER_ABANDONED", "SYSTEM_ERROR", "TEST_ALERT"] },
+        "severity": { "type": "string", "enum": ["critical", "high", "warning"] },
+        "title": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "body": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "targetUrl": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "createdBy": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["alertId", "tenantId", "category", "severity", "title", "body", "createdBy", "createdAt"]
+    },
+    "BranchNode": {
+      "title": "Branch Node",
+      "description": "Nodo aislado de sucursal reportado al plano de control central multi-sucursal.",
+      "type": "object",
+      "properties": {
+        "branchId": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "ownerUid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "name": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "code": { "type": "string", "minLength": 1, "maxLength": 24 },
+        "region": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "status": { "type": "string", "enum": ["online", "degraded", "offline"] },
+        "isolationMode": { "type": "string", "enum": ["isolated_local_first", "cloud_mirror"] },
+        "pendingSyncCount": { "type": "number", "minimum": 0 },
+        "todaySales": { "type": "number", "minimum": 0 },
+        "todayOrders": { "type": "number", "minimum": 0 },
+        "subscriptionTier": { "type": "string", "enum": ["TRIAL", "STARTER", "PRO", "ENTERPRISE"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["branchId", "ownerUid", "name", "code", "region", "status", "isolationMode", "pendingSyncCount", "todaySales", "todayOrders", "subscriptionTier", "createdAt", "updatedAt"]
+    },
+    "ImmutableAuditEntry": {
+      "title": "Immutable Audit Entry",
+      "description": "Registro inmutable encadenado SHA-256 para trazabilidad corporativa append-only.",
+      "type": "object",
+      "properties": {
+        "entryId": { "type": "string", "minLength": 4, "maxLength": 128 },
+        "ownerUid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "branchId": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "actorId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "actorRole": { "type": "string", "minLength": 1, "maxLength": 48 },
+        "action": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "resourceRef": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "payloadHash": { "type": "string", "minLength": 64, "maxLength": 64 },
+        "previousHash": { "type": "string", "minLength": 64, "maxLength": 64 },
+        "entryHash": { "type": "string", "minLength": 64, "maxLength": 64 },
+        "sequence": { "type": "number", "minimum": 1 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["entryId", "ownerUid", "branchId", "actorId", "actorRole", "action", "resourceRef", "payloadHash", "previousHash", "entryHash", "sequence", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/fcm_admin_devices/{deviceId}": {
+      "schema": { "$ref": "#/entities/FcmAdminDevice" },
+      "description": "Registro de dispositivos Android/Web de administradores suscritos a alertas push FCM."
+    },
+    "/early_warning_alerts/{alertId}": {
+      "schema": { "$ref": "#/entities/EarlyWarningAlert" },
+      "description": "Historial de alertas tempranas críticas despachadas a administradores."
+    },
+    "/branch_nodes/{branchId}": {
+      "schema": { "$ref": "#/entities/BranchNode" },
+      "description": "Telemetría consolidada y estado de aislamiento por nodo de sucursal."
+    },
+    "/immutable_audit_chain/{entryId}": {
+      "schema": { "$ref": "#/entities/ImmutableAuditEntry" },
+      "description": "Bitácora inmutable append-only encadenada criptográficamente."
+    }
+  }
+}

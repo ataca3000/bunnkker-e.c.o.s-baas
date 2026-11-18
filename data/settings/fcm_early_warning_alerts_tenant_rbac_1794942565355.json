@@ -1,0 +1,28 @@
+{
+  "alerts": [
+    {
+      "id": "ew_e7bc54c2-124",
+      "tenantId": "tenant_rbac_1794942565355",
+      "category": "SECURITY_ALERT",
+      "severity": "critical",
+      "title": "Prueba Seguridad Android",
+      "body": "Verificación de entrega push para administradores.",
+      "url": "/dashboard/audit",
+      "actorUid": "super-1",
+      "actorName": "superadmin",
+      "targetRoles": [
+        "superadmin",
+        "admin"
+      ],
+      "deliveryMode": "realtime_sw_only",
+      "sentCount": 0,
+      "failedCount": 0,
+      "prunedCount": 0,
+      "targetedDevices": 1,
+      "createdAt": "2026-11-17T19:09:25.370Z",
+      "metadata": {
+        "triggeredBy": "super-1"
+      }
+    }
+  ]
+}

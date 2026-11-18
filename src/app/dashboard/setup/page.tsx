@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Settings, Key, Landmark, MapPin, CheckCircle2, Lock, 
     CreditCard, HardDrive, Loader2, ArrowRight,
-    Printer
+    Printer, BellRing
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
@@ -17,6 +17,7 @@ const APIKeyManager = dynamic(() => import('@/components/admin/APIKeyManager'), 
 const InteractiveTerraMap = dynamic(() => import('@/components/admin/InteractiveTerraMap'), { ssr: false });
 const CloudBackupConfigWidget = dynamic(() => import('@/components/admin/CloudBackupConfigWidget'), { ssr: false });
 const HardwareSettingsModal = dynamic(() => import('@/components/hardware/HardwareSettingsModal'), { ssr: false });
+const AndroidPushManager = dynamic(() => import('@/components/admin/AndroidPushManager'), { ssr: false });
 
 export default function SetupWizard() {
     const searchParams = useSearchParams();
@@ -135,6 +136,7 @@ export default function SetupWizard() {
                             { id: 4, label: 'Contacto y Ubicación', icon: <MapPin size={18} /> },
                             { id: 5, label: 'Bóveda Local', icon: <HardDrive size={18} /> },
                             { id: 7, label: 'Impresoras y Hardware', icon: <Printer size={18} /> },
+                            { id: 8, label: 'Alertas Push Android', icon: <BellRing size={18} /> },
                             { id: 6, label: 'Operar Sistema', icon: <CheckCircle2 size={18} /> }
                         ].map((s) => (
                             <button
@@ -407,6 +409,12 @@ export default function SetupWizard() {
                                     </div>
                                 )}
 
+                                {step === 8 && (
+                                    <div className="space-y-4">
+                                        <AndroidPushManager variant="panel" />
+                                    </div>
+                                )}
+
                                 {step === 6 && (
                                     <div className="space-y-6 text-center py-6">
                                         <CheckCircle2 size={56} className="text-green-500 mx-auto animate-bounce" />
@@ -429,7 +437,7 @@ export default function SetupWizard() {
                         {step !== 6 && (
                             <div className="mt-8 pt-4 border-t border-slate-800/80 flex justify-end">
                                 <button
-                                    onClick={() => setStep(step === 5 ? 7 : step === 7 ? 6 : step + 1)}
+                                    onClick={() => setStep(step === 5 ? 7 : step === 7 ? 8 : step === 8 ? 6 : step + 1)}
                                     className="bg-cyan-500 hover:bg-cyan-600 text-black px-6 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-colors flex items-center gap-2"
                                 >
                                     Siguiente Paso <ArrowRight size={14} />

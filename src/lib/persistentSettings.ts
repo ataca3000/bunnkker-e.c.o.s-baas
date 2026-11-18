@@ -124,3 +124,63 @@ export function savePersistentAgentConfigs(tenantId: string = 'default', configs
     console.warn(`[PERSISTENT SETTINGS] Advertencia guardando configuración de agentes (mantenido en RAM):`, err);
   }
 }
+
+function sanitizeNamespaceKey(raw: string): string {
+  return raw.replace(/[^a-zA-Z0-9_-]/g, '_');
+}
+
+/**
+ * Carga un documento JSON arbitrario persistente por namespace y tenantId.
+ */
+export function loadPersistentJson<T>(
+  namespace: string,
+  tenantId: string = 'default',
+  fallback: T
+): T {
+  const safeNs = sanitizeNamespaceKey(namespace);
+  const safeTenant = sanitizeNamespaceKey(tenantId || 'default');
+  const cacheKey = `${safeNs}_${safeTenant}`;
+
+  if (memoryCache.has(cacheKey)) {
+    return memoryCache.get(cacheKey) as unknown as T;
+  }
+
+  const filePath = path.join(getStorageDir(), `${cacheKey}.json`);
+  if (fs.existsSync(filePath)) {
+    try {
+      const raw = fs.readFileSync(filePath, 'utf-8');
+      const parsed = JSON.parse(raw) as T;
+      memoryCache.set(cacheKey, parsed as unknown as Record<string, any>);
+      return parsed;
+    } catch (err) {
+      console.warn(`[PERSISTENT SETTINGS] Error leyendo ${filePath}:`, err);
+    }
+  }
+
+  memoryCache.set(cacheKey, fallback as unknown as Record<string, any>);
+  return fallback;
+}
+
+/**
+ * Guarda de forma atómica un documento JSON persistente por namespace y tenantId.
+ */
+export function savePersistentJson<T>(
+  namespace: string,
+  tenantId: string = 'default',
+  data: T
+): void {
+  const safeNs = sanitizeNamespaceKey(namespace);
+  const safeTenant = sanitizeNamespaceKey(tenantId || 'default');
+  const cacheKey = `${safeNs}_${safeTenant}`;
+  const dir = getStorageDir();
+  const filePath = path.join(dir, `${cacheKey}.json`);
+
+  memoryCache.set(cacheKey, data as unknown as Record<string, any>);
+
+  try {
+    atomicWriteFileSync(filePath, JSON.stringify(data, null, 2), true);
+  } catch (err) {
+    console.warn(`[PERSISTENT SETTINGS] Advertencia guardando ${filePath} (mantenido en RAM):`, err);
+  }
+}
+

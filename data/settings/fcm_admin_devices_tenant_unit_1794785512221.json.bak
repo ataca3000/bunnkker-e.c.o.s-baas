@@ -1,0 +1,25 @@
+{
+  "devices": [
+    {
+      "deviceId": "fcm_5298fb66_oken_001",
+      "tenantId": "tenant_unit_1794785512221",
+      "userId": "admin-1",
+      "userName": "Supervisor Android",
+      "role": "superadmin",
+      "token": "dQw4w9WgXcQ:APA91bHun4MxP5egoKMwt2KZFBaFUH-1RYqxS0cR_android_sample_token_001",
+      "tokenMasked": "dQw4w9Wg…en_001",
+      "platform": "android-pwa",
+      "deviceLabel": "Pixel Admin",
+      "enabled": true,
+      "categories": [
+        "STOCK_CRITICAL",
+        "PANIC_ALERT",
+        "SECURITY_ALERT"
+      ],
+      "userAgent": "Mozilla/5.0 (Linux; Android 14)",
+      "createdAt": "2026-11-15T23:31:52.223Z",
+      "updatedAt": "2026-11-15T23:31:52.224Z",
+      "lastDeliveryStatus": "pending"
+    }
+  ]
+}

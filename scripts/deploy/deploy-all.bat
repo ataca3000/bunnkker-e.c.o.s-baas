@@ -35,16 +35,16 @@ if %ERRORLEVEL% NEQ 0 (
 echo [OK] Compilacion web exitosa.
 echo.
 
-:: ── PASO 3: Deploy a Firebase Hosting + Firestore Rules ───────────────────────
-echo [3/6] Desplegando a Firebase Hosting y actualizando reglas de Firestore...
-call firebase deploy --only hosting,firestore:rules
+:: ── PASO 3: Deploy a Firebase Hosting ────────────────────────────────────────
+echo [3/6] Desplegando a Firebase Hosting (Next.js SSR + PWA)...
+call firebase experiments:enable webframeworks
+call firebase deploy --only hosting
 if %ERRORLEVEL% NEQ 0 (
     echo.
-    echo [ERROR] Fallo el deploy a Firebase. Verifica que iniciaste sesion con 'firebase login'.
+    echo [ERROR] Fallo el deploy a Firebase. Verifica 'firebase login' y tu Project ID en .firebaserc.
     exit /b %ERRORLEVEL%
 )
-echo [OK] Deploy a Firebase completado.
-echo     URL publica: https://admin-erp-pro-1.web.app
+echo [OK] Deploy a Firebase Hosting completado.
 echo.
 
 :: ── PASO 4: Build Next.js Standalone para Electron (.exe) ─────────────────────

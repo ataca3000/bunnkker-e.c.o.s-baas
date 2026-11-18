@@ -1,37 +1,43 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, disableNetwork, enableNetwork } from 'firebase/firestore';
+import { getFirestore, disableNetwork, enableNetwork, doc, getDocFromServer } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
+import firebaseAppletConfig from '../../firebase-applet-config.json';
 
-const firebaseConfig = {
-  apiKey:            process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyLocalDummyKeyForOfflineMode000",
-  authDomain:        process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "bunkker-local-app.firebaseapp.com",
-  projectId:         process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "bunkker-local-app",
-  storageBucket:     process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "bunkker-local-app.appspot.com",
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "848317819375",
-  appId:             process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "1:848317819375:web:29580474544fc9794e2e1a",
-};
-
-// ─── Inicialización de Firebase App ───────────────────────────────────────────
-export const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-
-// ─── Instancia Real de Firestore ──────────────────────────────────────────────
-export const db = getFirestore(app);
-
-// ─── Detección: ¿hay credenciales reales de nube? ────────────────────────────
 const DUMMY_KEYS = ['', 'MY_FIREBASE_API_KEY', 'AIzaSyLocalDummyKeyForOfflineMode000'];
 const DUMMY_PROJECTS = ['', 'bunkker-local-app', 'demo-project'];
+
+const appletProjectId = firebaseAppletConfig?.projectId || '';
+const appletApiKey = firebaseAppletConfig?.apiKey || '';
+
+const typedAppletConfig = firebaseAppletConfig as Record<string, string | undefined>;
+
+export const firebasePublicConfig = {
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || appletApiKey || 'AIzaSyLocalDummyKeyForOfflineMode000',
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || typedAppletConfig?.authDomain || 'bunkker-local-app.firebaseapp.com',
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || appletProjectId || 'bunkker-local-app',
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || typedAppletConfig?.storageBucket || 'bunkker-local-app.appspot.com',
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || typedAppletConfig?.messagingSenderId || '848317819375',
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || typedAppletConfig?.appId || '1:848317819375:web:29580474544fc9794e2e1a',
+  firestoreDatabaseId: typedAppletConfig?.firestoreDatabaseId || '(default)',
+};
+
+export const app = getApps().length === 0 ? initializeApp(firebasePublicConfig) : getApp();
+
+export const db =
+  firebasePublicConfig.firestoreDatabaseId && firebasePublicConfig.firestoreDatabaseId !== '(default)'
+    ? getFirestore(app, firebasePublicConfig.firestoreDatabaseId)
+    : getFirestore(app);
+
 export const hasRealCredentials =
-  !DUMMY_KEYS.includes(process.env.NEXT_PUBLIC_FIREBASE_API_KEY ?? '') &&
-  !DUMMY_PROJECTS.includes(process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ?? 'bunkker-local-app');
+  !DUMMY_KEYS.includes(firebasePublicConfig.apiKey) &&
+  !DUMMY_PROJECTS.includes(firebasePublicConfig.projectId);
 
 if (!hasRealCredentials) {
-  // Modo local-first (tanto cliente como servidor Node.js): sin red, cero latencia, sin errores GrpcConnection PERMISSION_DENIED
   disableNetwork(db).catch(() => {});
 }
 
 if (typeof window !== 'undefined') {
   if (hasRealCredentials) {
-    // Modo nube: reconexión automática cuando el stream TCP se corta
     let _reconnectTimer: ReturnType<typeof setTimeout> | null = null;
     let _backoffMs = 2000;
     const MAX_BACKOFF = 60_000;
@@ -52,7 +58,7 @@ if (typeof window !== 'undefined') {
     };
 
     window.addEventListener('offline', () => disableNetwork(db).catch(() => {}));
-    window.addEventListener('online',  () => {
+    window.addEventListener('online', () => {
       _backoffMs = 2000;
       enableNetwork(db).catch(scheduleReconnect);
     });
@@ -71,14 +77,22 @@ if (typeof window !== 'undefined') {
       }
       _origConsoleError(...args);
     };
+
+    // Validación inicial de conectividad Firestore sin bloquear la UI
+    getDocFromServer(doc(db, 'test', 'connection')).catch((error: unknown) => {
+      if (error instanceof Error && error.message.includes('the client is offline')) {
+        console.error('Please check your Firebase configuration.');
+      }
+    });
   }
 }
 
-// ─── Instancia de Auth & Storage ──────────────────────────────────────────────
-// Si no hay credenciales reales en producción o estamos offline, evitar llamadas que bloqueen la red
 const mockAuth = {
   currentUser: null,
-  onAuthStateChanged: (cb: any) => { cb(null); return () => {}; },
+  onAuthStateChanged: (cb: any) => {
+    cb(null);
+    return () => {};
+  },
   signOut: async () => {},
 };
 

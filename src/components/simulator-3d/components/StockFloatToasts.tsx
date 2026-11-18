@@ -43,7 +43,7 @@ export const StockFloatToasts: React.FC<StockFloatToastsProps> = ({ events }) =>
         return (
           <div
             key={ev.id}
-            className={`flex flex-col gap-1.5 p-3 rounded-2xl border shadow-2xl backdrop-blur-md animate-bounce transition-all ${badgeBg}`}
+            className={`flex flex-col gap-1.5 p-3 rounded-2xl border shadow-2xl transition-all ${badgeBg}`}
           >
             {/* Top row: Destination badge & tracking ID */}
             <div className="flex items-center justify-between gap-2">

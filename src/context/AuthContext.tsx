@@ -143,10 +143,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                         setProfile(null);
                     }
                 } else if (res && res.status === 401) {
+                    const errJson = await res.json().catch(() => null);
                     // Solo cerrar sesión si el backend explícitamente rechazó las credenciales
                     clearStaffSession();
                     setUser(null);
                     setProfile(null);
+                    if (errJson?.code === 'SESSION_REVOKED' && typeof window !== 'undefined' && window.location.pathname.startsWith('/dashboard')) {
+                        window.location.assign('/login?error=session_revoked');
+                    }
                 }
                 // Si la red falló o hubo timeout, NO borramos la sesión persistida
             } catch {

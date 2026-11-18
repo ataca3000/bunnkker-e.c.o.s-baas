@@ -5,6 +5,7 @@ import { ShieldCheck, CloudLightning, KeyRound, Sparkles, Map, HeadphonesIcon, D
 import Link from 'next/link';
 import { toast } from '@/lib/toast';
 import CloudBackupConfigWidget from '@/components/admin/CloudBackupConfigWidget';
+import FirebaseHostingDeployCard from '@/components/admin/FirebaseHostingDeployCard';
 
 export default function ProSyncPage() {
   const [serial, setSerial] = useState('');
@@ -318,6 +319,8 @@ export default function ProSyncPage() {
         </div>
 
       </div>
+
+      <FirebaseHostingDeployCard />
     </div>
   );
 }

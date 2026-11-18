@@ -46,6 +46,7 @@ import ThemeToggle from '@/components/ThemeToggle';
 import LanguageSelector from '@/components/LanguageSelector';
 import AdminDock, { type AdminDockItem } from './AdminDock';
 import SuperAdminAuditNotifier from './SuperAdminAuditNotifier';
+import AndroidPushManager from './AndroidPushManager';
 import { useTranslation } from '@/context/LanguageContext';
 /* ─── Navegación canónica del dashboard ───────────────────────────────────── */
 type DashboardMenuItem = {
@@ -62,6 +63,7 @@ const menuGroups: { label: string; items: DashboardMenuItem[] }[] = [
         label: 'Panel y administración',
         items: [
             { id: 'dashboard', title: 'Resumen ejecutivo', icon: <LayoutDashboard size={19} />, href: '/dashboard' },
+            { id: 'executive', title: 'Tablero ejecutivo', icon: <Activity size={19} />, href: '/dashboard/executive', roles: ['superadmin', 'admin'] },
             { id: 'pos', title: 'Punto de venta', icon: <Calculator size={19} />, href: '/dashboard/sales' },
             { id: 'team', title: 'Equipo y permisos', icon: <Users size={19} />, href: '/dashboard/team' },
             { id: 'users', title: 'Cuentas de acceso', icon: <Key size={19} />, href: '/dashboard/admin/users' },
@@ -345,7 +347,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const showAdminDock = !isPOSFullscreen && (profile?.role === 'superadmin' || profile?.role === 'admin');
     const currentRole = profile?.role || 'admin';
     const shortLabels: Record<string, string> = {
-        dashboard: 'Panel', pos: 'POS', team: 'Equipo', users: 'Accesos', crm: 'CRM',
+        dashboard: 'Panel', executive: 'Ejecutivo', pos: 'POS', team: 'Equipo', users: 'Accesos', crm: 'CRM',
         customers: 'Clientes', billing: 'CFDI', qr: 'QR', setup: 'Ajustes', guide: 'Guía',
         demo: 'Pruebas', inventory: 'Stock', patio: 'Patio', pickup: 'Pickup', delivery: 'Rutas',
         simulator: 'Simulador', marketing: 'Marketing', audit: 'Auditoría', subscription: 'Plan', store: 'Tienda',
@@ -368,7 +370,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         design: 'DISEÑO', delivery: 'LOGÍSTICA',
         billing: 'FACTURACIÓN', audit: 'AUDITORÍA', tests: 'PRUEBAS',
         users: 'USUARIOS', marketing: 'MARKETING', suscripcion: 'SUSCRIPCIÓN',
-        crm: 'CRM', team: 'EQUIPO', purchases: 'COMPRAS', reports: 'REPORTES',
+        crm: 'CRM', team: 'EQUIPO', purchases: 'COMPRAS', reports: 'REPORTES', executive: 'TABLERO EJECUTIVO',
         soporte: 'SOPORTE', setup: 'CONFIGURACIÓN', guia: 'GUÍA',
     };
 
@@ -447,6 +449,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         {/* Notificaciones de Auditoría (únicamente SuperAdmin, con Activar/Silenciar) */}
                         <SuperAdminAuditNotifier />
+
+                        {/* Alertas Push Tempranas Android (FCM para Admin / SuperAdmin) */}
+                        <AndroidPushManager variant="toolbar" />
 
                         {/* Selector de Idioma (Español, Inglés, Francés, Chino) */}
                         <LanguageSelector />

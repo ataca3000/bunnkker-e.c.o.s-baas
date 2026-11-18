@@ -1,0 +1,18 @@
+{
+  "devices": [],
+  "passes": [
+    {
+      "passId": "cc1b6107-fff3-40c9-a515-19885f800c64",
+      "code": "W9YJTD",
+      "tenantId": "test-revoke-1794942567407",
+      "role": "inventory",
+      "label": "Terminal INVENTORY",
+      "createdBy": "owner-1",
+      "createdAt": "2026-11-17T19:09:27.407Z",
+      "expiresAt": 1794943467407,
+      "reusable": true,
+      "usedCount": 0,
+      "revoked": false
+    }
+  ]
+}

@@ -56,6 +56,8 @@ export const DASHBOARD_ROLE_PERMISSIONS = {
     '/dashboard/omnipulse': ['marketing'],
     '/dashboard/design': ['marketing'],
     '/dashboard/reports': [],
+    '/dashboard/executive': [],
+    '/dashboard/enterprise': [],
     '/dashboard/qr': ['marketing', 'sales', 'caja'],
     '/dashboard/simulator': [],
     '/dashboard/demo': [],

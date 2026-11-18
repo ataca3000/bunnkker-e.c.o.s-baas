@@ -128,7 +128,7 @@ export default async function RootLayout({
 }>) {
   const headersList = await headers();
   const tenantId = headersList.get('x-tenant-id') || 'default';
-  const shouldInjectToolbar = process.env.NODE_ENV === 'development';
+  const shouldInjectToolbar = process.env.VERCEL === '1' && process.env.NODE_ENV === 'development';
 
   return (
     <html lang="es" suppressHydrationWarning className="dark bg-[var(--bunkker-surface)]">

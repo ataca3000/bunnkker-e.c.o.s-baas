@@ -1,0 +1,26 @@
+{
+  "alerts": [
+    {
+      "id": "ew_ed66be1d-d99",
+      "tenantId": "tenant_unit_1794785063576",
+      "category": "STOCK_CRITICAL",
+      "severity": "critical",
+      "title": "Stock en Cero",
+      "body": "Generador 3500W llegó a 0 unidades.",
+      "url": "/dashboard/inventory",
+      "actorUid": "admin-1",
+      "actorName": "Supervisor Android",
+      "targetRoles": [
+        "superadmin",
+        "admin"
+      ],
+      "deliveryMode": "realtime_sw_only",
+      "sentCount": 0,
+      "failedCount": 0,
+      "prunedCount": 0,
+      "targetedDevices": 1,
+      "createdAt": "2026-11-15T23:24:23.579Z",
+      "metadata": {}
+    }
+  ]
+}

@@ -8,6 +8,11 @@ import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
 import styles from './AdminAsistente.module.css';
+import {
+    detectFirebaseAiCapabilities,
+    runHybridFirebaseInference,
+    type FirebaseAiEngineSource,
+} from '@/lib/firebaseAiLogic';
 
 export default function AdminAsistente() {
     const { siteConfig, products, formatCurrency, orders } = useCart();
@@ -24,7 +29,19 @@ export default function AdminAsistente() {
 
     const [input, setInput] = useState('');
     const [isTyping, setIsTyping] = useState(false);
+    const [activeEngineLabel, setActiveEngineLabel] = useState<string>('Híbrido On-Device / Cloud');
     const scrollRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const caps = detectFirebaseAiCapabilities();
+        if (caps.hasOnDevicePromptApi) {
+            setActiveEngineLabel('On-Device Gemini Nano');
+        } else if (caps.hasFirebaseCredentials && caps.isOnline) {
+            setActiveEngineLabel('Firebase AI Híbrido');
+        } else {
+            setActiveEngineLabel('Motor Local Offline');
+        }
+    }, []);
     const { profile, user } = useAuth();
     const pathname = usePathname();
     const isOwner = pathname?.startsWith('/dashboard');
@@ -213,7 +230,11 @@ export default function AdminAsistente() {
             if (queryTextTrimmed.startsWith('queja:') || queryTextTrimmed.startsWith('ticket:')) {
                 const complaintMsg = userMsg.replace(/^(queja|ticket):\s*/i, '').trim();
                 if (complaintMsg) {
-                    const folio = `TKT-${Math.floor(1000 + Math.random() * 9000)}`;
+                    const randArr = new Uint16Array(1);
+                    if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+                        crypto.getRandomValues(randArr);
+                    }
+                    const folio = `TKT-${1000 + (randArr[0] % 9000)}`;
                     try {
                         await fetch('/api/tickets', {
                             method: 'POST',
@@ -238,26 +259,35 @@ export default function AdminAsistente() {
                 }
             }
 
-            const response = await fetch('/api/ai/chat', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    messages: messages.concat([{ role: 'user', content: userMsg }]),
-                    contextData,
-                    role: aiRole
-                })
+            const stringHistory = messages
+                .filter((m): m is { role: string; content: string } => typeof m.content === 'string')
+                .slice(-8);
+
+            const ENGINE_LABELS: Record<FirebaseAiEngineSource, string> = {
+                on_device: 'On-Device Nano',
+                in_cloud: 'Firebase AI Cloud',
+                server_gemini: 'Gemini Hydrogen',
+                local_rule_engine: 'Motor Local BUNKKER',
+            };
+
+            const hybridResult = await runHybridFirebaseInference({
+                prompt: userMsg,
+                history: stringHistory,
+                role: aiRole,
+                contextData,
+                serverFallbackFetcher: async (payload) => {
+                    const response = await fetch('/api/ai/chat', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload),
+                    });
+                    if (!response.ok) return null;
+                    return response.json();
+                },
             });
 
-            const data = await response.json();
-            
-            if (!response.ok) {
-                setMessages(prev => [...prev, { 
-                    role: 'assistant', 
-                    content: data.reply || "Modo local activo. ¿Qué productos o precios deseas consultar en el catálogo?" 
-                }]);
-            } else {
-                setMessages(prev => [...prev, { role: 'assistant', content: data.reply }]);
-            }
+            setActiveEngineLabel(ENGINE_LABELS[hybridResult.source] || 'Motor Local');
+            setMessages(prev => [...prev, { role: 'assistant', content: hybridResult.text }]);
         } catch (err) {
             console.error("Chat error:", err);
             setMessages(prev => [...prev, { role: 'assistant', content: "Lo siento, tuve un problema interno al procesar tu mensaje." }]);
@@ -329,9 +359,11 @@ export default function AdminAsistente() {
                             <X size={20} className={styles.chatClose} onClick={() => setIsOpen(false)} />
                         </div>
 
-                        <div className={styles.chatWarning} style={{ background: 'rgba(14, 165, 233, 0.08)', color: '#0284c7', borderBottom: '1px solid rgba(14, 165, 233, 0.15)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <Sparkles size={13} className="text-sky-500 animate-pulse flex-shrink-0" />
-                            <span><strong>BUNKKER E.C.O.S & LION:</strong> Gerente que personaliza y coordina tu operación.</span>
+                        <div className={styles.chatWarning} style={{ background: 'rgba(14, 165, 233, 0.08)', color: '#0284c7', borderBottom: '1px solid rgba(14, 165, 233, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <Sparkles size={13} className="text-sky-500 flex-shrink-0" />
+                                <span><strong>BUNKKER & LION:</strong> Firebase AI Logic ({activeEngineLabel})</span>
+                            </div>
                         </div>
 
                         <div ref={scrollRef} className={styles.chatBody}>

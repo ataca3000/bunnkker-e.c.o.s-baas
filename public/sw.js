@@ -104,7 +104,83 @@ self.addEventListener('message', (event) => {
         }
       })()
     );
+    return;
   }
+
+  if (event.data.type === 'SHOW_LOCAL_CRITICAL_NOTIFICATION' && event.data.payload) {
+    const p = event.data.payload;
+    const targetUrl = typeof p.url === 'string' && p.url.startsWith('/') ? p.url : '/dashboard/audit';
+    event.waitUntil(
+      self.registration.showNotification(p.title || 'BUNKKER — Alerta Temprana', {
+        body: p.body || 'Evento crítico detectado.',
+        icon: '/icon-192x192.png',
+        badge: '/icon-maskable-192x192.png',
+        tag: `bunkker-local-${p.category || 'ALERT'}-${p.id || Date.now()}`,
+        renotify: true,
+        requireInteraction: p.severity === 'critical',
+        vibrate: [250, 120, 250, 120, 400],
+        data: { url: targetUrl, category: p.category || 'EARLY_WARNING' },
+      })
+    );
+  }
+});
+
+self.addEventListener('push', (event) => {
+  let payload = {};
+  try {
+    payload = event.data ? event.data.json() : {};
+  } catch {
+    payload = {
+      notification: {
+        title: 'BUNKKER — Alerta Temprana',
+        body: event.data ? event.data.text() : 'Evento crítico registrado.',
+      },
+    };
+  }
+  const notif = payload.notification || {};
+  const data = payload.data || {};
+  const targetUrl = typeof data.url === 'string' && data.url.startsWith('/') ? data.url : '/dashboard/audit';
+
+  event.waitUntil(
+    self.registration.showNotification(notif.title || data.title || 'BUNKKER — Alerta Temprana', {
+      body: notif.body || data.body || 'Se detectó un evento crítico.',
+      icon: '/icon-192x192.png',
+      badge: '/icon-maskable-192x192.png',
+      tag: `bunkker-push-${data.category || 'ALERT'}-${data.alertId || Date.now()}`,
+      renotify: true,
+      requireInteraction: data.severity === 'critical',
+      vibrate: [250, 120, 250, 120, 400],
+      data: { url: targetUrl, category: data.category || 'EARLY_WARNING' },
+    })
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const targetUrl =
+    (event.notification && event.notification.data && event.notification.data.url) ||
+    '/dashboard/audit';
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+      for (const client of windowClients) {
+        try {
+          if (new URL(client.url).origin === self.location.origin) {
+            if ('navigate' in client && typeof client.navigate === 'function') {
+              client.navigate(targetUrl).catch(() => {});
+            }
+            if ('focus' in client) {
+              return client.focus();
+            }
+          }
+        } catch {}
+      }
+      if (self.clients.openWindow) {
+        return self.clients.openWindow(targetUrl);
+      }
+      return undefined;
+    })
+  );
 });
 
 self.addEventListener('fetch', (event) => {

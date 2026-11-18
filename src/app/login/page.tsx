@@ -12,6 +12,7 @@ import { motion } from 'framer-motion';
 import { saveCustomerSession } from '@/lib/customerAuth';
 import { saveStaffSession } from '@/lib/staffAuth';
 import { getRoleLandingPath } from '@/lib/dashboardRouting';
+import { signInWithGoogleWorkspace } from '@/lib/workspaceClient';
 
 function applyBrowserSessionCookies(uid?: string, role?: string, signature?: string) {
   if (typeof window === 'undefined' || !uid || !role || !signature) return;
@@ -87,6 +88,7 @@ export default function LoginPage() {
         user_not_found: '[ERR_SESSION_EXPIRED] El usuario asignado a este acceso no existe.',
         user_inactive: '[ERR_SESSION_EXPIRED] Esta cuenta de personal está desactivada.',
         device_revoked: '[ERR_DEVICE_REVOKED] Esta terminal fue desvinculada por el administrador. Escanea un nuevo QR para volver a conectarte.',
+        session_revoked: '[ERR_SESSION_REVOKED] Tu sesión corporativa fue revocada remotamente desde la Consola Central.',
       };
 
       if (errorParam) {
@@ -181,6 +183,64 @@ export default function LoginPage() {
   const handleStaffSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     await performStaffLogin(staffPin);
+  };
+
+  const handleCorporateGoogleSso = async () => {
+    setStaffLoading(true);
+    setStaffError('');
+    setStaffSuccess('');
+
+    try {
+      const googleRes = await signInWithGoogleWorkspace({ includeWorkspaceScopes: true });
+      const { getDeviceFingerprint } = await import('@/lib/fingerprint');
+      const deviceId = getDeviceFingerprint();
+
+      const res = await fetch('/api/auth/sso', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          idToken: googleRes.idToken,
+          deviceId,
+        }),
+      });
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok || !data?.success) {
+        setStaffError(data?.error || 'No se pudo autenticar tu cuenta corporativa Google.');
+        return;
+      }
+
+      const params = new URLSearchParams(window.location.search);
+      const targetUrl = getRoleLandingPath(data.role, params.get('redirect')) || '/dashboard';
+
+      applyBrowserSessionCookies(data.uid, data.role, data.signature);
+      saveStaffSession({
+        uid: data.uid,
+        role: data.role,
+        signature: data.signature,
+        user: data.user,
+        profile: {
+          uid: data.uid,
+          email: data.user?.email || googleRes.email,
+          displayName: data.user?.name || googleRes.displayName,
+          role: data.role,
+          signature: data.signature,
+          isPremium: true,
+          lastLogin: Date.now(),
+        },
+      });
+      setStaffSuccess('Identidad Google SSO verificada. Abriendo suite...');
+      window.location.assign(targetUrl);
+    } catch (err: unknown) {
+      setStaffError(
+        err instanceof Error
+          ? err.message
+          : 'Error iniciando sesión corporativa con Google.'
+      );
+    } finally {
+      setStaffLoading(false);
+    }
   };
 
   // Autenticación / Registro de Clientes
@@ -379,6 +439,38 @@ export default function LoginPage() {
                 )}
               </button>
             </form>
+
+            <div className="mt-5 pt-5 border-t border-white/10">
+              <p className="text-[11px] font-semibold text-slate-400 text-center mb-3">
+                Acceso Corporativo & Google Workspace (Admin / Gerencia)
+              </p>
+              <button
+                type="button"
+                onClick={() => void handleCorporateGoogleSso()}
+                disabled={staffLoading}
+                className="w-full min-h-[44px] cursor-pointer rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-slate-100 flex items-center justify-center gap-3 disabled:opacity-60"
+              >
+                <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+                  <path
+                    fill="#EA4335"
+                    d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"
+                  />
+                  <path
+                    fill="#4285F4"
+                    d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"
+                  />
+                  <path
+                    fill="#FBBC05"
+                    d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"
+                  />
+                  <path
+                    fill="#34A853"
+                    d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
+                  />
+                </svg>
+                <span>Iniciar sesión corporativa con Google SSO</span>
+              </button>
+            </div>
           </div>
 
           <div className="mt-6 pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">

@@ -186,3 +186,187 @@ export function useSyncListener(
     };
   }, [scopesKey]);
 }
+
+export interface FcmIntegrationCheckResult {
+  ok: boolean;
+  serviceWorkerSupported: boolean;
+  fcmSwActive: boolean;
+  fcmSwState: string | null;
+  fcmSwScriptUrl: string | null;
+  notificationPermission: NotificationPermission | 'unsupported';
+  fcmSupported: boolean;
+  hasFirebaseWebConfig: boolean;
+  token: string | null;
+  tokenSource: 'firebase_getToken' | 'localStorage' | 'none';
+  reason?: string;
+}
+
+/**
+ * Función de prueba / diagnóstico para verificar si el Service Worker de
+ * Firebase Cloud Messaging (`firebase-messaging-sw.js`) está activo en el
+ * dispositivo actual y registrar en consola el token FCM del dispositivo.
+ */
+export async function verifyFcmServiceWorkerIntegration(options?: {
+  registerIfMissing?: boolean;
+}): Promise<FcmIntegrationCheckResult> {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+    const serverResult: FcmIntegrationCheckResult = {
+      ok: false,
+      serviceWorkerSupported: false,
+      fcmSwActive: false,
+      fcmSwState: null,
+      fcmSwScriptUrl: null,
+      notificationPermission: 'unsupported',
+      fcmSupported: false,
+      hasFirebaseWebConfig: false,
+      token: null,
+      tokenSource: 'none',
+      reason: 'Esta verificación debe ejecutarse en el navegador del dispositivo.',
+    };
+    console.warn('[FCM Verify] Entorno sin navegador:', serverResult.reason);
+    return serverResult;
+  }
+
+  const serviceWorkerSupported = 'serviceWorker' in navigator;
+  const notificationPermission: NotificationPermission | 'unsupported' =
+    'Notification' in window ? Notification.permission : 'unsupported';
+
+  if (!serviceWorkerSupported) {
+    const unsupportedSw: FcmIntegrationCheckResult = {
+      ok: false,
+      serviceWorkerSupported: false,
+      fcmSwActive: false,
+      fcmSwState: null,
+      fcmSwScriptUrl: null,
+      notificationPermission,
+      fcmSupported: false,
+      hasFirebaseWebConfig: false,
+      token: null,
+      tokenSource: 'none',
+      reason: 'Service Worker API no soportada en este navegador.',
+    };
+    console.warn('[FCM Verify] Service Worker no soportado.', unsupportedSw);
+    return unsupportedSw;
+  }
+
+  const findFcmRegistration = async (): Promise<ServiceWorkerRegistration | undefined> => {
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    return registrations.find((reg) => {
+      const urls = [reg.active?.scriptURL, reg.waiting?.scriptURL, reg.installing?.scriptURL].filter(
+        Boolean
+      ) as string[];
+      return urls.some((u) => u.includes('firebase-messaging-sw.js'));
+    });
+  };
+
+  let fcmRegistration = await findFcmRegistration();
+
+  const { app, firebasePublicConfig, hasRealCredentials } = await import('@/lib/firebase');
+
+  if (!fcmRegistration && options?.registerIfMissing && hasRealCredentials) {
+    try {
+      const params = new URLSearchParams({
+        apiKey: firebasePublicConfig.apiKey || '',
+        authDomain: firebasePublicConfig.authDomain || '',
+        projectId: firebasePublicConfig.projectId || '',
+        storageBucket: firebasePublicConfig.storageBucket || '',
+        messagingSenderId: firebasePublicConfig.messagingSenderId || '',
+        appId: firebasePublicConfig.appId || '',
+      });
+      fcmRegistration = await navigator.serviceWorker.register(
+        `/firebase-messaging-sw.js?${params.toString()}`,
+        { scope: '/' }
+      );
+    } catch (regErr) {
+      console.warn('[FCM Verify] No se pudo registrar firebase-messaging-sw.js:', regErr);
+    }
+  }
+
+  const activeWorker = fcmRegistration?.active || null;
+  const candidateWorker = activeWorker || fcmRegistration?.waiting || fcmRegistration?.installing || null;
+  const fcmSwActive = Boolean(activeWorker && activeWorker.state === 'activated');
+  const fcmSwState = candidateWorker?.state || null;
+  const fcmSwScriptUrl = candidateWorker?.scriptURL || null;
+
+  let fcmSupported = false;
+  let token: string | null = null;
+  let tokenSource: FcmIntegrationCheckResult['tokenSource'] = 'none';
+  let reason: string | undefined;
+
+  try {
+    const { isSupported, getMessaging, getToken } = await import('firebase/messaging');
+    fcmSupported = await isSupported();
+
+    if (fcmSwActive && fcmSupported && hasRealCredentials && notificationPermission === 'granted') {
+      const messaging = getMessaging(app);
+      const vapidKey = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY?.trim();
+      const fetchedToken = await getToken(messaging, {
+        ...(vapidKey ? { vapidKey } : {}),
+        serviceWorkerRegistration: fcmRegistration,
+      });
+
+      if (fetchedToken) {
+        token = fetchedToken;
+        tokenSource = 'firebase_getToken';
+      }
+    }
+  } catch (err) {
+    reason = err instanceof Error ? err.message : 'Error consultando token FCM en firebase/messaging.';
+  }
+
+  if (!token) {
+    try {
+      const cachedToken = window.localStorage.getItem('bunkker_android_fcm_token');
+      if (cachedToken && cachedToken.trim()) {
+        token = cachedToken.trim();
+        tokenSource = 'localStorage';
+      }
+    } catch {}
+  }
+
+  if (!fcmSwActive && !reason) {
+    reason = fcmRegistration
+      ? `Service Worker FCM encontrado en estado "${fcmSwState}", aún no activo.`
+      : 'Service Worker firebase-messaging-sw.js no está registrado todavía.';
+  } else if (notificationPermission !== 'granted' && !reason) {
+    reason = `Permiso de notificaciones en estado "${notificationPermission}".`;
+  } else if (!token && !reason) {
+    reason = 'Service Worker FCM activo, pero no se obtuvo token (verifica NEXT_PUBLIC_FIREBASE_VAPID_KEY).';
+  }
+
+  const result: FcmIntegrationCheckResult = {
+    ok: fcmSwActive && Boolean(token),
+    serviceWorkerSupported,
+    fcmSwActive,
+    fcmSwState,
+    fcmSwScriptUrl,
+    notificationPermission,
+    fcmSupported,
+    hasFirebaseWebConfig: hasRealCredentials,
+    token,
+    tokenSource,
+    ...(reason ? { reason } : {}),
+  };
+
+  console.info('[FCM Verify] Estado Service Worker FCM:', {
+    activo: result.fcmSwActive,
+    estado: result.fcmSwState,
+    scriptURL: result.fcmSwScriptUrl,
+    permisoNotificaciones: result.notificationPermission,
+    soporteFCM: result.fcmSupported,
+    origenToken: result.tokenSource,
+  });
+
+  if (result.token) {
+    console.log('[FCM Verify] Token de registro del dispositivo actual:', result.token);
+  } else {
+    console.warn('[FCM Verify] Sin token de registro FCM:', result.reason);
+  }
+
+  return result;
+}
+
+if (typeof window !== 'undefined') {
+  (window as unknown as Record<string, unknown>).__verifyBunkkerFcm = verifyFcmServiceWorkerIntegration;
+}
+

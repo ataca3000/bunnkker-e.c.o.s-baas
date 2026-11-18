@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { validateApiSession } from '@/lib/apiAuth';
 import { sendMail } from '@/lib/mail';
-import { auth, db } from '@/lib/firebase-admin';
+import { db } from '@/lib/firebase-admin';
+import { dispatchCriticalAdminPush } from '@/lib/fcmPush';
 
 export async function POST(req: NextRequest) {
     const auth = validateApiSession(req);
@@ -81,6 +82,29 @@ export async function POST(req: NextRequest) {
             subject,
             html
         });
+
+        if (type === 'PANIC_ALERT' || type === 'ERROR_CRITICAL') {
+            const tenantId = req.headers.get('x-tenant-id') || 'default';
+            const isPanic = type === 'PANIC_ALERT';
+            await dispatchCriticalAdminPush({
+                tenantId,
+                category: isPanic ? 'PANIC_ALERT' : 'SYSTEM_ERROR',
+                severity: 'critical',
+                title: isPanic
+                    ? `🚨 EMERGENCIA DE REPARTIDOR: ${data?.driverName || 'Operador'}`
+                    : `🚨 ERROR CRÍTICO DE SISTEMA`,
+                body: isPanic
+                    ? `Botón de pánico activado en ruta. Ubicación: ${data?.mapsUrl || 'Revisar GPS en panel'}`
+                    : `${data?.message || 'Error crítico detectado en operación'} (${data?.userName || 'Sistema'})`,
+                url: isPanic ? '/dashboard/delivery' : '/dashboard/audit',
+                actorUid: auth.uid,
+                actorName: data?.driverName || data?.userName || auth.uid,
+                metadata: {
+                    type,
+                    mapsUrl: data?.mapsUrl ? String(data.mapsUrl) : '',
+                },
+            }).catch((err) => console.warn('[NOTIFY FCM PUSH WARN]:', err));
+        }
 
         // Registrar el envío en los logs de auditoría (opcional)
         if (result.success) {

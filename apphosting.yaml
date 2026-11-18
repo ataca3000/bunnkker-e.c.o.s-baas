@@ -1,0 +1,18 @@
+# Configuracion oficial para Firebase App Hosting (Next.js App Router + APIs)
+runConfig:
+  cpu: 1
+  memoryMiB: 1024
+  concurrency: 80
+  minInstances: 0
+  maxInstances: 3
+
+env:
+  - variable: NEXT_PUBLIC_APP_ENV
+    value: nube
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NODE_ENV
+    value: production
+    availability:
+      - RUNTIME

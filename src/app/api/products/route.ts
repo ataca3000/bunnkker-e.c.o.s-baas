@@ -9,6 +9,8 @@ import {
     normalizeProductMediaList,
     type ProductMediaItem,
 } from '@/lib/productMedia';
+import { dispatchCriticalAdminPush } from '@/lib/fcmPush';
+import { analyzeProductStock, DEFAULT_STOCK_THRESHOLD_CONFIG } from '@/lib/stockThresholds';
 
 export const dynamic = 'force-dynamic';
 
@@ -201,6 +203,46 @@ export async function POST(request: NextRequest) {
                 entityId: product.id,
                 payload: { details: auditSummary },
             });
+
+            if (priceChanged) {
+                void dispatchCriticalAdminPush({
+                    tenantId,
+                    category: 'PRICE_CHANGE',
+                    severity: 'warning',
+                    title: '💲 Cambio de Precio en Catálogo',
+                    body: auditSummary,
+                    url: '/dashboard/inventory',
+                    actorUid: auth.uid,
+                    actorName: auth.role,
+                    metadata: { productId: product.id, oldPrice: existing.price, newPrice: product.price },
+                }).catch(() => {});
+            } else if (data.stock !== undefined) {
+                const stockAnalysis = analyzeProductStock(
+                    {
+                        id: product.id,
+                        name: product.name,
+                        stock: product.stock,
+                        category: product.category,
+                        minStock: typeof body.minStock === 'number' ? body.minStock : undefined,
+                    },
+                    DEFAULT_STOCK_THRESHOLD_CONFIG
+                );
+                if (stockAnalysis.isAlert) {
+                    void dispatchCriticalAdminPush({
+                        tenantId,
+                        category: 'STOCK_CRITICAL',
+                        severity: stockAnalysis.status === 'out_of_stock' ? 'critical' : 'warning',
+                        title: stockAnalysis.status === 'out_of_stock' ? '🚨 Producto Agotado (0 uds)' : '⚠️ Stock Bajo Mínimo',
+                        body: `${product.name}: ${product.stock} uds disponibles (mínimo ${stockAnalysis.effectiveThreshold}).`,
+                        url: '/dashboard/inventory',
+                        actorUid: auth.uid,
+                        actorName: auth.role,
+                        dedupKey: `low_stock:${product.id}:${stockAnalysis.status}`,
+                        cooldownMs: 300_000,
+                        metadata: { productId: product.id, stock: product.stock, threshold: stockAnalysis.effectiveThreshold },
+                    }).catch(() => {});
+                }
+            }
             return NextResponse.json({ success: true, data: { ...product, media: finalMedia } });
         }
 
@@ -466,6 +508,34 @@ export async function PATCH(request: NextRequest) {
             entityId: product.id,
             payload: { details: patchDetails },
         });
+
+        if (typeof stockIncrement === 'number' && stockIncrement < 0) {
+            const stockAnalysis = analyzeProductStock(
+                {
+                    id: product.id,
+                    name: product.name,
+                    stock: product.stock,
+                    category: product.category,
+                    minStock: typeof minStock === 'number' ? minStock : undefined,
+                },
+                DEFAULT_STOCK_THRESHOLD_CONFIG
+            );
+            if (stockAnalysis.isAlert) {
+                void dispatchCriticalAdminPush({
+                    tenantId,
+                    category: 'STOCK_CRITICAL',
+                    severity: stockAnalysis.status === 'out_of_stock' ? 'critical' : 'warning',
+                    title: stockAnalysis.status === 'out_of_stock' ? '🚨 Producto Agotado (0 uds)' : '⚠️ Stock Bajo Mínimo',
+                    body: `${product.name}: bajó a ${product.stock} uds (mínimo ${stockAnalysis.effectiveThreshold}).`,
+                    url: '/dashboard/inventory',
+                    actorUid: auth.uid,
+                    actorName: auth.role,
+                    dedupKey: `low_stock:${product.id}:${stockAnalysis.status}`,
+                    cooldownMs: 300_000,
+                    metadata: { productId: product.id, stock: product.stock, threshold: stockAnalysis.effectiveThreshold },
+                }).catch(() => {});
+            }
+        }
         return NextResponse.json({ success: true, data: enrichedProduct, ...(restockAudit ? { restockAudit } : {}) });
     } catch (error: any) {
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });

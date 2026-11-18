@@ -7,12 +7,18 @@ import VirtualizedAuditList, { type AuditRowData } from '@/components/Virtualize
 import { type AuditLog } from '@/types/audit';
 import { areEqual, type ListChildComponentProps } from 'react-window';
 import Link from 'next/link';
-import { Settings, ShieldCheck, Camera, PenTool, CheckCircle2, Clock, Eye, X, Package, FileText, Store, Truck, UserCheck, AlertTriangle, BellRing, BellOff } from 'lucide-react';
+import dynamic from 'next/dynamic';
+import { Settings, ShieldCheck, Camera, PenTool, CheckCircle2, Clock, Eye, X, Package, FileText, Store, Truck, BellRing, BellOff, Database } from 'lucide-react';
 import {
     AUDIT_PREF_CHANGE_EVENT,
     loadAuditNotificationPreference,
     saveAuditNotificationPreference,
 } from '@/lib/auditNotifications';
+
+const DatabaseSchemaExplorerPanel = dynamic(
+    () => import('@/components/admin/DatabaseSchemaExplorerPanel'),
+    { ssr: false }
+);
 
 const isNode = typeof window === 'undefined' || !!(window as any).electronAPI;
 
@@ -48,7 +54,7 @@ Row.displayName = "AuditLogRow";
 
 export default function RadarAuditPage() {
     const { profile, signOut } = useAuth();
-    const [viewTab, setViewTab] = useState<'commercial' | 'warehouse' | 'logistics' | 'traceability' | 'logs'>('commercial');
+    const [viewTab, setViewTab] = useState<'commercial' | 'warehouse' | 'logistics' | 'traceability' | 'logs' | 'oil_explorer'>('commercial');
     const [logs, setLogs] = useState<AuditLog[]>([]);
     const [orders, setOrders] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
@@ -333,6 +339,18 @@ export default function RadarAuditPage() {
                 >
                     <FileText size={15} /> Registro Inmutable (Logs)
                 </button>
+                {(userRole === 'superadmin' || userRole === 'admin') && (
+                    <button
+                        onClick={() => setViewTab('oil_explorer')}
+                        className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer ${
+                            viewTab === 'oil_explorer'
+                                ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-900/30 ring-2 ring-cyan-400/50'
+                                : 'bg-zinc-900/80 text-zinc-400 hover:text-white border border-white/10'
+                        }`}
+                    >
+                        <Database size={15} /> Explorador BD (OIL)
+                    </button>
+                )}
             </div>
 
             {/* DOMINIO 1: COMERCIAL / VENTAS & COBROS (CAJA) */}
@@ -736,6 +754,11 @@ export default function RadarAuditPage() {
                         </div>
                     )}
                 </div>
+            )}
+
+            {/* DOMINIO 6: BUNKKER OIL FASE 1 — DATABASE SCHEMA EXPLORER (SOLO LECTURA) */}
+            {viewTab === 'oil_explorer' && (userRole === 'superadmin' || userRole === 'admin') && (
+                <DatabaseSchemaExplorerPanel />
             )}
 
             {/* Modal de Detalle de Evidencia PoD para Administrador */}

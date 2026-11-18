@@ -13,23 +13,53 @@ import type { DispatchResult } from '@/lib/omnipulse/types';
 export const dynamic = 'force-dynamic';
 
 export async function GET(
-    _request: NextRequest,
+    request: NextRequest,
     { params }: { params: Promise<{ postId: string }> }
 ) {
     const { postId } = await params;
 
+    let isClosed = false;
+    let interval: ReturnType<typeof setInterval> | null = null;
+
+    const cleanup = () => {
+        isClosed = true;
+        if (interval) {
+            clearInterval(interval);
+            interval = null;
+        }
+    };
+
     const stream = new ReadableStream({
-        async start(controller) {
+        start(controller) {
             const encoder = new TextEncoder();
 
+            const safeClose = () => {
+                if (isClosed) return;
+                cleanup();
+                try {
+                    controller.close();
+                } catch {
+                    // Stream already closed by client
+                }
+            };
+
             const send = (data: object) => {
-                controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+                if (isClosed) return;
+                try {
+                    controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+                } catch {
+                    safeClose();
+                }
             };
 
             let iterations = 0;
             const maxIterations = 120; // Máximo 3 minutos de polling
 
-            const interval = setInterval(() => {
+            interval = setInterval(() => {
+                if (isClosed) {
+                    cleanup();
+                    return;
+                }
                 iterations++;
                 const results = dispatchResults.get(postId) ?? [];
 
@@ -40,11 +70,15 @@ export async function GET(
 
                 if (allDone || iterations >= maxIterations) {
                     send({ postId, results, done: true, timestamp: Date.now() });
-                    clearInterval(interval);
-                    controller.close();
+                    safeClose();
                 }
             }, 1500);
-        }
+
+            request.signal.addEventListener('abort', safeClose, { once: true });
+        },
+        cancel() {
+            cleanup();
+        },
     });
 
     return new Response(stream, {

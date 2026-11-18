@@ -1,0 +1,18 @@
+{
+  "devices": [],
+  "passes": [
+    {
+      "passId": "8e280ab3-92a4-4c53-8eaf-af4d6fe4e053",
+      "code": "F2V9DZ",
+      "tenantId": "test-tenant-1794942567397",
+      "role": "sales",
+      "label": "Caja Movil 2",
+      "createdBy": "owner-1",
+      "createdAt": "2026-11-17T19:09:27.400Z",
+      "expiresAt": 1794943467400,
+      "reusable": true,
+      "usedCount": 1,
+      "revoked": false
+    }
+  ]
+}

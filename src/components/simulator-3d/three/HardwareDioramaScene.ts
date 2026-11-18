@@ -60,6 +60,12 @@ import type {
   ErpOrderStatus,
   ErpSignalPacket,
 } from '../types/logistics';
+import type {
+  TwinControlBoardRow,
+  TwinFlowImpulse,
+  TwinSnapshot,
+  TwinZoneKey,
+} from '@/lib/twinFlowBridge';
 
 export interface SceneCallbacks {
   onStepChange: (step: SimulationStep, progress: number) => void;
@@ -76,6 +82,7 @@ export interface SceneCallbacks {
   onActiveBoxesUpdate?: (boxes: ActiveBoxItem[]) => void;
   onHoverZone?: (zoneName: string | null) => void;
   onErpOrdersUpdate?: (orders: ErpOrder[]) => void;
+  autoDemoLoop?: boolean;
 }
 
 interface ActiveBox {
@@ -165,9 +172,13 @@ export class HardwareDioramaScene {
 
   // ERP Bunkker State & Neon Data Beams
   public erpOrders: ErpOrder[] = [];
+  private realBoardRows: TwinControlBoardRow[] | null = null;
+  private syncBoardSubtitle: string = '● FLUJO REAL E.C.O.S. ACTIVO';
   private erpBeams: { group: THREE.Group; curve: THREE.CatmullRomCurve3; pulseBead: THREE.Mesh; id: string }[] = [];
   private activeSignalPackets: { id: string; sprite: THREE.Sprite; curve: THREE.CatmullRomCurve3; progress: number; speed: number }[] = [];
-  private flowIntervalId: any = null;
+  private flowIntervalId: ReturnType<typeof setInterval> | null = null;
+  private pendingTimers: Set<ReturnType<typeof setTimeout>> = new Set();
+  private autoDemoEnabled: boolean = false;
 
   // Splines
   private localCurve!: THREE.CatmullRomCurve3;     // Box to Caja
@@ -269,15 +280,41 @@ export class HardwareDioramaScene {
     this.buildRouteGuides();
     this.buildLandingBeacons();
 
-    // Launch initial full logistics activity on load!
-    setTimeout(() => {
-      this.launchAllErpFlows();
-    }, 500);
+    this.autoDemoEnabled = Boolean(callbacks.autoDemoLoop);
 
-    // Continuous flow cycle keeps the conveyors and neon beams active indefinitely
+    if (this.autoDemoEnabled) {
+      this.setAutoDemoLoop(true);
+    }
+
+    window.addEventListener('resize', this.onResize);
+    this.tick = this.tick.bind(this);
+    this.startLoop();
+  }
+
+  private scheduleSafeTimeout(fn: () => void, delayMs: number) {
+    const id = setTimeout(() => {
+      this.pendingTimers.delete(id);
+      fn();
+    }, delayMs);
+    this.pendingTimers.add(id);
+    return id;
+  }
+
+  public setAutoDemoLoop(enabled: boolean) {
+    this.autoDemoEnabled = enabled;
+    if (this.flowIntervalId) {
+      clearInterval(this.flowIntervalId);
+      this.flowIntervalId = null;
+    }
+    if (!enabled) return;
+
+    this.scheduleSafeTimeout(() => {
+      if (this.autoDemoEnabled) this.launchAllErpFlows();
+    }, 300);
+
     let autoFlowCycle = 0;
     this.flowIntervalId = setInterval(() => {
-      if (!this.isSimulating) return;
+      if (!this.isSimulating || !this.autoDemoEnabled) return;
       autoFlowCycle = (autoFlowCycle + 1) % 3;
       if (autoFlowCycle === 0) {
         this.launchPedidoCargaFlow();
@@ -287,10 +324,6 @@ export class HardwareDioramaScene {
         this.launchPedidoCajaRapidaFlow();
       }
     }, 9000);
-
-    window.addEventListener('resize', this.onResize);
-    this.tick = this.tick.bind(this);
-    this.startLoop();
   }
 
   private setupLighting() {
@@ -1067,52 +1100,117 @@ export class HardwareDioramaScene {
       });
     });
 
-    // Initialize initial default orders in ERP
-    this.erpOrders = [
-      {
-        id: 'ORD-01',
-        orderNumber: 'PED-01',
-        flowType: 1,
-        channelName: 'Carga / Patio',
-        productName: 'Cemento Portland 50kg',
-        status: 'preparando',
-        stepDescription: 'Almacén prepara carga. Próximo paso: pase a pagar a caja.',
-        progress: 0.35,
-        timestamp: Date.now(),
-        ticketNumber: 'TK-8841',
-        signatureCaptured: false,
-        activeSignalEmoji: '📦',
-      },
-      {
-        id: 'ORD-02',
-        orderNumber: 'PED-02',
-        flowType: 2,
-        channelName: 'Domicilio',
-        productName: 'Taladro Percutor 20V',
-        status: 'en_ruta',
-        stepDescription: 'Repartidor en camino a domicilio residencial.',
-        progress: 0.60,
-        timestamp: Date.now(),
-        ticketNumber: 'TK-8842',
-        signatureCaptured: false,
-        activeSignalEmoji: '🚚',
-      },
-      {
-        id: 'ORD-03',
-        orderNumber: 'PED-03',
-        flowType: 3,
-        channelName: 'Caja Mostrador',
-        productName: 'Caja Herramientas 128 Pzs',
-        status: 'completado_ok',
-        stepDescription: 'Validado y cobrado en mostrador. Entrega OK.',
-        progress: 1.0,
-        timestamp: Date.now(),
-        ticketNumber: 'TK-8843',
-        signatureCaptured: true,
-        activeSignalEmoji: '✅',
-      },
-    ];
+    // Initial ERP list starts empty until hydrated by real BUNKKER state (or demo mode)
+    this.erpOrders = [];
+    this.callbacks.onErpOrdersUpdate?.([]);
+  }
+
+  private getZoneWorldPosition(zone: TwinZoneKey): THREE.Vector3 {
+    switch (zone) {
+      case 'cliente':
+        return new THREE.Vector3(-15.0, 1.8, 8.5);
+      case 'bunkker':
+        return new THREE.Vector3(15.5, 3.8, -9.5);
+      case 'almacen':
+        return new THREE.Vector3(-14.0, 3.2, -11.0);
+      case 'surtido':
+        return new THREE.Vector3(0.0, 2.2, -0.5);
+      case 'caja':
+        return new THREE.Vector3(-4.5, 2.2, 10.5);
+      case 'carga':
+        return new THREE.Vector3(-14.0, 2.2, -10.5);
+      case 'entregas':
+        return new THREE.Vector3(13.0, 2.2, 9.5);
+      case 'domicilio':
+        return new THREE.Vector3(25.0, 2.0, 9.5);
+      case 'stockIn':
+        return new THREE.Vector3(-19.5, 2.0, -4.5);
+    }
+  }
+
+  public syncRealErpState(snapshot: TwinSnapshot, syncSubtitle?: string) {
+    this.erpOrders = [...snapshot.erpOrders];
+    this.realBoardRows = snapshot.controlBoardRows;
+    if (syncSubtitle) {
+      this.syncBoardSubtitle = syncSubtitle;
+    }
+
+    if (snapshot.featuredStock) {
+      this.updateStockGauge(
+        snapshot.featuredStock.name,
+        snapshot.featuredStock.stock,
+        snapshot.featuredStock.minStock
+      );
+    }
+
     this.callbacks.onErpOrdersUpdate?.([...this.erpOrders]);
+    this.syncBunkkerControlBoard();
+  }
+
+  public triggerRealFlowImpulse(impulse: TwinFlowImpulse) {
+    const signals = impulse.signals || [];
+    signals.forEach((sig, index) => {
+      const spawnFn = () => {
+        this.spawnErpSignalPacket(
+          this.getZoneWorldPosition(sig.fromZone),
+          this.getZoneWorldPosition(sig.toZone),
+          sig.arcHeight,
+          sig.emoji,
+          sig.label,
+          sig.colorHex,
+          sig.speed ?? 0.55
+        );
+      };
+      if (index === 0) {
+        spawnFn();
+      } else {
+        this.scheduleSafeTimeout(spawnFn, index * 480);
+      }
+    });
+
+    if (impulse.box) {
+      this.launchBox(
+        impulse.box.destination,
+        impulse.box.productName,
+        impulse.box.trackingId,
+        impulse.box.category,
+        true
+      );
+    }
+
+    if (impulse.openDrawer && this.storeGroup?.userData.setDrawerOpen) {
+      this.storeGroup.userData.setDrawerOpen(1.0);
+      this.scheduleSafeTimeout(() => {
+        this.storeGroup?.userData.setDrawerOpen?.(0);
+      }, 2200);
+    }
+
+    if (impulse.openDock && this.dockGroup?.userData.setDoorOpen) {
+      this.dockGroup.userData.setDoorOpen(1.0);
+    }
+
+    if (impulse.celebration) {
+      this.spawnCelebrationMilestone(
+        impulse.celebration.destination,
+        impulse.celebration.productName,
+        impulse.celebration.trackingId,
+        this.getZoneWorldPosition(impulse.celebration.zone)
+      );
+    }
+
+    if (impulse.stockEvent) {
+      this.callbacks.onStockEvent?.(
+        impulse.stockEvent.type,
+        impulse.stockEvent.destination,
+        impulse.stockEvent.locationName,
+        impulse.stockEvent.trackingId,
+        impulse.stockEvent.productName
+      );
+    }
+
+    if (impulse.sound) {
+      this.callbacks.onSoundTrigger(impulse.sound);
+    }
   }
 
   /**
@@ -1186,6 +1284,14 @@ export class HardwareDioramaScene {
   }
 
   private syncBunkkerControlBoard() {
+    if (this.realBoardRows && this.bunkkerControlBoard?.userData.updateRealBoard) {
+      this.bunkkerControlBoard.userData.updateRealBoard(
+        this.realBoardRows,
+        this.syncBoardSubtitle
+      );
+      return;
+    }
+
     if (this.bunkkerControlBoard?.userData.updateBoard) {
       const getStatusLabel = (id: string, def: string) => {
         const ord = this.erpOrders.find((o) => o.id === id);
@@ -2163,7 +2269,10 @@ export class HardwareDioramaScene {
     clearTimeout(this.frameId);
     if (this.flowIntervalId) {
       clearInterval(this.flowIntervalId);
+      this.flowIntervalId = null;
     }
+    this.pendingTimers.forEach((timerId) => clearTimeout(timerId));
+    this.pendingTimers.clear();
     this.renderer.dispose();
   }
 }

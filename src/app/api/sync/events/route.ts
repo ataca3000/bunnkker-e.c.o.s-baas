@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getTenantId, validateApiSession } from '@/lib/apiAuth';
+import { isSessionRevoked } from '@/lib/enterpriseControlPlane';
 import {
   getRealtimeEventsSince,
   publishRealtimeEvent,
@@ -10,22 +11,31 @@ import {
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
+  const jti = request.cookies.get('msj-jti')?.value;
+  if (jti && isSessionRevoked(jti)) {
+    return NextResponse.json(
+      { success: false, code: 'SESSION_REVOKED', error: 'Sesión SSE revocada.' },
+      { status: 401 }
+    );
+  }
   const tenantId = getTenantId(request);
   const sinceParam = Number(request.nextUrl.searchParams.get('since') || '0');
   const encoder = new TextEncoder();
 
   let cleanup: (() => void) | null = null;
   let keepAliveTimer: ReturnType<typeof setInterval> | null = null;
+  let isClosed = false;
 
   const stream = new ReadableStream({
     start(controller) {
       const sendFrame = (event: string, data: unknown) => {
+        if (isClosed) return;
         try {
           controller.enqueue(
             encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`)
           );
         } catch {
-          // Stream closed
+          cleanup?.();
         }
       };
 
@@ -46,14 +56,17 @@ export async function GET(request: NextRequest) {
       });
 
       keepAliveTimer = setInterval(() => {
+        if (isClosed) return;
         try {
           controller.enqueue(encoder.encode(`: ping ${Date.now()}\n\n`));
         } catch {
-          if (keepAliveTimer) clearInterval(keepAliveTimer);
+          cleanup?.();
         }
       }, 20_000);
 
       cleanup = () => {
+        if (isClosed) return;
+        isClosed = true;
         if (keepAliveTimer) {
           clearInterval(keepAliveTimer);
           keepAliveTimer = null;
@@ -61,12 +74,16 @@ export async function GET(request: NextRequest) {
         unsubscribe();
       };
 
-      request.signal.addEventListener('abort', () => {
-        cleanup?.();
-        try {
-          controller.close();
-        } catch {}
-      });
+      request.signal.addEventListener(
+        'abort',
+        () => {
+          cleanup?.();
+          try {
+            controller.close();
+          } catch {}
+        },
+        { once: true }
+      );
     },
     cancel() {
       cleanup?.();

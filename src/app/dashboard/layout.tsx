@@ -4,6 +4,7 @@ import LocalRadio from "@/components/LocalRadio";
 import { BunkAssistantTour } from "@/components/LionAssistantTour";
 import { PinReminderModal } from "@/components/PinReminderModal";
 import BunkkerLayeredBackground from "@/components/ui/BunkkerLayeredBackground";
+import EnterpriseSuiteBar from "@/components/enterprise/EnterpriseSuiteBar";
 
 export default function DashboardLayout({
   children,
@@ -17,6 +18,7 @@ export default function DashboardLayout({
 
       {/* ─── CAPA 4: Contenido y contenedores translúcidos interactivos ─── */}
       <div className="relative z-10">
+        <EnterpriseSuiteBar />
         {children}
       </div>
       {/* Radio de Personal PTT (Walkie-Talkie) Exclusivo para el Dashboard de Trabajadores */}

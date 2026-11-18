@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyRoleSignature, hashPinSha256 } from '@/lib/apiAuth';
 import { INITIAL_STAFF_PIN_VALUES } from '@/lib/initialStaffPins';
+import { findSessionRecord, isSessionRevoked, touchSessionRecord } from '@/lib/enterpriseControlPlane';
+import { getCapabilitiesForRole } from '@/lib/enterpriseRbac';
 import bcrypt from 'bcryptjs';
 
 export async function GET(req: NextRequest) {
@@ -9,6 +11,7 @@ export async function GET(req: NextRequest) {
         const session = req.cookies.get('msj-session')?.value;
         const role    = req.cookies.get('msj-role')?.value;
         const sig     = req.cookies.get('msj-role-sig')?.value;
+        const jti     = req.cookies.get('msj-jti')?.value;
 
         if (!session || !role || !sig) {
             return NextResponse.json({ success: false, error: 'No session' }, { status: 401 });
@@ -19,6 +22,21 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ success: false, error: 'Invalid signature' }, { status: 401 });
         }
 
+        if (jti && isSessionRevoked(jti)) {
+            const res = NextResponse.json(
+                { success: false, code: 'SESSION_REVOKED', error: 'Tu sesión fue revocada remotamente.' },
+                { status: 401 }
+            );
+            res.cookies.delete('msj-session');
+            res.cookies.delete('msj-role');
+            res.cookies.delete('msj-role-sig');
+            res.cookies.delete('msj-jti');
+            return res;
+        }
+
+        const activeRec = jti ? findSessionRecord(jti) : null;
+        if (jti) touchSessionRecord(jti);
+
         let user: any = null;
         try {
             user = await prisma.user.findUnique({
@@ -26,6 +44,17 @@ export async function GET(req: NextRequest) {
             });
         } catch {
             user = null;
+        }
+
+        if (!user && activeRec && activeRec.provider === 'google_sso') {
+            user = {
+                id: activeRec.userId,
+                name: activeRec.userName,
+                email: activeRec.userEmail || '',
+                role: activeRec.role,
+                active: true,
+                tenantId: activeRec.branchId,
+            };
         }
 
         // Fallback únicamente para sesiones demo explícitas en entorno de desarrollo/test
@@ -58,6 +87,8 @@ export async function GET(req: NextRequest) {
             const initialHash = hashPinSha256(initialPin);
             return user.pin === initialHash || user.pin === initialPin;
         });
+
+        const capabilities = getCapabilitiesForRole(user.role);
         
         return NextResponse.json({ 
             success: true, 
@@ -67,7 +98,10 @@ export async function GET(req: NextRequest) {
                 name: user.name,
                 role: user.role,
                 signature: sig,
-                isInitialPin
+                isInitialPin,
+                sessionId: jti || undefined,
+                branchId: activeRec?.branchId || user.tenantId || 'default',
+                capabilities,
             }
         });
     } catch (error: any) {

@@ -6,7 +6,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 
 export type ApiAuthResult =
-  | { ok: true; uid: string; role: string; tenantId?: string }
+  | { ok: true; uid: string; role: string; tenantId?: string; jti?: string }
   | { ok: false; response: NextResponse };
 
 const WRITE_ROLES = ['superadmin', 'admin', 'inventory', 'sales', 'billing'];
@@ -64,6 +64,8 @@ export function verifyRoleSignature(role: string, uid: string, signature: string
 }
 
 import { SentinelGuardAgent } from './sentinelGuard';
+import { isSessionRevoked, touchSessionRecord } from './enterpriseControlPlane';
+import { hasCapability, type EnterpriseCapability } from './enterpriseRbac';
 
 /**
  * Valida que la petición tenga una sesión activa y una firma de rol válida.
@@ -116,7 +118,48 @@ export function validateApiSession(request: NextRequest): ApiAuthResult {
     return { ok: false, response: eviction };
   }
 
-  return { ok: true, uid: session, role, tenantId };
+  const jti = request.cookies.get('msj-jti')?.value;
+  if (jti && isSessionRevoked(jti)) {
+    const res = NextResponse.json(
+      {
+        success: false,
+        code: 'SESSION_REVOKED',
+        error: 'Tu sesión corporativa fue revocada remotamente por un administrador.',
+      },
+      { status: 401 }
+    );
+    res.cookies.delete('msj-session');
+    res.cookies.delete('msj-role');
+    res.cookies.delete('msj-role-sig');
+    res.cookies.delete('msj-jti');
+    return { ok: false, response: res };
+  }
+
+  if (jti) {
+    touchSessionRecord(jti);
+  }
+
+  return { ok: true, uid: session, role, tenantId, jti };
+}
+
+export function requireCapability(
+  request: NextRequest,
+  capability: EnterpriseCapability
+): ApiAuthResult {
+  const auth = validateApiSession(request);
+  if (!auth.ok) return auth;
+
+  if (!hasCapability(auth.role, capability)) {
+    return {
+      ok: false,
+      response: NextResponse.json(
+        { success: false, error: `Acceso denegado. Capacidad requerida: ${capability}` },
+        { status: 403 }
+      ),
+    };
+  }
+
+  return auth;
 }
 
 /**

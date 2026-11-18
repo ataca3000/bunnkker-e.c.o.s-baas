@@ -1,0 +1,181 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ── Catch-all deny ──────────────────────────────────────────────────────
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // ── Global Hardened Primitives ──────────────────────────────────────────
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isAdmin() {
+      return isVerifiedUser() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    function isValidFcmDevice(data) {
+      return data.keys().hasAll(['deviceId', 'userId', 'role', 'tenantId', 'platform', 'deviceLabel', 'enabled', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['deviceId', 'userId', 'role', 'tenantId', 'platform', 'deviceLabel', 'tokenPreview', 'enabled', 'createdAt', 'updatedAt'])
+        && isValidId(data.deviceId)
+        && data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128
+        && data.role in ['superadmin', 'admin']
+        && data.tenantId is string && data.tenantId.size() >= 1 && data.tenantId.size() <= 64
+        && data.platform in ['android', 'desktop', 'ios']
+        && data.deviceLabel is string && data.deviceLabel.size() >= 1 && data.deviceLabel.size() <= 120
+        && (!('tokenPreview' in data) || (data.tokenPreview is string && data.tokenPreview.size() <= 32))
+        && data.enabled is bool
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidEarlyWarningAlert(data) {
+      return data.keys().hasAll(['alertId', 'tenantId', 'category', 'severity', 'title', 'body', 'createdBy', 'createdAt'])
+        && data.keys().hasOnly(['alertId', 'tenantId', 'category', 'severity', 'title', 'body', 'targetUrl', 'createdBy', 'createdAt'])
+        && isValidId(data.alertId)
+        && data.tenantId is string && data.tenantId.size() >= 1 && data.tenantId.size() <= 64
+        && data.category in ['STOCK_CRITICAL', 'PANIC_ALERT', 'SECURITY_ALERT', 'PRICE_CHANGE', 'ORDER_ABANDONED', 'SYSTEM_ERROR', 'TEST_ALERT']
+        && data.severity in ['critical', 'high', 'warning']
+        && data.title is string && data.title.size() >= 1 && data.title.size() <= 120
+        && data.body is string && data.body.size() >= 1 && data.body.size() <= 500
+        && (!('targetUrl' in data) || (data.targetUrl is string && data.targetUrl.size() <= 200))
+        && data.createdBy is string && data.createdBy.size() >= 1 && data.createdBy.size() <= 128
+        && data.createdAt is timestamp;
+    }
+
+    function isValidBranchNode(data) {
+      return data.keys().hasAll(['branchId', 'ownerUid', 'name', 'code', 'region', 'status', 'isolationMode', 'pendingSyncCount', 'todaySales', 'todayOrders', 'subscriptionTier', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['branchId', 'ownerUid', 'name', 'code', 'region', 'status', 'isolationMode', 'pendingSyncCount', 'todaySales', 'todayOrders', 'subscriptionTier', 'createdAt', 'updatedAt'])
+        && isValidId(data.branchId)
+        && data.ownerUid is string && data.ownerUid.size() >= 1 && data.ownerUid.size() <= 128
+        && data.name is string && data.name.size() >= 1 && data.name.size() <= 120
+        && data.code is string && data.code.size() >= 1 && data.code.size() <= 24
+        && data.region is string && data.region.size() >= 1 && data.region.size() <= 120
+        && data.status in ['online', 'degraded', 'offline']
+        && data.isolationMode in ['isolated_local_first', 'cloud_mirror']
+        && data.pendingSyncCount is int && data.pendingSyncCount >= 0
+        && data.todaySales is number && data.todaySales >= 0
+        && data.todayOrders is int && data.todayOrders >= 0
+        && data.subscriptionTier in ['TRIAL', 'STARTER', 'PRO', 'ENTERPRISE']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidImmutableAuditEntry(data) {
+      return data.keys().hasAll(['entryId', 'ownerUid', 'branchId', 'actorId', 'actorRole', 'action', 'resourceRef', 'payloadHash', 'previousHash', 'entryHash', 'sequence', 'createdAt'])
+        && data.keys().hasOnly(['entryId', 'ownerUid', 'branchId', 'actorId', 'actorRole', 'action', 'resourceRef', 'payloadHash', 'previousHash', 'entryHash', 'sequence', 'createdAt'])
+        && isValidId(data.entryId)
+        && data.ownerUid is string && data.ownerUid.size() >= 1 && data.ownerUid.size() <= 128
+        && isValidId(data.branchId)
+        && data.actorId is string && data.actorId.size() >= 1 && data.actorId.size() <= 128
+        && data.actorRole is string && data.actorRole.size() >= 1 && data.actorRole.size() <= 48
+        && data.action is string && data.action.size() >= 1 && data.action.size() <= 80
+        && data.resourceRef is string && data.resourceRef.size() >= 1 && data.resourceRef.size() <= 128
+        && data.payloadHash is string && data.payloadHash.size() == 64
+        && data.previousHash is string && data.previousHash.size() == 64
+        && data.entryHash is string && data.entryHash.size() == 64
+        && data.sequence is int && data.sequence >= 1
+        && data.createdAt is timestamp;
+    }
+
+    // ── Admins Allowlist (Read-only from client) ───────────────────────────
+    match /admins/{adminId} {
+      allow get: if isValidId(adminId) && isSignedIn() && request.auth.uid == adminId;
+      allow list, create, update, delete: if false;
+    }
+
+    // ── Connection Check Doc ────────────────────────────────────────────────
+    match /test/connection {
+      allow get: if isSignedIn();
+      allow list, write: if false;
+    }
+
+    // ── FCM Admin Devices Registry ──────────────────────────────────────────
+    match /fcm_admin_devices/{deviceId} {
+      allow get: if isValidId(deviceId) && (isAdmin() || (isSignedIn() && existing().userId == request.auth.uid));
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isValidId(deviceId)
+        && isAdmin()
+        && isValidFcmDevice(incoming())
+        && incoming().deviceId == deviceId
+        && incoming().userId == request.auth.uid
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isValidId(deviceId)
+        && isAdmin()
+        && isValidFcmDevice(incoming())
+        && incoming().deviceId == existing().deviceId
+        && incoming().userId == existing().userId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['deviceLabel', 'tokenPreview', 'enabled', 'platform', 'updatedAt']);
+      allow delete: if isValidId(deviceId) && isAdmin();
+    }
+
+    // ── Early Warning Critical Alerts Log ───────────────────────────────────
+    match /early_warning_alerts/{alertId} {
+      allow get: if isValidId(alertId) && isAdmin();
+      allow list: if isSignedIn() && resource.data.createdBy == request.auth.uid;
+      allow create: if isValidId(alertId)
+        && isAdmin()
+        && isValidEarlyWarningAlert(incoming())
+        && incoming().alertId == alertId
+        && incoming().createdBy == request.auth.uid
+        && incoming().createdAt == request.time;
+      allow update, delete: if false;
+    }
+
+    // ── Multi-Branch Nodes Registry ─────────────────────────────────────────
+    match /branch_nodes/{branchId} {
+      allow get: if isValidId(branchId) && (isAdmin() || (isVerifiedUser() && existing().ownerUid == request.auth.uid));
+      allow list: if isVerifiedUser() && resource.data.ownerUid == request.auth.uid;
+      allow create: if isValidId(branchId)
+        && isVerifiedUser()
+        && isValidBranchNode(incoming())
+        && incoming().branchId == branchId
+        && incoming().ownerUid == request.auth.uid
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isValidId(branchId)
+        && isVerifiedUser()
+        && existing().ownerUid == request.auth.uid
+        && isValidBranchNode(incoming())
+        && incoming().branchId == existing().branchId
+        && incoming().ownerUid == existing().ownerUid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'region', 'status', 'isolationMode', 'pendingSyncCount', 'todaySales', 'todayOrders', 'subscriptionTier', 'updatedAt']);
+      allow delete: if false;
+    }
+
+    // ── Immutable Append-Only Audit Chain ───────────────────────────────────
+    match /immutable_audit_chain/{entryId} {
+      allow get: if isValidId(entryId) && (isAdmin() || (isVerifiedUser() && existing().ownerUid == request.auth.uid));
+      allow list: if isVerifiedUser() && resource.data.ownerUid == request.auth.uid;
+      allow create: if isValidId(entryId)
+        && isVerifiedUser()
+        && isValidImmutableAuditEntry(incoming())
+        && incoming().entryId == entryId
+        && incoming().ownerUid == request.auth.uid
+        && incoming().createdAt == request.time;
+      allow update, delete: if false;
+    }
+  }
+}

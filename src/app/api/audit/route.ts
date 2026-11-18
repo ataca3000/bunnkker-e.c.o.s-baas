@@ -2,8 +2,18 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { validateApiSession, requireActiveRole, getTenantId } from '@/lib/apiAuth';
 import { publishRealtimeEvent } from '@/lib/realtimeBus';
+import { dispatchCriticalAdminPush, type EarlyWarningCategory } from '@/lib/fcmPush';
 
 export const dynamic = 'force-dynamic';
+
+const CRITICAL_AUDIT_PUSH_MAP: Record<string, { category: EarlyWarningCategory; title: string; url: string }> = {
+    SECURITY_ALERT: { category: 'SECURITY_ALERT', title: '🛡️ Alerta Crítica de Seguridad', url: '/dashboard/audit' },
+    SHRINKAGE: { category: 'SECURITY_ALERT', title: '📉 Merma Crítica Registrada', url: '/dashboard/audit' },
+    ORDER_ABANDONED: { category: 'ORDER_ABANDONED', title: '⚠️ Orden Abandonada / Cancelada', url: '/dashboard/audit' },
+    ORDER_CANCELLED: { category: 'ORDER_ABANDONED', title: '⚠️ Cancelación Crítica de Pedido', url: '/dashboard/audit' },
+    PRICE_CHANGE: { category: 'PRICE_CHANGE', title: '💲 Cambio de Precio en Catálogo', url: '/dashboard/inventory' },
+    PRINT_FAILED: { category: 'SYSTEM_ERROR', title: '🖨️ Error de Impresión / Hardware', url: '/dashboard/setup?step=7' },
+};
 
 export async function GET(request: NextRequest) {
     const auth = await requireActiveRole(request, ['superadmin', 'admin', 'billing']);
@@ -66,6 +76,27 @@ export async function POST(request: NextRequest) {
                 actorUid: auth.uid,
             },
         });
+
+        const normalizedAction = action.trim().toUpperCase();
+        const criticalMatch = CRITICAL_AUDIT_PUSH_MAP[normalizedAction];
+        if (criticalMatch) {
+            void dispatchCriticalAdminPush({
+                tenantId,
+                category: criticalMatch.category,
+                severity: criticalMatch.category === 'SECURITY_ALERT' || criticalMatch.category === 'SYSTEM_ERROR' ? 'critical' : 'warning',
+                title: criticalMatch.title,
+                body: serializedDetails || `Evento crítico registrado: ${normalizedAction}`,
+                url: criticalMatch.url,
+                actorUid: auth.uid,
+                actorName: auth.role,
+                dedupKey: `audit:${normalizedAction}:${newLog.id}`,
+                cooldownMs: 3000,
+                metadata: {
+                    auditId: newLog.id,
+                    auditAction: normalizedAction,
+                },
+            }).catch((err) => console.warn('[AUDIT FCM PUSH WARN]:', err));
+        }
 
         return NextResponse.json({ success: true, data: newLog });
     } catch (error: any) {

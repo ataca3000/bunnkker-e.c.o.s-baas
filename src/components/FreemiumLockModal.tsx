@@ -23,38 +23,46 @@ export default function FreemiumLockModal() {
         let isMounted = true;
 
         const checkStatus = async () => {
+            if (typeof document !== 'undefined' && !document.cookie.includes('msj-session=')) {
+                return;
+            }
             try {
-                const res = await fetch('/api/sales/counter');
-                if (res.ok) {
-                    const data = await res.json();
-                    if (!isMounted) return;
-
-                    setSalesCount(data.lifetimeSales || 0);
-                    if (data.isSubscribed) {
-                        setIsLocked(false);
-                        setInGrace(false);
-                        return;
-                    }
-
-                    if (data.isLocked) {
-                        setIsLocked(true);
-                        setInGrace(false);
-                    } else if (data.inGracePeriod) {
-                        setIsLocked(false);
-                        setInGrace(true);
-                        setRemainingGrace(data.remainingGrace);
-                    } else {
-                        setIsLocked(false);
-                        setInGrace(false);
-                    }
+                const res = await fetch('/api/sales/counter', {
+                    credentials: 'include',
+                    headers: { Accept: 'application/json' },
+                });
+                const contentType = res.headers.get('content-type') || '';
+                if (!res.ok || !contentType.includes('application/json')) {
+                    return;
                 }
-            } catch (err) {
-                console.error("Error comprobando contador de ventas:", err);
+                const data = await res.json().catch(() => null);
+                if (!isMounted || !data || !data.success) return;
+
+                setSalesCount(data.lifetimeSales || 0);
+                if (data.isSubscribed) {
+                    setIsLocked(false);
+                    setInGrace(false);
+                    return;
+                }
+
+                if (data.isLocked) {
+                    setIsLocked(true);
+                    setInGrace(false);
+                } else if (data.inGracePeriod) {
+                    setIsLocked(false);
+                    setInGrace(true);
+                    setRemainingGrace(data.remainingGrace);
+                } else {
+                    setIsLocked(false);
+                    setInGrace(false);
+                }
+            } catch {
+                // Silencioso ante cortes transitorios de red o recompilación del servidor local
             }
         };
 
-        checkStatus();
-        const interval = setInterval(checkStatus, 30000); // Revisar cada 30 seg
+        void checkStatus();
+        const interval = setInterval(() => void checkStatus(), 30000); // Revisar cada 30 seg
         return () => {
             isMounted = false;
             clearInterval(interval);

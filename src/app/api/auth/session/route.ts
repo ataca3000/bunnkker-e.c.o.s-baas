@@ -7,6 +7,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { generateSecureRandomInt, signRole, hashPinSha256, getTenantId } from '@/lib/apiAuth';
 import { isDeviceAuthorizedForTenant, recordDeviceHeartbeat } from '@/lib/devicePairing';
+import { issueSessionRecord, revokeSessionRecord } from '@/lib/enterpriseControlPlane';
+import { appendImmutableAudit } from '@/lib/immutableAudit';
 import { redis } from '@/lib/redis';
 import { prisma } from '@/lib/prisma';
 import { INITIAL_STAFF_PINS, INITIAL_STAFF_PIN_VALUES } from '@/lib/initialStaffPins';
@@ -115,6 +117,7 @@ export async function POST(request: NextRequest) {
 
     let finalUid = uid || '';
     let finalRole = 'client';
+    let finalUserName = '';
     let matchedCustomer: any = null;
 
     // Obtener la IP del cliente (no eximir IPs privadas 10.*/192.168.* en x-forwarded-for para evitar bypass por spoofing)
@@ -357,6 +360,7 @@ export async function POST(request: NextRequest) {
 
       finalUid = matchedUser.id;
       finalRole = matchedUser.role;
+      finalUserName = matchedUser.name || matchedUser.role;
 
     } else if (body.isClientLogin || body.email) {
       const cleanIdentifier = (body.email || '').toLowerCase().trim();
@@ -450,11 +454,34 @@ export async function POST(request: NextRequest) {
         .sign(JWT_SECRET);
     }
 
+    let issuedJti: string | undefined;
+    if (finalRole !== 'client') {
+      const sessionRec = issueSessionRecord({
+        userId: finalUid,
+        userName: finalUserName || finalRole,
+        branchId: typeof body.branchId === 'string' && body.branchId.trim() ? body.branchId.trim() : tenantId,
+        role: finalRole,
+        provider: 'terminal_pin',
+        deviceId: typeof deviceId === 'string' ? deviceId : undefined,
+      });
+      issuedJti = sessionRec.sessionId;
+      appendImmutableAudit({
+        branchId: sessionRec.branchId,
+        actorId: finalUid,
+        actorName: sessionRec.userName,
+        actorRole: finalRole,
+        action: 'SESSION_ISSUED_PIN',
+        resourceRef: sessionRec.sessionId,
+        details: { deviceId: deviceId || 'web', provider: 'terminal_pin' },
+      });
+    }
+
     const response = NextResponse.json({
       success: true,
       role: finalRole,
       uid: finalUid,
       signature: sig,
+      sessionId: issuedJti,
       requirePinChange: isInitialPin,
       token: clientToken,
       customer: matchedCustomer ? {
@@ -473,6 +500,9 @@ export async function POST(request: NextRequest) {
     response.cookies.set('msj-session', finalUid, cookieOpts);
     response.cookies.set('msj-role', finalRole, cookieOpts);
     response.cookies.set('msj-role-sig', sig, cookieOpts);
+    if (issuedJti) {
+      response.cookies.set('msj-jti', issuedJti, cookieOpts);
+    }
     if (clientToken) {
       response.cookies.set('admincom_session', clientToken, cookieOpts);
       response.cookies.set('customer_token', clientToken, cookieOpts);
@@ -496,12 +526,28 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function DELETE(_request?: NextRequest) {
+export async function DELETE(request: NextRequest) {
+  const jti = request.cookies.get('msj-jti')?.value;
+  if (jti) {
+    const rev = revokeSessionRecord(jti, 'user_logout');
+    if (rev) {
+      appendImmutableAudit({
+        branchId: rev.branchId,
+        actorId: rev.userId,
+        actorName: rev.userName,
+        actorRole: rev.role,
+        action: 'SESSION_LOGOUT',
+        resourceRef: jti,
+      });
+    }
+  }
+
   try {
     const cookieStore = await cookies();
     cookieStore.delete('msj-session');
     cookieStore.delete('msj-role');
     cookieStore.delete('msj-role-sig');
+    cookieStore.delete('msj-jti');
     cookieStore.delete('msj-worker-vip');
     cookieStore.delete('msj-worker-vip-sig');
     cookieStore.delete('admincom_session');
@@ -513,6 +559,7 @@ export async function DELETE(_request?: NextRequest) {
   response.cookies.delete('msj-session');
   response.cookies.delete('msj-role');
   response.cookies.delete('msj-role-sig');
+  response.cookies.delete('msj-jti');
   response.cookies.delete('msj-worker-vip');
   response.cookies.delete('msj-worker-vip-sig');
   response.cookies.delete('admincom_session');

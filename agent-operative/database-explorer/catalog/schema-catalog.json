@@ -1,0 +1,2901 @@
+{
+  "schemaVersion": "1.0.0",
+  "phase": "OIL Phase 1 — Read-Only Database Schema Explorer",
+  "readOnly": true,
+  "generatedAt": "2026-11-17T02:08:32.470Z",
+  "source": {
+    "mode": "prisma_sqlite_mirror",
+    "location": "/app/applet/prisma/schema.sqlite.prisma"
+  },
+  "summary": {
+    "tablesCount": 14,
+    "viewsCount": 0,
+    "relationsCount": 4,
+    "logicalLinksCount": 7,
+    "indexesCount": 24,
+    "explicitIndexesCount": 7,
+    "triggersCount": 0,
+    "auditTablesCount": 5,
+    "modulesCount": 7
+  },
+  "modules": [
+    {
+      "id": "sales_and_cash",
+      "name": "Ventas y Caja",
+      "purpose": "Cobros, estados de venta abierta/cerrada, métodos de pago y cortes ciegos de caja.",
+      "tables": [
+        "CashRegisterLog",
+        "Order",
+        "OrderEvent",
+        "OrderItem",
+        "SwarmTransaction"
+      ],
+      "auditTables": [
+        "CashRegisterLog",
+        "OrderEvent"
+      ]
+    },
+    {
+      "id": "inventory_and_stock",
+      "name": "Inventario y Stock",
+      "purpose": "Existencias físicas, stock reservado, ubicaciones en anaquel, mermas y compras.",
+      "tables": [
+        "Product",
+        "Purchase",
+        "ShrinkageLog"
+      ],
+      "auditTables": [
+        "ShrinkageLog"
+      ]
+    },
+    {
+      "id": "customers_and_support",
+      "name": "Clientes y Soporte",
+      "purpose": "Identidad comercial/fiscal de clientes, tickets de soporte e historial vinculado.",
+      "tables": [
+        "Customer",
+        "SupportTicket"
+      ],
+      "auditTables": []
+    },
+    {
+      "id": "orders_and_logistics",
+      "name": "Pedidos y Logística",
+      "purpose": "Trazabilidad operativa de surtido, patio de carga, ruta y prueba de entrega (PoD).",
+      "tables": [
+        "OrderEvent"
+      ],
+      "auditTables": [
+        "OrderEvent"
+      ]
+    },
+    {
+      "id": "roles_and_security",
+      "name": "Roles y Seguridad",
+      "purpose": "Operadores del ERP, roles RBAC, PIN/credenciales y estado activo.",
+      "tables": [
+        "User"
+      ],
+      "auditTables": []
+    },
+    {
+      "id": "audit_and_history",
+      "name": "Auditoría e Integridad",
+      "purpose": "Bitácora inmutable de cambios de precio, stock, cancelaciones y discrepancias.",
+      "tables": [
+        "AuditLog",
+        "CashRegisterLog",
+        "OrderEvent",
+        "ShrinkageLog"
+      ],
+      "auditTables": [
+        "AuditLog",
+        "CashRegisterLog",
+        "OrderEvent",
+        "ShrinkageLog"
+      ]
+    },
+    {
+      "id": "sync_and_config",
+      "name": "Sincronización y Configuración",
+      "purpose": "Cola distribuida local-first, licenciamiento y conectores externos.",
+      "tables": [
+        "AppConfig",
+        "SyncQueue"
+      ],
+      "auditTables": [
+        "SyncQueue"
+      ]
+    }
+  ],
+  "auditTables": [
+    "AuditLog",
+    "CashRegisterLog",
+    "OrderEvent",
+    "ShrinkageLog",
+    "SyncQueue"
+  ],
+  "tablesWithoutTenantId": [],
+  "tables": [
+    {
+      "name": "AppConfig",
+      "type": "table",
+      "columnCount": 9,
+      "primaryKeys": [
+        "id"
+      ],
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": "'global'",
+          "primaryKey": true,
+          "primaryKeyOrder": 1,
+          "hidden": 0
+        },
+        {
+          "cid": 1,
+          "name": "licenseType",
+          "type": "TEXT",
+          "notNull": true,
+          "defaultValue": "'TRIAL'",
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 2,
+          "name": "tenantId",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 3,
+          "name": "cloudToken",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 4,
+          "name": "pairedAt",
+          "type": "DATETIME",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 5,
+          "name": "lastBackupAt",
+          "type": "DATETIME",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 6,
+          "name": "lastBackupSize",
+          "type": "INTEGER",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 7,
+          "name": "lastBackupHash",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 8,
+          "name": "updatedAt",
+          "type": "DATETIME",
+          "notNull": true,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_AppConfig_1",
+          "tableName": "AppConfig",
+          "unique": true,
+          "origin": "pk",
+          "partial": false,
+          "isAutoIndex": true,
+          "columns": [
+            "id"
+          ],
+          "sql": null
+        }
+      ],
+      "triggers": [],
+      "foreignKeys": [],
+      "referencedBy": [],
+      "semantic": {
+        "primaryModule": "sync_and_config",
+        "primaryModuleName": "Sincronización y Configuración",
+        "modules": [
+          "sync_and_config"
+        ],
+        "purpose": "Cola distribuida local-first, licenciamiento y conectores externos.",
+        "isAuditTable": false,
+        "hasTenantIsolation": true,
+        "hasTimestamp": false
+      }
+    },
+    {
+      "name": "AuditLog",
+      "type": "table",
+      "columnCount": 7,
+      "primaryKeys": [
+        "id"
+      ],
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": true,
+          "primaryKeyOrder": 1,
+          "hidden": 0
+        },
+        {
+          "cid": 1,
+          "name": "tenantId",
+          "type": "TEXT",
+          "notNull": true,
+          "defaultValue": "'default'",
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 2,
+          "name": "action",
+          "type": "TEXT",
+          "notNull": true,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 3,
+          "name": "details",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 4,
+          "name": "userId",
+          "type": "TEXT",
+          "notNull": true,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 5,
+          "name": "timestamp",
+          "type": "DATETIME",
+          "notNull": true,
+          "defaultValue": "CURRENT_TIMESTAMP",
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 6,
+          "name": "synced",
+          "type": "INTEGER",
+          "notNull": true,
+          "defaultValue": "0",
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_AuditLog_1",
+          "tableName": "AuditLog",
+          "unique": true,
+          "origin": "pk",
+          "partial": false,
+          "isAutoIndex": true,
+          "columns": [
+            "id"
+          ],
+          "sql": null
+        }
+      ],
+      "triggers": [],
+      "foreignKeys": [],
+      "referencedBy": [],
+      "semantic": {
+        "primaryModule": "audit_and_history",
+        "primaryModuleName": "Auditoría e Integridad",
+        "modules": [
+          "audit_and_history"
+        ],
+        "purpose": "Bitácora inmutable de cambios de precio, stock, cancelaciones y discrepancias.",
+        "isAuditTable": true,
+        "hasTenantIsolation": true,
+        "hasTimestamp": true
+      }
+    },
+    {
+      "name": "CashRegisterLog",
+      "type": "table",
+      "columnCount": 9,
+      "primaryKeys": [
+        "id"
+      ],
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": true,
+          "primaryKeyOrder": 1,
+          "hidden": 0
+        },
+        {
+          "cid": 1,
+          "name": "tenantId",
+          "type": "TEXT",
+          "notNull": true,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 2,
+          "name": "cashierId",
+          "type": "TEXT",
+          "notNull": true,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 3,
+          "name": "cashierName",
+          "type": "TEXT",
+          "notNull": true,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 4,
+          "name": "declaredAmount",
+          "type": "REAL",
+          "notNull": true,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 5,
+          "name": "expectedAmount",
+          "type": "REAL",
+          "notNull": true,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 6,
+          "name": "discrepancy",
+          "type": "REAL",
+          "notNull": true,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 7,
+          "name": "createdAt",
+          "type": "DATETIME",
+          "notNull": true,
+          "defaultValue": "CURRENT_TIMESTAMP",
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 8,
+          "name": "synced",
+          "type": "INTEGER",
+          "notNull": true,
+          "defaultValue": "0",
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_CashRegisterLog_tenantId_createdAt",
+          "tableName": "CashRegisterLog",
+          "unique": false,
+          "origin": "c",
+          "partial": false,
+          "isAutoIndex": false,
+          "columns": [
+            "tenantId",
+            "createdAt"
+          ],
+          "sql": "CREATE INDEX \"idx_CashRegisterLog_tenantId_createdAt\" ON \"CashRegisterLog\" (\"tenantId\", \"createdAt\")"
+        },
+        {
+          "name": "sqlite_autoindex_CashRegisterLog_1",
+          "tableName": "CashRegisterLog",
+          "unique": true,
+          "origin": "pk",
+          "partial": false,
+          "isAutoIndex": true,
+          "columns": [
+            "id"
+          ],
+          "sql": null
+        }
+      ],
+      "triggers": [],
+      "foreignKeys": [],
+      "referencedBy": [],
+      "semantic": {
+        "primaryModule": "sales_and_cash",
+        "primaryModuleName": "Ventas y Caja",
+        "modules": [
+          "sales_and_cash",
+          "audit_and_history"
+        ],
+        "purpose": "Cobros, estados de venta abierta/cerrada, métodos de pago y cortes ciegos de caja.",
+        "isAuditTable": true,
+        "hasTenantIsolation": true,
+        "hasTimestamp": true
+      }
+    },
+    {
+      "name": "Customer",
+      "type": "table",
+      "columnCount": 15,
+      "primaryKeys": [
+        "id"
+      ],
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": true,
+          "primaryKeyOrder": 1,
+          "hidden": 0
+        },
+        {
+          "cid": 1,
+          "name": "tenantId",
+          "type": "TEXT",
+          "notNull": true,
+          "defaultValue": "'default'",
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 2,
+          "name": "name",
+          "type": "TEXT",
+          "notNull": true,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 3,
+          "name": "phone",
+          "type": "TEXT",
+          "notNull": true,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 4,
+          "name": "email",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 5,
+          "name": "address",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 6,
+          "name": "references",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 7,
+          "name": "gpsCoords",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 8,
+          "name": "pin",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 9,
+          "name": "rfc",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 10,
+          "name": "razonSocial",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 11,
+          "name": "regimenFiscal",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 12,
+          "name": "usoCFDI",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 13,
+          "name": "codigoPostal",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 14,
+          "name": "createdAt",
+          "type": "DATETIME",
+          "notNull": true,
+          "defaultValue": "CURRENT_TIMESTAMP",
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_Customer_2",
+          "tableName": "Customer",
+          "unique": true,
+          "origin": "u",
+          "partial": false,
+          "isAutoIndex": true,
+          "columns": [
+            "tenantId",
+            "phone"
+          ],
+          "sql": null
+        },
+        {
+          "name": "sqlite_autoindex_Customer_1",
+          "tableName": "Customer",
+          "unique": true,
+          "origin": "pk",
+          "partial": false,
+          "isAutoIndex": true,
+          "columns": [
+            "id"
+          ],
+          "sql": null
+        }
+      ],
+      "triggers": [],
+      "foreignKeys": [],
+      "referencedBy": [
+        {
+          "sourceTable": "Order",
+          "sourceColumn": "customerId",
+          "column": "id",
+          "onDelete": "NO ACTION",
+          "onUpdate": "NO ACTION"
+        }
+      ],
+      "semantic": {
+        "primaryModule": "customers_and_support",
+        "primaryModuleName": "Clientes y Soporte",
+        "modules": [
+          "customers_and_support"
+        ],
+        "purpose": "Identidad comercial/fiscal de clientes, tickets de soporte e historial vinculado.",
+        "isAuditTable": false,
+        "hasTenantIsolation": true,
+        "hasTimestamp": true
+      }
+    },
+    {
+      "name": "Order",
+      "type": "table",
+      "columnCount": 30,
+      "primaryKeys": [
+        "id"
+      ],
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": true,
+          "primaryKeyOrder": 1,
+          "hidden": 0
+        },
+        {
+          "cid": 1,
+          "name": "tenantId",
+          "type": "TEXT",
+          "notNull": true,
+          "defaultValue": "'default'",
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 2,
+          "name": "total",
+          "type": "REAL",
+          "notNull": true,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 3,
+          "name": "paymentMethod",
+          "type": "TEXT",
+          "notNull": true,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 4,
+          "name": "status",
+          "type": "TEXT",
+          "notNull": true,
+          "defaultValue": "'paid'",
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 5,
+          "name": "deliveryType",
+          "type": "TEXT",
+          "notNull": true,
+          "defaultValue": "'LOCAL'",
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 6,
+          "name": "date",
+          "type": "DATETIME",
+          "notNull": true,
+          "defaultValue": "CURRENT_TIMESTAMP",
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 7,
+          "name": "expiresAt",
+          "type": "DATETIME",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 8,
+          "name": "offline",
+          "type": "INTEGER",
+          "notNull": true,
+          "defaultValue": "1",
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 9,
+          "name": "synced",
+          "type": "INTEGER",
+          "notNull": true,
+          "defaultValue": "0",
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 10,
+          "name": "ventanilla",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 11,
+          "name": "cajon",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 12,
+          "name": "vendedorId",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 13,
+          "name": "vendedorName",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 14,
+          "name": "confirmedAt",
+          "type": "DATETIME",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 15,
+          "name": "deliveryPin",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 16,
+          "name": "deliveryLat",
+          "type": "REAL",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 17,
+          "name": "deliveryLng",
+          "type": "REAL",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 18,
+          "name": "deliveryAddress",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 19,
+          "name": "loadedBy",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 20,
+          "name": "loadedByUid",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 21,
+          "name": "loadingStartedAt",
+          "type": "DATETIME",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 22,
+          "name": "loadingFinishedAt",
+          "type": "DATETIME",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 23,
+          "name": "isLoaded",
+          "type": "INTEGER",
+          "notNull": true,
+          "defaultValue": "0",
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 24,
+          "name": "assignedDriverId",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 25,
+          "name": "signatureData",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 26,
+          "name": "photoData",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 27,
+          "name": "completedAt",
+          "type": "DATETIME",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 28,
+          "name": "rejectionReason",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 29,
+          "name": "customerId",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_Order_tenantId_status_date",
+          "tableName": "Order",
+          "unique": false,
+          "origin": "c",
+          "partial": false,
+          "isAutoIndex": false,
+          "columns": [
+            "tenantId",
+            "status",
+            "date"
+          ],
+          "sql": "CREATE INDEX \"idx_Order_tenantId_status_date\" ON \"Order\" (\"tenantId\", \"status\", \"date\")"
+        },
+        {
+          "name": "sqlite_autoindex_Order_1",
+          "tableName": "Order",
+          "unique": true,
+          "origin": "pk",
+          "partial": false,
+          "isAutoIndex": true,
+          "columns": [
+            "id"
+          ],
+          "sql": null
+        }
+      ],
+      "triggers": [],
+      "foreignKeys": [
+        {
+          "column": "customerId",
+          "targetTable": "Customer",
+          "targetColumn": "id",
+          "onDelete": "NO ACTION",
+          "onUpdate": "NO ACTION"
+        }
+      ],
+      "referencedBy": [
+        {
+          "sourceTable": "OrderEvent",
+          "sourceColumn": "orderId",
+          "column": "id",
+          "onDelete": "CASCADE",
+          "onUpdate": "NO ACTION"
+        },
+        {
+          "sourceTable": "OrderItem",
+          "sourceColumn": "orderId",
+          "column": "id",
+          "onDelete": "CASCADE",
+          "onUpdate": "NO ACTION"
+        }
+      ],
+      "semantic": {
+        "primaryModule": "sales_and_cash",
+        "primaryModuleName": "Ventas y Caja",
+        "modules": [
+          "sales_and_cash"
+        ],
+        "purpose": "Cobros, estados de venta abierta/cerrada, métodos de pago y cortes ciegos de caja.",
+        "isAuditTable": false,
+        "hasTenantIsolation": true,
+        "hasTimestamp": true
+      }
+    },
+    {
+      "name": "OrderEvent",
+      "type": "table",
+      "columnCount": 11,
+      "primaryKeys": [
+        "id"
+      ],
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": true,
+          "primaryKeyOrder": 1,
+          "hidden": 0
+        },
+        {
+          "cid": 1,
+          "name": "tenantId",
+          "type": "TEXT",
+          "notNull": true,
+          "defaultValue": "'default'",
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 2,
+          "name": "orderId",
+          "type": "TEXT",
+          "notNull": true,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 3,
+          "name": "eventType",
+          "type": "TEXT",
+          "notNull": true,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 4,
+          "name": "fromStatus",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 5,
+          "name": "toStatus",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 6,
+          "name": "actorId",
+          "type": "TEXT",
+          "notNull": true,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 7,
+          "name": "actorName",
+          "type": "TEXT",
+          "notNull": true,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 8,
+          "name": "actorRole",
+          "type": "TEXT",
+          "notNull": true,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 9,
+          "name": "details",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 10,
+          "name": "createdAt",
+          "type": "DATETIME",
+          "notNull": true,
+          "defaultValue": "CURRENT_TIMESTAMP",
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_OrderEvent_actorId_createdAt",
+          "tableName": "OrderEvent",
+          "unique": false,
+          "origin": "c",
+          "partial": false,
+          "isAutoIndex": false,
+          "columns": [
+            "actorId",
+            "createdAt"
+          ],
+          "sql": "CREATE INDEX \"idx_OrderEvent_actorId_createdAt\" ON \"OrderEvent\" (\"actorId\", \"createdAt\")"
+        },
+        {
+          "name": "idx_OrderEvent_orderId_createdAt",
+          "tableName": "OrderEvent",
+          "unique": false,
+          "origin": "c",
+          "partial": false,
+          "isAutoIndex": false,
+          "columns": [
+            "orderId",
+            "createdAt"
+          ],
+          "sql": "CREATE INDEX \"idx_OrderEvent_orderId_createdAt\" ON \"OrderEvent\" (\"orderId\", \"createdAt\")"
+        },
+        {
+          "name": "sqlite_autoindex_OrderEvent_1",
+          "tableName": "OrderEvent",
+          "unique": true,
+          "origin": "pk",
+          "partial": false,
+          "isAutoIndex": true,
+          "columns": [
+            "id"
+          ],
+          "sql": null
+        }
+      ],
+      "triggers": [],
+      "foreignKeys": [
+        {
+          "column": "orderId",
+          "targetTable": "Order",
+          "targetColumn": "id",
+          "onDelete": "CASCADE",
+          "onUpdate": "NO ACTION"
+        }
+      ],
+      "referencedBy": [],
+      "semantic": {
+        "primaryModule": "sales_and_cash",
+        "primaryModuleName": "Ventas y Caja",
+        "modules": [
+          "sales_and_cash",
+          "orders_and_logistics",
+          "audit_and_history"
+        ],
+        "purpose": "Cobros, estados de venta abierta/cerrada, métodos de pago y cortes ciegos de caja.",
+        "isAuditTable": true,
+        "hasTenantIsolation": true,
+        "hasTimestamp": true
+      }
+    },
+    {
+      "name": "OrderItem",
+      "type": "table",
+      "columnCount": 6,
+      "primaryKeys": [
+        "id"
+      ],
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": true,
+          "primaryKeyOrder": 1,
+          "hidden": 0
+        },
+        {
+          "cid": 1,
+          "name": "tenantId",
+          "type": "TEXT",
+          "notNull": true,
+          "defaultValue": "'default'",
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 2,
+          "name": "orderId",
+          "type": "TEXT",
+          "notNull": true,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 3,
+          "name": "productId",
+          "type": "TEXT",
+          "notNull": true,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 4,
+          "name": "cantidad",
+          "type": "INTEGER",
+          "notNull": true,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 5,
+          "name": "precio",
+          "type": "REAL",
+          "notNull": true,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_OrderItem_1",
+          "tableName": "OrderItem",
+          "unique": true,
+          "origin": "pk",
+          "partial": false,
+          "isAutoIndex": true,
+          "columns": [
+            "id"
+          ],
+          "sql": null
+        }
+      ],
+      "triggers": [],
+      "foreignKeys": [
+        {
+          "column": "productId",
+          "targetTable": "Product",
+          "targetColumn": "id",
+          "onDelete": "NO ACTION",
+          "onUpdate": "NO ACTION"
+        },
+        {
+          "column": "orderId",
+          "targetTable": "Order",
+          "targetColumn": "id",
+          "onDelete": "CASCADE",
+          "onUpdate": "NO ACTION"
+        }
+      ],
+      "referencedBy": [],
+      "semantic": {
+        "primaryModule": "sales_and_cash",
+        "primaryModuleName": "Ventas y Caja",
+        "modules": [
+          "sales_and_cash"
+        ],
+        "purpose": "Cobros, estados de venta abierta/cerrada, métodos de pago y cortes ciegos de caja.",
+        "isAuditTable": false,
+        "hasTenantIsolation": true,
+        "hasTimestamp": false
+      }
+    },
+    {
+      "name": "Product",
+      "type": "table",
+      "columnCount": 16,
+      "primaryKeys": [
+        "id"
+      ],
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": true,
+          "primaryKeyOrder": 1,
+          "hidden": 0
+        },
+        {
+          "cid": 1,
+          "name": "tenantId",
+          "type": "TEXT",
+          "notNull": true,
+          "defaultValue": "'default'",
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 2,
+          "name": "name",
+          "type": "TEXT",
+          "notNull": true,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 3,
+          "name": "price",
+          "type": "REAL",
+          "notNull": true,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 4,
+          "name": "stock",
+          "type": "INTEGER",
+          "notNull": true,
+          "defaultValue": "0",
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 5,
+          "name": "reservedStock",
+          "type": "INTEGER",
+          "notNull": true,
+          "defaultValue": "0",
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 6,
+          "name": "category",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 7,
+          "name": "image",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 8,
+          "name": "rating",
+          "type": "REAL",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 9,
+          "name": "reviewCount",
+          "type": "INTEGER",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 10,
+          "name": "barcode",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 11,
+          "name": "description",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 12,
+          "name": "estante",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 13,
+          "name": "fila",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 14,
+          "name": "orderIndex",
+          "type": "INTEGER",
+          "notNull": true,
+          "defaultValue": "0",
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 15,
+          "name": "deletedAt",
+          "type": "DATETIME",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_Product_tenantId_barcode",
+          "tableName": "Product",
+          "unique": false,
+          "origin": "c",
+          "partial": false,
+          "isAutoIndex": false,
+          "columns": [
+            "tenantId",
+            "barcode"
+          ],
+          "sql": "CREATE INDEX \"idx_Product_tenantId_barcode\" ON \"Product\" (\"tenantId\", \"barcode\")"
+        },
+        {
+          "name": "idx_Product_tenantId_deletedAt",
+          "tableName": "Product",
+          "unique": false,
+          "origin": "c",
+          "partial": false,
+          "isAutoIndex": false,
+          "columns": [
+            "tenantId",
+            "deletedAt"
+          ],
+          "sql": "CREATE INDEX \"idx_Product_tenantId_deletedAt\" ON \"Product\" (\"tenantId\", \"deletedAt\")"
+        },
+        {
+          "name": "sqlite_autoindex_Product_1",
+          "tableName": "Product",
+          "unique": true,
+          "origin": "pk",
+          "partial": false,
+          "isAutoIndex": true,
+          "columns": [
+            "id"
+          ],
+          "sql": null
+        }
+      ],
+      "triggers": [],
+      "foreignKeys": [],
+      "referencedBy": [
+        {
+          "sourceTable": "OrderItem",
+          "sourceColumn": "productId",
+          "column": "id",
+          "onDelete": "NO ACTION",
+          "onUpdate": "NO ACTION"
+        }
+      ],
+      "semantic": {
+        "primaryModule": "inventory_and_stock",
+        "primaryModuleName": "Inventario y Stock",
+        "modules": [
+          "inventory_and_stock"
+        ],
+        "purpose": "Existencias físicas, stock reservado, ubicaciones en anaquel, mermas y compras.",
+        "isAuditTable": false,
+        "hasTenantIsolation": true,
+        "hasTimestamp": false
+      }
+    },
+    {
+      "name": "Purchase",
+      "type": "table",
+      "columnCount": 8,
+      "primaryKeys": [
+        "id"
+      ],
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": true,
+          "primaryKeyOrder": 1,
+          "hidden": 0
+        },
+        {
+          "cid": 1,
+          "name": "tenantId",
+          "type": "TEXT",
+          "notNull": true,
+          "defaultValue": "'default'",
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 2,
+          "name": "supplier",
+          "type": "TEXT",
+          "notNull": true,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 3,
+          "name": "concept",
+          "type": "TEXT",
+          "notNull": true,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 4,
+          "name": "amount",
+          "type": "REAL",
+          "notNull": true,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 5,
+          "name": "status",
+          "type": "TEXT",
+          "notNull": true,
+          "defaultValue": "'Pendiente'",
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 6,
+          "name": "createdAt",
+          "type": "DATETIME",
+          "notNull": true,
+          "defaultValue": "CURRENT_TIMESTAMP",
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 7,
+          "name": "synced",
+          "type": "INTEGER",
+          "notNull": true,
+          "defaultValue": "0",
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_Purchase_1",
+          "tableName": "Purchase",
+          "unique": true,
+          "origin": "pk",
+          "partial": false,
+          "isAutoIndex": true,
+          "columns": [
+            "id"
+          ],
+          "sql": null
+        }
+      ],
+      "triggers": [],
+      "foreignKeys": [],
+      "referencedBy": [],
+      "semantic": {
+        "primaryModule": "inventory_and_stock",
+        "primaryModuleName": "Inventario y Stock",
+        "modules": [
+          "inventory_and_stock"
+        ],
+        "purpose": "Existencias físicas, stock reservado, ubicaciones en anaquel, mermas y compras.",
+        "isAuditTable": false,
+        "hasTenantIsolation": true,
+        "hasTimestamp": true
+      }
+    },
+    {
+      "name": "ShrinkageLog",
+      "type": "table",
+      "columnCount": 11,
+      "primaryKeys": [
+        "id"
+      ],
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": true,
+          "primaryKeyOrder": 1,
+          "hidden": 0
+        },
+        {
+          "cid": 1,
+          "name": "tenantId",
+          "type": "TEXT",
+          "notNull": true,
+          "defaultValue": "'default'",
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 2,
+          "name": "productId",
+          "type": "TEXT",
+          "notNull": true,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 3,
+          "name": "productName",
+          "type": "TEXT",
+          "notNull": true,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 4,
+          "name": "productCategory",
+          "type": "TEXT",
+          "notNull": true,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 5,
+          "name": "discrepancyType",
+          "type": "TEXT",
+          "notNull": true,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 6,
+          "name": "qty",
+          "type": "INTEGER",
+          "notNull": true,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 7,
+          "name": "estimatedLoss",
+          "type": "REAL",
+          "notNull": true,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 8,
+          "name": "notes",
+          "type": "TEXT",
+          "notNull": true,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 9,
+          "name": "reportedBy",
+          "type": "TEXT",
+          "notNull": true,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 10,
+          "name": "createdAt",
+          "type": "DATETIME",
+          "notNull": true,
+          "defaultValue": "CURRENT_TIMESTAMP",
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_ShrinkageLog_1",
+          "tableName": "ShrinkageLog",
+          "unique": true,
+          "origin": "pk",
+          "partial": false,
+          "isAutoIndex": true,
+          "columns": [
+            "id"
+          ],
+          "sql": null
+        }
+      ],
+      "triggers": [],
+      "foreignKeys": [],
+      "referencedBy": [],
+      "semantic": {
+        "primaryModule": "inventory_and_stock",
+        "primaryModuleName": "Inventario y Stock",
+        "modules": [
+          "inventory_and_stock",
+          "audit_and_history"
+        ],
+        "purpose": "Existencias físicas, stock reservado, ubicaciones en anaquel, mermas y compras.",
+        "isAuditTable": true,
+        "hasTenantIsolation": true,
+        "hasTimestamp": true
+      }
+    },
+    {
+      "name": "SupportTicket",
+      "type": "table",
+      "columnCount": 9,
+      "primaryKeys": [
+        "id"
+      ],
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": true,
+          "primaryKeyOrder": 1,
+          "hidden": 0
+        },
+        {
+          "cid": 1,
+          "name": "folio",
+          "type": "TEXT",
+          "notNull": true,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 2,
+          "name": "tenantId",
+          "type": "TEXT",
+          "notNull": true,
+          "defaultValue": "'default'",
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 3,
+          "name": "customerEmail",
+          "type": "TEXT",
+          "notNull": true,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 4,
+          "name": "customerName",
+          "type": "TEXT",
+          "notNull": true,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 5,
+          "name": "message",
+          "type": "TEXT",
+          "notNull": true,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 6,
+          "name": "status",
+          "type": "TEXT",
+          "notNull": true,
+          "defaultValue": "'Pendiente'",
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 7,
+          "name": "createdAt",
+          "type": "DATETIME",
+          "notNull": true,
+          "defaultValue": "CURRENT_TIMESTAMP",
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 8,
+          "name": "synced",
+          "type": "INTEGER",
+          "notNull": true,
+          "defaultValue": "0",
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_SupportTicket_2",
+          "tableName": "SupportTicket",
+          "unique": true,
+          "origin": "u",
+          "partial": false,
+          "isAutoIndex": true,
+          "columns": [
+            "tenantId",
+            "folio"
+          ],
+          "sql": null
+        },
+        {
+          "name": "sqlite_autoindex_SupportTicket_1",
+          "tableName": "SupportTicket",
+          "unique": true,
+          "origin": "pk",
+          "partial": false,
+          "isAutoIndex": true,
+          "columns": [
+            "id"
+          ],
+          "sql": null
+        }
+      ],
+      "triggers": [],
+      "foreignKeys": [],
+      "referencedBy": [],
+      "semantic": {
+        "primaryModule": "customers_and_support",
+        "primaryModuleName": "Clientes y Soporte",
+        "modules": [
+          "customers_and_support"
+        ],
+        "purpose": "Identidad comercial/fiscal de clientes, tickets de soporte e historial vinculado.",
+        "isAuditTable": false,
+        "hasTenantIsolation": true,
+        "hasTimestamp": true
+      }
+    },
+    {
+      "name": "SwarmTransaction",
+      "type": "table",
+      "columnCount": 10,
+      "primaryKeys": [
+        "id"
+      ],
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": true,
+          "primaryKeyOrder": 1,
+          "hidden": 0
+        },
+        {
+          "cid": 1,
+          "name": "tenantId",
+          "type": "TEXT",
+          "notNull": true,
+          "defaultValue": "'default'",
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 2,
+          "name": "requestingNode",
+          "type": "TEXT",
+          "notNull": true,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 3,
+          "name": "providingNode",
+          "type": "TEXT",
+          "notNull": true,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 4,
+          "name": "productId",
+          "type": "TEXT",
+          "notNull": true,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 5,
+          "name": "qty",
+          "type": "INTEGER",
+          "notNull": true,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 6,
+          "name": "reservedAt",
+          "type": "DATETIME",
+          "notNull": true,
+          "defaultValue": "CURRENT_TIMESTAMP",
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 7,
+          "name": "expiresAt",
+          "type": "DATETIME",
+          "notNull": true,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 8,
+          "name": "status",
+          "type": "TEXT",
+          "notNull": true,
+          "defaultValue": "'RESERVED'",
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 9,
+          "name": "commissionEarned",
+          "type": "REAL",
+          "notNull": true,
+          "defaultValue": "0",
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_SwarmTransaction_1",
+          "tableName": "SwarmTransaction",
+          "unique": true,
+          "origin": "pk",
+          "partial": false,
+          "isAutoIndex": true,
+          "columns": [
+            "id"
+          ],
+          "sql": null
+        }
+      ],
+      "triggers": [],
+      "foreignKeys": [],
+      "referencedBy": [],
+      "semantic": {
+        "primaryModule": "sales_and_cash",
+        "primaryModuleName": "Ventas y Caja",
+        "modules": [
+          "sales_and_cash"
+        ],
+        "purpose": "Cobros, estados de venta abierta/cerrada, métodos de pago y cortes ciegos de caja.",
+        "isAuditTable": false,
+        "hasTenantIsolation": true,
+        "hasTimestamp": false
+      }
+    },
+    {
+      "name": "SyncQueue",
+      "type": "table",
+      "columnCount": 11,
+      "primaryKeys": [
+        "id"
+      ],
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": true,
+          "primaryKeyOrder": 1,
+          "hidden": 0
+        },
+        {
+          "cid": 1,
+          "name": "tenantId",
+          "type": "TEXT",
+          "notNull": true,
+          "defaultValue": "'default'",
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 2,
+          "name": "collection",
+          "type": "TEXT",
+          "notNull": true,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 3,
+          "name": "documentId",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 4,
+          "name": "action",
+          "type": "TEXT",
+          "notNull": true,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 5,
+          "name": "payload",
+          "type": "TEXT",
+          "notNull": true,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 6,
+          "name": "createdAt",
+          "type": "DATETIME",
+          "notNull": true,
+          "defaultValue": "CURRENT_TIMESTAMP",
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 7,
+          "name": "status",
+          "type": "TEXT",
+          "notNull": true,
+          "defaultValue": "'PENDING'",
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 8,
+          "name": "errorMsg",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 9,
+          "name": "retryCount",
+          "type": "INTEGER",
+          "notNull": true,
+          "defaultValue": "0",
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 10,
+          "name": "processAfter",
+          "type": "DATETIME",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_SyncQueue_status",
+          "tableName": "SyncQueue",
+          "unique": false,
+          "origin": "c",
+          "partial": false,
+          "isAutoIndex": false,
+          "columns": [
+            "status"
+          ],
+          "sql": "CREATE INDEX \"idx_SyncQueue_status\" ON \"SyncQueue\" (\"status\")"
+        },
+        {
+          "name": "sqlite_autoindex_SyncQueue_1",
+          "tableName": "SyncQueue",
+          "unique": true,
+          "origin": "pk",
+          "partial": false,
+          "isAutoIndex": true,
+          "columns": [
+            "id"
+          ],
+          "sql": null
+        }
+      ],
+      "triggers": [],
+      "foreignKeys": [],
+      "referencedBy": [],
+      "semantic": {
+        "primaryModule": "sync_and_config",
+        "primaryModuleName": "Sincronización y Configuración",
+        "modules": [
+          "sync_and_config"
+        ],
+        "purpose": "Cola distribuida local-first, licenciamiento y conectores externos.",
+        "isAuditTable": true,
+        "hasTenantIsolation": true,
+        "hasTimestamp": true
+      }
+    },
+    {
+      "name": "User",
+      "type": "table",
+      "columnCount": 11,
+      "primaryKeys": [
+        "id"
+      ],
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": true,
+          "primaryKeyOrder": 1,
+          "hidden": 0
+        },
+        {
+          "cid": 1,
+          "name": "tenantId",
+          "type": "TEXT",
+          "notNull": true,
+          "defaultValue": "'default'",
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 2,
+          "name": "name",
+          "type": "TEXT",
+          "notNull": true,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 3,
+          "name": "email",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 4,
+          "name": "pin",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 5,
+          "name": "pinHash",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 6,
+          "name": "deviceId",
+          "type": "TEXT",
+          "notNull": false,
+          "defaultValue": null,
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 7,
+          "name": "role",
+          "type": "TEXT",
+          "notNull": true,
+          "defaultValue": "'sales'",
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 8,
+          "name": "active",
+          "type": "INTEGER",
+          "notNull": true,
+          "defaultValue": "1",
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 9,
+          "name": "createdAt",
+          "type": "DATETIME",
+          "notNull": true,
+          "defaultValue": "CURRENT_TIMESTAMP",
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 10,
+          "name": "synced",
+          "type": "INTEGER",
+          "notNull": true,
+          "defaultValue": "0",
+          "primaryKey": false,
+          "primaryKeyOrder": 0,
+          "hidden": 0
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_User_2",
+          "tableName": "User",
+          "unique": true,
+          "origin": "u",
+          "partial": false,
+          "isAutoIndex": true,
+          "columns": [
+            "tenantId",
+            "email"
+          ],
+          "sql": null
+        },
+        {
+          "name": "sqlite_autoindex_User_1",
+          "tableName": "User",
+          "unique": true,
+          "origin": "pk",
+          "partial": false,
+          "isAutoIndex": true,
+          "columns": [
+            "id"
+          ],
+          "sql": null
+        }
+      ],
+      "triggers": [],
+      "foreignKeys": [],
+      "referencedBy": [],
+      "semantic": {
+        "primaryModule": "roles_and_security",
+        "primaryModuleName": "Roles y Seguridad",
+        "modules": [
+          "roles_and_security"
+        ],
+        "purpose": "Operadores del ERP, roles RBAC, PIN/credenciales y estado activo.",
+        "isAuditTable": false,
+        "hasTenantIsolation": true,
+        "hasTimestamp": true
+      }
+    }
+  ],
+  "views": [],
+  "relations": [
+    {
+      "id": 0,
+      "seq": 0,
+      "fromTable": "Order",
+      "fromColumn": "customerId",
+      "toTable": "Customer",
+      "toColumn": "id",
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "match": "NONE"
+    },
+    {
+      "id": 0,
+      "seq": 0,
+      "fromTable": "OrderEvent",
+      "fromColumn": "orderId",
+      "toTable": "Order",
+      "toColumn": "id",
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "match": "NONE"
+    },
+    {
+      "id": 0,
+      "seq": 0,
+      "fromTable": "OrderItem",
+      "fromColumn": "productId",
+      "toTable": "Product",
+      "toColumn": "id",
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "match": "NONE"
+    },
+    {
+      "id": 1,
+      "seq": 0,
+      "fromTable": "OrderItem",
+      "fromColumn": "orderId",
+      "toTable": "Order",
+      "toColumn": "id",
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "match": "NONE"
+    }
+  ],
+  "logicalLinks": [
+    {
+      "fromTable": "AuditLog",
+      "fromColumn": "userId",
+      "toTable": "User",
+      "toColumn": "id",
+      "kind": "semantic_actor_ref"
+    },
+    {
+      "fromTable": "CashRegisterLog",
+      "fromColumn": "cashierId",
+      "toTable": "User",
+      "toColumn": "id",
+      "kind": "semantic_actor_ref"
+    },
+    {
+      "fromTable": "Order",
+      "fromColumn": "vendedorId",
+      "toTable": "User",
+      "toColumn": "id",
+      "kind": "semantic_actor_ref"
+    },
+    {
+      "fromTable": "Order",
+      "fromColumn": "assignedDriverId",
+      "toTable": "User",
+      "toColumn": "id",
+      "kind": "semantic_actor_ref"
+    },
+    {
+      "fromTable": "OrderEvent",
+      "fromColumn": "actorId",
+      "toTable": "User",
+      "toColumn": "id",
+      "kind": "semantic_actor_ref"
+    },
+    {
+      "fromTable": "ShrinkageLog",
+      "fromColumn": "productId",
+      "toTable": "Product",
+      "toColumn": "id",
+      "kind": "semantic_product_ref"
+    },
+    {
+      "fromTable": "SwarmTransaction",
+      "fromColumn": "productId",
+      "toTable": "Product",
+      "toColumn": "id",
+      "kind": "semantic_product_ref"
+    }
+  ],
+  "indexes": [
+    {
+      "name": "sqlite_autoindex_AppConfig_1",
+      "tableName": "AppConfig",
+      "unique": true,
+      "origin": "pk",
+      "partial": false,
+      "isAutoIndex": true,
+      "columns": [
+        "id"
+      ],
+      "sql": null
+    },
+    {
+      "name": "sqlite_autoindex_AuditLog_1",
+      "tableName": "AuditLog",
+      "unique": true,
+      "origin": "pk",
+      "partial": false,
+      "isAutoIndex": true,
+      "columns": [
+        "id"
+      ],
+      "sql": null
+    },
+    {
+      "name": "idx_CashRegisterLog_tenantId_createdAt",
+      "tableName": "CashRegisterLog",
+      "unique": false,
+      "origin": "c",
+      "partial": false,
+      "isAutoIndex": false,
+      "columns": [
+        "tenantId",
+        "createdAt"
+      ],
+      "sql": "CREATE INDEX \"idx_CashRegisterLog_tenantId_createdAt\" ON \"CashRegisterLog\" (\"tenantId\", \"createdAt\")"
+    },
+    {
+      "name": "sqlite_autoindex_CashRegisterLog_1",
+      "tableName": "CashRegisterLog",
+      "unique": true,
+      "origin": "pk",
+      "partial": false,
+      "isAutoIndex": true,
+      "columns": [
+        "id"
+      ],
+      "sql": null
+    },
+    {
+      "name": "sqlite_autoindex_Customer_2",
+      "tableName": "Customer",
+      "unique": true,
+      "origin": "u",
+      "partial": false,
+      "isAutoIndex": true,
+      "columns": [
+        "tenantId",
+        "phone"
+      ],
+      "sql": null
+    },
+    {
+      "name": "sqlite_autoindex_Customer_1",
+      "tableName": "Customer",
+      "unique": true,
+      "origin": "pk",
+      "partial": false,
+      "isAutoIndex": true,
+      "columns": [
+        "id"
+      ],
+      "sql": null
+    },
+    {
+      "name": "idx_Order_tenantId_status_date",
+      "tableName": "Order",
+      "unique": false,
+      "origin": "c",
+      "partial": false,
+      "isAutoIndex": false,
+      "columns": [
+        "tenantId",
+        "status",
+        "date"
+      ],
+      "sql": "CREATE INDEX \"idx_Order_tenantId_status_date\" ON \"Order\" (\"tenantId\", \"status\", \"date\")"
+    },
+    {
+      "name": "sqlite_autoindex_Order_1",
+      "tableName": "Order",
+      "unique": true,
+      "origin": "pk",
+      "partial": false,
+      "isAutoIndex": true,
+      "columns": [
+        "id"
+      ],
+      "sql": null
+    },
+    {
+      "name": "idx_OrderEvent_actorId_createdAt",
+      "tableName": "OrderEvent",
+      "unique": false,
+      "origin": "c",
+      "partial": false,
+      "isAutoIndex": false,
+      "columns": [
+        "actorId",
+        "createdAt"
+      ],
+      "sql": "CREATE INDEX \"idx_OrderEvent_actorId_createdAt\" ON \"OrderEvent\" (\"actorId\", \"createdAt\")"
+    },
+    {
+      "name": "idx_OrderEvent_orderId_createdAt",
+      "tableName": "OrderEvent",
+      "unique": false,
+      "origin": "c",
+      "partial": false,
+      "isAutoIndex": false,
+      "columns": [
+        "orderId",
+        "createdAt"
+      ],
+      "sql": "CREATE INDEX \"idx_OrderEvent_orderId_createdAt\" ON \"OrderEvent\" (\"orderId\", \"createdAt\")"
+    },
+    {
+      "name": "sqlite_autoindex_OrderEvent_1",
+      "tableName": "OrderEvent",
+      "unique": true,
+      "origin": "pk",
+      "partial": false,
+      "isAutoIndex": true,
+      "columns": [
+        "id"
+      ],
+      "sql": null
+    },
+    {
+      "name": "sqlite_autoindex_OrderItem_1",
+      "tableName": "OrderItem",
+      "unique": true,
+      "origin": "pk",
+      "partial": false,
+      "isAutoIndex": true,
+      "columns": [
+        "id"
+      ],
+      "sql": null
+    },
+    {
+      "name": "idx_Product_tenantId_barcode",
+      "tableName": "Product",
+      "unique": false,
+      "origin": "c",
+      "partial": false,
+      "isAutoIndex": false,
+      "columns": [
+        "tenantId",
+        "barcode"
+      ],
+      "sql": "CREATE INDEX \"idx_Product_tenantId_barcode\" ON \"Product\" (\"tenantId\", \"barcode\")"
+    },
+    {
+      "name": "idx_Product_tenantId_deletedAt",
+      "tableName": "Product",
+      "unique": false,
+      "origin": "c",
+      "partial": false,
+      "isAutoIndex": false,
+      "columns": [
+        "tenantId",
+        "deletedAt"
+      ],
+      "sql": "CREATE INDEX \"idx_Product_tenantId_deletedAt\" ON \"Product\" (\"tenantId\", \"deletedAt\")"
+    },
+    {
+      "name": "sqlite_autoindex_Product_1",
+      "tableName": "Product",
+      "unique": true,
+      "origin": "pk",
+      "partial": false,
+      "isAutoIndex": true,
+      "columns": [
+        "id"
+      ],
+      "sql": null
+    },
+    {
+      "name": "sqlite_autoindex_Purchase_1",
+      "tableName": "Purchase",
+      "unique": true,
+      "origin": "pk",
+      "partial": false,
+      "isAutoIndex": true,
+      "columns": [
+        "id"
+      ],
+      "sql": null
+    },
+    {
+      "name": "sqlite_autoindex_ShrinkageLog_1",
+      "tableName": "ShrinkageLog",
+      "unique": true,
+      "origin": "pk",
+      "partial": false,
+      "isAutoIndex": true,
+      "columns": [
+        "id"
+      ],
+      "sql": null
+    },
+    {
+      "name": "sqlite_autoindex_SupportTicket_2",
+      "tableName": "SupportTicket",
+      "unique": true,
+      "origin": "u",
+      "partial": false,
+      "isAutoIndex": true,
+      "columns": [
+        "tenantId",
+        "folio"
+      ],
+      "sql": null
+    },
+    {
+      "name": "sqlite_autoindex_SupportTicket_1",
+      "tableName": "SupportTicket",
+      "unique": true,
+      "origin": "pk",
+      "partial": false,
+      "isAutoIndex": true,
+      "columns": [
+        "id"
+      ],
+      "sql": null
+    },
+    {
+      "name": "sqlite_autoindex_SwarmTransaction_1",
+      "tableName": "SwarmTransaction",
+      "unique": true,
+      "origin": "pk",
+      "partial": false,
+      "isAutoIndex": true,
+      "columns": [
+        "id"
+      ],
+      "sql": null
+    },
+    {
+      "name": "idx_SyncQueue_status",
+      "tableName": "SyncQueue",
+      "unique": false,
+      "origin": "c",
+      "partial": false,
+      "isAutoIndex": false,
+      "columns": [
+        "status"
+      ],
+      "sql": "CREATE INDEX \"idx_SyncQueue_status\" ON \"SyncQueue\" (\"status\")"
+    },
+    {
+      "name": "sqlite_autoindex_SyncQueue_1",
+      "tableName": "SyncQueue",
+      "unique": true,
+      "origin": "pk",
+      "partial": false,
+      "isAutoIndex": true,
+      "columns": [
+        "id"
+      ],
+      "sql": null
+    },
+    {
+      "name": "sqlite_autoindex_User_2",
+      "tableName": "User",
+      "unique": true,
+      "origin": "u",
+      "partial": false,
+      "isAutoIndex": true,
+      "columns": [
+        "tenantId",
+        "email"
+      ],
+      "sql": null
+    },
+    {
+      "name": "sqlite_autoindex_User_1",
+      "tableName": "User",
+      "unique": true,
+      "origin": "pk",
+      "partial": false,
+      "isAutoIndex": true,
+      "columns": [
+        "id"
+      ],
+      "sql": null
+    }
+  ],
+  "triggers": [],
+  "auditCorrelationChains": [
+    {
+      "name": "Auditoría de Venta Cancelada o Sospechosa",
+      "steps": [
+        "Order (status, total, rejectionReason, vendedorId, confirmedAt)",
+        "User (actorId/vendedorId -> role, active)",
+        "OrderEvent (orderId -> secuencia fromStatus/toStatus y actorRole)",
+        "OrderItem -> Product (productId -> cantidad, precio vs Product.price, stock/reservedStock)",
+        "CashRegisterLog (cashierId -> discrepancias en corte)",
+        "AuditLog (userId, action=ORDER_CANCELLED|PRICE_CHANGE|SECURITY_ALERT)"
+      ]
+    },
+    {
+      "name": "Trazabilidad de Inventario y Merma",
+      "steps": [
+        "Product (stock, reservedStock, barcode, deletedAt)",
+        "OrderItem (salidas comprometidas o liquidadas)",
+        "ShrinkageLog (productId -> discrepancyType, qty, estimatedLoss, reportedBy)",
+        "Purchase (reposición por proveedor y costo)",
+        "AuditLog (action=STOCK_UPDATE|INVENTORY_MOVE|SHRINKAGE)"
+      ]
+    }
+  ]
+}
