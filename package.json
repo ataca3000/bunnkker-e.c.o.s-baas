@@ -126,6 +126,7 @@
     "html5-qrcode": "^2.3.8",
     "immer": "^10.2.0",
     "ioredis": "^5.11.1",
+    "jose": "^6.2.12",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.21.0",
     "mercadopago": "^3.1.0",
@@ -199,6 +200,9 @@
     "vite": "^6.4.3",
     "launch-editor": "^3.0.1",
     "esbuild": "^0.25.0",
-    "@vitest/mocker": "^4.1.12"
+    "@vitest/mocker": "^4.1.12",
+    "jwks-rsa": {
+      "jose": "5.10.0"
+    }
   }
 }
