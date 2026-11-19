@@ -32,11 +32,12 @@
     }
   },
   "include": [
+    ".next/types/**/*.ts",
     "globals.d.ts",
     "next-env.d.ts",
     "src/**/*.ts",
     "src/**/*.tsx",
-    ".next/types/**/*.ts"
+    "build/.next-dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",
