@@ -8,6 +8,7 @@ import type { BlockConfig } from '@/components/marketing/builder/Types';
 import type { Product, CartItem, Order } from '@/lib/types';
 import { toast } from '@/lib/toast';
 import { checkLicenseStatus } from '@/lib/license';
+import { shouldApplyCatalogSnapshot } from '@/lib/catalogSync';
 import { enqueueOfflineOrder, flushOfflineOrderQueue, getQueuedOfflineOrders } from '@/lib/indexedDBCart';
 import { getCustomerAuthHeaders } from '@/lib/customerAuth';
 import { broadcastSync, inferSyncScope } from '@/lib/syncNotifier';
@@ -292,11 +293,18 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
         const fetchLocalData = async () => {
             if (unmounted) return;
-            if (isFetching || localMutationInFlight.current > 0) {
+            if (isFetching) {
                 refetchQueued = true;
                 return;
             }
+            if (localMutationInFlight.current > 0) {
+                refetchQueued = true;
+                scheduleNextPoll();
+                return;
+            }
             isFetching = true;
+            refetchQueued = false;
+            const productsAtRequestStart = useERPStore.getState().products;
 
             try {
                 if (typeof navigator !== 'undefined' && navigator.onLine === false) {
@@ -339,22 +347,34 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
                 if (prodRes.ok) {
                     const prodData = await prodRes.json().catch(() => null);
                     if (prodData?.success && Array.isArray(prodData.data)) {
-                        const mappedProducts = prodData.data.map((p: any) => ({
-                            ...p,
-                            category: p.category || 'General',
-                            location: { estante: p.estante || '', fila: p.fila || '' }
-                        }));
                         const currentProducts = useERPStore.getState().products;
-                        const serverIds = new Set(mappedProducts.map((p: any) => p.id));
-                        const freshlyCreated = currentProducts.filter(
-                            (p) => !serverIds.has(p.id) && (Date.now() - (new Date(p.createdAt || 0).getTime())) < 60000
+                        const canApplySnapshot = shouldApplyCatalogSnapshot(
+                            productsAtRequestStart,
+                            currentProducts,
+                            localMutationInFlight.current
                         );
-                        const finalProducts = [...mappedProducts, ...freshlyCreated];
-                        setProducts(finalProducts);
-                        try {
-                            localStorage.setItem('_bunkker_cached_products', JSON.stringify(finalProducts));
-                            localStorage.setItem('_bunkker_last_catalog_sync', new Date().toISOString());
-                        } catch {}
+
+                        if (!canApplySnapshot) {
+                            if (currentProducts !== productsAtRequestStart) {
+                                refetchQueued = true;
+                            }
+                        } else {
+                            const mappedProducts = prodData.data.map((p: any) => ({
+                                ...p,
+                                category: p.category || 'General',
+                                location: { estante: p.estante || '', fila: p.fila || '' }
+                            }));
+                            const serverIds = new Set(mappedProducts.map((p: any) => p.id));
+                            const freshlyCreated = currentProducts.filter(
+                                (p) => !serverIds.has(p.id) && (Date.now() - (new Date(p.createdAt || 0).getTime())) < 60000
+                            );
+                            const finalProducts = [...mappedProducts, ...freshlyCreated];
+                            setProducts(finalProducts);
+                            try {
+                                localStorage.setItem('_bunkker_cached_products', JSON.stringify(finalProducts));
+                                localStorage.setItem('_bunkker_last_catalog_sync', new Date().toISOString());
+                            } catch {}
+                        }
                     }
                 } else {
                     detectedErrorCode = prodRes.status >= 500 ? 'ERR_SYNC_HTTP_5XX' : 'ERR_SERVER_UNREACHABLE';
