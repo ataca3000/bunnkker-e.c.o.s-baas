@@ -1,0 +1,34 @@
+name: CI Build y pruebas
+
+on:
+  push:
+    branches:
+      - feature/android-device-local-first
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: Build y pruebas
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar código
+        uses: actions/checkout@v6
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '20.x'
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci --legacy-peer-deps
+
+      - name: Ejecutar pruebas
+        run: npm test
+
+      - name: Compilar aplicación
+        run: npm run build
