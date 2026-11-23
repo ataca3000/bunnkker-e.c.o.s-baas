@@ -1,5 +1,3 @@
-<img width="512" height="512" alt="46 sin título_20261114143850" src="https://github.com/user-attachments/assets/4a27f18e-6b1a-4c44-90fd-8ecc6d164f0a" />
-<img width="720" height="1600" alt="Screenshot_20261114_234155_com microsoft emmx" src="https://github.com/user-attachments/assets/5bd408a8-6d76-46f8-91aa-2834f78410d1" />
 
 
 <div align="center">
@@ -21,6 +19,7 @@ ERP y punto de venta para operaciones de mayoreo y menudeo. El proyecto busca co
 ---
 
 ## ¿Qué es BUNKKER E.C.O.S.?
+<img width="819" height="404" alt="Screenshot_20261123_023913" src="https://github.com/user-attachments/assets/32cad553-c27e-4e08-b8ce-7fac8a851ac7" />
 
 Una plataforma en desarrollo para tiendas, ferreterías, bodegas y distribuidoras. El repositorio incluye una aplicación basada en Next.js/TypeScript y herramientas de escritorio con Electron.
 
