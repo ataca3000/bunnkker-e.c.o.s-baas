@@ -1,3 +1,7 @@
+<img width="512" height="512" alt="46 sin título_20261114143850" src="https://github.com/user-attachments/assets/4a27f18e-6b1a-4c44-90fd-8ecc6d164f0a" />
+<img width="720" height="1600" alt="Screenshot_20261114_234155_com microsoft emmx" src="https://github.com/user-attachments/assets/5bd408a8-6d76-46f8-91aa-2834f78410d1" />
+
+
 <div align="center">
 
 # BUNKKER E.C.O.S.
@@ -96,6 +100,10 @@ También puedes usar el botón **Sponsor** de GitHub cuando GitHub Sponsors est�
 ## Seguridad
 
 No publiques contraseñas, PIN, tokens, claves privadas, datos de clientes ni archivos de configuración con secretos. Para reportar una posible vulnerabilidad, evita abrir un Issue público con detalles explotables; contacta al mantenedor por un canal privado.
+<img width="720" height="1600" alt="Screenshot_20261114_234155_com microsoft emmx" src="https://github.com/user-attachments/assets/e50c9273-857d-46ee-8d1a-66cb6c5b24d6" />
+<img width="1600" height="720" alt="Screenshot_20261114_234259_com microsoft emmx" src="https://github.com/user-attachments/assets/716f12db-5881-4789-8594-5b49c04da988" />
+<img width="720" height="1600" alt="Screenshot_20261114_234331_com microsoft emmx" src="https://github.com/user-attachments/assets/bd6d74ff-b589-4e18-9dce-b246be251615" />
+<img width="720" height="1600" alt="Screenshot_20261114_234336_com microsoft emmx" src="https://github.com/user-attachments/assets/e571496d-999b-49df-8913-27aed0f71261" />
 
 ---
 
