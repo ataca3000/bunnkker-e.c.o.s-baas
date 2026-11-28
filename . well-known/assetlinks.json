@@ -1,0 +1,17 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls",
+      "delegate_permission/common.get_login_creds"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.BunkkerERP",
+      "sha256_cert_fingerprints": [
+        "1C:5E:0E:B9:21:97:A5:0F:C7:68:06:D2:B5:DA:74:7F:4E:37:DD:21:1B:0A:1D:29:FB:A0:65:EC:EF:F0:50:FE",
+        "4C:9B:2D:AB:D7:EF:AF:2E:CF:F1:18:6E:9E:8B:D2:7E:6E:65:63:8E:7A:C5:5A:58:E0:05:B8:32:B2:BD:EF:4B",
+        "66:29:8E:BF:38:66:9C:AD:2A:FB:35:7B:7B:A2:89:58:8B:3A:2C:8D:0D:2F:8A:A9:44:AA:78:39:6D:E0:CC:3B"
+      ]
+    }
+  }
+]
