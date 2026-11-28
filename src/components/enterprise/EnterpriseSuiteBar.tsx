@@ -2,10 +2,12 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Bell, Building2, Search, ShieldCheck } from 'lucide-react';
+import { Bell, Building2, MessageSquareWarning, QrCode, Search, ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import type { BranchNode } from '@/lib/enterpriseControlPlane';
 import CommandPaletteModal from './CommandPaletteModal';
+import QuickFeedbackModal from './QuickFeedbackModal';
+import QuickInventoryLookupModal from './QuickInventoryLookupModal';
 import UnifiedAlertDrawer from './UnifiedAlertDrawer';
 
 export default function EnterpriseSuiteBar() {
@@ -14,6 +16,8 @@ export default function EnterpriseSuiteBar() {
   const [activeBranchId, setActiveBranchId] = useState<string>('default');
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [alertsOpen, setAlertsOpen] = useState(false);
+  const [qrLookupOpen, setQrLookupOpen] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
   const loadBranches = useCallback(async () => {
@@ -112,8 +116,32 @@ export default function EnterpriseSuiteBar() {
             </kbd>
           </button>
 
-          {/* Right: Unified Alert Center + Operator Identity */}
-          <div className="flex shrink-0 items-center gap-3">
+          {/* Right: Quick QR Scanner + Discreet Feedback + Unified Alert Center + Operator Identity */}
+          <div className="flex shrink-0 items-center gap-2 sm:gap-2.5">
+            <button
+              type="button"
+              data-testid="dashboard-qr-lookup-btn"
+              onClick={() => setQrLookupOpen(true)}
+              aria-label="Escanear código QR o de barras para consultar inventario"
+              title="Escanear QR / código de barras"
+              className="inline-flex min-h-[34px] cursor-pointer items-center gap-1.5 whitespace-nowrap shrink-0 rounded-lg border border-cyan-500/40 bg-cyan-500/10 px-2.5 py-1.5 text-xs font-semibold text-cyan-200 transition-colors hover:border-cyan-400/70 hover:bg-cyan-500/20 hover:text-white"
+            >
+              <QrCode size={15} className="shrink-0 text-cyan-400" aria-hidden="true" />
+              <span className="hidden sm:inline">Escanear</span>
+            </button>
+
+            <button
+              type="button"
+              data-testid="dashboard-feedback-btn"
+              onClick={() => setFeedbackOpen(true)}
+              aria-label="Reportar falla o enviar comentario"
+              title="Reportar falla / Enviar comentario"
+              className="inline-flex min-h-[34px] cursor-pointer items-center gap-1.5 whitespace-nowrap shrink-0 rounded-lg border border-slate-800 bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-slate-300 transition-colors hover:border-amber-500/50 hover:bg-slate-800 hover:text-amber-200"
+            >
+              <MessageSquareWarning size={14} className="shrink-0 text-amber-400" aria-hidden="true" />
+              <span className="hidden md:inline">Reportar falla</span>
+            </button>
+
             <button
               type="button"
               onClick={() => setAlertsOpen(true)}
@@ -148,6 +176,16 @@ export default function EnterpriseSuiteBar() {
         onClose={() => setAlertsOpen(false)}
         activeBranchId={activeBranchId}
         onUnreadCountChange={setUnreadCount}
+      />
+
+      <QuickInventoryLookupModal
+        open={qrLookupOpen}
+        onClose={() => setQrLookupOpen(false)}
+      />
+
+      <QuickFeedbackModal
+        open={feedbackOpen}
+        onClose={() => setFeedbackOpen(false)}
       />
     </>
   );

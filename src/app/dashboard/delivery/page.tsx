@@ -14,6 +14,10 @@ import MyRoute from './components/MyRoute';
 import DeliveryView from './components/DeliveryView';
 import OrderNoteModal from './components/OrderNoteModal';
 import OrderPickingAssistant from '@/components/orders/OrderPickingAssistant';
+import { TicketReceiptModal } from '@/components/sales/caja-movil/TicketReceiptModal';
+import { saveDigitalTicket, type DigitalTicket } from '@/lib/digitalTicket';
+import { broadcastSync } from '@/lib/syncNotifier';
+import { useERPStore } from '@/store/useERPStore';
 import { 
     AlertCircle, 
     User, 
@@ -69,27 +73,42 @@ export default function DeliveryDashboard() {
         }
     }, [siteConfig?.deliveryZone]);
     
-    // Convert ERP Orders to DeliveryOrders
+    // Convert ERP Orders to DeliveryOrders cleanly without mixing cashier vendedorId into driverId
     const orders: DeliveryOrder[] = allOrders
         .filter(o => (o.deliveryMethod === 'repartidor' || o.deliveryType === 'DELIVERY') && !['cancelled', 'refunded'].includes(o.status))
-        .map(o => ({
-            id: o.id,
-            customerName: o.customer?.name || 'Cliente',
-            customerPhone: o.customer?.phone || '',
-            customerRole: 'Cliente',
-            address: o.deliveryAddress || o.address || o.customer?.address || 'Domicilio',
-            lat: o.deliveryLat ?? o.lat ?? 0,
-            lng: o.deliveryLng ?? o.lng ?? 0,
-            status: ['delivered', 'completed'].includes(o.status.toLowerCase())
-                ? 'completed'
-                : ['rejected', 'no_answer'].includes(o.status.toLowerCase())
-                    ? o.status.toLowerCase()
-                    : (o.assignedDriverId || o.driverId || o.vendedorId) ? 'claimed' : 'available',
-            driverId: o.assignedDriverId || o.driverId || o.vendedorId || undefined,
-            total: o.total,
-            deliveryPin: o.deliveryPin,
-            items: o.items || []
-        } as DeliveryOrder));
+        .map(o => {
+            const lowerStatus = String(o.status || '').toLowerCase();
+            const assignedDriver = o.assignedDriverId || o.driverId || undefined;
+            let mappedStatus: string = 'awaiting_dispatch';
+
+            if (['delivered', 'completed'].includes(lowerStatus)) {
+                mappedStatus = 'completed';
+            } else if (['rejected', 'no_answer'].includes(lowerStatus)) {
+                mappedStatus = lowerStatus;
+            } else if (o.status === 'claimed' || (o.status === 'OUT_FOR_DELIVERY' && assignedDriver)) {
+                mappedStatus = 'claimed';
+            } else if (o.status === 'OUT_FOR_DELIVERY' && !assignedDriver) {
+                mappedStatus = 'available';
+            }
+
+            return {
+                id: o.id,
+                customerName: o.customer?.name || o.customerName || 'Cliente',
+                customerPhone: o.customer?.phone || o.customerPhone || '',
+                customerRole: 'Cliente',
+                address: o.deliveryAddress || o.address || o.customer?.address || 'Domicilio',
+                lat: o.deliveryLat ?? o.lat ?? 0,
+                lng: o.deliveryLng ?? o.lng ?? 0,
+                status: mappedStatus,
+                rawStatus: o.status,
+                driverId: assignedDriver,
+                total: o.total,
+                deliveryPin: o.deliveryPin,
+                vendedorName: o.vendedorName,
+                loadedBy: o.loadedBy,
+                items: o.items || []
+            } as DeliveryOrder;
+        });
 
     const [currentView, setCurrentView] = useState<ViewState>('cockpit');
     const [activeDeliveryId, setActiveDeliveryId] = useState<string | null>(null);
@@ -100,6 +119,7 @@ export default function DeliveryDashboard() {
     const [selectedOrder, setSelectedOrder] = useState<DeliveryOrder | null>(null);
     const [selectedOrderForNote, setSelectedOrderForNote] = useState<DeliveryOrder | null>(null);
     const [pickingOrder, setPickingOrder] = useState<DeliveryOrder | null>(null);
+    const [deliveryTicketModal, setDeliveryTicketModal] = useState<DigitalTicket | null>(null);
     
     const lastGpsUpdate = useRef<number>(0);
     const GPS_THROTTLE_MS = 15000;
@@ -115,6 +135,7 @@ export default function DeliveryDashboard() {
                 const res = await fetch('/api/orders', {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
                     body: JSON.stringify({
                         id: ord.id,
                         status: ord.status,
@@ -226,8 +247,9 @@ export default function DeliveryDashboard() {
         }
     };
 
-    // Actualización de orden: Prioriza persistencia local y sincroniza en segundo plano
+    // Actualización de orden: sincroniza con servidor y genera Ticket de Entrega al cerrar PoD
     const updateOrder = async (id: string, updates: Partial<DeliveryOrder>) => {
+        const currentOrder = orders.find(o => o.id === id);
         const mappedStatus = updates.status === 'completed' ? 'DELIVERED' : updates.status;
         const dataToUpdate: any = { id };
         if (mappedStatus) dataToUpdate.status = mappedStatus;
@@ -240,23 +262,53 @@ export default function DeliveryDashboard() {
         // 1. Guardar siempre en almacenamiento persistente local del teléfono
         if (mappedStatus === 'DELIVERED') {
             useDeliveryStore.getState().completeDelivery(id, updates.signatureData, updates.photoData);
+            const receiptTicket = saveDigitalTicket(
+                'repartidor',
+                profile?.displayName || 'Repartidor',
+                id,
+                currentOrder?.items || [],
+                Number(currentOrder?.total || 0),
+                {
+                    amountReceived: Number(currentOrder?.total || 0),
+                    change: 0,
+                    paymentMethod: 'REPARTO DOMICILIO · PoD VALIDADO',
+                    customerName: currentOrder?.customerName || 'Cliente',
+                    vendedorId: profile?.uid || 'DRIVER',
+                    vendedorName: profile?.displayName || 'Repartidor',
+                    evidencePhoto: updates.photoData || null,
+                    signatureData: updates.signatureData || null,
+                    loadedBy: currentOrder?.loadedBy || null,
+                    deliveryType: 'DELIVERY'
+                }
+            );
+            setDeliveryTicketModal(receiptTicket);
         } else if (mappedStatus === 'rejected' || mappedStatus === 'no_answer') {
             useDeliveryStore.getState().rejectDelivery(id, updates.rejectionReason || 'Rechazado en ruta');
         }
 
-        // 2. Intentar enviar a la PC Maestra
+        // 2. Enviar a la PC Maestra / Base de Datos
         try {
             const response = await fetch('/api/orders', {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify(dataToUpdate)
             });
-            if (response.ok) {
+            const data = await response.json().catch(() => null);
+            if (response.ok && data?.success) {
                 useDeliveryStore.getState().markOrderSynced(id);
-                toast.success('✅ Entrega confirmada y sincronizada con el sistema.');
+                if (data.order) {
+                    const st = useERPStore.getState();
+                    st.setOrders(st.orders.map(o => o.id === id ? { ...o, ...data.order } : o));
+                }
+                broadcastSync({ action: 'DELIVERY_ORDER_UPDATED', id });
+                toast.success('✅ Entrega confirmada, ticket generado y stock actualizado.');
                 if (typeof window !== 'undefined' && (window as any).__inventorySocket) {
                     (window as any).__inventorySocket.emit('sync_db_event', { action: 'DELIVERY_ORDER_UPDATED', id });
                 }
+                return;
+            } else if (!response.ok) {
+                toast.error(data?.error || 'No se pudo confirmar la entrega en el servidor.');
                 return;
             }
         } catch {
@@ -274,38 +326,76 @@ export default function DeliveryDashboard() {
              return;
         }
 
-        // Guardar copia local en el teléfono para que viaje en ruta sin depender de Wi-Fi
-        if (order) {
-            useDeliveryStore.getState().startRoute([
-                ...useDeliveryStore.getState().activeOrders.filter(o => o.id !== orderId),
-                {
-                    id: order.id,
-                    customerName: order.customerName || 'Cliente',
-                    address: order.address || 'Domicilio',
-                    lat: order.lat ?? 0,
-                    lng: order.lng ?? 0,
-                    status: 'OUT_FOR_DELIVERY',
-                    deliveryPin: order.deliveryPin || undefined,
-                    items: order.items || [],
-                    total: order.total ?? 0
-                }
-            ], []);
-        }
-
         try {
             const response = await fetch('/api/orders', {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({ id: orderId, action: 'claim_delivery' })
             });
             const result = await response.json().catch(() => null);
-            if (!response.ok || !result?.success) throw new Error(result?.error || 'Otro repartidor tomó este pedido.');
+            if (!response.ok || !result?.success) {
+                throw new Error(result?.error || 'Otro repartidor tomó este pedido.');
+            }
+
+            if (result.order) {
+                const st = useERPStore.getState();
+                st.setOrders(st.orders.map(o => o.id === orderId ? { ...o, ...result.order } : o));
+            }
+
+            // Guardar copia local en el teléfono únicamente tras confirmación atómica del servidor
+            if (order) {
+                useDeliveryStore.getState().startRoute([
+                    ...useDeliveryStore.getState().activeOrders.filter(o => o.id !== orderId),
+                    {
+                        id: order.id,
+                        customerName: order.customerName || 'Cliente',
+                        address: order.address || 'Domicilio',
+                        lat: order.lat ?? 0,
+                        lng: order.lng ?? 0,
+                        status: 'OUT_FOR_DELIVERY',
+                        deliveryPin: order.deliveryPin || undefined,
+                        items: order.items || [],
+                        total: order.total ?? 0
+                    }
+                ], []);
+            }
+
+            broadcastSync({ action: 'DELIVERY_ORDER_CLAIMED', id: orderId });
             if (typeof window !== 'undefined' && (window as any).__inventorySocket) {
                 (window as any).__inventorySocket.emit('sync_db_event', { action: 'DELIVERY_ORDER_CLAIMED', id: orderId });
             }
-            toast.success('📦 Pedido asignado a tu ruta.');
+            toast.success('📦 Pedido bloqueado y asignado a tu ruta.');
         } catch (error) {
-            toast.warning(error instanceof Error ? error.message : 'Tomado localmente en tu ruta.');
+            toast.error(error instanceof Error ? error.message : 'No se pudo tomar el pedido.');
+        }
+    };
+
+    const handleReleaseDelivery = async (orderId: string) => {
+        try {
+            const response = await fetch('/api/orders', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ id: orderId, action: 'release_claim', slot: 'delivery' })
+            });
+            const result = await response.json().catch(() => null);
+            if (!response.ok || !result?.success) {
+                throw new Error(result?.error || 'No se pudo soltar el pedido de tu ruta.');
+            }
+            if (result.order) {
+                const st = useERPStore.getState();
+                st.setOrders(st.orders.map(o => o.id === orderId ? { ...o, ...result.order } : o));
+            }
+            const deliveryStore = useDeliveryStore.getState();
+            deliveryStore.startRoute(
+                deliveryStore.activeOrders.filter(o => o.id !== orderId),
+                []
+            );
+            broadcastSync({ action: 'DELIVERY_ORDER_RELEASED', id: orderId });
+            toast.info(`Pedido #${orderId.slice(-6).toUpperCase()} devuelto a la Bolsa de Pedidos.`);
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : 'Error al liberar el pedido.');
         }
     };
 
@@ -317,6 +407,7 @@ export default function DeliveryDashboard() {
     const currentRoute = orders.filter(o => o.status === 'claimed' && o.driverId === currentDriverId);
     const history = orders.filter(o => ['completed', 'rejected', 'no_answer'].includes(o.status) && o.driverId === currentDriverId);
     const availableOrders = orders.filter(o => o.status === 'available');
+    const awaitingDispatchOrders = orders.filter(o => o.status === 'awaiting_dispatch');
 
     const startDelivery = (orderId: string) => {
         setActiveDeliveryId(orderId);
@@ -642,6 +733,12 @@ export default function DeliveryDashboard() {
                                 </span>
                             </div>
 
+                            {awaitingDispatchOrders.length > 0 && (
+                                <div className="mb-3 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/25 text-[11px] text-amber-200 font-semibold">
+                                    ⏳ {awaitingDispatchOrders.length} {awaitingDispatchOrders.length === 1 ? 'envío en preparación / cobro en Caja' : 'envíos en preparación / cobro en Caja'} antes de pasar a Bolsa.
+                                </div>
+                            )}
+
                             <div className="space-y-3 overflow-y-auto max-h-[500px] pr-1">
                                 {availableOrders.length === 0 ? (
                                     <div className="text-center py-12 bg-slate-950/50 rounded-xl border border-slate-800/80 p-4">
@@ -650,7 +747,7 @@ export default function DeliveryDashboard() {
                                             Radar Limpio
                                         </p>
                                         <p className="text-slate-500 text-[11px] mt-1">
-                                            No hay pedidos pendientes en la bolsa en este momento.
+                                            Solo aparecen aquí los envíos ya surtidos y cobrados en Caja.
                                         </p>
                                     </div>
                                 ) : (
@@ -823,6 +920,16 @@ export default function DeliveryDashboard() {
                                                     >
                                                         <NavIcon size={12} /> Iniciar
                                                     </button>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleReleaseDelivery(order.id);
+                                                        }}
+                                                        className="px-2 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700 text-[11px] font-bold transition-colors"
+                                                        title="Devolver a la bolsa de pedidos"
+                                                    >
+                                                        Soltar
+                                                    </button>
                                                     <a
                                                         href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(order.address || '')}`}
                                                         target="_blank"
@@ -944,6 +1051,7 @@ export default function DeliveryDashboard() {
                         onStartDelivery={startDelivery} 
                         onBackToPool={() => setCurrentView('cockpit')} 
                         onViewNote={(order) => setSelectedOrderForNote(order)}
+                        onReleaseOrder={handleReleaseDelivery}
                     />
                 )}
 
@@ -1228,6 +1336,15 @@ export default function DeliveryDashboard() {
                         }}
                     />
                 )}
+
+                {/* ── COMPROBANTE DIGITAL DE ENTREGA EN DOMICILIO (CON FIRMA Y FOTO) ── */}
+                <TicketReceiptModal
+                    isOpen={Boolean(deliveryTicketModal)}
+                    onClose={() => setDeliveryTicketModal(null)}
+                    ticket={deliveryTicketModal}
+                    siteConfig={siteConfig}
+                    cajaId="repartidor"
+                />
             </main>
         </div>
     );

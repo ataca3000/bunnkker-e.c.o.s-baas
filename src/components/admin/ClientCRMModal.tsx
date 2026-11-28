@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Save, Clock, MessageCircle, AlertTriangle, Bot, CheckCircle2 } from 'lucide-react';
-import { db } from '@/lib/firebase';
+import { auth, db, hasRealCredentials } from '@/lib/firebase';
 import { doc, updateDoc, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { toast } from '@/lib/toast';
 
@@ -32,12 +32,14 @@ export default function ClientCRMModal({ client, onClose }: ClientCRMModalProps)
     const [aiThinking, setAiThinking] = useState(false);
 
     useEffect(() => {
-        if (!client.uid) return;
+        if (!client.uid || !hasRealCredentials || !auth?.currentUser) return;
         const q = query(collection(db, `users/${client.uid}/history`), orderBy('timestamp', 'desc'));
         const unsub = onSnapshot(q, (snap: any) => {
             const list: any[] = [];
             snap.forEach((doc: any) => list.push({ id: doc.id, ...doc.data() }));
             setHistory(list);
+        }, (err: any) => {
+            console.warn('[ClientCRMModal] Historial CRM en modo local:', err?.message);
         });
         return () => unsub();
     }, [client.uid]);

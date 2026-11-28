@@ -7,17 +7,19 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Settings, Key, Landmark, MapPin, CheckCircle2, Lock, 
     CreditCard, HardDrive, Loader2, ArrowRight,
-    Printer, BellRing
+    Printer, BellRing, Store, Building2
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
 import { toast } from '@/lib/toast';
+import ConfigHelpButton from '@/components/common/ConfigHelpButton';
 
 const APIKeyManager = dynamic(() => import('@/components/admin/APIKeyManager'), { ssr: false });
 const InteractiveTerraMap = dynamic(() => import('@/components/admin/InteractiveTerraMap'), { ssr: false });
 const CloudBackupConfigWidget = dynamic(() => import('@/components/admin/CloudBackupConfigWidget'), { ssr: false });
 const HardwareSettingsModal = dynamic(() => import('@/components/hardware/HardwareSettingsModal'), { ssr: false });
 const AndroidPushManager = dynamic(() => import('@/components/admin/AndroidPushManager'), { ssr: false });
+const FirebaseAiDiagnosticsPanel = dynamic(() => import('@/components/admin/FirebaseAiDiagnosticsPanel'), { ssr: false });
 
 export default function SetupWizard() {
     const searchParams = useSearchParams();
@@ -43,6 +45,7 @@ export default function SetupWizard() {
         facebookUrl: '',
         instagramUrl: '',
         activeModules: ['sales', 'users', 'crm', 'inventory', 'delivery', 'design', 'marketing', 'billing', 'audit'],
+        operationSpace: 'local' as 'local' | 'business',
         operationRange: 'local' as 'local' | 'regional' | 'nacional' | 'global',
         enableWebPayments: true,
         requireCashierInspection: true
@@ -55,6 +58,7 @@ export default function SetupWizard() {
                 whatsapp: siteConfig?.businessPhone || '',
                 location: siteConfig?.businessAddress || '',
                 activeModules: siteConfig?.activeModules || ['sales', 'users', 'crm', 'inventory', 'delivery', 'design', 'marketing', 'billing', 'audit'],
+                operationSpace: siteConfig?.operationSpace || 'local',
                 operationRange: siteConfig?.operationRange || 'local',
                 enableWebPayments: siteConfig?.enableWebPayments ?? true,
                 requireCashierInspection: siteConfig?.requireCashierInspection ?? true
@@ -92,6 +96,7 @@ export default function SetupWizard() {
                 businessPhone: config.whatsapp,
                 businessAddress: config.location,
                 activeModules: config.activeModules,
+                operationSpace: config.operationSpace,
                 operationRange: config.operationRange,
                 enableWebPayments: config.enableWebPayments ?? true,
                 requireCashierInspection: config.requireCashierInspection ?? true
@@ -137,14 +142,15 @@ export default function SetupWizard() {
                             { id: 5, label: 'Bóveda Local', icon: <HardDrive size={18} /> },
                             { id: 7, label: 'Impresoras y Hardware', icon: <Printer size={18} /> },
                             { id: 8, label: 'Alertas Push Android', icon: <BellRing size={18} /> },
+                            { id: 9, label: 'IA Híbrida Firebase', icon: <Settings size={18} /> },
                             { id: 6, label: 'Operar Sistema', icon: <CheckCircle2 size={18} /> }
                         ].map((s) => (
                             <button
                                 key={s.id}
                                 onClick={() => setStep(s.id)}
-                                className={`min-w-max xl:min-w-0 xl:w-full px-3 py-2.5 xl:p-3 flex items-center gap-2.5 cursor-pointer rounded-xl transition-all border-l-4 text-left ${
+                                className={`min-w-max xl:min-w-0 xl:w-full px-3 py-2.5 xl:p-3 flex items-center gap-2.5 cursor-pointer rounded-xl transition-all border text-left ${
                                     step === s.id 
-                                    ? 'border-cyan-500 bg-cyan-950/20 font-bold text-cyan-400 shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]' 
+                                    ? 'border-cyan-500/40 bg-cyan-950/25 font-bold text-cyan-300' 
                                     : 'border-transparent bg-transparent font-medium text-slate-400 hover:bg-slate-900/40 hover:text-slate-200'
                                 }`}
                                 aria-current={step === s.id ? 'step' : undefined}
@@ -179,16 +185,22 @@ export default function SetupWizard() {
                             >
                                 {step === 1 && (
                                     <div className="space-y-6">
-                                        <h3 className="flex items-center gap-2.5 text-cyan-400 font-bold text-lg sm:text-xl tracking-wide">
-                                            <Key /> Facturación SAT (Facturapi 4.0)
-                                        </h3>
+                                        <div className="flex items-center justify-between gap-3">
+                                            <h3 className="flex items-center gap-2.5 text-cyan-400 font-bold text-lg sm:text-xl tracking-wide">
+                                                <Key /> Facturación SAT (Facturapi 4.0)
+                                            </h3>
+                                            <ConfigHelpButton settingKey="facturapi" />
+                                        </div>
                                         <p className="text-sm text-slate-400 leading-relaxed">
                                             Conecta tu cuenta de Facturapi para timbrar facturas de forma automática al cerrar ventas en tu POS. Las facturas se enviarán solas al WhatsApp de tus clientes.
                                         </p>
 
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                                             <div>
-                                                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Nombre comercial del negocio</label>
+                                                <div className="flex items-center justify-between gap-2 mb-1.5">
+                                                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest">Nombre comercial del negocio</label>
+                                                    <ConfigHelpButton settingKey="businessName" />
+                                                </div>
                                                 <input 
                                                     type="text" 
                                                     value={config.businessName} 
@@ -225,9 +237,12 @@ export default function SetupWizard() {
 
                                 {step === 2 && (
                                     <div className="space-y-6">
-                                        <h3 className="flex items-center gap-2.5 text-cyan-400 font-bold text-lg sm:text-xl tracking-wide">
-                                            <Landmark /> Cuenta Bancaria de Destino
-                                        </h3>
+                                        <div className="flex items-center justify-between gap-3">
+                                            <h3 className="flex items-center gap-2.5 text-cyan-400 font-bold text-lg sm:text-xl tracking-wide">
+                                                <Landmark /> Cuenta Bancaria de Destino
+                                            </h3>
+                                            <ConfigHelpButton settingKey="bankAccount" />
+                                        </div>
                                         <p className="text-sm text-slate-400">
                                             Especifica los datos del banco donde recibirás las transferencias de cobro electrónico y los cortes de caja.
                                         </p>
@@ -258,53 +273,97 @@ export default function SetupWizard() {
 
                                 {step === 3 && (
                                     <div className="space-y-6">
-                                        <h3 className="flex items-center gap-2.5 text-cyan-400 font-bold text-lg sm:text-xl tracking-wide">
-                                            <CreditCard /> Reservas y Operación Local
-                                        </h3>
+                                        <div className="flex items-center justify-between gap-3">
+                                            <h3 className="flex items-center gap-2.5 text-cyan-400 font-bold text-lg sm:text-xl tracking-wide">
+                                                <CreditCard /> Reservas, Pagos y Modo Operativo
+                                            </h3>
+                                            <ConfigHelpButton settingKey="operationSpace" />
+                                        </div>
                                         <p className="text-sm text-slate-400">
-                                            El sistema opera en modo Local-First. Puedes otorgar o revocar el acceso a pagos web públicos e inspección obligatoria en caja.
+                                            Elige entre una vista simple de tienda diaria (Operación Local) o herramientas avanzadas multi-sucursal (Modo Business), y controla los pagos web.
                                         </p>
-                                        
-                                        <div className="p-4 rounded-xl bg-cyan-950/20 border border-cyan-500/30 text-cyan-400 text-sm">
-                                            <span className="font-bold block mb-1">🛒 Flujo de Reservas WiFi LAN & Ficha de Pago:</span>
-                                            Todos los pedidos desde la fila o web entran en reserva con temporizador de 30 minutos. Los clientes obtienen un Serial único (BNK-XXXX) para validar y pagar directamente en la caja (Efectivo/Tarjeta/SPEI).
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                            <button
+                                                type="button"
+                                                onClick={() => setConfig({ ...config, operationSpace: 'local' })}
+                                                className={`p-4 rounded-xl border text-left transition-colors cursor-pointer ${
+                                                    config.operationSpace !== 'business'
+                                                        ? 'border-emerald-400/60 bg-emerald-950/25'
+                                                        : 'border-slate-800 bg-slate-900/60 hover:border-slate-700'
+                                                }`}
+                                            >
+                                                <div className="flex items-center gap-2 font-bold text-sm text-white">
+                                                    <Store size={16} className="text-emerald-400" />
+                                                    <span>Operación Local (Recomendado diario)</span>
+                                                </div>
+                                                <p className="text-xs text-slate-400 mt-1">
+                                                    Muestra solo caja POS, almacén, patio y pickup. Sin menús corporativos complejos.
+                                                </p>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setConfig({ ...config, operationSpace: 'business' })}
+                                                className={`p-4 rounded-xl border text-left transition-colors cursor-pointer ${
+                                                    config.operationSpace === 'business'
+                                                        ? 'border-sky-400/60 bg-sky-950/25'
+                                                        : 'border-slate-800 bg-slate-900/60 hover:border-slate-700'
+                                                }`}
+                                            >
+                                                <div className="flex items-center gap-2 font-bold text-sm text-white">
+                                                    <Building2 size={16} className="text-sky-400" />
+                                                    <span>Modo Business (Multi-Sucursal / Cloud)</span>
+                                                </div>
+                                                <p className="text-xs text-slate-400 mt-1">
+                                                    Habilita nodos por sucursal, revocación SSO, respaldos Drive/Sheets y auditoría SHA-256.
+                                                </p>
+                                            </button>
                                         </div>
 
                                         <div className="space-y-4 pt-2">
-                                            <label className="flex items-center justify-between p-4 bg-slate-900/60 border border-slate-800 rounded-xl cursor-pointer hover:border-slate-700 transition-colors">
-                                                <div>
-                                                    <span className="font-bold text-white block text-sm">Habilitar Fichas y Pagos Web Públicos</span>
-                                                    <span className="text-xs text-slate-400 block mt-0.5">Permite mostrar datos bancarios y referencia para depósitos/transferencias desde la Web.</span>
-                                                </div>
-                                                <input 
-                                                    type="checkbox"
-                                                    checked={config.enableWebPayments ?? true}
-                                                    onChange={(e) => setConfig({ ...config, enableWebPayments: e.target.checked })}
-                                                    className="w-5 h-5 accent-cyan-500 rounded cursor-pointer"
-                                                />
-                                            </label>
+                                            <div className="flex items-center justify-between gap-3 p-4 bg-slate-900/60 border border-slate-800 rounded-xl hover:border-slate-700 transition-colors">
+                                                <label className="flex-1 flex items-center justify-between gap-4 cursor-pointer">
+                                                    <div>
+                                                        <span className="font-bold text-white block text-sm">Habilitar Fichas y Pagos Web Públicos</span>
+                                                        <span className="text-xs text-slate-400 block mt-0.5">Permite mostrar datos bancarios y referencia para depósitos/transferencias desde la Web.</span>
+                                                    </div>
+                                                    <input 
+                                                        type="checkbox"
+                                                        checked={config.enableWebPayments ?? true}
+                                                        onChange={(e) => setConfig({ ...config, enableWebPayments: e.target.checked })}
+                                                        className="w-5 h-5 accent-cyan-500 rounded cursor-pointer shrink-0"
+                                                    />
+                                                </label>
+                                                <ConfigHelpButton settingKey="enableWebPayments" />
+                                            </div>
 
-                                            <label className="flex items-center justify-between p-4 bg-slate-900/60 border border-slate-800 rounded-xl cursor-pointer hover:border-slate-700 transition-colors">
-                                                <div>
-                                                    <span className="font-bold text-white block text-sm">Inspección Obligatoria de Cajera en Caja</span>
-                                                    <span className="text-xs text-slate-400 block mt-0.5">Las órdenes requieren que la cajera valide el pago con el Serial BNK-XXXX antes de enviar el pedido a preparación.</span>
-                                                </div>
-                                                <input 
-                                                    type="checkbox"
-                                                    checked={config.requireCashierInspection ?? true}
-                                                    onChange={(e) => setConfig({ ...config, requireCashierInspection: e.target.checked })}
-                                                    className="w-5 h-5 accent-cyan-500 rounded cursor-pointer"
-                                                />
-                                            </label>
+                                            <div className="flex items-center justify-between gap-3 p-4 bg-slate-900/60 border border-slate-800 rounded-xl hover:border-slate-700 transition-colors">
+                                                <label className="flex-1 flex items-center justify-between gap-4 cursor-pointer">
+                                                    <div>
+                                                        <span className="font-bold text-white block text-sm">Inspección Obligatoria de Cajera en Caja</span>
+                                                        <span className="text-xs text-slate-400 block mt-0.5">Las órdenes requieren que la cajera valide el pago con el Serial BNK-XXXX antes de enviar el pedido a preparación.</span>
+                                                    </div>
+                                                    <input 
+                                                        type="checkbox"
+                                                        checked={config.requireCashierInspection ?? true}
+                                                        onChange={(e) => setConfig({ ...config, requireCashierInspection: e.target.checked })}
+                                                        className="w-5 h-5 accent-cyan-500 rounded cursor-pointer shrink-0"
+                                                    />
+                                                </label>
+                                                <ConfigHelpButton settingKey="requireCashierInspection" />
+                                            </div>
                                         </div>
                                     </div>
                                 )}
 
                                 {step === 4 && (
                                     <div className="space-y-6">
-                                        <h3 className="flex items-center gap-2.5 text-cyan-400 font-bold text-lg sm:text-xl tracking-wide">
-                                            <MapPin /> Contacto y Cobertura
-                                        </h3>
+                                        <div className="flex items-center justify-between gap-3">
+                                            <h3 className="flex items-center gap-2.5 text-cyan-400 font-bold text-lg sm:text-xl tracking-wide">
+                                                <MapPin /> Contacto y Cobertura
+                                            </h3>
+                                            <ConfigHelpButton settingKey="operationRange" />
+                                        </div>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div>
                                                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">WhatsApp de ventas</label>
@@ -339,9 +398,12 @@ export default function SetupWizard() {
 
                                 {step === 5 && (
                                     <div className="space-y-6">
-                                        <h3 className="flex items-center gap-2.5 text-cyan-400 font-bold text-lg sm:text-xl tracking-wide">
-                                            <HardDrive /> Bóveda Local y Respaldos Google Cloud
-                                        </h3>
+                                        <div className="flex items-center justify-between gap-3">
+                                            <h3 className="flex items-center gap-2.5 text-cyan-400 font-bold text-lg sm:text-xl tracking-wide">
+                                                <HardDrive /> Bóveda Local y Respaldos Google Cloud
+                                            </h3>
+                                            <ConfigHelpButton settingKey="cloudBackup" />
+                                        </div>
                                         <p className="text-sm text-slate-400">
                                             Configura la frecuencia de sincronización automática hacia Google Cloud y la unidad física USB de resguardo local.
                                         </p>
@@ -405,13 +467,31 @@ export default function SetupWizard() {
 
                                 {step === 7 && (
                                     <div className="space-y-4">
+                                        <div className="flex items-center justify-between gap-3">
+                                            <h3 className="flex items-center gap-2 text-cyan-400 font-bold text-base">
+                                                <Printer size={18} /> Impresoras Térmicas y Lectores
+                                            </h3>
+                                            <ConfigHelpButton settingKey="hardwarePrinters" />
+                                        </div>
                                         <HardwareSettingsModal isInline />
                                     </div>
                                 )}
 
                                 {step === 8 && (
                                     <div className="space-y-4">
+                                        <div className="flex items-center justify-between gap-3">
+                                            <h3 className="flex items-center gap-2 text-cyan-400 font-bold text-base">
+                                                <BellRing size={18} /> Alertas Push Android
+                                            </h3>
+                                            <ConfigHelpButton settingKey="androidPush" />
+                                        </div>
                                         <AndroidPushManager variant="panel" />
+                                    </div>
+                                )}
+
+                                {step === 9 && (
+                                    <div className="space-y-4">
+                                        <FirebaseAiDiagnosticsPanel />
                                     </div>
                                 )}
 
@@ -437,7 +517,7 @@ export default function SetupWizard() {
                         {step !== 6 && (
                             <div className="mt-8 pt-4 border-t border-slate-800/80 flex justify-end">
                                 <button
-                                    onClick={() => setStep(step === 5 ? 7 : step === 7 ? 8 : step === 8 ? 6 : step + 1)}
+                                    onClick={() => setStep(step === 5 ? 7 : step === 7 ? 8 : step === 8 ? 9 : step === 9 ? 6 : step + 1)}
                                     className="bg-cyan-500 hover:bg-cyan-600 text-black px-6 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-colors flex items-center gap-2"
                                 >
                                     Siguiente Paso <ArrowRight size={14} />

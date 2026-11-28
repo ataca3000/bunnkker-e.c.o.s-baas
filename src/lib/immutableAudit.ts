@@ -44,9 +44,41 @@ export interface AuditChainVerificationResult {
   brokenEntryId?: string;
   reason?: string;
   headHash: string;
+  genesisHash: string;
+  verifiedAt: string;
 }
 
-const GENESIS_HASH = '0'.repeat(64);
+export interface AuditBlockVerification {
+  entryId: string;
+  sequence: number;
+  payloadValid: boolean;
+  linkValid: boolean;
+  hashValid: boolean;
+  valid: boolean;
+  expectedPayloadHash: string;
+  expectedPreviousHash: string;
+  expectedEntryHash: string;
+}
+
+export interface AuditDetailedVerificationResult {
+  integrity: AuditChainVerificationResult;
+  blocks: AuditBlockVerification[];
+  blockStatuses: Record<string, AuditBlockVerification>;
+  totalChainCount: number;
+}
+
+export interface TamperSimulationResult {
+  targetSequence: number;
+  targetEntryId: string;
+  tamperedField: string;
+  originalValue: string;
+  tamperedValue: string;
+  integrity: AuditChainVerificationResult;
+  brokenBlock: AuditBlockVerification | null;
+  realLedgerUntouched: boolean;
+}
+
+export const GENESIS_HASH = '0'.repeat(64);
 const AUDIT_CHAIN_FILE = path.join(process.cwd(), 'data', 'enterprise_audit_chain.json');
 const MAX_CHAIN_ENTRIES = 2000;
 
@@ -64,7 +96,7 @@ function sha256(value: string): string {
   return crypto.createHash('sha256').update(value).digest('hex');
 }
 
-function computePayloadHash(input: {
+export function computePayloadHash(input: {
   branchId: string;
   actorId: string;
   actorName: string;
@@ -87,7 +119,7 @@ function computePayloadHash(input: {
   return sha256(canonical);
 }
 
-function computeEntryHash(params: {
+export function computeEntryHash(params: {
   entryId: string;
   sequence: number;
   branchId: string;
@@ -192,41 +224,74 @@ export function appendImmutableAudit(input: AppendImmutableAuditInput): Immutabl
 export function listImmutableAudit(filters?: {
   branchId?: string;
   limit?: number;
+  action?: string;
+  q?: string;
 }): ImmutableAuditEntry[] {
   const entries = ensureLoaded();
   const branchId = filters?.branchId?.trim();
-  const scoped = branchId && branchId !== 'all'
+  const action = filters?.action?.trim();
+  const q = filters?.q?.trim().toLowerCase();
+
+  let scoped = branchId && branchId !== 'all'
     ? entries.filter((e) => e.branchId === branchId)
     : entries;
+
+  if (action && action !== 'all') {
+    scoped = scoped.filter((e) => e.action === action);
+  }
+
+  if (q) {
+    scoped = scoped.filter((e) => {
+      const haystack = `${e.sequence} ${e.entryId} ${e.branchId} ${e.actorName} ${e.actorRole} ${e.action} ${e.resourceRef} ${e.entryHash} ${e.payloadHash} ${e.previousHash}`.toLowerCase();
+      return haystack.includes(q);
+    });
+  }
+
   const limit = Math.max(1, Math.min(200, filters?.limit ?? 80));
   return [...scoped].reverse().slice(0, limit);
 }
 
-export function verifyAuditChainIntegrity(
+export function listDistinctAuditActions(): string[] {
+  const entries = ensureLoaded();
+  return Array.from(new Set(entries.map((e) => e.action))).sort();
+}
+
+export function verifyAuditChainDetailed(
   customEntries?: ImmutableAuditEntry[]
-): AuditChainVerificationResult {
+): AuditDetailedVerificationResult {
   const entries = customEntries ?? ensureLoaded();
+  const verifiedAt = new Date().toISOString();
+
   if (entries.length === 0) {
     return {
-      valid: true,
-      checkedCount: 0,
-      headHash: GENESIS_HASH,
+      integrity: {
+        valid: true,
+        checkedCount: 0,
+        headHash: GENESIS_HASH,
+        genesisHash: GENESIS_HASH,
+        verifiedAt,
+      },
+      blocks: [],
+      blockStatuses: {},
+      totalChainCount: 0,
     };
   }
+
+  const blocks: AuditBlockVerification[] = [];
+  const blockStatuses: Record<string, AuditBlockVerification> = {};
+  let firstBreak:
+    | { sequence: number; entryId: string; reason: string }
+    | undefined;
 
   let expectedPrevHash = GENESIS_HASH;
   for (let idx = 0; idx < entries.length; idx++) {
     const entry = entries[idx];
-    if (idx > 0 && entry.previousHash !== expectedPrevHash) {
-      return {
-        valid: false,
-        checkedCount: idx + 1,
-        brokenSequence: entry.sequence,
-        brokenEntryId: entry.entryId,
-        reason: `Ruptura de encadenamiento en secuencia #${entry.sequence} (previousHash no coincide).`,
-        headHash: entries[entries.length - 1].entryHash,
-      };
-    }
+    const linkValid =
+      idx === 0
+        ? entry.sequence === 1
+          ? entry.previousHash === GENESIS_HASH
+          : true
+        : entry.previousHash === expectedPrevHash;
 
     const expectedPayloadHash = computePayloadHash({
       branchId: entry.branchId,
@@ -238,17 +303,7 @@ export function verifyAuditChainIntegrity(
       details: entry.details,
       timestamp: entry.timestamp,
     });
-
-    if (expectedPayloadHash !== entry.payloadHash) {
-      return {
-        valid: false,
-        checkedCount: idx + 1,
-        brokenSequence: entry.sequence,
-        brokenEntryId: entry.entryId,
-        reason: `Alteración detectada en el contenido del registro #${entry.sequence} (${entry.action}).`,
-        headHash: entries[entries.length - 1].entryHash,
-      };
-    }
+    const payloadValid = expectedPayloadHash === entry.payloadHash;
 
     const expectedEntryHash = computeEntryHash({
       entryId: entry.entryId,
@@ -258,25 +313,192 @@ export function verifyAuditChainIntegrity(
       previousHash: entry.previousHash,
       timestamp: entry.timestamp,
     });
+    const hashValid = expectedEntryHash === entry.entryHash;
+    const valid = linkValid && payloadValid && hashValid;
 
-    if (expectedEntryHash !== entry.entryHash) {
-      return {
-        valid: false,
-        checkedCount: idx + 1,
-        brokenSequence: entry.sequence,
-        brokenEntryId: entry.entryId,
-        reason: `Huella criptográfica inválida en secuencia #${entry.sequence}.`,
-        headHash: entries[entries.length - 1].entryHash,
-      };
+    const blockCheck: AuditBlockVerification = {
+      entryId: entry.entryId,
+      sequence: entry.sequence,
+      payloadValid,
+      linkValid,
+      hashValid,
+      valid,
+      expectedPayloadHash,
+      expectedPreviousHash: idx === 0 ? entry.previousHash : expectedPrevHash,
+      expectedEntryHash,
+    };
+
+    blocks.push(blockCheck);
+    blockStatuses[entry.entryId] = blockCheck;
+
+    if (!firstBreak && !valid) {
+      if (!linkValid) {
+        firstBreak = {
+          sequence: entry.sequence,
+          entryId: entry.entryId,
+          reason: `Ruptura de encadenamiento en secuencia #${entry.sequence} (previousHash no coincide).`,
+        };
+      } else if (!payloadValid) {
+        firstBreak = {
+          sequence: entry.sequence,
+          entryId: entry.entryId,
+          reason: `Alteración detectada en el contenido del registro #${entry.sequence} (${entry.action}).`,
+        };
+      } else {
+        firstBreak = {
+          sequence: entry.sequence,
+          entryId: entry.entryId,
+          reason: `Huella criptográfica inválida en secuencia #${entry.sequence}.`,
+        };
+      }
     }
 
     expectedPrevHash = entry.entryHash;
   }
 
+  const headHash = entries[entries.length - 1].entryHash;
+
   return {
-    valid: true,
-    checkedCount: entries.length,
-    headHash: entries[entries.length - 1].entryHash,
+    integrity: firstBreak
+      ? {
+          valid: false,
+          checkedCount: firstBreak.sequence,
+          brokenSequence: firstBreak.sequence,
+          brokenEntryId: firstBreak.entryId,
+          reason: firstBreak.reason,
+          headHash,
+          genesisHash: GENESIS_HASH,
+          verifiedAt,
+        }
+      : {
+          valid: true,
+          checkedCount: entries.length,
+          headHash,
+          genesisHash: GENESIS_HASH,
+          verifiedAt,
+        },
+    blocks,
+    blockStatuses,
+    totalChainCount: entries.length,
+  };
+}
+
+export function verifyAuditChainIntegrity(
+  customEntries?: ImmutableAuditEntry[]
+): AuditChainVerificationResult {
+  return verifyAuditChainDetailed(customEntries).integrity;
+}
+
+export function simulateTamperDiagnostic(
+  targetSequence?: number
+): TamperSimulationResult {
+  const realEntries = ensureLoaded();
+  let cloned: ImmutableAuditEntry[];
+
+  if (realEntries.length > 0) {
+    cloned = realEntries.map((e) => ({
+      ...e,
+      details: e.details ? { ...e.details } : undefined,
+    }));
+  } else {
+    const ts1 = new Date().toISOString();
+    const p1 = computePayloadHash({
+      branchId: 'default',
+      actorId: 'sim-admin',
+      actorName: 'Auditor Forense',
+      actorRole: 'superadmin',
+      action: 'GENESIS_SEAL',
+      resourceRef: 'sha256-ledger',
+      timestamp: ts1,
+    });
+    const id1 = 'aud_sim_genesis_0001';
+    const h1 = computeEntryHash({
+      entryId: id1,
+      sequence: 1,
+      branchId: 'default',
+      payloadHash: p1,
+      previousHash: GENESIS_HASH,
+      timestamp: ts1,
+    });
+    const ts2 = new Date().toISOString();
+    const p2 = computePayloadHash({
+      branchId: 'default',
+      actorId: 'sim-admin',
+      actorName: 'Auditor Forense',
+      actorRole: 'superadmin',
+      action: 'CASH_CUT_VERIFIED',
+      resourceRef: 'corte-turno-1',
+      timestamp: ts2,
+    });
+    const id2 = 'aud_sim_block_0002';
+    const h2 = computeEntryHash({
+      entryId: id2,
+      sequence: 2,
+      branchId: 'default',
+      payloadHash: p2,
+      previousHash: h1,
+      timestamp: ts2,
+    });
+    cloned = [
+      {
+        entryId: id1,
+        sequence: 1,
+        branchId: 'default',
+        actorId: 'sim-admin',
+        actorName: 'Auditor Forense',
+        actorRole: 'superadmin',
+        action: 'GENESIS_SEAL',
+        resourceRef: 'sha256-ledger',
+        payloadHash: p1,
+        previousHash: GENESIS_HASH,
+        entryHash: h1,
+        timestamp: ts1,
+      },
+      {
+        entryId: id2,
+        sequence: 2,
+        branchId: 'default',
+        actorId: 'sim-admin',
+        actorName: 'Auditor Forense',
+        actorRole: 'superadmin',
+        action: 'CASH_CUT_VERIFIED',
+        resourceRef: 'corte-turno-1',
+        payloadHash: p2,
+        previousHash: h1,
+        entryHash: h2,
+        timestamp: ts2,
+      },
+    ];
+  }
+
+  const targetIdx =
+    typeof targetSequence === 'number'
+      ? Math.max(
+          0,
+          cloned.findIndex((e) => e.sequence === targetSequence)
+        )
+      : cloned.length - 1;
+  const resolvedIdx = targetIdx >= 0 ? targetIdx : cloned.length - 1;
+  const target = cloned[resolvedIdx];
+  const originalValue = target.action;
+  const tamperedValue = `${target.action}_ALTERED`;
+  cloned[resolvedIdx] = {
+    ...target,
+    action: tamperedValue,
+  };
+
+  const verification = verifyAuditChainDetailed(cloned);
+  const brokenBlock = verification.blocks[resolvedIdx] ?? null;
+
+  return {
+    targetSequence: target.sequence,
+    targetEntryId: target.entryId,
+    tamperedField: 'action',
+    originalValue,
+    tamperedValue,
+    integrity: verification.integrity,
+    brokenBlock,
+    realLedgerUntouched: true,
   };
 }
 

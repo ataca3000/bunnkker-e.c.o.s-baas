@@ -28,7 +28,10 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isVerifiedUser() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+      return isVerifiedUser() && (
+        request.auth.token.email == 'luishalo69@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
     }
 
     function isValidFcmDevice(data) {

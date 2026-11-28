@@ -78,11 +78,15 @@ if (typeof window !== 'undefined') {
       _origConsoleError(...args);
     };
 
-    // Validación inicial de conectividad Firestore sin bloquear la UI
-    getDocFromServer(doc(db, 'test', 'connection')).catch((error: unknown) => {
-      if (error instanceof Error && error.message.includes('the client is offline')) {
-        console.error('Please check your Firebase configuration.');
-      }
+    // Validación inicial de conectividad Firestore cuando existe sesión Firebase activa
+    const firebaseAuth = getAuth(app);
+    firebaseAuth.onAuthStateChanged((fbUser: unknown) => {
+      if (!fbUser) return;
+      getDocFromServer(doc(db, 'test', 'connection')).catch((error: unknown) => {
+        if (error instanceof Error && error.message.includes('the client is offline')) {
+          console.error('Please check your Firebase configuration.');
+        }
+      });
     });
   }
 }

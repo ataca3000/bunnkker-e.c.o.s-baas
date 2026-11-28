@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { db } from '@/lib/firebase';
+import { auth, db, hasRealCredentials } from '@/lib/firebase';
 import { collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { Radio, Send, Volume2, VolumeX, X, Mic, MicOff, Headphones, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -89,6 +89,8 @@ export default function WalkieTalkieRadio() {
     };
 
     useEffect(() => {
+        if (!hasRealCredentials || !auth?.currentUser) return;
+
         const qRadio = query(
             collection(db, 'radio_channel'),
             orderBy('timestamp', 'desc'),
@@ -126,6 +128,8 @@ export default function WalkieTalkieRadio() {
                 }
             }
             lastMsgCount.current = cronoList.length;
+        }, (err: any) => {
+            console.warn('[WalkieTalkieRadio] Canal en modo local:', err?.message);
         });
 
         return () => unsubscribe();

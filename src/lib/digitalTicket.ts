@@ -36,7 +36,7 @@ export interface DigitalTicket {
   signatureData?: string | null;
   loadedBy?: string | null;
   validationSerial?: string;
-  deliveryType?: 'PATIO' | 'CAJA';
+  deliveryType?: 'PATIO' | 'CAJA' | 'DELIVERY';
   status?: 'COMPLETADO' | 'CANCELADO';
   cancellationReason?: string;
   notes?: string[];
@@ -63,7 +63,7 @@ export function saveDigitalTicket(
     signatureData?: string | null;
     loadedBy?: string | null;
     validationSerial?: string;
-    deliveryType?: 'PATIO' | 'CAJA';
+    deliveryType?: 'PATIO' | 'CAJA' | 'DELIVERY';
   } = {}
 ): DigitalTicket {
   const safeCaja = cajaId || 'caja_1';

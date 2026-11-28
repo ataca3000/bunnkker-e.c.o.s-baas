@@ -19,6 +19,7 @@ export default [
       "**/*.js",
       "src/__tests__/**",
       "tests/**",
+      "android-app/**",
     ],
   },
 

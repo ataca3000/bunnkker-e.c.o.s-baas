@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation';
 import { Mic, MicOff, Radio } from 'lucide-react';
 import { toast } from '@/lib/toast';
 import { useTranslation } from '@/context/LanguageContext';
+import { shouldConnectLocalLanSocket } from '@/lib/testerFeedback';
 
 export default function LocalRadio() {
     const { profile } = useAuth();
@@ -32,18 +33,22 @@ export default function LocalRadio() {
     useEffect(() => {
         if (!isStaff || typeof window === 'undefined') return;
 
-        // En producción la app vive en Vercel: la radio debe apuntar al PC
-        // servidor dentro de la LAN, no al hostname de Vercel.
+        // En producción la app vive en HTTPS/nube: la radio LAN solo conecta si hay URL explícita
+        // o si el dispositivo navega directamente dentro de una red local Wi-Fi (http://192.168.x.x / localhost).
         const configuredUrl = process.env.NEXT_PUBLIC_RADIO_URL?.trim();
+        if (!shouldConnectLocalLanSocket(window.location.hostname, window.location.protocol, configuredUrl)) {
+            setConnectionState('offline');
+            return;
+        }
         const radioPort = process.env.NEXT_PUBLIC_RADIO_PORT || '3002';
         const host = window.location.hostname;
         const radioUrl = configuredUrl || `http://${host}:${radioPort}`;
         const newSocket = io(radioUrl, {
             reconnection: true,
-            reconnectionAttempts: Infinity,
-            reconnectionDelay: 1000,
-            reconnectionDelayMax: 5000,
-            timeout: 20000,
+            reconnectionAttempts: 5,
+            reconnectionDelay: 1500,
+            reconnectionDelayMax: 8000,
+            timeout: 5000,
         });
         
         newSocket.on('connect', () => {

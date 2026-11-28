@@ -8,6 +8,7 @@ export const defaultSiteConfig: SiteConfig = {
     businessAddress: 'Dirección no configurada',
     currency: 'MXN',
     currencySymbol: '$',
+    operationSpace: 'local',
     enableWebPayments: true,
     allowWebCheckout: true,
     requireCashierInspection: true,

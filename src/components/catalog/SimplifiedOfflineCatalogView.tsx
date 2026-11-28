@@ -30,6 +30,7 @@ import {
     formatLastSyncTimestamp, 
     type AvailabilityFilterOption 
 } from '@/lib/offlineAvailability';
+import { filterPublicCatalogProducts } from '@/lib/publicProductVisibility';
 import { toast } from '@/lib/toast';
 
 interface SimplifiedOfflineCatalogViewProps {
@@ -55,11 +56,13 @@ export function SimplifiedOfflineCatalogView({
 
     const isEffectiveOffline = !isDeviceOnline || isSimulatedOffline;
 
-    // Métricas globales del catálogo
-    const summary = getOfflineCatalogSummary(products, floatingStock);
+    const publicProducts = filterPublicCatalogProducts(products);
+
+    // Métricas globales del catálogo público visible
+    const summary = getOfflineCatalogSummary(publicProducts, floatingStock);
 
     // Filtrar según el botón de disponibilidad seleccionado
-    const filteredProducts = filterCatalogByAvailability(products, availabilityFilter, floatingStock);
+    const filteredProducts = filterCatalogByAvailability(publicProducts, availabilityFilter, floatingStock);
 
     const handleCopyBarcode = (barcode: string) => {
         if (!barcode) return;
@@ -207,7 +210,7 @@ export function SimplifiedOfflineCatalogView({
                 </div>
 
                 <div className="text-xs font-bold text-slate-500">
-                    Mostrando <strong>{filteredProducts.length}</strong> de {products.length} productos
+                    Mostrando <strong>{filteredProducts.length}</strong> de {publicProducts.length} productos
                 </div>
             </div>
 
@@ -332,13 +335,21 @@ export function SimplifiedOfflineCatalogView({
                                         {/* Detalle del stock garantizado */}
                                         <div className="mt-1 text-[11px] text-slate-600 dark:text-slate-300">
                                             <span>Existencia confirmada: </span>
-                                            <strong className={info.availableStock > 0 ? 'text-slate-900 dark:text-white' : 'text-rose-500'}>
-                                                {info.availableStock} piezas
-                                            </strong>
-                                            {hold > 0 && (
-                                                <span className="text-amber-600 text-[10px] ml-1.5 font-semibold">
-                                                    ({hold} apartadas en cola)
-                                                </span>
+                                            {p.hidePublicStock ? (
+                                                <strong className={info.availableStock > 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-500'}>
+                                                    {info.availableStock > 0 ? 'Disponible en tienda' : 'Sin stock'}
+                                                </strong>
+                                            ) : (
+                                                <>
+                                                    <strong className={info.availableStock > 0 ? 'text-slate-900 dark:text-white' : 'text-rose-500'}>
+                                                        {info.availableStock} piezas
+                                                    </strong>
+                                                    {hold > 0 && (
+                                                        <span className="text-amber-600 text-[10px] ml-1.5 font-semibold">
+                                                            ({hold} apartadas en cola)
+                                                        </span>
+                                                    )}
+                                                </>
                                             )}
                                         </div>
                                     </div>

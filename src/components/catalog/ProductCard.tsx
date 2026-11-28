@@ -31,7 +31,7 @@ import { useAuth } from '@/context/AuthContext';
 import { getCustomerProfile } from '@/lib/customerAuth';
 import { StarRating } from './CatalogUtils';
 import { toast } from '@/lib/toast';
-import { db } from '@/lib/firebase';
+import { auth, db, hasRealCredentials } from '@/lib/firebase';
 import { collection, query, where, onSnapshot, orderBy, addDoc } from 'firebase/firestore';
 import {
     checkCustomerPurchaseEligibility,
@@ -430,7 +430,19 @@ export function ProductCard({
                     </div>
 
                     <div className="shrink-0 text-right">
-                        {availableStock >= 3 ? (
+                        {p.hidePublicStock ? (
+                            availableStock > 0 ? (
+                                <span
+                                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 whitespace-nowrap"
+                                    title="Producto disponible para compra"
+                                >
+                                    <ShieldCheck size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                    Disponible
+                                </span>
+                            ) : (
+                                <span className="text-[11px] font-semibold text-slate-400 whitespace-nowrap">Sin stock</span>
+                            )
+                        ) : availableStock >= 3 ? (
                             <span
                                 className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 tabular-nums whitespace-nowrap"
                                 title="Disponibilidad física garantizada en anaquel"
@@ -619,7 +631,8 @@ export function ProductDetailDrawer({ product, onClose }: ProductDetailDrawerPro
         const localReviews = getStoredLocalReviews(product.id);
         setReviews(localReviews);
 
-        // 2. Intentar cargar desde Firebase Firestore si la colección existe
+        // 2. Intentar cargar desde Firebase Firestore solo con sesión autenticada
+        if (!hasRealCredentials || !auth?.currentUser) return;
         try {
             const q = query(
                 collection(db, 'reviews'),
@@ -829,9 +842,11 @@ export function ProductDetailDrawer({ product, onClose }: ProductDetailDrawerPro
                                 </div>
                                 <div className="text-right">
                                     <span className="text-[10px] uppercase font-bold text-slate-400 block">Disponibilidad en Piso</span>
-                                    <span className={`text-xs font-black block ${availableStock >= 3 ? 'text-emerald-700' : availableStock > 0 ? 'text-amber-700' : 'text-rose-600'}`}>
+                                    <span className={`text-xs font-black block ${availableStock >= 3 ? 'text-emerald-700' : availableStock > 0 ? (product.hidePublicStock ? 'text-emerald-700' : 'text-amber-700') : 'text-rose-600'}`}>
                                         {availableStock > 0 
-                                            ? `✓ ${availableStock} unidades disponibles (${product.stock} total)`
+                                            ? (product.hidePublicStock
+                                                ? '✓ Disponible en tienda'
+                                                : `✓ ${availableStock} unidades disponibles (${product.stock} total)`)
                                             : 'Agotado en anaquel'}
                                     </span>
                                 </div>

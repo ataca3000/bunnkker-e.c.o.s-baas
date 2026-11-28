@@ -1,18 +1,28 @@
 "use client";
 
 import { useState, useRef, useEffect } from 'react';
-import { Bot, Send, X, Sparkles, AlertTriangle } from 'lucide-react';
+import { Bot, Send, X, Sparkles, AlertTriangle, Sliders, Check, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePathname } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
+import { useERPStore } from '@/store/useERPStore';
+import { broadcastSync } from '@/lib/syncNotifier';
 import Link from 'next/link';
 import styles from './AdminAsistente.module.css';
+import { InferenceMode } from 'firebase/ai';
 import {
     detectFirebaseAiCapabilities,
+    runDirectFirebaseAiProbe,
     runHybridFirebaseInference,
     type FirebaseAiEngineSource,
 } from '@/lib/firebaseAiLogic';
+import HybridInferenceBadge from '@/components/ai/HybridInferenceBadge';
+import {
+    isLikelyLionConfigCommand,
+    type LionConfigChangePreviewItem,
+    type LionConfigOperation,
+} from '@/lib/lionConfigurator';
 
 export default function AdminAsistente() {
     const { siteConfig, products, formatCurrency, orders } = useCart();
@@ -30,21 +40,36 @@ export default function AdminAsistente() {
     const [input, setInput] = useState('');
     const [isTyping, setIsTyping] = useState(false);
     const [activeEngineLabel, setActiveEngineLabel] = useState<string>('Híbrido On-Device / Cloud');
+    const [activeEngineSource, setActiveEngineSource] = useState<FirebaseAiEngineSource | null>(null);
+    const [activeEngineModel, setActiveEngineModel] = useState<string | undefined>(undefined);
+    const [activeLatencyMs, setActiveLatencyMs] = useState<number | undefined>(undefined);
     const scrollRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const caps = detectFirebaseAiCapabilities();
         if (caps.hasOnDevicePromptApi) {
             setActiveEngineLabel('On-Device Gemini Nano');
+            setActiveEngineSource('on_device');
         } else if (caps.hasFirebaseCredentials && caps.isOnline) {
             setActiveEngineLabel('Firebase AI Híbrido');
+            setActiveEngineSource('in_cloud');
         } else {
             setActiveEngineLabel('Motor Local Offline');
+            setActiveEngineSource('local_rule_engine');
         }
     }, []);
-    const { profile, user } = useAuth();
+    const { profile, user, isReadOnly } = useAuth();
     const pathname = usePathname();
     const isOwner = pathname?.startsWith('/dashboard');
+    const isSuperAdmin = profile?.role === 'superadmin';
+    const [pendingConfigProposal, setPendingConfigProposal] = useState<{
+        prompt: string;
+        summary: string;
+        changes: LionConfigChangePreviewItem[];
+        operations: LionConfigOperation[];
+        source: string;
+    } | null>(null);
+    const [isApplyingConfig, setIsApplyingConfig] = useState(false);
 
     useEffect(() => {
         if (scrollRef.current) {
@@ -79,8 +104,9 @@ export default function AdminAsistente() {
         setInput('');
         setIsTyping(true);
         try {
-            // --- PASO PREVIO: RESOLUCIÓN SEMÁNTICA LOCAL POR TÓPICOS ---
-            if (isOwner) {
+            // --- PASO PREVIO: RESOLUCIÓN SEMÁNTICA SOLO PARA NAVEGACIÓN DIRECTA ---
+            const wantsDirectNav = /\b(ir a|abre|abrir|llevame|llévame|navega)\b/i.test(userMsg);
+            if (isOwner && wantsDirectNav) {
                 try {
                     const intentRes = await fetch('/api/ai/resolve-intent', {
                         method: 'POST',
@@ -89,13 +115,13 @@ export default function AdminAsistente() {
                     });
                     if (intentRes.ok) {
                         const intentData = await intentRes.json();
-                        if (intentData.success && intentData.data && intentData.data.intent !== 'unknown' && intentData.data.confidence >= 0.6) {
+                        if (intentData.success && intentData.data && intentData.data.intent !== 'unknown' && intentData.data.confidence >= 0.75) {
                             const { label, redirect, confidence } = intentData.data;
                             setMessages(prev => [...prev, { 
                                 role: 'assistant', 
                                 content: (
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                        <p>Jefe, detecto que deseas realizar operaciones en: <strong>{label}</strong> (Confianza semántica local: {Math.round(confidence * 100)}%).</p>
+                                        <p>Jefe, detecto que deseas ir a: <strong>{label}</strong> (Confianza local: {Math.round(confidence * 100)}%).</p>
                                         <Link href={redirect} onClick={() => setIsOpen(false)} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#38bdf8', fontWeight: 'bold', textDecoration: 'underline' }}>
                                             👉 Acceder a {label}
                                         </Link>
@@ -103,7 +129,7 @@ export default function AdminAsistente() {
                                 )
                             }]);
                             setIsTyping(false);
-                            return; // Detener ejecución para no ir a la IA remota
+                            return;
                         }
                     }
                 } catch (intentErr) {
@@ -115,6 +141,63 @@ export default function AdminAsistente() {
             const queryText = userMsg.toLowerCase();
             const bName = siteConfig.businessName || 'nuestro negocio';
             const bPhone = siteConfig.businessPhone || '55 1234 5678';
+
+            // --- CONFIGURADOR CONVERSACIONAL LION (ESTRICTAMENTE SUPERADMIN) ---
+            if (isLikelyLionConfigCommand(userMsg)) {
+                if (!isSuperAdmin || isReadOnly) {
+                    setMessages(prev => [
+                        ...prev,
+                        {
+                            role: 'assistant',
+                            content:
+                                '🔒 Por seguridad del sistema, únicamente el **SuperAdmin** puede reconfigurar parámetros del negocio o la visibilidad pública mediante LION.',
+                        },
+                    ]);
+                    setIsTyping(false);
+                    return;
+                }
+
+                try {
+                    const cfgRes = await fetch('/api/ai/lion-config', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({ action: 'preview', prompt: userMsg }),
+                    });
+                    const cfgData = await cfgRes.json().catch(() => null);
+                    if (cfgRes.ok && cfgData?.success && cfgData.understood && Array.isArray(cfgData.changes) && cfgData.changes.length > 0) {
+                        setPendingConfigProposal({
+                            prompt: userMsg,
+                            summary: cfgData.summary,
+                            changes: cfgData.changes,
+                            operations: cfgData.operations,
+                            source: cfgData.source || 'rule_engine',
+                        });
+                        setMessages(prev => [
+                            ...prev,
+                            {
+                                role: 'assistant',
+                                content: `🦁 Entendido, Jefe. Preparé la vista previa de cambios (${cfgData.source === 'gemini' ? 'Gemini LION' : 'Motor Local LION'}). Revisa el resumen abajo y confirma con **"Aplicar cambios"** para sellarlo.`,
+                            },
+                        ]);
+                        setIsTyping(false);
+                        return;
+                    }
+                    if (cfgRes.status === 401 || cfgRes.status === 403) {
+                        setMessages(prev => [
+                            ...prev,
+                            {
+                                role: 'assistant',
+                                content: '🔒 Tu sesión actual no tiene autorización activa de SuperAdmin para reconfigurar ajustes.',
+                            },
+                        ]);
+                        setIsTyping(false);
+                        return;
+                    }
+                } catch (cfgErr) {
+                    console.warn('[LION Config Preview Fallback]:', cfgErr);
+                }
+            }
 
             if (isOwner) {
                 // Respuestas del modo Gerente / Propietario
@@ -276,9 +359,10 @@ export default function AdminAsistente() {
                 role: aiRole,
                 contextData,
                 serverFallbackFetcher: async (payload) => {
-                    const response = await fetch('/api/ai/chat', {
+            const response = await fetch('/api/ai/chat', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
                         body: JSON.stringify(payload),
                     });
                     if (!response.ok) return null;
@@ -287,6 +371,9 @@ export default function AdminAsistente() {
             });
 
             setActiveEngineLabel(ENGINE_LABELS[hybridResult.source] || 'Motor Local');
+            setActiveEngineSource(hybridResult.source);
+            setActiveEngineModel(hybridResult.model);
+            setActiveLatencyMs(hybridResult.latencyMs);
             setMessages(prev => [...prev, { role: 'assistant', content: hybridResult.text }]);
         } catch (err) {
             console.error("Chat error:", err);
@@ -296,7 +383,148 @@ export default function AdminAsistente() {
         }
     };
 
-    if (pathname === '/dashboard/sales') {
+    const handleTestGeminiLion = async () => {
+        if (isTyping) return;
+        setMessages(prev => [...prev, { role: 'user', content: '🦁 Probar comprensión del sistema con Firebase AI Logic (LION)' }]);
+        setIsTyping(true);
+        try {
+            const probePrompt = `Preséntate como LION de ${siteConfig?.businessName || 'BUNKKER E.C.O.S.'} en 2 oraciones confirmando lectura local/híbrida (${products?.length || 0} productos y ${orders?.length || 0} pedidos en sesión).`;
+            const directProbe = await runDirectFirebaseAiProbe({
+                mode: InferenceMode.PREFER_ON_DEVICE,
+                prompt: probePrompt,
+            });
+
+            if (directProbe.ok && directProbe.text) {
+                const isLocal = directProbe.source === 'on_device';
+                setActiveEngineLabel(
+                    isLocal
+                        ? `On-Device Nano (${directProbe.latencyMs}ms)`
+                        : `Firebase AI Cloud (${directProbe.latencyMs}ms)`
+                );
+                setActiveEngineSource(isLocal ? 'on_device' : 'in_cloud');
+                setActiveEngineModel(directProbe.model);
+                setActiveLatencyMs(directProbe.latencyMs);
+                setMessages(prev => [...prev, {
+                    role: 'assistant',
+                    content: directProbe.text,
+                }]);
+                return;
+            }
+
+            const res = await fetch('/api/ai/lion-test', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({
+                    businessName: siteConfig?.businessName || 'BUNKKER E.C.O.S.',
+                }),
+            });
+            const data = await res.json().catch(() => null);
+            if (!res.ok || !data?.success) {
+                setMessages(prev => [...prev, {
+                    role: 'assistant',
+                    content: `⚠️ Firebase AI Logic (${directProbe.error || 'no disponible'}) y respaldo servidor (${data?.model || 'gemini-4-hydrogen'}): ${data?.error || `HTTP ${res.status}`}.`
+                }]);
+                return;
+            }
+            setActiveEngineLabel(`Gemini ${data.model} (${data.latencyMs}ms)`);
+            setActiveEngineSource('server_gemini');
+            setActiveEngineModel(data.model);
+            setActiveLatencyMs(data.latencyMs);
+            setMessages(prev => [...prev, {
+                role: 'assistant',
+                content: data.reply
+            }]);
+        } catch (err: any) {
+            setMessages(prev => [...prev, {
+                role: 'assistant',
+                content: `⚠️ Error verificando Firebase AI Logic / LION: ${err?.message || 'Sin conexión'}`
+            }]);
+        } finally {
+            setIsTyping(false);
+        }
+    };
+
+    const handleCommitLionConfig = async () => {
+        if (!pendingConfigProposal || !isSuperAdmin || isApplyingConfig) return;
+        setIsApplyingConfig(true);
+        try {
+            const res = await fetch('/api/ai/lion-config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({
+                    action: 'commit',
+                    operations: pendingConfigProposal.operations,
+                }),
+            });
+            const data = await res.json().catch(() => null);
+            if (!res.ok || !data?.success) {
+                setMessages(prev => [
+                    ...prev,
+                    {
+                        role: 'assistant',
+                        content: `⚠️ No pude aplicar los cambios: ${data?.error || `HTTP ${res.status}`}.`,
+                    },
+                ]);
+                return;
+            }
+
+            if (data.siteConfig) {
+                const store = useERPStore.getState();
+                store.setSiteConfig({ ...store.siteConfig, ...data.siteConfig });
+                try {
+                    localStorage.setItem('_bunkker_site_config', JSON.stringify(data.siteConfig));
+                } catch {}
+            }
+
+            if (data.updatedProductsCount > 0) {
+                try {
+                    const pRes = await fetch('/api/products', { credentials: 'include', cache: 'no-store' });
+                    const pJson = await pRes.json().catch(() => null);
+                    if (pRes.ok && pJson?.success && Array.isArray(pJson.data)) {
+                        const normalized = pJson.data.map((p: any) => ({
+                            ...p,
+                            location: p.location || { estante: p.estante || '', fila: p.fila || '' },
+                        }));
+                        useERPStore.getState().setProducts(normalized);
+                        try {
+                            localStorage.setItem('_bunkker_cached_products', JSON.stringify(normalized));
+                        } catch {}
+                    }
+                } catch {}
+                broadcastSync({ action: 'PRODUCTS_VISIBILITY_UPDATED', scope: 'products', skipServerPost: true });
+            }
+
+            if (data.updatedSettingsCount > 0) {
+                broadcastSync({ action: 'SITE_CONFIG_PUBLISHED', scope: 'settings', skipServerPost: true });
+            }
+
+            const summaryText = Array.isArray(data.appliedDescriptions)
+                ? data.appliedDescriptions.join('\n• ')
+                : pendingConfigProposal.summary;
+            setPendingConfigProposal(null);
+            setMessages(prev => [
+                ...prev,
+                {
+                    role: 'assistant',
+                    content: `✅ **Configuración aplicada y sellada en bitácora SHA-256:**\n• ${summaryText}`,
+                },
+            ]);
+        } catch (err: any) {
+            setMessages(prev => [
+                ...prev,
+                {
+                    role: 'assistant',
+                    content: `⚠️ Error aplicando configuración: ${err?.message || 'Sin conexión'}`,
+                },
+            ]);
+        } finally {
+            setIsApplyingConfig(false);
+        }
+    };
+
+    if (pathname === '/dashboard/sales' || pathname === '/login') {
         return null;
     }
 
@@ -359,11 +587,21 @@ export default function AdminAsistente() {
                             <X size={20} className={styles.chatClose} onClick={() => setIsOpen(false)} />
                         </div>
 
-                        <div className={styles.chatWarning} style={{ background: 'rgba(14, 165, 233, 0.08)', color: '#0284c7', borderBottom: '1px solid rgba(14, 165, 233, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                        <div className={styles.chatWarning} style={{ background: 'rgba(15, 23, 42, 0.92)', color: '#e2e8f0', borderBottom: '1px solid rgba(56, 189, 248, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                <Sparkles size={13} className="text-sky-500 flex-shrink-0" />
-                                <span><strong>BUNKKER & LION:</strong> Firebase AI Logic ({activeEngineLabel})</span>
+                                <Sparkles size={13} className="text-sky-400 flex-shrink-0" />
+                                <span className="text-[11px] font-semibold">LION · Firebase AI Logic</span>
                             </div>
+                            {activeEngineSource ? (
+                                <HybridInferenceBadge
+                                    source={activeEngineSource}
+                                    model={activeEngineModel}
+                                    latencyMs={activeLatencyMs}
+                                    compact
+                                />
+                            ) : (
+                                <span className="text-[11px] text-sky-300">{activeEngineLabel}</span>
+                            )}
                         </div>
 
                         <div ref={scrollRef} className={styles.chatBody}>
@@ -372,6 +610,53 @@ export default function AdminAsistente() {
                                     {m.content}
                                 </div>
                             ))}
+                            {isSuperAdmin && pendingConfigProposal && (
+                                <div className="rounded-xl border border-sky-400/50 bg-slate-900 p-3 text-xs text-slate-100 shadow-lg space-y-2.5 my-1">
+                                    <div className="flex items-center justify-between gap-2 border-b border-slate-800 pb-2">
+                                        <span className="inline-flex items-center gap-1.5 font-bold text-sky-300">
+                                            <ShieldCheck size={14} /> Vista Previa SuperAdmin · LION
+                                        </span>
+                                        <span className="text-[10px] text-slate-400">Requiere confirmación</span>
+                                    </div>
+                                    <p className="text-[11px] text-slate-300 leading-snug">{pendingConfigProposal.summary}</p>
+                                    <div className="space-y-1.5">
+                                        {pendingConfigProposal.changes.map((chg) => (
+                                            <div key={chg.id} className="rounded-lg border border-slate-800 bg-slate-950/80 p-2 text-[11px]">
+                                                <div className="font-semibold text-white">{chg.label}</div>
+                                                <div className="mt-1 flex items-center justify-between gap-2 text-slate-400">
+                                                    <span className="truncate">Actual: {chg.currentValue}</span>
+                                                    <span className="font-semibold text-emerald-300 truncate">→ {chg.nextValue}</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="flex items-center justify-end gap-2 pt-1">
+                                        <button
+                                            type="button"
+                                            disabled={isApplyingConfig}
+                                            onClick={() => {
+                                                setPendingConfigProposal(null);
+                                                setMessages(prev => [
+                                                    ...prev,
+                                                    { role: 'assistant', content: 'Cancelado. Ningún parámetro del sistema fue modificado.' },
+                                                ]);
+                                            }}
+                                            className="px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-slate-200 text-[11px] font-semibold hover:bg-slate-700 cursor-pointer"
+                                        >
+                                            Cancelar
+                                        </button>
+                                        <button
+                                            type="button"
+                                            disabled={isApplyingConfig}
+                                            onClick={() => void handleCommitLionConfig()}
+                                            className="px-3 py-1.5 rounded-lg bg-emerald-500 text-slate-950 text-[11px] font-bold hover:bg-emerald-400 inline-flex items-center gap-1 cursor-pointer disabled:opacity-60"
+                                        >
+                                            <Check size={13} />
+                                            {isApplyingConfig ? 'Aplicando...' : 'Aplicar cambios'}
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                             {isTyping && <div className={styles.typing}>{isOwner ? 'Analizando operaciones...' : 'Escribiendo...'}</div>}
                         </div>
 
@@ -388,6 +673,16 @@ export default function AdminAsistente() {
                         }}>
                             {isOwner ? (
                                 <>
+                                    <button onClick={handleTestGeminiLion} style={{ padding: '6px 12px', borderRadius: '12px', border: '1px solid #10b981', background: '#ecfdf5', fontSize: '0.75rem', fontWeight: 'bold', cursor: 'pointer', whiteSpace: 'nowrap', color: '#047857' }}>🦁 Test Gemini LION</button>
+                                    {isSuperAdmin && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setInput('Desactiva pagos web públicos')}
+                                            style={{ padding: '6px 12px', borderRadius: '12px', border: '1px solid #6366f1', background: '#eef2ff', fontSize: '0.75rem', fontWeight: 'bold', cursor: 'pointer', whiteSpace: 'nowrap', color: '#4338ca', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                                        >
+                                            <Sliders size={12} /> Reconfigurar con LION
+                                        </button>
+                                    )}
                                     <button onClick={() => handleSend('recolectar pedido picking')} style={{ padding: '6px 12px', borderRadius: '12px', border: '1px solid #38bdf8', background: '#f0f9ff', fontSize: '0.75rem', fontWeight: 'bold', cursor: 'pointer', whiteSpace: 'nowrap', color: '#0284c7' }}>📦 Picking IA</button>
                                     <button onClick={() => handleSend('deconstruir pedido devolucion')} style={{ padding: '6px 12px', borderRadius: '12px', border: '1px solid #f59e0b', background: '#fffbeb', fontSize: '0.75rem', fontWeight: 'bold', cursor: 'pointer', whiteSpace: 'nowrap', color: '#b45309' }}>↩️ Deconstruir</button>
                                     <button onClick={() => handleSend('resumen de ventas')} style={{ padding: '6px 12px', borderRadius: '12px', border: '1px solid #e2e8f0', background: 'white', fontSize: '0.75rem', fontWeight: 'bold', cursor: 'pointer', whiteSpace: 'nowrap', color: '#0ea5e9' }}>📊 Ventas</button>

@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import DemoModeBanner from '@/components/DemoModeBanner';
+import HybridOperationalSummaryCard from '@/components/ai/HybridOperationalSummaryCard';
 import { toast } from '@/lib/toast';
 
 interface SalesMetric {
@@ -280,6 +281,11 @@ export default function ReportsAndBackups() {
                             <h3 style={{ fontSize: '1.6rem', fontWeight: '900', color: '#1a1a1a', margin: 0 }}>{kpi.value}</h3>
                         </motion.div>
                     ))}
+                </div>
+
+                {/* Resumen Operativo Híbrido (Firebase AI Logic: On-Device / Cloud) */}
+                <div style={{ marginBottom: '2rem' }}>
+                    <HybridOperationalSummaryCard defaultScope="sales_cut" />
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '2rem' }}>

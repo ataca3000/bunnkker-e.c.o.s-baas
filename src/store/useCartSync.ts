@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef } from 'react';
-import { doc, onSnapshot, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { doc, onSnapshot, setDoc, serverTimestamp } from 'firebase/firestore';
+import { auth, db, hasRealCredentials } from '@/lib/firebase';
 import { useERPStore } from '@/store/useERPStore';
 import { useAuth } from '@/context/AuthContext';
 import { type CartItem } from '@/context/CartContext';
@@ -20,9 +20,10 @@ export function useCartSync() {
 
     // 1. ESCUCHAR cambios desde Firestore (Nube -> Local)
     useEffect(() => {
-        if (!user || !isPremium) return;
+        const fbUid = auth?.currentUser?.uid;
+        if (!hasRealCredentials || !fbUid || !user || !isPremium) return;
 
-        const cartRef = doc(db, 'users', user.uid, 'cart', 'current');
+        const cartRef = doc(db, 'users', fbUid, 'cart', 'current');
         const unsub = onSnapshot(cartRef, (docSnap: any) => {
             if (docSnap.exists()) {
                 const remoteCart = docSnap.data().items || [];
@@ -47,6 +48,8 @@ export function useCartSync() {
                     setCart(mergedCart);
                 }
             }
+        }, (err: any) => {
+            console.warn('[useCartSync] Sincronización de carrito en modo local:', err?.message);
         });
 
         return () => unsub();
@@ -54,14 +57,15 @@ export function useCartSync() {
 
     // 2. GUARDAR cambios en Firestore (Local -> Nube)
     useEffect(() => {
-        if (!user || !isPremium) return;
+        const fbUid = auth?.currentUser?.uid;
+        if (!hasRealCredentials || !fbUid || !user || !isPremium) return;
 
         const timer = setTimeout(async () => {
-            const cartRef = doc(db, 'users', user.uid, 'cart', 'current');
+            const cartRef = doc(db, 'users', fbUid, 'cart', 'current');
             try {
                 await setDoc(cartRef, { items: cart, updatedAt: serverTimestamp() }, { merge: true });
             } catch (err) {
-                console.error("Error syncing cart to Firestore:", err);
+                console.warn("Cart sync fallback (local):", err);
             }
         }, 1000); // Debounce de 1 segundo
 

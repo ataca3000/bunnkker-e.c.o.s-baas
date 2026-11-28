@@ -13,12 +13,14 @@ export default function MyRoute({
   orders, 
   onStartDelivery, 
   onBackToPool,
-  onViewNote
+  onViewNote,
+  onReleaseOrder
 }: { 
   orders: DeliveryOrder[]; 
   onStartDelivery: (id: string) => void;
   onBackToPool: () => void;
   onViewNote?: (order: DeliveryOrder) => void;
+  onReleaseOrder?: (id: string) => void;
 }) {
   const [localOrders, setLocalOrders] = useState<DeliveryOrder[]>([]);
   const [auditOrder, setAuditOrder] = useState<DeliveryOrder | null>(null);
@@ -190,6 +192,15 @@ export default function MyRoute({
                   <Package size={14} />
                   <span>Recolectar</span>
                 </button>
+                {onReleaseOrder && (
+                  <button
+                    onClick={() => onReleaseOrder(order.id)}
+                    className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-600 text-xs font-bold transition-all active:scale-95"
+                    title="Devolver pedido a la bolsa para que otro repartidor lo tome"
+                  >
+                    Soltar
+                  </button>
+                )}
                 <button 
                   onClick={() => onStartDelivery(order.id)}
                   className="w-10 h-10 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-slate-950 flex items-center justify-center hover:from-emerald-400 hover:to-teal-500 shadow-md transition-all active:scale-95"

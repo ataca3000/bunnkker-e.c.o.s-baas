@@ -30,10 +30,18 @@ export function PinReminderModal() {
       if (!res.ok) return;
       const data = await res.json();
       if (data.user) {
+        const userId = String(data.user.id || '');
+        const isDemoMode =
+          userId.startsWith('demo-') ||
+          (typeof window !== 'undefined' &&
+            (window.location.search.includes('welcome=1') ||
+              sessionStorage.getItem('bunkker_demo_mode') === '1'));
+        if (isDemoMode) return;
+
         setUserRole(data.user.role || 'sales');
         // Si el usuario usa un PIN inicial predeterminado o no ha sido cambiado
         const isUsingInitial = data.user.isInitialPin === true;
-        const hasCompletedChange = localStorage.getItem(`bunkker_pin_changed_${data.user.id}`);
+        const hasCompletedChange = localStorage.getItem(`bunkker_pin_changed_${userId}`);
         
         if (isUsingInitial && !hasCompletedChange) {
           setIsOpen(true);

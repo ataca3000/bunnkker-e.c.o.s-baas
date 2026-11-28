@@ -13,6 +13,7 @@ import {
   LayoutDashboard,
   Package,
   Search,
+  ShieldCheck,
   ShoppingCart,
   Truck,
   X,
@@ -185,6 +186,26 @@ export default function CommandPaletteModal({
         onOpenAlerts();
       },
     });
+
+    if (hasCapability(role, 'audit:read')) {
+      entries.push({
+        id: 'act-immutable-audit',
+        section: 'Acción rápida',
+        title: 'Auditoría Inmutable SHA-256',
+        subtitle: 'Validar cadena criptográfica, sellar checkpoints y prueba forense',
+        keywords: 'auditoria inmutable sha256 sha-256 hash cadena integridad forense logs',
+        icon: <ShieldCheck size={15} aria-hidden="true" />,
+        run: () => {
+          onClose();
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(
+              new CustomEvent('bunkker_enterprise_tab', { detail: { tab: 'audit' } })
+            );
+          }
+          router.push('/dashboard/enterprise?tab=audit');
+        },
+      });
+    }
 
     if (hasCapability(role, 'inventory:read')) {
       for (const product of products.slice(0, 40)) {

@@ -60,12 +60,13 @@ export default function DeliveryView({
     window.open(url, '_blank');
   };
 
-  const handleComplete = async () => {
-    if (!order.lat || !order.lng) {
-      toast.error('Este pedido no tiene una ubicación de entrega válida. No se puede confirmar por GPS.', 'Ubicación requerida');
-      return;
-    }
+  const hasValidCoordinates = Boolean(
+    order.lat &&
+    order.lng &&
+    (Math.abs(order.lat) > 0.001 || Math.abs(order.lng) > 0.001)
+  );
 
+  const handleComplete = async () => {
     if (!photoData) {
       toast.warning('Toma una fotografía de evidencia antes de cerrar la entrega.');
       return;
@@ -82,20 +83,20 @@ export default function DeliveryView({
         return;
     }
 
-    // 2. Validar Geocerca (50 metros) si hay coordenadas de destino
-    if (order.lat && order.lng) {
+    // 2. Validar Geocerca (50 metros) solo si el pedido tiene coordenadas de destino válidas
+    if (hasValidCoordinates && typeof navigator !== 'undefined' && navigator.geolocation) {
         setIsVerifyingGPS(true);
         try {
             const pos: any = await new Promise((resolve, reject) => {
                 navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 10000 });
             });
-            const distance = getDistanceFromLatLonInMeters(pos.coords.latitude, pos.coords.longitude, order.lat, order.lng);
+            const distance = getDistanceFromLatLonInMeters(pos.coords.latitude, pos.coords.longitude, order.lat!, order.lng!);
             if (distance > 50) {
                 toast.warning(`Estás a ${Math.round(distance)} metros del destino. Acércate a menos de 50 metros para confirmar la entrega.`, '⚠️ GPS');
                 setIsVerifyingGPS(false);
                 return;
             }
-        } catch (err) {
+        } catch {
             toast.error('No pudimos obtener tu ubicación actual para verificar la geocerca. Asegúrate de tener el GPS activado.', '❌ Error GPS');
             setIsVerifyingGPS(false);
             return;
@@ -206,7 +207,7 @@ export default function DeliveryView({
                   className="w-full border-2 border-dashed border-white/20 hover:border-sky-500 text-slate-300 hover:text-sky-400 focus:outline-none focus:ring-0 bg-white/5 hover:bg-sky-500/10 font-bold py-6 rounded-xl flex flex-col items-center justify-center gap-2 transition-all"
                 >
                   <Camera size={24} />
-                  Tomar Fotografía (Opcional)
+                  Tomar Fotografía (Obligatorio)
                 </button>
               )}
             </div>

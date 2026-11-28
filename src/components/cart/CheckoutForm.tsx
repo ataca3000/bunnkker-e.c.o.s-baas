@@ -1,10 +1,10 @@
 'use client';
 
-import Link from 'next/link';
-import { Lock, Truck, MapPin, Clock, FileText } from 'lucide-react';
+import { Truck, MapPin, Clock, FileText, Lock } from 'lucide-react';
 import { motion } from 'framer-motion';
 import dynamic from 'next/dynamic';
 import styles from '../CartDrawer.module.css';
+import { InlineCustomerAuthGate } from './InlineCustomerAuthGate';
 
 const LocationPickerMap = dynamic(() => import('../LocationPickerMap'), { ssr: false });
 
@@ -31,6 +31,7 @@ interface CheckoutFormProps {
     userRole?: string;
     onClose: () => void;
     isLoggedIn: boolean;
+    onAuthenticated?: (customer: any) => void;
 }
 
 /**
@@ -38,25 +39,24 @@ interface CheckoutFormProps {
  * Responsabilidades: método de entrega, datos de cliente, facturación CFDI.
  * La lógica de submit vive en CartDrawer para mantener este componente puro.
  */
-export function CheckoutForm({ formData, onChange, userRole, onClose, isLoggedIn }: CheckoutFormProps) {
+export function CheckoutForm({ formData, onChange, userRole, onClose: _onClose, isLoggedIn, onAuthenticated }: CheckoutFormProps) {
     const set = (patch: Partial<CheckoutFormData>) => onChange(patch);
     const isStaff = userRole === 'sales' || userRole === 'admin' || userRole === 'superadmin';
 
     if (!isLoggedIn) {
         return (
-            <div className="text-center p-6 bg-slate-100 rounded-xl mt-4">
-                <Lock className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-                <h4 className="font-bold text-slate-800 mb-2">Inicia Sesión para Comprar</h4>
-                <p className="text-sm text-slate-600 mb-6">
-                    Debes tener una cuenta o iniciar sesión para poder realizar un pedido.
-                </p>
-                <Link
-                    href="/cuenta?redirect=/carrito"
-                    onClick={onClose}
-                    className="bg-[#0ea5e9] hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg w-full flex items-center justify-center gap-2 transition-colors"
-                >
-                    Registrarme o iniciar sesión
-                </Link>
+            <div className="mt-2">
+                <InlineCustomerAuthGate
+                    theme="light"
+                    onAuthenticated={(cust) => {
+                        set({
+                            name: cust?.name || formData.name,
+                            phone: cust?.phone || formData.phone,
+                            address: cust?.address || formData.address
+                        });
+                        if (onAuthenticated) onAuthenticated(cust);
+                    }}
+                />
             </div>
         );
     }
@@ -312,17 +312,17 @@ export function CartFooter({
                     onClick={onProceed}
                     className={styles.payBtn}
                 >
-                    <Lock size={16} /> Tramitar Pedido · ${(finalTotal).toFixed(2)}
+                    {isLoggedIn ? `Tramitar Pedido · $${(finalTotal).toFixed(2)}` : `Identificarse y Pedir · $${(finalTotal).toFixed(2)}`}
                 </button>
             ) : (
                 <div className={styles.checkoutActions}>
                     <button onClick={onBack} className={styles.backBtn}>← Volver</button>
                     <button
-                        disabled={isProcessing}
+                        disabled={isProcessing || !isLoggedIn}
                         onClick={onConfirm}
                         className={styles.confirmBtn}
                     >
-                        {isProcessing ? 'Confirmando...' : 'Confirmar y apartar pedido'} <Truck size={18} />
+                        {isProcessing ? 'Confirmando...' : !isLoggedIn ? 'Inicia sesión arriba para pedir' : 'Confirmar y apartar pedido'} <Truck size={18} />
                     </button>
                 </div>
             )}

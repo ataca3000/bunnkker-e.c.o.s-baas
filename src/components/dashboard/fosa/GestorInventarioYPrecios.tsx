@@ -7,6 +7,7 @@ import {
     DollarSign, Package, AlertTriangle, Layers
 } from 'lucide-react';
 import { toast } from '@/lib/toast';
+import { acquireGlobalMutationLock, releaseGlobalMutationLock } from '@/lib/catalogSync';
 
 interface GestorInventarioYPreciosProps {
     idAlmacen: string;
@@ -49,6 +50,7 @@ export function GestorInventarioYPrecios({ idAlmacen }: GestorInventarioYPrecios
     };
 
     const handleSaveEdit = async (productId: string) => {
+        acquireGlobalMutationLock();
         try {
             const payload = {
                 id: productId,
@@ -60,6 +62,7 @@ export function GestorInventarioYPrecios({ idAlmacen }: GestorInventarioYPrecios
             const res = await fetch('/api/products', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify(payload)
             });
             const data = await res.json().catch(() => ({}));
@@ -70,18 +73,27 @@ export function GestorInventarioYPrecios({ idAlmacen }: GestorInventarioYPrecios
             const current = products.find((p: any) => p.id === productId);
             if (current) {
                 const { useERPStore } = await import('@/store/useERPStore');
-                useERPStore.getState().updateProduct({
+                const updatedItem = {
                     ...current,
-                    price: Number(editPrice),
-                    stock: Number(editStock),
-                    estante: editEstante,
-                    fila: editFila
-                } as any);
+                    ...(data.data || {}),
+                    price: Number(data.data?.price ?? editPrice),
+                    stock: Number(data.data?.stock ?? editStock),
+                    estante: data.data?.estante ?? editEstante,
+                    fila: data.data?.fila ?? editFila
+                };
+                useERPStore.getState().updateProduct(updatedItem as any);
+                try {
+                    localStorage.setItem('_bunkker_cached_products', JSON.stringify(useERPStore.getState().products));
+                } catch {}
             }
+            const { broadcastSync } = await import('@/lib/syncNotifier');
+            broadcastSync({ action: 'PRODUCT_UPDATED', id: productId, scope: 'products', skipServerPost: true });
             toast.success('Precio y stock actualizados en base de datos local.');
             setEditingId(null);
         } catch (err: any) {
             toast.error(err?.message || 'Error al actualizar producto.');
+        } finally {
+            releaseGlobalMutationLock();
         }
     };
 
@@ -90,6 +102,7 @@ export function GestorInventarioYPrecios({ idAlmacen }: GestorInventarioYPrecios
             toast.warning('El nombre y precio son obligatorios.');
             return;
         }
+        acquireGlobalMutationLock();
         try {
             const prodId = `PROD-${Date.now().toString().slice(-6)}`;
             const payload = {
@@ -104,6 +117,7 @@ export function GestorInventarioYPrecios({ idAlmacen }: GestorInventarioYPrecios
             const res = await fetch('/api/products', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify(payload)
             });
             const data = await res.json().catch(() => ({}));
@@ -112,13 +126,20 @@ export function GestorInventarioYPrecios({ idAlmacen }: GestorInventarioYPrecios
             }
 
             const { useERPStore } = await import('@/store/useERPStore');
-            useERPStore.getState().addProduct(payload as any);
+            useERPStore.getState().addProduct((data.data || payload) as any);
+            try {
+                localStorage.setItem('_bunkker_cached_products', JSON.stringify(useERPStore.getState().products));
+            } catch {}
+            const { broadcastSync } = await import('@/lib/syncNotifier');
+            broadcastSync({ action: 'PRODUCT_CREATED', id: prodId, scope: 'products', skipServerPost: true });
 
             toast.success(`Producto "${newProduct.name}" dado de alta con éxito.`);
             setIsAddingNew(false);
             setNewProduct({ name: '', price: 0, stock: 0, category: 'General', estante: 'A-1', fila: 'F-1' });
         } catch (err: any) {
             toast.error(err?.message || 'Error al crear producto.');
+        } finally {
+            releaseGlobalMutationLock();
         }
     };
 

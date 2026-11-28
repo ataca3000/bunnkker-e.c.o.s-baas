@@ -6,7 +6,6 @@ import {
   Activity,
   Building2,
   Check,
-  CheckCircle2,
   CloudUpload,
   CreditCard,
   ExternalLink,
@@ -29,6 +28,7 @@ import type {
   SubscriptionTier,
 } from '@/lib/enterpriseControlPlane';
 import type {
+  AuditBlockVerification,
   AuditChainVerificationResult,
   ImmutableAuditEntry,
 } from '@/lib/immutableAudit';
@@ -41,9 +41,12 @@ import {
   syncBranchNodeToFirestore,
 } from '@/lib/enterpriseFirestore';
 import WorkspaceConfirmModal from './WorkspaceConfirmModal';
+import ImmutableAuditView from './ImmutableAuditView';
+import ConfigHelpButton from '@/components/common/ConfigHelpButton';
+import FirebaseAiDiagnosticsPanel from '@/components/admin/FirebaseAiDiagnosticsPanel';
 import { toast } from '@/lib/toast';
 
-type ConsoleTab = 'branches' | 'sessions' | 'rbac' | 'audit' | 'workspace';
+export type ConsoleTab = 'branches' | 'sessions' | 'rbac' | 'audit' | 'workspace' | 'hybrid-ai';
 
 const TABS: Array<{ id: ConsoleTab; label: string }> = [
   { id: 'branches', label: 'Sucursales y Nodos' },
@@ -51,6 +54,7 @@ const TABS: Array<{ id: ConsoleTab; label: string }> = [
   { id: 'rbac', label: 'Matriz RBAC' },
   { id: 'audit', label: 'Auditoría Inmutable' },
   { id: 'workspace', label: 'Google Workspace' },
+  { id: 'hybrid-ai', label: 'IA Híbrida (Firebase)' },
 ];
 
 const RBAC_ROLES = [
@@ -65,16 +69,26 @@ const RBAC_ROLES = [
   { id: 'marketing', label: 'Marketing' },
 ];
 
-export default function EnterpriseConsoleView() {
-  const { formatCurrency } = useCart();
-  const [activeTab, setActiveTab] = useState<ConsoleTab>('branches');
+export default function EnterpriseConsoleView({
+  initialTab = 'branches',
+}: {
+  initialTab?: ConsoleTab;
+}) {
+  const { formatCurrency, siteConfig, updateSiteConfig } = useCart();
+  const [activeTab, setActiveTab] = useState<ConsoleTab>(initialTab);
   const [activeBranchFilter, setActiveBranchFilter] = useState<string>('all');
+  const operationSpace: 'local' | 'business' =
+    siteConfig?.operationSpace === 'business' ? 'business' : 'local';
 
   const [branches, setBranches] = useState<BranchNode[]>([]);
   const [sessions, setSessions] = useState<SessionRecord[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [auditEntries, setAuditEntries] = useState<ImmutableAuditEntry[]>([]);
   const [auditIntegrity, setAuditIntegrity] = useState<AuditChainVerificationResult | null>(null);
+  const [auditBlockStatuses, setAuditBlockStatuses] = useState<
+    Record<string, AuditBlockVerification>
+  >({});
+  const [totalChainCount, setTotalChainCount] = useState<number>(0);
 
   const [loading, setLoading] = useState(true);
   const [creatingBranch, setCreatingBranch] = useState(false);
@@ -130,6 +144,12 @@ export default function EnterpriseConsoleView() {
         if (aJson?.success) {
           if (Array.isArray(aJson.data)) setAuditEntries(aJson.data);
           if (aJson.integrity) setAuditIntegrity(aJson.integrity);
+          if (aJson.blockStatuses && typeof aJson.blockStatuses === 'object') {
+            setAuditBlockStatuses(aJson.blockStatuses);
+          }
+          if (typeof aJson.totalChainCount === 'number') {
+            setTotalChainCount(aJson.totalChainCount);
+          }
         }
       }
     } finally {
@@ -142,14 +162,24 @@ export default function EnterpriseConsoleView() {
   }, [loadAll]);
 
   useEffect(() => {
-    const handler = (ev: Event) => {
+    const branchHandler = (ev: Event) => {
       const detail = (ev as CustomEvent<{ branchId?: string }>).detail;
       if (detail?.branchId) {
         setActiveBranchFilter(detail.branchId);
       }
     };
-    window.addEventListener('bunkker_branch_context_changed', handler);
-    return () => window.removeEventListener('bunkker_branch_context_changed', handler);
+    const tabHandler = (ev: Event) => {
+      const detail = (ev as CustomEvent<{ tab?: ConsoleTab }>).detail;
+      if (detail?.tab) {
+        setActiveTab(detail.tab);
+      }
+    };
+    window.addEventListener('bunkker_branch_context_changed', branchHandler);
+    window.addEventListener('bunkker_enterprise_tab', tabHandler);
+    return () => {
+      window.removeEventListener('bunkker_branch_context_changed', branchHandler);
+      window.removeEventListener('bunkker_enterprise_tab', tabHandler);
+    };
   }, []);
 
   useSyncListener(() => {
@@ -269,23 +299,6 @@ export default function EnterpriseConsoleView() {
     }
   };
 
-  const handleVerifyAuditChain = async () => {
-    const res = await fetch('/api/enterprise/audit-chain', {
-      method: 'POST',
-      credentials: 'include',
-    });
-    const json = await res.json().catch(() => null);
-    if (res.ok && json?.success && json.integrity) {
-      setAuditIntegrity(json.integrity);
-      if (json.integrity.valid) {
-        toast.success(
-          `Cadena íntegra: ${json.integrity.checkedCount} registro(s) verificados.`
-        );
-      } else {
-        toast.error(json.integrity.reason || 'Se detectó alteración en la bitácora.');
-      }
-    }
-  };
 
   const handleExecuteWorkspaceExport = async (accessToken: string) => {
     const target = workspaceModal.target;
@@ -405,6 +418,29 @@ export default function EnterpriseConsoleView() {
         </div>
       </header>
 
+      {operationSpace === 'local' && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-500/35 bg-amber-950/20 px-4 py-3 text-xs text-amber-200">
+          <div className="space-y-0.5">
+            <p className="font-semibold text-amber-100">
+              Sistema operando en modo tienda única (Operación Local)
+            </p>
+            <p className="text-amber-200/80">
+              Las funciones de esta pantalla pertenecen al Modo Business (multi-sucursal, SSO y nube). No afectan tu caja ni tu inventario actual.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => void updateSiteConfig?.({ operationSpace: 'business' })}
+              className="min-h-[36px] rounded-lg bg-sky-500 px-3 py-1.5 text-xs font-semibold text-slate-950 hover:bg-sky-400 cursor-pointer"
+            >
+              Activar Modo Business
+            </button>
+            <ConfigHelpButton settingKey="operationSpace" />
+          </div>
+        </div>
+      )}
+
       {/* 4 Single-Elevation Summary KPI Cards */}
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-4">
@@ -448,7 +484,10 @@ export default function EnterpriseConsoleView() {
 
         <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-4">
           <div className="flex items-center justify-between text-xs text-slate-400">
-            <span>Integridad Bitácora SHA-256</span>
+            <span className="inline-flex items-center gap-1.5">
+              Integridad Bitácora SHA-256
+              <ConfigHelpButton settingKey="auditChain" />
+            </span>
             <ShieldCheck
               size={15}
               className={auditIntegrity?.valid === false ? 'text-rose-400' : 'text-emerald-400'}
@@ -544,9 +583,12 @@ export default function EnterpriseConsoleView() {
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-[11px] font-medium text-slate-400">
-                Topología
-              </label>
+              <div className="flex items-center justify-between gap-1">
+                <label className="block text-[11px] font-medium text-slate-400">
+                  Topología
+                </label>
+                <ConfigHelpButton settingKey="branchIsolationMode" />
+              </div>
               <select
                 value={newBranchIsolation}
                 onChange={(e) => setNewBranchIsolation(e.target.value as BranchIsolationMode)}
@@ -558,7 +600,10 @@ export default function EnterpriseConsoleView() {
             </div>
 
             <div className="md:col-span-1">
-              <label className="block text-[11px] font-medium text-slate-400">Plan</label>
+              <div className="flex items-center justify-between gap-1">
+                <label className="block text-[11px] font-medium text-slate-400">Plan</label>
+                <ConfigHelpButton settingKey="branchTier" />
+              </div>
               <select
                 value={newBranchTier}
                 onChange={(e) => setNewBranchTier(e.target.value as SubscriptionTier)}
@@ -865,115 +910,24 @@ export default function EnterpriseConsoleView() {
 
       {/* ══ TAB 4: IMMUTABLE SHA-256 AUDIT CHAIN ═════════════════════════════ */}
       {activeTab === 'audit' && (
-        <section className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-900/80 p-4">
-            <div className="flex items-center gap-3">
-              <CheckCircle2
-                size={18}
-                className={auditIntegrity?.valid === false ? 'text-rose-400' : 'text-emerald-400'}
-                aria-hidden="true"
-              />
-              <div className="text-xs">
-                <p className="font-semibold text-slate-100">
-                  {auditIntegrity?.valid === false
-                    ? 'Alerta de integridad en cadena SHA-256'
-                    : 'Cadena criptográfica append-only verificada'}
-                </p>
-                <p className="font-mono text-[11px] text-slate-400">
-                  {auditIntegrity?.checkedCount ?? 0} registros validados · Head:{' '}
-                  {auditIntegrity?.headHash?.slice(0, 20) || 'genesis'}…
-                </p>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={() => void handleVerifyAuditChain()}
-                className="cursor-pointer rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-800"
-              >
-                Verificar Cadena SHA-256
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  setWorkspaceModal({
-                    open: true,
-                    target: 'drive',
-                    title: `bunkker-auditoria-inmutable-${new Date().toISOString().slice(0, 10)}`,
-                    summary: `Respaldo completo de ${auditEntries.length} registros SHA-256 y nodos multi-sucursal en Google Drive.`,
-                  })
-                }
-                className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-sky-500 px-3 py-1.5 text-xs font-semibold text-slate-950 hover:bg-sky-400"
-              >
-                <HardDrive size={13} aria-hidden="true" />
-                Respaldar en Drive
-              </button>
-            </div>
-          </div>
-
-          <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900/80">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="border-b border-slate-800 text-slate-400">
-                  <tr>
-                    <th className="px-4 py-3 font-medium">#</th>
-                    <th className="px-4 py-3 font-medium">Hora</th>
-                    <th className="px-4 py-3 font-medium">Actor</th>
-                    <th className="px-4 py-3 font-medium">Acción</th>
-                    <th className="px-4 py-3 font-medium">Recurso</th>
-                    <th className="px-4 py-3 font-medium">Hash Bloque</th>
-                    <th className="px-4 py-3 text-right font-medium">Nube</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-800/80">
-                  {auditEntries.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className="px-4 py-10 text-center text-slate-400">
-                        Sin eventos encadenados todavía. Las sesiones, sincronizaciones y exportaciones se registran aquí.
-                      </td>
-                    </tr>
-                  ) : (
-                    auditEntries.map((entry) => (
-                      <tr key={entry.entryId} className="hover:bg-slate-800/35">
-                        <td className="px-4 py-2.5 font-mono text-slate-400 tabular-nums">
-                          {entry.sequence}
-                        </td>
-                        <td className="px-4 py-2.5 font-mono text-[11px] text-slate-400 tabular-nums">
-                          {new Date(entry.timestamp).toLocaleString('es-MX')}
-                        </td>
-                        <td className="px-4 py-2.5">
-                          <span className="font-medium text-slate-100">{entry.actorName}</span>
-                          <span className="ml-1.5 font-mono text-[11px] text-slate-400">
-                            · {entry.actorRole}
-                          </span>
-                        </td>
-                        <td className="px-4 py-2.5 font-mono font-semibold text-sky-300">
-                          {entry.action}
-                        </td>
-                        <td className="px-4 py-2.5 font-mono text-[11px] text-slate-300">
-                          {entry.resourceRef}
-                        </td>
-                        <td className="px-4 py-2.5 font-mono text-[11px] text-emerald-400">
-                          {entry.entryHash.slice(0, 16)}…
-                        </td>
-                        <td className="px-4 py-2.5 text-right">
-                          <button
-                            type="button"
-                            onClick={() => void handleMirrorLatestAuditToFirestore(entry)}
-                            className="cursor-pointer text-[11px] font-medium text-sky-400 hover:text-sky-300"
-                          >
-                            Espejar
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </section>
+        <ImmutableAuditView
+          entries={auditEntries}
+          integrity={auditIntegrity}
+          blockStatuses={auditBlockStatuses}
+          totalChainCount={totalChainCount}
+          branchFilter={activeBranchFilter}
+          loading={loading}
+          onRefresh={loadAll}
+          onBackupDrive={() =>
+            setWorkspaceModal({
+              open: true,
+              target: 'drive',
+              title: `bunkker-auditoria-inmutable-${new Date().toISOString().slice(0, 10)}`,
+              summary: `Respaldo completo de ${auditEntries.length} registros SHA-256 y nodos multi-sucursal en Google Drive.`,
+            })
+          }
+          onMirrorFirestore={handleMirrorLatestAuditToFirestore}
+        />
       )}
 
       {/* ══ TAB 5: GOOGLE WORKSPACE & COMMERCIAL LICENSING ══════════════════ */}
@@ -1038,6 +992,9 @@ export default function EnterpriseConsoleView() {
           </div>
         </section>
       )}
+
+      {/* ══ TAB 6: FIREBASE AI LOGIC HYBRID DIAGNOSTICS ════════════════════ */}
+      {activeTab === 'hybrid-ai' && <FirebaseAiDiagnosticsPanel />}
 
       <WorkspaceConfirmModal
         open={workspaceModal.open}

@@ -12,7 +12,8 @@ import DeliveryProofModal from '@/components/orders/DeliveryProofModal';
 import TicketEntrega from '@/components/TicketEntrega';
 import OrderPickingAssistant from '@/components/orders/OrderPickingAssistant';
 import PinAuthorizationModal, { type PinAuthorizationResult } from '@/components/security/PinAuthorizationModal';
-import { PauseCircle, LockKeyhole } from 'lucide-react';
+import { PauseCircle, LockKeyhole, Lock } from 'lucide-react';
+import { getOrderLockInfo } from '@/lib/orderWorkflow';
 
 export default function PatioDashboard() {
     const { orders, startLoading, completeLoading, products, siteConfig } = useCart();
@@ -171,6 +172,29 @@ export default function PatioDashboard() {
         }
     };
 
+    const handleReleaseLock = async (orderId: string) => {
+        setProcessingId(orderId);
+        try {
+            const res = await fetch('/api/orders', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ id: orderId, action: 'release_claim', slot: 'loading' })
+            });
+            const data = await res.json().catch(() => null);
+            if (!res.ok || !data?.success) {
+                toast.error(data?.error || 'No se pudo liberar la orden.');
+                return;
+            }
+            if (typeof window !== 'undefined' && (window as any).__inventorySocket) {
+                (window as any).__inventorySocket.emit('sync_db_event', { action: 'ORDER_CLAIM_RELEASED', id: orderId });
+            }
+            toast.info(`Carga #${orderId.slice(-6)} devuelta a la pizarra.`);
+        } finally {
+            setProcessingId(null);
+        }
+    };
+
     return (
         <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8 font-sans">
             <Link href="/dashboard" className="inline-flex items-center gap-2 text-slate-400 hover:text-sky-400 font-bold uppercase text-xs tracking-wider mb-4 transition-colors">
@@ -266,6 +290,7 @@ export default function PatioDashboard() {
                             const isPending = order.status === 'PENDIENTE_LLEGADA';
                             const isOnHold = order.status === 'EN_ESPERA';
                             const isDelayed = isNight || isPending || isOnHold;
+                            const lockInfo = getOrderLockInfo(order as any, profile?.uid, profile?.role);
 
                             return (
                                 <motion.div 
@@ -280,8 +305,8 @@ export default function PatioDashboard() {
                                                 {order.id}
                                             </span>
                                             {order.loadedBy && (
-                                                <span className="text-sky-300 font-semibold">
-                                                    · En surtido por: {order.loadedBy}
+                                                <span className={`font-semibold inline-flex items-center gap-1 ${lockInfo.isLockedByOther ? 'text-amber-300' : 'text-sky-300'}`}>
+                                                    <Lock size={12} /> {lockInfo.isLockedByOther ? `Bloqueado por: ${order.loadedBy}` : `Tomado por ti (${order.loadedBy})`}
                                                 </span>
                                             )}
                                             {isOnHold && (
@@ -330,7 +355,11 @@ export default function PatioDashboard() {
 
                                     {/* Botones de Control de Almacén */}
                                     <div className="flex flex-col gap-3 w-full md:w-auto min-w-[240px]">
-                                        {isDelayed ? (
+                                        {lockInfo.isLockedByOther && !lockInfo.canAdminOverride ? (
+                                            <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 text-center text-xs font-bold text-amber-300">
+                                                🔒 Bloqueado por {order.loadedBy || 'otro operador'}
+                                            </div>
+                                        ) : isDelayed ? (
                                             <div className="flex flex-col gap-2">
                                                 <button 
                                                     onClick={() => handleAction(order.id, 'resume')}
@@ -341,14 +370,24 @@ export default function PatioDashboard() {
                                                     {isOnHold ? 'Retomar Surtido Guardado' : isNight ? 'Pasar a Fila Activa' : 'Retomar (Llegó el Cliente)'}
                                                 </button>
                                                 {order.loadedBy && (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setAbandonTargetOrder(order)}
-                                                        disabled={!!processingId}
-                                                        className="min-h-[44px] bg-red-500/15 hover:bg-red-500/25 border border-red-500/30 text-red-200 px-4 py-2 rounded-xl font-semibold text-xs flex items-center gap-1.5 justify-center"
-                                                    >
-                                                        <LockKeyhole size={14} /> Cancelar / Soltar (NIP)
-                                                    </button>
+                                                    <div className="grid grid-cols-2 gap-2">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleReleaseLock(order.id)}
+                                                            disabled={!!processingId}
+                                                            className="min-h-[44px] bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 px-3 py-2 rounded-xl font-semibold text-xs flex items-center justify-center"
+                                                        >
+                                                            Soltar
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setAbandonTargetOrder(order)}
+                                                            disabled={!!processingId}
+                                                            className="min-h-[44px] bg-red-500/15 hover:bg-red-500/25 border border-red-500/30 text-red-200 px-3 py-2 rounded-xl font-semibold text-xs flex items-center gap-1 justify-center"
+                                                        >
+                                                            <LockKeyhole size={14} /> NIP
+                                                        </button>
+                                                    </div>
                                                 )}
                                             </div>
                                         ) : !order.loadedBy ? (
@@ -382,7 +421,7 @@ export default function PatioDashboard() {
                                                 <div className="grid grid-cols-2 gap-2">
                                                     <button 
                                                         onClick={() => finalizeOrderAndNotify(order.id, 'caja')}
-                                                        disabled={!!processingId || (order.loadedByUid !== profile?.uid && profile?.role !== 'superadmin')}
+                                                        disabled={!!processingId || (order.loadedByUid !== profile?.uid && !lockInfo.canAdminOverride)}
                                                         className="bg-emerald-600 hover:bg-emerald-500 text-white p-3 rounded-xl font-black text-[11px] uppercase flex flex-col items-center justify-center gap-1 shadow-md shadow-emerald-900/30 disabled:opacity-50 transition-all active:scale-95 text-center"
                                                         title="Marcar listo para que el cliente pase a mostrador/caja"
                                                     >
@@ -392,7 +431,7 @@ export default function PatioDashboard() {
                                                     </button>
                                                     <button 
                                                         onClick={() => finalizeOrderAndNotify(order.id, 'carga')}
-                                                        disabled={!!processingId || (order.loadedByUid !== profile?.uid && profile?.role !== 'superadmin')}
+                                                        disabled={!!processingId || (order.loadedByUid !== profile?.uid && !lockInfo.canAdminOverride)}
                                                         className="bg-sky-600 hover:bg-sky-500 text-white p-3 rounded-xl font-black text-[11px] uppercase flex flex-col items-center justify-center gap-1 shadow-md shadow-sky-900/30 disabled:opacity-50 transition-all active:scale-95 text-center"
                                                         title="Marcar listo para que el cliente pase a la bahía de carga/patio"
                                                     >
@@ -403,27 +442,35 @@ export default function PatioDashboard() {
                                                 </div>
                                                 <button 
                                                     onClick={() => handleAction(order.id, 'complete')}
-                                                    disabled={!!processingId || (order.loadedByUid !== profile?.uid && profile?.role !== 'superadmin')}
+                                                    disabled={!!processingId || (order.loadedByUid !== profile?.uid && !lockInfo.canAdminOverride)}
                                                     className="w-full min-h-[44px] bg-slate-800 text-slate-200 px-4 py-2 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 hover:bg-slate-700 transition-colors disabled:opacity-50 mt-1"
                                                 >
                                                     <QrCode size={14} /> Escanear Código
                                                 </button>
-                                                <div className="grid grid-cols-2 gap-2 pt-1">
+                                                <div className="grid grid-cols-3 gap-2 pt-1">
                                                     <button
                                                         type="button"
                                                         onClick={() => handleAction(order.id, 'hold')}
                                                         disabled={!!processingId}
-                                                        className="min-h-[44px] bg-amber-500/15 hover:bg-amber-500/25 text-amber-200 border border-amber-500/30 px-3 py-2 rounded-xl font-semibold text-xs flex items-center justify-center gap-1.5"
+                                                        className="min-h-[40px] bg-amber-500/15 hover:bg-amber-500/25 text-amber-200 border border-amber-500/30 px-2 py-2 rounded-xl font-semibold text-xs flex items-center justify-center gap-1"
                                                     >
-                                                        <PauseCircle size={14} /> En Espera
+                                                        <PauseCircle size={13} /> Espera
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleReleaseLock(order.id)}
+                                                        disabled={!!processingId}
+                                                        className="min-h-[40px] bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 px-2 py-2 rounded-xl font-semibold text-xs flex items-center justify-center"
+                                                    >
+                                                        Soltar
                                                     </button>
                                                     <button
                                                         type="button"
                                                         onClick={() => setAbandonTargetOrder(order)}
                                                         disabled={!!processingId}
-                                                        className="min-h-[44px] bg-red-500/15 hover:bg-red-500/25 text-red-200 border border-red-500/30 px-3 py-2 rounded-xl font-semibold text-xs flex items-center justify-center gap-1.5"
+                                                        className="min-h-[40px] bg-red-500/15 hover:bg-red-500/25 text-red-200 border border-red-500/30 px-2 py-2 rounded-xl font-semibold text-xs flex items-center justify-center gap-1"
                                                     >
-                                                        <LockKeyhole size={14} /> Soltar (NIP)
+                                                        <LockKeyhole size={13} /> NIP
                                                     </button>
                                                 </div>
                                             </div>

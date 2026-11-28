@@ -122,10 +122,11 @@ function applyUpdateData(target: any, data: any) {
   return updated;
 }
 
-function loadPersistedStore(): Record<string, any[]> {
+function readPersistedStoreWithMtime(): { data: Record<string, any[]>; mtimeMs: number } {
   try {
     const readablePath = resolveReadablePath(PERSISTENCE_FILE);
     if (fs.existsSync(readablePath)) {
+      const stat = fs.statSync(readablePath);
       const content = fs.readFileSync(readablePath, 'utf-8');
       const parsed = JSON.parse(content);
       if (parsed && typeof parsed === 'object') {
@@ -134,14 +135,20 @@ function loadPersistedStore(): Record<string, any[]> {
             parsed[key] = [...val];
           }
         }
-        return parsed;
+        return { data: parsed, mtimeMs: stat.mtimeMs || 0 };
       }
     }
   } catch (err) {
     console.warn('[Prisma Store] Error loading persisted memory store:', err);
   }
-  return { ...initialMemoryStore };
+  return { data: { ...initialMemoryStore }, mtimeMs: 0 };
 }
+
+function loadPersistedStore(): Record<string, any[]> {
+  return readPersistedStoreWithMtime().data;
+}
+
+const IMMEDIATE_FLUSH_MODELS = new Set(['product', 'order', 'orderItem', 'appConfig']);
 
 let saveTimer: any = null;
 export function flushPersistedStore() {
@@ -150,22 +157,41 @@ export function flushPersistedStore() {
     const g = globalThis as any;
     const store = g._bunkker_memory_store;
     if (store) {
-      if (saveTimer) clearTimeout(saveTimer);
+      if (saveTimer) {
+        clearTimeout(saveTimer);
+        saveTimer = null;
+      }
       const writablePath = resolveWritablePath(PERSISTENCE_FILE);
       atomicWriteFileSync(writablePath, JSON.stringify(store, null, 2), true);
+      try {
+        g._bunkker_memory_store_mtime = fs.statSync(writablePath).mtimeMs || Date.now();
+      } catch {
+        g._bunkker_memory_store_mtime = Date.now();
+      }
     }
   } catch (err) {
     console.warn('[Prisma Store] Error flushing store to disk:', err);
   }
 }
 
-function triggerStoreSave(store: Record<string, any[]>) {
+function triggerStoreSave(store: Record<string, any[]>, immediate = false) {
   if (process.env.NODE_ENV === 'test' || process.env.VITEST) return;
+  const g = globalThis as any;
+  g._bunkker_memory_store = store;
+  if (immediate) {
+    flushPersistedStore();
+    return;
+  }
   if (saveTimer) clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
     try {
       const writablePath = resolveWritablePath(PERSISTENCE_FILE);
       atomicWriteFileSync(writablePath, JSON.stringify(store, null, 2), true);
+      try {
+        g._bunkker_memory_store_mtime = fs.statSync(writablePath).mtimeMs || Date.now();
+      } catch {
+        g._bunkker_memory_store_mtime = Date.now();
+      }
     } catch (err) {
       console.warn('[Prisma Store] Error saving store to disk:', err);
     }
@@ -181,13 +207,33 @@ if (typeof process !== 'undefined' && typeof process.on === 'function') {
 function createInMemoryPrisma() {
   const g = globalThis as any;
   if (!g._bunkker_memory_store) {
-    g._bunkker_memory_store = loadPersistedStore();
+    const loaded = readPersistedStoreWithMtime();
+    g._bunkker_memory_store = loaded.data;
+    g._bunkker_memory_store_mtime = loaded.mtimeMs;
   }
-  const store: Record<string, any[]> = g._bunkker_memory_store;
+
+  const syncStoreFromDiskIfNewer = (): Record<string, any[]> => {
+    if (process.env.NODE_ENV !== 'test' && !process.env.VITEST && !saveTimer) {
+      try {
+        const readablePath = resolveReadablePath(PERSISTENCE_FILE);
+        if (fs.existsSync(readablePath)) {
+          const stat = fs.statSync(readablePath);
+          const knownMtime = Number(g._bunkker_memory_store_mtime || 0);
+          if (stat.mtimeMs > knownMtime + 1) {
+            const loaded = readPersistedStoreWithMtime();
+            g._bunkker_memory_store = loaded.data;
+            g._bunkker_memory_store_mtime = loaded.mtimeMs;
+          }
+        }
+      } catch {}
+    }
+    return g._bunkker_memory_store;
+  };
 
   const getTable = (prop: string): any[] => {
-    if (!store[prop]) store[prop] = [];
-    return store[prop];
+    const currentStore = syncStoreFromDiskIfNewer();
+    if (!currentStore[prop]) currentStore[prop] = [];
+    return currentStore[prop];
   };
 
   const attachRelations = (prop: string, item: any, include?: any) => {
@@ -220,7 +266,9 @@ function createInMemoryPrisma() {
     return copy;
   };
 
-  const makeModel = (prop: string, undoLog?: Array<() => void>) => ({
+  const makeModel = (prop: string, undoLog?: Array<() => void>) => {
+    const shouldFlushNow = !undoLog && IMMEDIATE_FLUSH_MODELS.has(prop);
+    return {
     findMany: async (args?: any) => {
       let rows = getTable(prop).filter((r) => matchesWhere(r, args?.where));
       if (args?.orderBy) {
@@ -286,11 +334,11 @@ function createInMemoryPrisma() {
           const idx = tbl.indexOf(newRecord);
           if (idx !== -1) tbl.splice(idx, 1);
           if (createdOrderItemIds.length > 0) {
-            store['orderItem'] = getTable('orderItem').filter((oi) => !createdOrderItemIds.includes(oi.id));
+            g._bunkker_memory_store['orderItem'] = getTable('orderItem').filter((oi) => !createdOrderItemIds.includes(oi.id));
           }
         });
       }
-      triggerStoreSave(store);
+      triggerStoreSave(g._bunkker_memory_store, shouldFlushNow);
       return attachRelations(prop, newRecord, args?.include);
     },
     update: async (args?: any) => {
@@ -305,7 +353,7 @@ function createInMemoryPrisma() {
             if (fIdx !== -1) tbl.splice(fIdx, 1);
           });
         }
-        triggerStoreSave(store);
+        triggerStoreSave(g._bunkker_memory_store, shouldFlushNow);
         return attachRelations(prop, fallback, args?.include);
       }
       const prevRecord = { ...tbl[idx] };
@@ -321,7 +369,7 @@ function createInMemoryPrisma() {
           }
         });
       }
-      triggerStoreSave(store);
+      triggerStoreSave(g._bunkker_memory_store, shouldFlushNow);
       return attachRelations(prop, tbl[idx], args?.include);
     },
     updateMany: async (args?: any) => {
@@ -349,7 +397,7 @@ function createInMemoryPrisma() {
             }
           });
         }
-        triggerStoreSave(store);
+        triggerStoreSave(g._bunkker_memory_store, shouldFlushNow);
       }
       return { count };
     },
@@ -366,7 +414,7 @@ function createInMemoryPrisma() {
             if (curIdx !== -1) tbl[curIdx] = prevRecord;
           });
         }
-        triggerStoreSave(store);
+        triggerStoreSave(g._bunkker_memory_store, shouldFlushNow);
         return attachRelations(prop, tbl[idx], args?.include);
       }
       const created = {
@@ -382,7 +430,7 @@ function createInMemoryPrisma() {
           if (cIdx !== -1) tbl.splice(cIdx, 1);
         });
       }
-      triggerStoreSave(store);
+      triggerStoreSave(g._bunkker_memory_store, shouldFlushNow);
       return attachRelations(prop, created, args?.include);
     },
     delete: async (args?: any) => {
@@ -395,7 +443,7 @@ function createInMemoryPrisma() {
             tbl.splice(Math.min(idx, tbl.length), 0, removed);
           });
         }
-        triggerStoreSave(store);
+        triggerStoreSave(g._bunkker_memory_store, shouldFlushNow);
         return removed;
       }
       return {};
@@ -404,7 +452,7 @@ function createInMemoryPrisma() {
       const tbl = getTable(prop);
       const before = tbl.length;
       const removedItems: Array<{ index: number; item: any }> = [];
-      store[prop] = tbl.filter((r, idx) => {
+      g._bunkker_memory_store[prop] = tbl.filter((r, idx) => {
         if (matchesWhere(r, args?.where)) {
           removedItems.push({ index: idx, item: r });
           return false;
@@ -419,10 +467,11 @@ function createInMemoryPrisma() {
           }
         });
       }
-      triggerStoreSave(store);
-      return { count: before - store[prop].length };
+      triggerStoreSave(g._bunkker_memory_store, shouldFlushNow);
+      return { count: before - g._bunkker_memory_store[prop].length };
     },
-  });
+    };
+  };
 
   const createTxProxy = (undoLog: Array<() => void>): any =>
     new Proxy(
@@ -446,18 +495,24 @@ function createInMemoryPrisma() {
               const undoLog: Array<() => void> = [];
               const txProxy = createTxProxy(undoLog);
               try {
-                return await arg(txProxy);
+                const res = await arg(txProxy);
+                if (undoLog.length > 0) flushPersistedStore();
+                return res;
               } catch (txErr) {
                 for (let i = undoLog.length - 1; i >= 0; i--) {
                   try {
                     undoLog[i]();
                   } catch {}
                 }
-                if (undoLog.length > 0) triggerStoreSave(store);
+                if (undoLog.length > 0) triggerStoreSave(g._bunkker_memory_store, true);
                 throw txErr;
               }
             }
-            if (Array.isArray(arg)) return Promise.all(arg);
+            if (Array.isArray(arg)) {
+              const res = await Promise.all(arg);
+              flushPersistedStore();
+              return res;
+            }
             return arg;
           };
         }

@@ -42,52 +42,49 @@ function detectPlatformLabel(): string {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-    // Pre-hidratación instantánea (0ms) desde almacenamiento local
-    const [user, setUser] = useState<any | null>(() => {
-        const cached = getStaffSession();
-        return cached?.user || (cached?.uid ? { id: cached.uid, role: cached.role } : null);
-    });
-    const [profile, setProfile] = useState<UserProfile | null>(() => {
-        const cached = getStaffSession();
-        if (cached?.profile) return cached.profile as UserProfile;
-        if (cached?.uid && cached?.role) {
-            return {
-                uid: cached.uid,
-                email: '',
-                displayName: cached.user?.name || 'Personal',
-                role: cached.role,
-                signature: cached.signature,
-                nodeAccess: [],
-                lastLogin: Date.now(),
-                isPremium: true
-            };
-        }
-        return null;
-    });
-    const [loading, setLoading] = useState(() => {
-        // Si ya tenemos sesión persistida en el navegador, no bloquear con pantalla de carga
-        return !getStaffSession();
-    });
+    // Inicialización idéntica SSR/CSR para evitar Hydration Mismatch; se rehidrata inmediatamente tras el montaje.
+    const [user, setUser] = useState<any | null>(null);
+    const [profile, setProfile] = useState<UserProfile | null>(null);
+    const [loading, setLoading] = useState(true);
     const [deviceId, setDeviceId] = useState<string | null>(null);
     const [isReadOnly] = useState(false);
-    const [networkMode] = useState(() => {
+    const [networkMode, setNetworkMode] = useState({
+        isMaster: true,
+        host: 'localhost',
+        label: 'SERVIDOR MAESTRO'
+    });
+
+    useEffect(() => {
+        // Rehidratación inmediata tras el montaje + detección de nodo y Machine ID
         if (typeof window !== 'undefined') {
             const hostname = window.location.hostname;
             const port = window.location.port;
             const isMaster = hostname === 'localhost' || hostname === '127.0.0.1';
             const hostPort = port ? `${hostname}:${port}` : hostname;
-            return {
+            setNetworkMode({
                 isMaster,
                 host: hostname,
                 label: isMaster ? 'SERVIDOR MAESTRO' : `NODO CONECTADO A ${hostPort}`
-            };
-        }
-        return { isMaster: true, host: 'localhost', label: 'SERVIDOR MAESTRO' };
-    });
+            });
 
-    useEffect(() => {
-        // Si estamos en Electron, inicializar el Machine ID desde el host nativo
-        if (typeof window !== 'undefined') {
+            const cached = getStaffSession();
+            if (cached?.uid && cached?.role) {
+                setUser(cached.user || { id: cached.uid, role: cached.role });
+                setProfile(
+                    (cached.profile as UserProfile) || {
+                        uid: cached.uid,
+                        email: '',
+                        displayName: cached.user?.name || 'Personal',
+                        role: cached.role,
+                        signature: cached.signature,
+                        nodeAccess: [],
+                        lastLogin: Date.now(),
+                        isPremium: true
+                    }
+                );
+                setLoading(false);
+            }
+
             setDeviceId(getDeviceFingerprint());
             const electronAPI = (window as any).electronAPI;
             if (electronAPI?.getMachineId) {

@@ -2,6 +2,7 @@ export const dynamic = 'force-static';
 
 import Link from "next/link";
 import { ShieldCheck, ArrowLeft, Lock, Database, Camera, MapPin, EyeOff, FileText } from "lucide-react";
+import AccountDeletionForm from "@/components/legal/AccountDeletionForm";
 
 export default function PrivacidadPage() {
     return (
@@ -46,17 +47,20 @@ export default function PrivacidadPage() {
 
                     <section className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-4">
                         <h2 className="text-base font-bold text-white flex items-center gap-2">
-                            <Database className="w-5 h-5 text-cyan-400" /> 2. Datos que Recopilamos y Finalidad
+                            <Database className="w-5 h-5 text-cyan-400" /> 2. Datos en la Nube (Firebase), Red Local (Wi-Fi) e IA Híbrida
                         </h2>
                         <ul className="list-disc pl-5 space-y-2 text-slate-300">
                             <li>
-                                <strong className="text-white">Datos de Cuenta y Personal:</strong> Nombres, correo electrónico, rol operativo (Caja, Bodega, Chofer, Admin) y PIN de autenticación local para el control de acceso basado en roles (RBAC).
+                                <strong className="text-white">Datos de Cuenta y Roles (RBAC):</strong> Nombres, correo electrónico, identificador de sucursal (tenant), rol operativo (Caja, Bodega, Chofer, Admin) y PIN de autenticación para controlar permisos por módulo.
                             </li>
                             <li>
-                                <strong className="text-white">Datos Comerciales y Transaccionales:</strong> Ventas, inventario, cotizaciones, tickets y catálogos de productos correspondientes a la sucursal o tenant del cliente.
+                                <strong className="text-white">Qué se guarda en la Nube (Firebase / Servidor):</strong> Cuando el comercio habilita la sincronización en la nube, los catálogos, pedidos, tickets de soporte y perfiles autorizados se sincronizan mediante Firebase (proyecto <code className="text-cyan-300">gen-lang-client-0628483139</code>) bajo cifrado TLS en tránsito.
                             </li>
                             <li>
-                                <strong className="text-white">Almacenamiento Local y Caché de Alto Rendimiento:</strong> Uso de LocalStorage, IndexedDB y bases de datos locales (SQLite en entorno escritorio) para permitir la continuidad operativa 100% offline.
+                                <strong className="text-white">Qué pasa en Red Local (Wi-Fi / LAN):</strong> En sucursales conectadas a una misma red Wi-Fi local, las terminales sincronizan inventario flotante, alertas de caja y audio PTT directamente dentro de la red privada del comercio sin salir a internet público, respaldándose en caché local (<code className="text-cyan-300">LocalStorage / IndexedDB / SQLite</code>) para operar 100% offline.
+                            </li>
+                            <li>
+                                <strong className="text-white">Procesamiento de IA Híbrida (Firebase AI Logic):</strong> El asistente LION y el autoclasificador de productos priorizan ejecución local en el dispositivo (<strong className="text-white">Gemini Nano On-Device</strong>) sin enviar tus consultas fuera del teléfono/PC. Solo en análisis extensos o dispositivos sin soporte local se consulta el modelo en la nube (<code className="text-cyan-300">gemini-2.5-flash</code>) enviando únicamente el contexto mínimo necesario de la consulta; nunca se usa tu catálogo comercial para entrenar modelos públicos.
                             </li>
                         </ul>
                     </section>
@@ -94,13 +98,14 @@ export default function PrivacidadPage() {
                         </p>
                     </section>
 
-                    <section className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-3">
+                    <section id="eliminacion-cuenta" className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-3 scroll-mt-10">
                         <h2 className="text-base font-bold text-white flex items-center gap-2">
-                            <FileText className="w-5 h-5 text-cyan-400" /> 5. Migración Segura y Eliminación de Datos
+                            <FileText className="w-5 h-5 text-cyan-400" /> 5. Migración Segura y Eliminación de Cuenta y Datos
                         </h2>
                         <p>
-                            El usuario o administrador de la sucursal tiene pleno derecho a exportar su respaldo de datos a través del <strong>Centro de Migración de Dispositivo</strong>, o solicitar la purga definitiva de su cuenta y registros enviando una solicitud a nuestro canal de soporte técnico: <span className="text-cyan-400 font-mono">luishalo69@gmail.com</span>.
+                            El usuario o administrador de la sucursal tiene pleno derecho a exportar su respaldo de datos a través del <strong>Centro de Migración de Dispositivo</strong>, o solicitar la eliminación definitiva de su cuenta y registros en la nube usando el formulario oficial o escribiendo directamente a <span className="text-cyan-400 font-mono">luishalo69@gmail.com</span>.
                         </p>
+                        <AccountDeletionForm />
                     </section>
                 </div>
 

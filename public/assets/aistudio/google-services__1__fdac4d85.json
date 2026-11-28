@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "594116889378",
+    "project_id": "gen-lang-client-0628483139",
+    "storage_bucket": "gen-lang-client-0628483139.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:594116889378:android:8d55b9d77d3f0f7446737b",
+        "android_client_info": {
+          "package_name": "com.BunkkerERP"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "594116889378-ktnim6ruvtnk2mhc7422020cam2autit.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCtr6DyNLvYnD9CQ50HYcFJWUSM-gk75x4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "594116889378-ktnim6ruvtnk2mhc7422020cam2autit.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

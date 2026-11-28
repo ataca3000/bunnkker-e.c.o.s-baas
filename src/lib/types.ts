@@ -28,6 +28,8 @@ export interface Product {
   reviewsCount?: number;
   isOffer?: boolean;
   offerPrice?: number;
+  hidePublicStock?: boolean;
+  hideFromPublic?: boolean;
   [key: string]: any;
 }
 
@@ -148,6 +150,7 @@ export interface ProductData {
 
 export interface SiteConfig {
   businessName?: string;
+  operationSpace?: 'local' | 'business';
   deliveryZone?: DeliveryZone;
   [key: string]: any;
 }

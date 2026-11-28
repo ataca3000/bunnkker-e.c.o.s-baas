@@ -154,7 +154,8 @@
       "role": "superadmin",
       "pin": "9af15b336e6a9619928537df30b2e6a2376569fcf9d7e773eccede65606529a0",
       "active": true,
-      "createdAt": "2026-10-24T00:00:00.000Z"
+      "createdAt": "2026-10-24T00:00:00.000Z",
+      "pinHash": "$2b$10$VKAjgJuNrSLWj1hhX4VCSeUt2IHbGKIfOwjZTxlyvz/lhLHto7J5q"
     },
     {
       "id": "demo-admin",
@@ -228,24 +229,7 @@
     }
   ],
   "customer": [],
-  "order": [
-    {
-      "id": "TCK-TEST-1794342395233",
-      "tenantId": "default",
-      "createdAt": "2026-11-10T20:26:35.235Z",
-      "date": "2026-11-10T20:26:35.235Z",
-      "status": "COMPLETED",
-      "deliveryType": "LOCAL",
-      "offline": true,
-      "synced": false,
-      "isLoaded": false,
-      "total": 3700,
-      "paymentMethod": "CASH",
-      "vendedorId": "demo-sales",
-      "vendedorName": "Cajero / Ventas",
-      "customerId": "demo-customer-1"
-    }
-  ],
+  "order": [],
   "orderItem": [
     {
       "id": "16eeef6f-397c-4917-b30f-fcb0796805b0",

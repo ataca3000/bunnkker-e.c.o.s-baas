@@ -24,6 +24,7 @@ import {
     INVENTORY_SOCKET_STATUS_EVENT,
     type InventorySocketState,
 } from '@/lib/inventorySocketControl';
+import { shouldConnectLocalLanSocket } from '@/lib/testerFeedback';
 
 export type { Product, CartItem, Order };
 
@@ -196,6 +197,7 @@ export interface SiteConfig {
         layout: VisualLayoutBlock[];
         canvasLayers: CanvasLayer[];
     }>;
+    operationSpace?: 'local' | 'business';
     operationRange?: 'local' | 'regional' | 'nacional' | 'global';
     enableWebPayments?: boolean;
     allowWebCheckout?: boolean;
@@ -645,6 +647,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         const createOrConnectSocket = (forceRecreate = false) => {
             if (isDisposed) return;
 
+            const lanBridgeUrl = process.env.NEXT_PUBLIC_LAN_BRIDGE_URL?.trim();
+            if (!shouldConnectLocalLanSocket(window.location.hostname, window.location.protocol, lanBridgeUrl)) {
+                emitSocketState('disconnected');
+                return;
+            }
+
             if (newSocket && !forceRecreate) {
                 try {
                     emitSocketState('reconnecting');
@@ -670,7 +678,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             try {
                 emitSocketState('reconnecting');
                 const { io } = require('socket.io-client');
-                newSocket = io('http://' + window.location.hostname + ':3001', {
+                newSocket = io(lanBridgeUrl || 'http://' + window.location.hostname + ':3001', {
                     reconnection: true,
                     reconnectionAttempts: 5,
                     reconnectionDelay: 1500,

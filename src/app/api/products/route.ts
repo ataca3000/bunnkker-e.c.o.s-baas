@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { prisma, flushPersistedStore } from '@/lib/prisma';
 import { requireRole, getTenantId, WRITE_ROLES } from '@/lib/apiAuth';
 import { publishRealtimeEvent } from '@/lib/realtimeBus';
 import { loadPersistentSiteConfig, savePersistentSiteConfig } from '@/lib/persistentSettings';
@@ -11,6 +11,12 @@ import {
 } from '@/lib/productMedia';
 import { dispatchCriticalAdminPush } from '@/lib/fcmPush';
 import { analyzeProductStock, DEFAULT_STOCK_THRESHOLD_CONFIG } from '@/lib/stockThresholds';
+import {
+    getProductVisibilityMap,
+    saveBatchProductVisibility,
+    type ProductVisibilityMap,
+} from '@/lib/productVisibilityStore';
+import { appendImmutableAudit } from '@/lib/immutableAudit';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,19 +38,50 @@ function saveProductMediaForId(tenantId: string, productId: string, media: Produ
     });
 }
 
-function enrichProductWithMedia<T extends { id: string; image?: string | null; imageUrl?: string | null }>(
+function getProductMinStockMap(tenantId: string): Record<string, number> {
+    const cfg = loadPersistentSiteConfig(tenantId);
+    const map = cfg?.productMinStockMap;
+    return map && typeof map === 'object' ? (map as Record<string, number>) : {};
+}
+
+function saveProductMinStockForId(tenantId: string, productId: string, minStock: number): void {
+    if (!Number.isFinite(minStock) || minStock < 0) return;
+    const cfg = loadPersistentSiteConfig(tenantId);
+    const existingMap = cfg?.productMinStockMap && typeof cfg.productMinStockMap === 'object' ? cfg.productMinStockMap : {};
+    savePersistentSiteConfig(tenantId, {
+        ...cfg,
+        productMinStockMap: {
+            ...existingMap,
+            [productId]: Math.floor(minStock),
+        },
+    });
+}
+
+function enrichProductWithMedia<T extends { id: string; image?: string | null; imageUrl?: string | null; minStock?: number | null }>(
     product: T,
-    mediaMap: Record<string, ProductMediaItem[]>
-): T & { media: ProductMediaItem[] } {
+    mediaMap: Record<string, ProductMediaItem[]>,
+    minStockMap: Record<string, number> = {},
+    visibilityMap: ProductVisibilityMap = {}
+): T & { media: ProductMediaItem[]; minStock?: number; hidePublicStock: boolean; hideFromPublic: boolean } {
     const stored = mediaMap[product.id];
     const media = normalizeProductMedia({
         media: stored,
         image: product.image,
         imageUrl: product.imageUrl,
     });
+    const resolvedMinStock =
+        typeof minStockMap[product.id] === 'number'
+            ? minStockMap[product.id]
+            : typeof product.minStock === 'number'
+              ? product.minStock
+              : undefined;
+    const vis = visibilityMap[product.id];
     return {
         ...product,
+        ...(resolvedMinStock !== undefined ? { minStock: resolvedMinStock } : {}),
         media,
+        hidePublicStock: Boolean(vis?.hidePublicStock),
+        hideFromPublic: Boolean(vis?.hideFromPublic),
     };
 }
 
@@ -89,7 +126,11 @@ export async function GET(request: NextRequest) {
         }
 
         const mediaMap = getProductMediaMap(tenantId);
-        const enriched = products.map((product) => enrichProductWithMedia(product, mediaMap));
+        const minStockMap = getProductMinStockMap(tenantId);
+        const visibilityMap = getProductVisibilityMap(tenantId);
+        const enriched = products.map((product) =>
+            enrichProductWithMedia(product, mediaMap, minStockMap, visibilityMap)
+        );
 
         return NextResponse.json({ success: true, data: enriched });
     } catch (error: any) {
@@ -140,6 +181,15 @@ export async function POST(request: NextRequest) {
             }, { status: 403 });
         }
 
+        const hasVisibilityPayload =
+            typeof body.hidePublicStock === 'boolean' || typeof body.hideFromPublic === 'boolean';
+        if (hasVisibilityPayload && auth.role !== 'superadmin') {
+            return NextResponse.json({
+                success: false,
+                error: 'Solo el SuperAdmin puede modificar la visibilidad pública de los productos.',
+            }, { status: 403 });
+        }
+
         // DOBLE CONFIRMACIÓN ANTI-DEDO CHUECO: Si se envía confirmPrice, debe coincidir exactamente con price.
         if (body.confirmPrice !== undefined && data.price !== undefined) {
             const confirmVal = Number(body.confirmPrice);
@@ -168,6 +218,9 @@ export async function POST(request: NextRequest) {
         const existing = await prisma.product.findFirst({ where: { id, tenantId } });
         if (existing) {
             const product = await prisma.product.update({ where: { id }, data });
+            if (typeof body.minStock === 'number' && Number.isFinite(body.minStock) && body.minStock >= 0) {
+                saveProductMinStockForId(tenantId, product.id, body.minStock);
+            }
             const finalMedia =
                 normalizedMedia !== null
                     ? normalizedMedia
@@ -243,7 +296,22 @@ export async function POST(request: NextRequest) {
                     }).catch(() => {});
                 }
             }
-            return NextResponse.json({ success: true, data: { ...product, media: finalMedia } });
+            if (hasVisibilityPayload) {
+                saveBatchProductVisibility(tenantId, [product.id], {
+                    ...(typeof body.hidePublicStock === 'boolean' ? { hidePublicStock: body.hidePublicStock } : {}),
+                    ...(typeof body.hideFromPublic === 'boolean' ? { hideFromPublic: body.hideFromPublic } : {}),
+                });
+            }
+            flushPersistedStore();
+            const updatedMinStockMap = getProductMinStockMap(tenantId);
+            const updatedVisibilityMap = getProductVisibilityMap(tenantId);
+            const enrichedUpdated = enrichProductWithMedia(
+                product,
+                { [product.id]: finalMedia },
+                updatedMinStockMap,
+                updatedVisibilityMap
+            );
+            return NextResponse.json({ success: true, data: enrichedUpdated });
         }
 
         if (!data.name || data.price === undefined) {
@@ -270,6 +338,10 @@ export async function POST(request: NextRequest) {
             saveProductMediaForId(tenantId, product.id, normalizedMedia);
         }
 
+        if (typeof body.minStock === 'number' && Number.isFinite(body.minStock) && body.minStock >= 0) {
+            saveProductMinStockForId(tenantId, product.id, body.minStock);
+        }
+
         const createSummary = `Nuevo producto: ${product.name} ($${product.price}, stock: ${product.stock})`;
         try {
             await prisma.auditLog.create({
@@ -289,7 +361,24 @@ export async function POST(request: NextRequest) {
             entityId: product.id,
             payload: { details: createSummary },
         });
-        return NextResponse.json({ success: true, data: { ...product, media: finalMedia } });
+        if (hasVisibilityPayload) {
+            saveBatchProductVisibility(tenantId, [product.id], {
+                ...(typeof body.hidePublicStock === 'boolean' ? { hidePublicStock: body.hidePublicStock } : {}),
+                ...(typeof body.hideFromPublic === 'boolean' ? { hideFromPublic: body.hideFromPublic } : {}),
+            });
+        }
+        flushPersistedStore();
+        const createdMinStockMap = getProductMinStockMap(tenantId);
+        const createdVisibilityMap = getProductVisibilityMap(tenantId);
+        return NextResponse.json({
+            success: true,
+            data: enrichProductWithMedia(
+                product,
+                { [product.id]: finalMedia },
+                createdMinStockMap,
+                createdVisibilityMap
+            ),
+        });
     } catch (error: any) {
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
@@ -342,8 +431,122 @@ export async function PATCH(request: NextRequest) {
                 });
 
             const results = await prisma.$transaction(operations);
+            flushPersistedStore();
             publishRealtimeEvent({ tenantId, scope: 'products', action: 'PRODUCTS_BATCH_UPDATED' });
             return NextResponse.json({ success: true, count: results.length, data: results });
+        }
+
+        // Batch Visibility mode (SuperAdmin ONLY)
+        if (body.batchVisibility && typeof body.batchVisibility === 'object') {
+            if (auth.role !== 'superadmin') {
+                return NextResponse.json(
+                    { success: false, error: 'Solo el SuperAdmin puede configurar la visibilidad pública masiva.' },
+                    { status: 403 }
+                );
+            }
+            const bv = body.batchVisibility as {
+                ids?: string[];
+                hidePublicStock?: boolean;
+                hideFromPublic?: boolean;
+            };
+            const ids = Array.isArray(bv.ids)
+                ? bv.ids.filter((x): x is string => typeof x === 'string' && x.trim().length > 0)
+                : [];
+            if (ids.length === 0) {
+                return NextResponse.json({ success: false, error: 'Selecciona al menos un producto.' }, { status: 400 });
+            }
+            const nextMap = saveBatchProductVisibility(tenantId, ids, {
+                ...(typeof bv.hidePublicStock === 'boolean' ? { hidePublicStock: bv.hidePublicStock } : {}),
+                ...(typeof bv.hideFromPublic === 'boolean' ? { hideFromPublic: bv.hideFromPublic } : {}),
+            });
+            flushPersistedStore();
+
+            const summary = `Visibilidad pública actualizada en ${ids.length} producto(s)`;
+            try {
+                await prisma.auditLog.create({
+                    data: {
+                        tenantId,
+                        action: 'PRODUCT_VISIBILITY_BATCH',
+                        userId: auth.uid,
+                        details: summary,
+                    },
+                });
+            } catch {}
+            appendImmutableAudit({
+                branchId: tenantId,
+                actorId: auth.uid,
+                actorName: auth.role,
+                actorRole: auth.role,
+                action: 'PRODUCT_VISIBILITY_BATCH',
+                resourceRef: `products:batch:${ids.length}`,
+                details: {
+                    count: ids.length,
+                    ids: ids.slice(0, 20),
+                    hidePublicStock: bv.hidePublicStock,
+                    hideFromPublic: bv.hideFromPublic,
+                },
+            });
+            publishRealtimeEvent({
+                tenantId,
+                scope: 'products',
+                action: 'PRODUCTS_VISIBILITY_UPDATED',
+                payload: { details: summary },
+            });
+            return NextResponse.json({ success: true, count: ids.length, visibilityMap: nextMap });
+        }
+
+        // Batch Archive / Papelera mode (SuperAdmin ONLY)
+        if (body.batchArchive && typeof body.batchArchive === 'object') {
+            if (auth.role !== 'superadmin') {
+                return NextResponse.json(
+                    { success: false, error: 'Solo el SuperAdmin puede mover productos en lote a la papelera.' },
+                    { status: 403 }
+                );
+            }
+            const ba = body.batchArchive as { ids?: string[] };
+            const ids = Array.isArray(ba.ids)
+                ? ba.ids.filter((x): x is string => typeof x === 'string' && x.trim().length > 0)
+                : [];
+            if (ids.length === 0) {
+                return NextResponse.json({ success: false, error: 'Selecciona al menos un producto.' }, { status: 400 });
+            }
+            const now = new Date();
+            const ops = ids.map((pid) =>
+                prisma.product.update({
+                    where: { id: pid, tenantId },
+                    data: { deletedAt: now },
+                })
+            );
+            await prisma.$transaction(ops);
+            flushPersistedStore();
+
+            const summary = `${ids.length} producto(s) movidos a papelera por lote`;
+            try {
+                await prisma.auditLog.create({
+                    data: {
+                        tenantId,
+                        action: 'PRODUCT_BATCH_ARCHIVED',
+                        userId: auth.uid,
+                        details: summary,
+                    },
+                });
+            } catch {}
+            appendImmutableAudit({
+                branchId: tenantId,
+                actorId: auth.uid,
+                actorName: auth.role,
+                actorRole: auth.role,
+                action: 'PRODUCT_BATCH_ARCHIVED',
+                resourceRef: `products:archive:${ids.length}`,
+                details: { count: ids.length, ids: ids.slice(0, 20) },
+            });
+            publishRealtimeEvent({
+                tenantId,
+                scope: 'products',
+                action: 'PRODUCTS_BATCH_ARCHIVED',
+                payload: { details: summary },
+            });
+            return NextResponse.json({ success: true, count: ids.length, archivedIds: ids });
         }
 
         const {
@@ -439,6 +642,16 @@ export async function PATCH(request: NextRequest) {
             }
         }
 
+        if (
+            (typeof body.hidePublicStock === 'boolean' || typeof body.hideFromPublic === 'boolean') &&
+            auth.role !== 'superadmin'
+        ) {
+            return NextResponse.json({
+                success: false,
+                error: 'Solo el SuperAdmin puede cambiar la visibilidad pública del producto.',
+            }, { status: 403 });
+        }
+
         const dataToUpdate: any = {};
         if (typeof stockIncrement === 'number') {
             dataToUpdate.stock = { increment: stockIncrement };
@@ -454,6 +667,15 @@ export async function PATCH(request: NextRequest) {
             where: { id, tenantId },
             data: dataToUpdate
         });
+        if (typeof minStock === 'number' && Number.isFinite(minStock) && minStock >= 0 && typeof stockIncrement !== 'number') {
+            saveProductMinStockForId(tenantId, product.id, minStock);
+        }
+        if (typeof body.hidePublicStock === 'boolean' || typeof body.hideFromPublic === 'boolean') {
+            saveBatchProductVisibility(tenantId, [product.id], {
+                ...(typeof body.hidePublicStock === 'boolean' ? { hidePublicStock: body.hidePublicStock } : {}),
+                ...(typeof body.hideFromPublic === 'boolean' ? { hideFromPublic: body.hideFromPublic } : {}),
+            });
+        }
 
         let restockAudit = null;
         if (typeof stockIncrement === 'number' && stockIncrement !== 0 && existingProduct) {
@@ -496,7 +718,9 @@ export async function PATCH(request: NextRequest) {
         }
 
         const mediaMap = getProductMediaMap(tenantId);
-        const enrichedProduct = enrichProductWithMedia(product, mediaMap);
+        const minStockMap = getProductMinStockMap(tenantId);
+        const visibilityMap = getProductVisibilityMap(tenantId);
+        const enrichedProduct = enrichProductWithMedia(product, mediaMap, minStockMap, visibilityMap);
         const patchDetails = restockAudit
             ? `Recarga de stock: ${restockAudit.productName} (+${restockAudit.addedQty} ${restockAudit.unitType} -> ${restockAudit.newStock})`
             : `Producto actualizado: ${product.name}`;
@@ -536,6 +760,7 @@ export async function PATCH(request: NextRequest) {
                 }).catch(() => {});
             }
         }
+        flushPersistedStore();
         return NextResponse.json({ success: true, data: enrichedProduct, ...(restockAudit ? { restockAudit } : {}) });
     } catch (error: any) {
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });
@@ -600,6 +825,7 @@ export async function DELETE(request: NextRequest) {
             entityId: id,
             payload: { details: deleteSummary },
         });
+        flushPersistedStore();
         return NextResponse.json({ success: true, permanent });
     } catch (error: any) {
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });

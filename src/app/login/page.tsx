@@ -106,7 +106,7 @@ export default function LoginPage() {
 
   // Una sola regla de destino evita saltos distintos entre login y middleware.
   useEffect(() => {
-    if (!user || !profile) return;
+    if (!user || !profile || staffLoading) return;
 
     const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
     const targetPath = profile.role
@@ -114,12 +114,19 @@ export default function LoginPage() {
       : null;
 
     if (targetPath) {
-      router.replace(targetPath);
+      const hasPendingWelcome =
+        typeof window !== 'undefined' &&
+        sessionStorage.getItem('bunkker_pending_welcome_tour') === '1';
+      const finalTarget =
+        hasPendingWelcome && !targetPath.includes('welcome=')
+          ? `${targetPath}${targetPath.includes('?') ? '&' : '?'}welcome=1`
+          : targetPath;
+      router.replace(finalTarget);
     }
-  }, [user, profile, router]);
+  }, [user, profile, staffLoading, router]);
 
   // Autenticación por PIN de Trabajadores / Administración
-  async function performStaffLogin(pinCandidate: string) {
+  async function performStaffLogin(pinCandidate: string, options?: { welcome?: boolean }) {
     if (!pinCandidate || !pinCandidate.trim()) {
       setStaffError('Por favor ingresa tu PIN de acceso.');
       return;
@@ -143,12 +150,24 @@ export default function LoginPage() {
 
       if (res.ok && data.success) {
         const params = new URLSearchParams(window.location.search);
-        const targetUrl = getRoleLandingPath(data.role, params.get('redirect'));
+        const rawTargetUrl = getRoleLandingPath(data.role, params.get('redirect'));
 
-        if (!targetUrl) {
+        if (!rawTargetUrl) {
           setStaffError('Este perfil no tiene un módulo asignado. Contacta al administrador.');
           return;
         }
+
+        if (options?.welcome && typeof window !== 'undefined') {
+          try {
+            sessionStorage.setItem('bunkker_pending_welcome_tour', '1');
+            sessionStorage.setItem('bunkker_demo_mode', '1');
+          } catch {}
+        }
+
+        const targetUrl =
+          options?.welcome && !rawTargetUrl.includes('welcome=')
+            ? `${rawTargetUrl}${rawTargetUrl.includes('?') ? '&' : '?'}welcome=1`
+            : rawTargetUrl;
 
         applyBrowserSessionCookies(data.uid, data.role, data.signature);
         saveStaffSession({
@@ -438,6 +457,17 @@ export default function LoginPage() {
                   </>
                 )}
               </button>
+
+              <button
+                type="button"
+                data-testid="demo-admin-login-btn"
+                disabled={staffLoading}
+                onClick={() => void performStaffLogin('0000', { welcome: true })}
+                className="w-full min-h-[44px] cursor-pointer rounded-2xl border border-cyan-500/40 bg-cyan-500/10 px-4 py-3 text-xs sm:text-sm font-bold text-cyan-200 transition hover:bg-cyan-500/20 hover:text-white flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                <ShieldCheck className="w-4 h-4 text-cyan-400 shrink-0" />
+                <span>Entrar como Admin Demo (Guía 3 pasos)</span>
+              </button>
             </form>
 
             <div className="mt-5 pt-5 border-t border-white/10">
@@ -473,15 +503,24 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <div className="mt-6 pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
-            <Link
-              href="/pair"
-              className="inline-flex items-center gap-1.5 text-purple-300 hover:text-purple-200 font-bold transition-colors"
-            >
-              <QrCode className="w-3.5 h-3.5" />
-              Vincular terminal con código de 6 dígitos
-            </Link>
-            <span className="text-slate-500">Seguridad HMAC Activa</span>
+          <div className="mt-6 pt-4 border-t border-white/10 space-y-2.5 text-[11px] text-slate-400">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <Link
+                href="/pair"
+                className="inline-flex items-center gap-1.5 text-purple-300 hover:text-purple-200 font-bold transition-colors"
+              >
+                <QrCode className="w-3.5 h-3.5" />
+                Vincular terminal con código de 6 dígitos
+              </Link>
+              <span className="text-slate-500">Seguridad HMAC Activa</span>
+            </div>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-slate-400" data-testid="login-legal-links">
+              <Link href="/privacidad" className="underline hover:text-cyan-300">Política de Privacidad</Link>
+              <span aria-hidden="true">·</span>
+              <Link href="/terminos" className="underline hover:text-cyan-300">Términos de Servicio</Link>
+              <span aria-hidden="true">·</span>
+              <Link href="/privacidad#eliminacion-cuenta" className="underline hover:text-rose-300">Eliminar cuenta</Link>
+            </div>
           </div>
         </motion.div>
 
@@ -635,25 +674,34 @@ export default function LoginPage() {
             </form>
           </div>
 
-          <div className="mt-6 pt-4 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs">
-            <button
-              type="button"
-              onClick={() => {
-                setIsRegisterMode(!isRegisterMode);
-                setClientError('');
-                setClientSuccess('');
-              }}
-              className="text-cyan-400 hover:text-cyan-300 font-semibold transition-colors"
-            >
-              {isRegisterMode ? '¿Ya tienes cuenta? Inicia sesión' : '¿Cliente nuevo? Regístrate aquí'}
-            </button>
-            <button
-              type="button"
-              onClick={() => router.push('/catalogo')}
-              className="text-slate-400 hover:text-white transition-colors"
-            >
-              Ir al Catálogo Público →
-            </button>
+          <div className="mt-6 pt-4 border-t border-white/10 space-y-2.5 text-xs">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsRegisterMode(!isRegisterMode);
+                  setClientError('');
+                  setClientSuccess('');
+                }}
+                className="text-cyan-400 hover:text-cyan-300 font-semibold transition-colors"
+              >
+                {isRegisterMode ? '¿Ya tienes cuenta? Inicia sesión' : '¿Cliente nuevo? Regístrate aquí'}
+              </button>
+              <button
+                type="button"
+                onClick={() => router.push('/catalogo')}
+                className="text-slate-400 hover:text-white transition-colors"
+              >
+                Ir al Catálogo Público →
+              </button>
+            </div>
+            <p className="text-[11px] text-slate-400 leading-relaxed">
+              Al iniciar sesión o registrarte aceptas los{' '}
+              <Link href="/terminos" className="text-cyan-400 underline hover:text-cyan-300">Términos de Servicio</Link>{' '}
+              y la{' '}
+              <Link href="/privacidad" className="text-cyan-400 underline hover:text-cyan-300">Política de Privacidad</Link>{' '}
+              (<Link href="/privacidad#eliminacion-cuenta" className="text-slate-300 underline hover:text-rose-300">solicitar eliminación de cuenta</Link>).
+            </p>
           </div>
         </motion.div>
 

@@ -36,18 +36,18 @@ import {
     Activity,
     Boxes,
     Settings,
-    Store
+    Store,
+    Building2
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
 import { toast } from '@/lib/toast';
 import ThemeToggle from '@/components/ThemeToggle';
-import LanguageSelector from '@/components/LanguageSelector';
 import AdminDock, { type AdminDockItem } from './AdminDock';
 import SuperAdminAuditNotifier from './SuperAdminAuditNotifier';
 import AndroidPushManager from './AndroidPushManager';
-import { useTranslation } from '@/context/LanguageContext';
+import ConfigHelpButton from '@/components/common/ConfigHelpButton';
 /* ─── Navegación canónica del dashboard ───────────────────────────────────── */
 type DashboardMenuItem = {
     id: string;
@@ -91,6 +91,7 @@ const menuGroups: { label: string; items: DashboardMenuItem[] }[] = [
         items: [
             { id: 'marketing', title: 'Marketing y marca', icon: <Megaphone size={19} />, href: '/dashboard/marketing' },
             { id: 'audit', title: 'Auditoría', icon: <ShieldCheck size={19} />, href: '/dashboard/audit' },
+            { id: 'enterprise', title: 'Consola Multi-Sucursal', icon: <Building2 size={19} />, href: '/dashboard/enterprise', roles: ['superadmin'] },
             { id: 'subscription', title: 'Suscripción', icon: <CreditCard size={19} />, href: '/dashboard/suscripcion', roles: ['superadmin'] },
             { id: 'store', title: 'Tienda pública', icon: <Store size={19} />, href: '/' },
         ],
@@ -312,8 +313,32 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
     const isDashboard = pathname === '/dashboard' || pathname?.startsWith('/dashboard/');
     const { isReadOnly, isPremium, profile, signOut } = useAuth();
-    const { firebaseStatus, siteConfig } = useCart();
-    const { t } = useTranslation();
+    const { firebaseStatus, siteConfig, updateSiteConfig } = useCart();
+    const [switchingSpace, setSwitchingSpace] = useState(false);
+
+    const operationSpace: 'local' | 'business' =
+        siteConfig?.operationSpace === 'business' ? 'business' : 'local';
+
+    const handleSwitchOperationSpace = async (nextSpace: 'local' | 'business') => {
+        if (nextSpace === operationSpace || switchingSpace) return;
+        if (isReadOnly) {
+            toast.warning('No se puede cambiar el entorno en Modo Demostración.');
+            return;
+        }
+        setSwitchingSpace(true);
+        try {
+            await updateSiteConfig({ operationSpace: nextSpace });
+            toast.success(
+                nextSpace === 'business'
+                    ? 'Modo Business activado: funciones multi-sucursal, nube y auditoría SHA-256 visibles.'
+                    : 'Operación Local activada: vista simplificada para caja, almacén y mostrador.'
+            );
+        } catch (err: any) {
+            toast.error(err?.message || 'No se pudo cambiar el entorno del sistema.');
+        } finally {
+            setSwitchingSpace(false);
+        }
+    };
 
     /* close tooltip on outside click */
     useEffect(() => {
@@ -350,11 +375,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         dashboard: 'Panel', executive: 'Ejecutivo', pos: 'POS', team: 'Equipo', users: 'Accesos', crm: 'CRM',
         customers: 'Clientes', billing: 'CFDI', qr: 'QR', setup: 'Ajustes', guide: 'Guía',
         demo: 'Pruebas', inventory: 'Stock', patio: 'Patio', pickup: 'Pickup', delivery: 'Rutas',
-        simulator: 'Simulador', marketing: 'Marketing', audit: 'Auditoría', subscription: 'Plan', store: 'Tienda',
+        simulator: 'Simulador', marketing: 'Marketing', audit: 'Auditoría', enterprise: 'Sucursales', subscription: 'Plan', store: 'Tienda',
     };
+    const BUSINESS_ONLY_DOCK_IDS = new Set(['executive', 'enterprise', 'subscription', 'demo']);
     const dockItems: AdminDockItem[] = menuGroups
         .flatMap((group) => group.items)
         .filter((item) => !item.roles || item.roles.includes(currentRole))
+        .filter((item) => operationSpace === 'business' || !BUSINESS_ONLY_DOCK_IDS.has(item.id))
         .map((item) => ({
             id: item.id,
             title: item.title,
@@ -414,7 +441,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                             onMouseEnter={e => (e.currentTarget.style.color = '#0284c7')}
                             onMouseLeave={e => (e.currentTarget.style.color = '#0ea5e9')}
                         >
-                            {t('nav.panel', 'PANEL')}
+                            PANEL
                         </Link>
 
                         {pathname !== '/dashboard' && (
@@ -446,15 +473,44 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     </nav>
 
                     {/* Status Indicators & Profile */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                        {(currentRole === 'superadmin' || currentRole === 'admin') && (
+                            <div className="inline-flex items-center gap-1 rounded-lg border border-slate-700/80 bg-slate-900/90 p-0.5">
+                                <button
+                                    type="button"
+                                    disabled={switchingSpace}
+                                    onClick={() => void handleSwitchOperationSpace('local')}
+                                    className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer whitespace-nowrap ${
+                                        operationSpace === 'local'
+                                            ? 'bg-emerald-500 text-slate-950 font-bold'
+                                            : 'text-slate-300 hover:text-white'
+                                    }`}
+                                    title="Operación diaria simple de tienda única"
+                                >
+                                    Operación Local
+                                </button>
+                                <button
+                                    type="button"
+                                    disabled={switchingSpace}
+                                    onClick={() => void handleSwitchOperationSpace('business')}
+                                    className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer whitespace-nowrap ${
+                                        operationSpace === 'business'
+                                            ? 'bg-sky-500 text-slate-950 font-bold'
+                                            : 'text-slate-300 hover:text-white'
+                                    }`}
+                                    title="Funciones avanzadas multi-sucursal, nube y SSO"
+                                >
+                                    Modo Business
+                                </button>
+                                <ConfigHelpButton settingKey="operationSpace" align="right" />
+                            </div>
+                        )}
+
                         {/* Notificaciones de Auditoría (únicamente SuperAdmin, con Activar/Silenciar) */}
                         <SuperAdminAuditNotifier />
 
                         {/* Alertas Push Tempranas Android (FCM para Admin / SuperAdmin) */}
                         <AndroidPushManager variant="toolbar" />
-
-                        {/* Selector de Idioma (Español, Inglés, Francés, Chino) */}
-                        <LanguageSelector />
 
                         {/* Selector de Tema */}
                         <ThemeToggle />
@@ -491,7 +547,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                         }} />
                                     )}
                                 </span>
-                                <span className="sr-only">{firebaseStatus === 'online' ? t('status.online', 'SISTEMA ONLINE') : t('status.offline', 'SIN CONEXIÓN')}</span>
+                                <span className="sr-only">{firebaseStatus === 'online' ? 'SISTEMA ONLINE' : 'SIN CONEXIÓN'}</span>
                             </button>
 
                             <ConnectionTooltip isOpen={connTooltipOpen} firebaseStatus={firebaseStatus} />
@@ -505,7 +561,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                             >
                                 <User size={15} aria-hidden="true" />
                                 <span className="hidden max-w-28 truncate text-xs font-semibold xl:inline">
-                                    {profile?.displayName || t('nav.profile', 'PERFIL')}
+                                    {profile?.displayName || 'PERFIL'}
                                 </span>
                             </summary>
                             <div className="absolute right-0 top-full z-50 mt-2 w-56 rounded-2xl border border-white/10 bg-slate-950/90 p-2 text-white shadow-2xl backdrop-blur-2xl">
@@ -546,7 +602,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         borderBottom: '1px solid #FFCB05',
                     }}>
                         <AlertCircle size={16} color="#FFCB05" style={{ flexShrink: 0 }} />
-                        <span>{t('status.demo_warning', 'MODO DEMOSTRACIÓN: Usted está en modo de solo lectura. Los cambios no se guardarán en la base de datos real.')}</span>
+                        <span>MODO DEMOSTRACIÓN: Usted está en modo de solo lectura. Los cambios no se guardarán en la base de datos real.</span>
                     </div>
                 )}
 

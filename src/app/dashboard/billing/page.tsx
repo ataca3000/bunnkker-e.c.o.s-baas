@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FileText, Download, CheckCircle2, Coins, Zap, Search, Loader2 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { db, auth } from '@/lib/firebase';
+import { db, auth, hasRealCredentials } from '@/lib/firebase';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { toast } from '@/lib/toast';
 import { BILLING_TIMBRE_PACKAGES, TIMBRE_UNIT_PRICE_MXN } from '@/lib/billingPackages';
@@ -32,13 +32,14 @@ function FacturacionContent() {
     const [customerEmail, setCustomerEmail] = useState('');
 
     useEffect(() => {
+        if (!hasRealCredentials || !auth?.currentUser) return;
         const fetchStats = async () => {
             try {
                 const q = query(collection(db, 'audit_logs'), where('type', '==', 'INVOICE_GENERATE'));
                 const snap = await getDocs(q);
                 setInvoiceCount(snap.size);
             } catch (err) {
-                console.error("Error fetching invoice stats", err);
+                console.warn("Stats fallback (local):", err);
             }
         };
         fetchStats();

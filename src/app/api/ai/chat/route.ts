@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { validateApiSession } from '@/lib/apiAuth';
 import { DEFAULT_GEMINI_MODEL, getServerGeminiClient } from '@/lib/geminiClient';
+import { buildLionSystemInstruction } from '@/lib/lionSystemPrompt';
 
 /**
  * BUNKKER E.C.O.S. - Asistente Inteligente Gemini Multi-Rol
@@ -100,10 +101,10 @@ export async function POST(req: NextRequest) {
         const ai = getServerGeminiClient();
         if (ai) {
             try {
-                const systemInstruction = `Eres el agente ${effectiveRole} de BUNKKER E.C.O.S. ${roleInstructions[effectiveRole] || roleInstructions.customer} Responde en español, de forma breve y accionable (máximo 180 palabras). Datos disponibles: ${JSON.stringify(contextData)}`;
+                const systemInstruction = buildLionSystemInstruction(effectiveRole, contextData);
                 const historyText = messages
                     .slice(-8)
-                    .map((m: any) => `${m.role === 'user' ? 'Usuario' : 'Asistente'}: ${typeof m.content === 'string' ? m.content : JSON.stringify(m.content)}`)
+                    .map((m: any) => `${m.role === 'user' ? 'Usuario' : 'LION'}: ${typeof m.content === 'string' ? m.content : JSON.stringify(m.content)}`)
                     .join('\n');
 
                 const response = await ai.models.generateContent({

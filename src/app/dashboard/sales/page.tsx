@@ -1035,12 +1035,13 @@ export default function SalesDashboard() {
             const res = await fetch('/api/orders', {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({ id: orderId, action: 'claim_cashier' })
             });
             const data = await res.json();
             if (data.success) {
-                showToast(`✅ Pedido ${orderId} tomado en tu caja.`);
-                broadcastSync();
+                showToast(`✅ Pedido ${orderId} tomado y bloqueado en tu caja.`);
+                broadcastSync({ action: 'ORDER_CASHIER_CLAIMED', id: orderId });
             } else {
                 toast.error(data.error || 'No se pudo tomar el pedido.');
             }
@@ -1051,6 +1052,46 @@ export default function SalesDashboard() {
         }
     };
 
+    const handleReleaseOrderClaim = async (orderId: string, slot: 'loading' | 'cashier' | 'delivery' | 'auto' = 'auto') => {
+        try {
+            const res = await fetch('/api/orders', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ id: orderId, action: 'release_claim', slot })
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast(`🔓 Pedido ${orderId} liberado a la pizarra.`);
+                broadcastSync({ action: 'ORDER_CLAIM_RELEASED', id: orderId });
+            } else {
+                toast.error(data.error || 'No se pudo liberar el bloqueo.');
+            }
+        } catch {
+            toast.error('Error al liberar el bloqueo del pedido.');
+        }
+    };
+
+    const handleUpdateOrderStatus = async (orderId: string, status: string) => {
+        try {
+            const res = await fetch('/api/orders', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ id: orderId, action: 'update_order_status', status })
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast(`🔄 Estado del pedido ${orderId} actualizado a ${status}.`);
+                broadcastSync({ action: 'ORDER_STATUS_UPDATED', id: orderId });
+            } else {
+                toast.error(data.error || 'No se pudo actualizar el estado.');
+            }
+        } catch {
+            toast.error('Error al actualizar el estado del pedido.');
+        }
+    };
+
     const PENDING_CASHIER_STATUSES = [
         'pending_payment',
         'pending_confirmation',
@@ -1058,6 +1099,7 @@ export default function SalesDashboard() {
         'paid',
         'PREPARANDO',
         'EN_ESPERA',
+        'PENDIENTE_LLEGADA',
         'READY_TO_SHIP',
         'READY_FOR_PICKUP',
         'READY_FOR_PICKUP_PAID',
@@ -1067,12 +1109,15 @@ export default function SalesDashboard() {
         'refunded'
     ];
 
-    const isStoreOrder = (o: any) => o.deliveryType !== 'DELIVERY' && o.deliveryMethod !== 'repartidor';
+    const isDeliveryOrder = (o: any) => o.deliveryType === 'DELIVERY' || o.deliveryMethod === 'repartidor';
+    const isDispatchedToDriver = (o: any) => isDeliveryOrder(o) && ['OUT_FOR_DELIVERY', 'claimed'].includes(o.status);
+    // En Caja deben aparecer todos los pedidos activos de tienda Y los pedidos a domicilio que aún esperan preparación o cobro en Caja
+    const isStoreOrder = (o: any) => !isDispatchedToDriver(o);
 
     const pendingOrders = orders.filter(o => isStoreOrder(o) && PENDING_CASHIER_STATUSES.includes(o.status) && !isTestOrder(o));
 
     const pendingPrepOrders = orders.filter(o => isStoreOrder(o) && !o.isLoaded && !['DELIVERED', 'COMPLETED', 'cancelled', 'refunded'].includes(o.status) && !isTestOrder(o));
-    const readyToPayOrders = orders.filter(o => isStoreOrder(o) && (o.isLoaded || ['READY_TO_SHIP', 'READY_FOR_PICKUP'].includes(o.status)) && !o.confirmedAt && o.status !== 'paid' && o.status !== 'READY_FOR_PICKUP_PAID' && !['DELIVERED', 'COMPLETED', 'cancelled', 'refunded'].includes(o.status) && !isTestOrder(o));
+    const readyToPayOrders = orders.filter(o => isStoreOrder(o) && (o.isLoaded || ['READY_TO_SHIP', 'READY_FOR_PICKUP'].includes(o.status)) && !o.confirmedAt && !['paid', 'READY_FOR_PICKUP_PAID', 'OUT_FOR_DELIVERY', 'claimed', 'DELIVERED', 'COMPLETED', 'cancelled', 'refunded'].includes(o.status) && !isTestOrder(o));
     const cancelledOrders = orders.filter(o => isStoreOrder(o) && (o.status === 'cancelled' || o.status === 'refunded') && !isTestOrder(o));
     const cancelledReacomodoOrders = cancelledOrders.filter(o => o.rejectionReason !== 'CANCELADA_STOCK_RESTITUIDO');
 
@@ -1088,43 +1133,40 @@ export default function SalesDashboard() {
         return matchesId || matchesCustomer || matchesPhone || matchesItems;
     };
 
-    // 🟢 VERDE: "Los que pueden tomar" (pedidos libres sin asignar o no tomados por mí)
+    // 1. Pizarra Libre (por tomar / asignar)
     const greenCanClaimOrders = orders.filter(o => {
         if (!isStoreOrder(o) || isTestOrder(o)) return false;
-        const isUnpaid = !o.confirmedAt && o.status !== 'paid' && o.status !== 'READY_FOR_PICKUP_PAID';
+        const isUnpaid = !o.confirmedAt && !['paid', 'READY_FOR_PICKUP_PAID', 'OUT_FOR_DELIVERY', 'claimed'].includes(o.status);
         const isNotLoaded = !o.isLoaded && !['READY_TO_SHIP', 'READY_FOR_PICKUP'].includes(o.status);
         const isTerminal = ['DELIVERED', 'COMPLETED', 'cancelled', 'refunded'].includes(o.status);
         if (!isUnpaid || !isNotLoaded || isTerminal) return false;
-        // Libre para tomar si no tiene cajero asignado o fue iniciado por otro usuario
-        const canTake = !o.vendedorId || o.vendedorId !== profile?.uid;
+        const canTake = (!o.vendedorId || o.vendedorId !== profile?.uid) && o.loadedByUid !== profile?.uid;
         return canTake;
     }).filter(filterBySearch);
 
-    // 🟡 AMARILLO: "Los que tienes que preparar" (en almacén / mostrador pendientes de surtido)
+    // 2. En Preparación / Surtido activo
     const yellowNeedPrepOrders = orders.filter(o => {
         if (!isStoreOrder(o) || isTestOrder(o)) return false;
-        const isUnpaid = !o.confirmedAt && o.status !== 'paid' && o.status !== 'READY_FOR_PICKUP_PAID';
+        const isPaidReady = Boolean(o.confirmedAt) && ['READY_FOR_PICKUP_PAID', 'OUT_FOR_DELIVERY', 'claimed'].includes(o.status);
         const isNotLoaded = !o.isLoaded && !['READY_TO_SHIP', 'READY_FOR_PICKUP'].includes(o.status);
         const isTerminal = ['DELIVERED', 'COMPLETED', 'cancelled', 'refunded'].includes(o.status);
-        if (!isUnpaid || !isNotLoaded || isTerminal) return false;
-        if (onlyMyOrders && o.vendedorId !== profile?.uid) return false;
+        if (isPaidReady || !isNotLoaded || isTerminal) return false;
+        if (onlyMyOrders && o.vendedorId !== profile?.uid && o.loadedByUid !== profile?.uid) return false;
         return true;
     }).filter(filterBySearch);
 
-    // 🔵 AZUL: "Los que ya puedes cobrar" (surtidos listos para cobrar)
-    // REGLA CRUCIAL DEL USUARIO: "caja cobra todos asi que ahi aparacen los de todos y el cobra ok"
+    // 3. Listos para Cobro, Firma y Ticket en Caja (incluye PICKUP, PATIO y DELIVERY listos o surtidos)
     const blueReadyToPayOrders = orders.filter(o => {
         if (!isStoreOrder(o) || isTestOrder(o)) return false;
-        const isReady = (Boolean(o.isLoaded) || ['READY_TO_SHIP', 'READY_FOR_PICKUP'].includes(o.status));
-        const isUnpaid = !o.confirmedAt && o.status !== 'paid' && o.status !== 'READY_FOR_PICKUP_PAID';
+        const isReady = Boolean(o.isLoaded) || ['READY_TO_SHIP', 'READY_FOR_PICKUP'].includes(o.status);
+        const isUnpaid = !o.confirmedAt && !['paid', 'READY_FOR_PICKUP_PAID', 'OUT_FOR_DELIVERY', 'claimed'].includes(o.status);
         const isTerminal = ['DELIVERED', 'COMPLETED', 'cancelled', 'refunded'].includes(o.status);
-        // ¡NO se aplica onlyMyOrders aquí! Caja cobra absolutamente todos los pedidos listos.
         return isReady && isUnpaid && !isTerminal;
     }).filter(filterBySearch);
 
-    // 📦 LISTOS ENTREGA: Surtidos y cobrados listos para entregar físicamente al cliente con firma y foto (PoD)
+    // 4. Listos para entrega física en Tienda/Patio (excluye DELIVERY porque ese pasa a Repartidor)
     const readyToDeliverOrders = orders.filter(o => {
-        if (!isStoreOrder(o) || isTestOrder(o)) return false;
+        if (isDeliveryOrder(o) || isTestOrder(o)) return false;
         const isReady = ['READY_TO_SHIP', 'READY_FOR_PICKUP_PAID'].includes(o.status) || (Boolean(o.isLoaded) && (Boolean(o.confirmedAt) || o.status === 'paid')) || o.status === 'READY_FOR_PICKUP';
         const isTerminal = ['DELIVERED', 'COMPLETED', 'cancelled', 'refunded'].includes(o.status);
         const isPaid = Boolean(o.confirmedAt) || o.status === 'paid' || o.status === 'READY_FOR_PICKUP_PAID';
@@ -1685,7 +1727,11 @@ export default function SalesDashboard() {
                                 yellowOrders={yellowNeedPrepOrders}
                                 blueOrders={blueReadyToPayOrders}
                                 readyOrders={readyToDeliverOrders}
+                                currentUserUid={profile?.uid}
+                                currentUserRole={profile?.role}
                                 onClaimOrder={handleClaimOrder}
+                                onReleaseClaim={handleReleaseOrderClaim}
+                                onUpdateStatus={handleUpdateOrderStatus}
                                 onLoadToPos={(order) => {
                                     if (order.items && order.items.length > 0) {
                                         const converted = order.items.map((it: any) => ({
@@ -2087,11 +2133,15 @@ export default function SalesDashboard() {
                         setCurrentTicket(ticket);
                         setIsTicketModalOpen(true);
                     }
+                    const isDelivery = updatedOrder.deliveryType === 'DELIVERY' || updatedOrder.deliveryMethod === 'repartidor' || updatedOrder.status === 'OUT_FOR_DELIVERY';
                     const isPatio = updatedOrder.deliveryType === 'PATIO' || updatedOrder.deliveryMethod === 'patio';
-                    if (isPatio) {
-                        toast.success('✅ Cobro completado. El cliente ahora puede pasar al patio con su Ticket/QR para que el personal de patio escanee y entregue con firma y foto.');
-                    } else {
-                        // En mostrador/caja, permitir cerrar la entrega directamente
+                    if (isDelivery) {
+                        toast.success('Cobro y firma registrados. El pedido pasó a la Bolsa del Repartidor.');
+                    } else if (isPatio) {
+                        toast.success('Cobro y firma registrados. El cliente pasa a Bahía de Patio con su Ticket/QR para despacho.');
+                    } else if (['DELIVERED', 'COMPLETED'].includes(updatedOrder.status)) {
+                        toast.success('Cobro, firma y entrega completados. Ticket emitido.');
+                    } else if (!updatedOrder.signatureData) {
                         setOrderForDeliveryProof(updatedOrder);
                     }
                 }}

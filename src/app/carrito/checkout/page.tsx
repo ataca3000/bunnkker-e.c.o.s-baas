@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Truck, MapPin, CheckCircle2, ShieldCheck, Loader2, RefreshCw } from 'lucide-react';
 import AdvancedMap from '@/components/AdvancedMap';
@@ -11,9 +10,9 @@ import { useCart } from '@/context/CartContext';
 import { toast } from '@/lib/toast';
 import { broadcastSync } from '@/lib/syncNotifier';
 import { getCustomerProfile, getCustomerAuthHeaders } from '@/lib/customerAuth';
+import { InlineCustomerAuthGate } from '@/components/cart/InlineCustomerAuthGate';
 
 export default function CheckoutPage() {
-    const router = useRouter();
     const { cart, siteConfig, createOrder, products } = useCart();
     const [method, setMethod] = useState<'delivery' | 'pickup' | 'patio'>('pickup');
     
@@ -90,12 +89,6 @@ export default function CheckoutPage() {
         return () => { active = false; };
     }, []);
 
-    useEffect(() => {
-        if (!customerLoading && !customerAccount) {
-            router.push('/cuenta?redirect=/carrito/checkout');
-        }
-    }, [customerLoading, customerAccount, router]);
-
     const handleGetLocation = () => {
         setGpsLoading(true);
         if ("geolocation" in navigator) {
@@ -148,8 +141,7 @@ export default function CheckoutPage() {
 
     const handleCheckout = async () => {
         if (!customerAccount) {
-            toast.warning('Regístrate o inicia sesión para generar tu pedido.');
-            window.location.href = '/cuenta?redirect=/carrito/checkout';
+            toast.warning('Regístrate o inicia sesión como cliente para generar tu pedido.');
             return;
         }
         if (method === 'delivery' && (!clientAddress.trim() || !clientGps)) {
@@ -356,7 +348,25 @@ export default function CheckoutPage() {
     }
 
     if (!customerAccount) {
-        return <div className="min-h-[70vh] flex items-center justify-center"><Loader2 className="animate-spin text-sky-500" size={32} /></div>;
+        return (
+            <div style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem 1rem' }}>
+                <div style={{ maxWidth: '480px', width: '100%' }}>
+                    <InlineCustomerAuthGate
+                        theme="dark"
+                        title="Registro o Inicio de Sesión Obligatorio"
+                        subtitle="Para levantar un pedido y darle seguimiento en pizarra, caja y reparto, identifica tu cuenta de cliente."
+                        onAuthenticated={(account) => {
+                            setCustomerAccount(account);
+                            setClientName(account.name || '');
+                            setClientPhone(account.phone || '');
+                            setClientAddress(account.address || '');
+                            setClientRfc(account.rfc || '');
+                            setClientRazonSocial(account.razonSocial || '');
+                        }}
+                    />
+                </div>
+            </div>
+        );
     }
 
     return (

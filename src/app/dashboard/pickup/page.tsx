@@ -10,6 +10,8 @@ import BarcodeScanner from '@/components/BarcodeScanner';
 import DeliveryProofModal from '@/components/orders/DeliveryProofModal';
 import TicketEntrega from '@/components/TicketEntrega';
 import OrderPickingAssistant from '@/components/orders/OrderPickingAssistant';
+import { getOrderLockInfo } from '@/lib/orderWorkflow';
+import { Lock } from 'lucide-react';
 
 export default function PickupDashboard() {
     const { formatCurrency, products, orders: allOrders, siteConfig } = useCart();
@@ -66,6 +68,24 @@ export default function PickupDashboard() {
     const pendingPaymentOrders = orders.filter(o => o.status === 'READY_FOR_PICKUP');
     const readyToDeliverOrders = orders.filter(o => o.status === 'READY_FOR_PICKUP_PAID' || (o.status === 'paid' && o.isLoaded));
 
+    const handleReleaseClaim = async (orderId: string, slot: 'loading' | 'cashier' = 'loading') => {
+        try {
+            const res = await fetch('/api/orders', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ id: orderId, action: 'release_claim', slot })
+            });
+            const data = await res.json().catch(() => null);
+            if (!res.ok || !data?.success) throw new Error(data?.error || 'No se pudo liberar el bloqueo');
+            toast.info(`Pedido #${orderId.slice(-6).toUpperCase()} liberado en pizarra.`);
+            const state = require('@/store/useERPStore').useERPStore.getState();
+            if (state.fetchOrders) state.fetchOrders();
+        } catch (err: any) {
+            toast.error(err?.message || 'Error al liberar pedido');
+        }
+    };
+
     return (
         <div className="bg-[#0f111a] min-h-screen text-white p-[8px] pb-24">
             <div className="max-w-7xl mx-auto">
@@ -107,7 +127,9 @@ export default function PickupDashboard() {
                             {pendingPaymentOrders.length === 0 ? (
                                 <p className="text-gray-500 text-center py-8">No hay pedidos pickup preparados esperando a caja.</p>
                             ) : (
-                                pendingPaymentOrders.map(order => (
+                                pendingPaymentOrders.map(order => {
+                                    const lockInfo = getOrderLockInfo(order as any, profile?.uid, profile?.role);
+                                    return (
                                     <motion.div 
                                         key={order.id}
                                         initial={{ opacity: 0, y: 10 }}
@@ -115,7 +137,18 @@ export default function PickupDashboard() {
                                         className="bg-[#1a1d2d] border border-white/5 rounded-xl p-[8px] hover:border-yellow-400/30 transition-colors"
                                     >
                                         <div className="flex justify-between items-start mb-3">
-                                            <h3 className="font-bold text-lg">{order.customer?.name || 'Cliente Mostrador'}</h3>
+                                            <div>
+                                                <h3 className="font-bold text-lg">{order.customer?.name || 'Cliente Mostrador'}</h3>
+                                                {lockInfo.isLocked && (
+                                                    <span className={`inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded text-[10px] font-bold ${
+                                                        lockInfo.isLockedByOther
+                                                            ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
+                                                            : 'bg-sky-500/15 text-sky-300 border border-sky-500/30'
+                                                    }`}>
+                                                        <Lock size={10} /> {lockInfo.lockedRoleLabel}: {lockInfo.lockedByName}
+                                                    </span>
+                                                )}
+                                            </div>
                                             <span className="text-yellow-400 font-bold text-xl">{formatCurrency(order.total)}</span>
                                         </div>
                                         <div className="text-sm text-gray-400 space-y-1 mb-4">
@@ -150,10 +183,19 @@ export default function PickupDashboard() {
                                         <div className="flex flex-col gap-2 mt-2">
                                             <button
                                                 onClick={() => setPickingOrder(order)}
-                                                className="w-full bg-cyan-600/30 hover:bg-cyan-600/50 text-cyan-200 border border-cyan-500/30 font-bold py-2 rounded-lg text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95"
+                                                disabled={lockInfo.isLockedByOther && !lockInfo.canAdminOverride}
+                                                className="w-full bg-cyan-600/30 hover:bg-cyan-600/50 disabled:opacity-40 text-cyan-200 border border-cyan-500/30 font-bold py-2 rounded-lg text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95"
                                             >
                                                 🤖 Asistente de Recolección / Delegar
                                             </button>
+                                            {lockInfo.isLocked && (lockInfo.isLockedByMe || lockInfo.canAdminOverride) && (
+                                                <button
+                                                    onClick={() => handleReleaseClaim(order.id, lockInfo.lockedScope === 'cashier' ? 'cashier' : 'loading')}
+                                                    className="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 font-bold py-1.5 rounded-lg text-xs transition-all"
+                                                >
+                                                    Soltar bloqueo
+                                                </button>
+                                            )}
                                         </div>
 
                                         <div className="w-full border border-yellow-500/30 bg-yellow-500/10 p-3 text-center text-xs font-bold text-yellow-300 mt-2">
@@ -161,7 +203,8 @@ export default function PickupDashboard() {
                                             {order.vendedorName ? ` Caja asignada: ${order.vendedorName}.` : ''}
                                         </div>
                                     </motion.div>
-                                ))
+                                    );
+                                })
                             )}
                         </div>
                     </div>

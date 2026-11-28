@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { auth, db, hasRealCredentials } from '@/lib/firebase';
 import { Trophy, Medal, Star, ShieldCheck } from 'lucide-react';
 
 interface StaffUser {
@@ -19,7 +19,10 @@ export default function StaffRankingWidget({ tenantId }: { tenantId: string }) {
 
     useEffect(() => {
         const fetchStaff = async () => {
-            if (!tenantId) return;
+            if (!tenantId || !hasRealCredentials || !auth?.currentUser) {
+                setLoading(false);
+                return;
+            }
             try {
                 // Obtenemos los usuarios del tenant que no son superadmin (opcionalmente) 
                 // pero como kpiScore se actualiza para los roles de staff, ordenamos por kpiScore

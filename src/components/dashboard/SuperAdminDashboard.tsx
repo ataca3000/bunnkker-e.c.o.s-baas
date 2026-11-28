@@ -269,21 +269,25 @@ export default function SuperAdminDashboard({
                         </div>
                     </details>
 
-                    <Link
-                        href="/dashboard/enterprise"
-                        className="inline-flex min-h-[40px] items-center gap-2 whitespace-nowrap shrink-0 rounded-xl border border-slate-700 bg-slate-900 px-3.5 py-2 text-xs font-semibold text-slate-200 transition-colors hover:border-sky-400/50 hover:text-sky-200"
-                    >
-                        <ShieldCheck size={15} aria-hidden="true" />
-                        <span>Consola Cloud</span>
-                    </Link>
+                    {siteConfig?.operationSpace === 'business' && (
+                        <>
+                            <Link
+                                href="/dashboard/enterprise"
+                                className="inline-flex min-h-[40px] items-center gap-2 whitespace-nowrap shrink-0 rounded-xl border border-slate-700 bg-slate-900 px-3.5 py-2 text-xs font-semibold text-slate-200 transition-colors hover:border-sky-400/50 hover:text-sky-200"
+                            >
+                                <ShieldCheck size={15} aria-hidden="true" />
+                                <span>Consola Cloud</span>
+                            </Link>
 
-                    <Link
-                        href="/dashboard/executive"
-                        className="inline-flex min-h-[40px] items-center gap-2 whitespace-nowrap shrink-0 rounded-xl border border-sky-400/40 bg-sky-500/15 px-3.5 py-2 text-xs font-semibold text-sky-200 transition-colors hover:bg-sky-500/25"
-                    >
-                        <BarChart3 size={15} aria-hidden="true" />
-                        <span>Tablero Ejecutivo</span>
-                    </Link>
+                            <Link
+                                href="/dashboard/executive"
+                                className="inline-flex min-h-[40px] items-center gap-2 whitespace-nowrap shrink-0 rounded-xl border border-sky-400/40 bg-sky-500/15 px-3.5 py-2 text-xs font-semibold text-sky-200 transition-colors hover:bg-sky-500/25"
+                            >
+                                <BarChart3 size={15} aria-hidden="true" />
+                                <span>Tablero Ejecutivo</span>
+                            </Link>
+                        </>
+                    )}
 
                     <div className="bunkker-translucent-card flex items-center gap-2 rounded-xl border border-cyan-500/30 px-3 py-2">
                         <Zap size={15} className="text-cyan-400" />

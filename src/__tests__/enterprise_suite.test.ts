@@ -4,6 +4,8 @@ import { getCapabilitiesForRole, hasCapability } from '@/lib/enterpriseRbac';
 import {
   appendImmutableAudit,
   resetImmutableAuditForTest,
+  simulateTamperDiagnostic,
+  verifyAuditChainDetailed,
   verifyAuditChainIntegrity,
 } from '@/lib/immutableAudit';
 import {
@@ -123,6 +125,30 @@ describe('BUNKKER Enterprise Suite & Daily Performance', () => {
     const invalidReport = verifyAuditChainIntegrity(tampered);
     expect(invalidReport.valid).toBe(false);
     expect(invalidReport.brokenSequence).toBe(2);
+
+    // Detailed per-block verification + broken chain link detection
+    const detailedOk = verifyAuditChainDetailed();
+    expect(detailedOk.totalChainCount).toBe(2);
+    expect(detailedOk.blockStatuses[e1.entryId].valid).toBe(true);
+    expect(detailedOk.blockStatuses[e2.entryId].linkValid).toBe(true);
+
+    const linkBroken = verifyAuditChainDetailed([
+      e1,
+      {
+        ...e2,
+        previousHash: 'f'.repeat(64),
+      },
+    ]);
+    expect(linkBroken.integrity.valid).toBe(false);
+    expect(linkBroken.blockStatuses[e2.entryId].linkValid).toBe(false);
+
+    // Isolated forensic simulation keeps real ledger valid and untouched
+    const sim = simulateTamperDiagnostic(2);
+    expect(sim.realLedgerUntouched).toBe(true);
+    expect(sim.integrity.valid).toBe(false);
+    expect(sim.targetSequence).toBe(2);
+    expect(sim.brokenBlock?.payloadValid).toBe(false);
+    expect(verifyAuditChainIntegrity().valid).toBe(true);
   });
 
   it('manages isolated branch nodes and enforces instant session revocation', () => {

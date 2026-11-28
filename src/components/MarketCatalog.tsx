@@ -22,6 +22,10 @@ import { ProductCard, ProductDetailDrawer } from './catalog/ProductCard';
 import { toast } from '@/lib/toast';
 import { findProductByBarcodeOrCode, matchesProductSearch } from '@/lib/barcodeLookup';
 import type { TimedOfferBanner, StorefrontPageId } from '@/lib/storefrontBuilder';
+import {
+    filterPublicCatalogProducts,
+    formatPublicAvailabilityLabel,
+} from '@/lib/publicProductVisibility';
 
 export default function MarketCatalog({
     initialCategory,
@@ -66,31 +70,33 @@ export default function MarketCatalog({
         setVisibleCount(24);
     }
 
+    const publicProducts = filterPublicCatalogProducts(contextProducts);
+
     const handleScan = (decodedText: string) => {
         const clean = decodedText.trim();
-        const product = findProductByBarcodeOrCode(contextProducts, clean);
+        const product = findProductByBarcodeOrCode(publicProducts, clean);
         setFilter('Todos');
         setSearch(product?.barcode || clean);
         if (product) {
             setSelectedProduct(product);
             toast.success(
-                `${product.name} · $${Number(product.price || 0).toLocaleString('es-MX')} MXN (${product.stock} disp.)`,
+                `${product.name} · $${Number(product.price || 0).toLocaleString('es-MX')} MXN (${formatPublicAvailabilityLabel(product, product.stock, 'toast')})`,
                 '🔍 Código Identificado'
             );
         } else {
-            toast.warning(`No se encontró un producto con código "${clean}".`, '🔍 Búsqueda por Escáner');
+            toast.warning(`No se encontró un producto disponible con código "${clean}".`, '🔍 Búsqueda por Escáner');
         }
         setShowScanner(false);
     };
 
-    // Categorías únicas derivadas de los productos con fallback a 'General'
-    const uniqueCategories = Array.from(new Set(contextProducts.map(p => p.category || 'General'))).filter(Boolean).sort() as string[];
+    // Categorías únicas derivadas de los productos públicos con fallback a 'General'
+    const uniqueCategories = Array.from(new Set(publicProducts.map(p => p.category || 'General'))).filter(Boolean).sort() as string[];
 
     // Banners del Canvas Editor
     const catalogBanners = (siteConfig.layout || []).filter((b: any) => b.type === 'banner' && b.visible !== false);
 
     // Ordenar por productOrder del siteConfig: los productos nuevos van al inicio para visibilidad inmediata
-    const sorted = [...contextProducts].sort((a, b) => {
+    const sorted = [...publicProducts].sort((a, b) => {
         if (!siteConfig.productOrder || siteConfig.productOrder.length === 0) {
             return (b.orderIndex ?? 0) - (a.orderIndex ?? 0);
         }

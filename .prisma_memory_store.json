@@ -154,7 +154,8 @@
       "role": "superadmin",
       "pin": "9af15b336e6a9619928537df30b2e6a2376569fcf9d7e773eccede65606529a0",
       "active": true,
-      "createdAt": "2026-10-24T00:00:00.000Z"
+      "createdAt": "2026-10-24T00:00:00.000Z",
+      "pinHash": "$2b$10$VKAjgJuNrSLWj1hhX4VCSeUt2IHbGKIfOwjZTxlyvz/lhLHto7J5q"
     },
     {
       "id": "demo-admin",
@@ -242,7 +243,18 @@
   "orderEvent": [],
   "syncQueue": [],
   "auditLog": [],
-  "supportTicket": [],
+  "supportTicket": [
+    {
+      "id": "ee9d1ffc-72a6-4330-b11f-fff46e8f95cc",
+      "tenantId": "default",
+      "createdAt": "2026-11-27T17:49:09.037Z",
+      "folio": "BETA-EGKW",
+      "customerEmail": "superadmin@bunnkker.local",
+      "customerName": "Dueño (Superadmin)",
+      "message": "[TIPO: FALLA-TECNICA] · Ruta: /dashboard · Rol: superadmin · Dispositivo: 390x844\n\nVerificación final modal feedback sin bloqueo",
+      "status": "Pendiente (IA)"
+    }
+  ],
   "purchase": [],
   "cashRegisterLog": [],
   "shrinkageLog": [],

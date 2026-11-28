@@ -12,7 +12,8 @@ import {
     Folder, FolderOpen, ChevronDown, ChevronUp, Shield, QrCode,
     Download, Upload, AlertTriangle, TrendingDown, History, Sparkles, Database, FileText,
     Mic, Printer, Trash2, FileSpreadsheet, Layers, CheckCircle2, Filter, Clock,
-    PauseCircle, Play, LockKeyhole, PackagePlus, RefreshCw, Film, Link2, Star
+    PauseCircle, Play, LockKeyhole, PackagePlus, RefreshCw, Film, Link2, Star,
+    Eye, EyeOff, Check
 } from 'lucide-react';
 import { exportToExcel } from '@/lib/excelExport';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -62,6 +63,14 @@ import {
     normalizeProductMediaList,
     type ProductMediaItem,
 } from '@/lib/productMedia';
+import ConfigHelpButton from '@/components/common/ConfigHelpButton';
+import HybridInferenceBadge from '@/components/ai/HybridInferenceBadge';
+import {
+    runHybridProductClassification,
+    type FirebaseAiEngineSource,
+} from '@/lib/firebaseAiLogic';
+import InventorySummaryCards from '@/components/inventory/InventorySummaryCards';
+import { calculateInventorySummary } from '@/lib/inventoryMetrics';
 
 export default function InventoryDashboard() {
     const { products, formatCurrency, orders, startLoading, completeLoading } = useCart();
@@ -75,6 +84,20 @@ export default function InventoryDashboard() {
     const [localProducts, setLocalProducts] = useState<Product[]>([]);
     const mutationInFlight = useRef(0);
 
+    // Control de visibilidad pública y selección múltiple tipo galería (SOLO SuperAdmin)
+    const isSuperAdmin = profile?.role === 'superadmin';
+    const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
+    const [visibilityPopoverId, setVisibilityPopoverId] = useState<string | null>(null);
+    const [visibilityBusyId, setVisibilityBusyId] = useState<string | null>(null);
+    const [bulkActionBusy, setBulkActionBusy] = useState(false);
+    const [bulkTrashConfirmOpen, setBulkTrashConfirmOpen] = useState(false);
+    const [classifyingHybrid, setClassifyingHybrid] = useState(false);
+    const [classificationSource, setClassificationSource] = useState<{
+        source: FirebaseAiEngineSource;
+        model: string;
+        latencyMs: number;
+    } | null>(null);
+
     // Picking / Deconstrucción IA para Almacén (Individual y Multipedido)
     const [pickingOrder, setPickingOrder] = useState<any | null>(null);
     const [multiPickingOrders, setMultiPickingOrders] = useState<any[] | null>(null);
@@ -83,6 +106,29 @@ export default function InventoryDashboard() {
     const [onlyMyOrders, setOnlyMyOrders] = useState(false);
     const [abandonTargetOrder, setAbandonTargetOrder] = useState<any | null>(null);
     const [busyOrderId, setBusyOrderId] = useState<string | null>(null);
+
+    const acquireMutationLock = () => {
+        mutationInFlight.current += 1;
+        if (typeof window !== 'undefined') {
+            const lock = (window as any).__bunkkerMutationLock as { current: number } | undefined;
+            if (lock) lock.current += 1;
+        }
+    };
+
+    const releaseMutationLock = () => {
+        mutationInFlight.current = Math.max(0, mutationInFlight.current - 1);
+        if (typeof window !== 'undefined') {
+            const lock = (window as any).__bunkkerMutationLock as { current: number } | undefined;
+            if (lock) lock.current = Math.max(0, lock.current - 1);
+        }
+    };
+
+    const syncCachedProducts = (nextProducts: Product[]) => {
+        try {
+            localStorage.setItem('_bunkker_cached_products', JSON.stringify(nextProducts));
+            localStorage.setItem('_bunkker_last_catalog_sync', new Date().toISOString());
+        } catch {}
+    };
 
     useEffect(() => {
         if (mutationInFlight.current > 0) return;
@@ -93,6 +139,25 @@ export default function InventoryDashboard() {
 
     // Tabs
     const [activeTab, setActiveTab] = useState<'catalog' | 'shelves' | 'transfer' | 'backup' | 'shrinkage' | 'trash' | 'orders' | 'thresholds' | 'restock'>('catalog');
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const query = new URLSearchParams(window.location.search).get('search');
+        if (query && query.trim()) {
+            setSearchTerm(query.trim());
+            setActiveTab('catalog');
+        }
+        const onSearchEvent = (event: Event) => {
+            const custom = event as CustomEvent<{ search?: string }>;
+            const nextQuery = custom.detail?.search?.trim();
+            if (nextQuery) {
+                setSearchTerm(nextQuery);
+                setActiveTab('catalog');
+            }
+        };
+        window.addEventListener('bunkker_inventory_search', onSearchEvent);
+        return () => window.removeEventListener('bunkker_inventory_search', onSearchEvent);
+    }, []);
 
     // Recarga Rápida de Stock Bajo + Auditoría
     const [restockTargetProduct, setRestockTargetProduct] = useState<Product | null>(null);
@@ -106,10 +171,15 @@ export default function InventoryDashboard() {
     const [isThresholdToastVisible, setIsThresholdToastVisible] = useState(true);
     const lastAlertedProductIdsRef = useRef<Set<string>>(new Set());
 
-    // Resumen reactivo de alertas de stock
+    // Resumen reactivo de alertas de stock y valuación de inventario
     const alertSummary: StockAlertSummary = useMemo(() => {
         return computeInventoryStockAlerts(localProducts, thresholdConfig);
     }, [localProducts, thresholdConfig]);
+
+    const inventorySummary = useMemo(() => {
+        const sourceProducts = localProducts.length > 0 || products.length === 0 ? localProducts : products;
+        return calculateInventorySummary(sourceProducts);
+    }, [localProducts, products]);
 
     // Disparo de notificación visual (toast), aviso flotante y alerta auditiva cuando cualquier producto cae debajo de su mínimo configurado
     useEffect(() => {
@@ -225,7 +295,7 @@ export default function InventoryDashboard() {
         dirtySlotUpdatesRef.current.clear();
         syncDirtyChunksState();
         setIsFlushingChunks(true);
-        mutationInFlight.current += 1;
+        acquireMutationLock();
 
         try {
             const batchUpdates = pendingEntries.map(({ id, estante, fila, orderIndex }) => ({
@@ -238,6 +308,7 @@ export default function InventoryDashboard() {
             const response = await fetch('/api/products', {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({ batchUpdates }),
             });
             const result = await response.json().catch(() => null);
@@ -259,7 +330,7 @@ export default function InventoryDashboard() {
             toast.error(error instanceof Error ? error.message : 'Error al sincronizar estantes de inventario.');
         } finally {
             setIsFlushingChunks(false);
-            mutationInFlight.current = Math.max(0, mutationInFlight.current - 1);
+            releaseMutationLock();
         }
     };
 
@@ -962,7 +1033,7 @@ export default function InventoryDashboard() {
         }
 
         setLoading(true);
-        mutationInFlight.current += 1;
+        acquireMutationLock();
         const productId = editingProductId || `PROD-${Date.now().toString().slice(-6)}`;
         
         const parsedMinStock = (formData as any).minStock !== '' && !isNaN(Number((formData as any).minStock))
@@ -1038,8 +1109,10 @@ export default function InventoryDashboard() {
                 orderIndex: result.data.orderIndex ?? newProduct.orderIndex
             };
             const store = useERPStore.getState();
-            store.setProducts([...store.products.filter(product => product.id !== productId), savedProduct]);
+            const nextProducts = [...store.products.filter(product => product.id !== productId), savedProduct];
+            store.setProducts(nextProducts);
             setLocalProducts(previous => [...previous.filter(product => product.id !== productId), savedProduct]);
+            syncCachedProducts(nextProducts);
             setSearchTerm('');
             setActiveTab('catalog');
 
@@ -1054,6 +1127,7 @@ export default function InventoryDashboard() {
                 metadata: { productId, action: editingProductId ? 'update_product' : 'create_product' }
             });
 
+            broadcastSync({ action: 'PRODUCT_SAVED', id: productId, scope: 'products', skipServerPost: true });
             // Disparar sincronización en tiempo real a otras pestañas/dispositivos
             if (typeof window !== 'undefined' && (window as any).__inventorySocket) {
                 (window as any).__inventorySocket.emit('sync_db_event', { action: 'PRODUCT_SAVED', id: productId });
@@ -1070,7 +1144,7 @@ export default function InventoryDashboard() {
             toast.error('Error al guardar el producto: ' + (error.message || 'Error desconocido'), 'Error');
         } finally {
             setLoading(false);
-            mutationInFlight.current = Math.max(0, mutationInFlight.current - 1);
+            releaseMutationLock();
         }
     };
 
@@ -1079,6 +1153,7 @@ export default function InventoryDashboard() {
             toast.warning('Operación no permitida en Modo Demostración.', '🔒 Demo');
             return;
         }
+        acquireMutationLock();
         try {
             const res = await fetch('/api/products', {
                 method: 'PATCH',
@@ -1087,6 +1162,7 @@ export default function InventoryDashboard() {
                     'x-user-role': profile?.role || 'superadmin',
                     'x-user-id': profile?.uid || 'local_owner'
                 },
+                credentials: 'include',
                 body: JSON.stringify({
                     id: productId,
                     minStock: newThreshold
@@ -1100,16 +1176,20 @@ export default function InventoryDashboard() {
             // Sincronizar estado local y store ERP
             setLocalProducts(prev => prev.map(p => p.id === productId ? { ...p, minStock: newThreshold } : p));
             const store = useERPStore.getState();
-            store.setProducts(store.products.map(p => p.id === productId ? { ...p, minStock: newThreshold } : p));
+            const nextProducts = store.products.map(p => p.id === productId ? { ...p, minStock: newThreshold } : p);
+            store.setProducts(nextProducts);
+            syncCachedProducts(nextProducts);
 
             toast.success(`Umbral mínimo actualizado a ${newThreshold} uds`);
-            broadcastSync({ action: 'PRODUCT_SAVED', id: productId });
+            broadcastSync({ action: 'PRODUCT_SAVED', id: productId, scope: 'products', skipServerPost: true });
             if (typeof window !== 'undefined' && (window as any).__inventorySocket) {
                 (window as any).__inventorySocket.emit('sync_db_event', { action: 'PRODUCT_SAVED', id: productId });
             }
         } catch (err: any) {
             console.error(err);
             toast.error(err.message || 'Error al actualizar umbral de producto');
+        } finally {
+            releaseMutationLock();
         }
     };
 
@@ -1160,75 +1240,82 @@ export default function InventoryDashboard() {
         const operatorName = profile?.displayName || profile?.uid || 'Operador Almacén';
         const effectiveMin = getProductEffectiveThreshold(product, thresholdConfig);
 
-        const res = await fetch('/api/products', {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-user-role': profile?.role || 'superadmin',
-                'x-user-id': profile?.uid || 'local_owner',
-            },
-            credentials: 'include',
-            body: JSON.stringify({
-                id: product.id,
-                stockIncrement: qtyToAdd,
-                confirmStockIncrement: confirmQtyToAdd,
-                unitType: product.unitType || 'PZA',
-                isBulk: Boolean(product.isBulk),
-                minStock: effectiveMin,
-                mode: 'quick_restock',
-                notes,
-                operatorName,
-            }),
-        });
-        const data = await res.json().catch(() => null);
-        if (!res.ok || !data?.success || !data?.data) {
-            throw new Error(data?.error || 'No se pudo aplicar la recarga de piezas.');
+        acquireMutationLock();
+        try {
+            const res = await fetch('/api/products', {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-user-role': profile?.role || 'superadmin',
+                    'x-user-id': profile?.uid || 'local_owner',
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                    id: product.id,
+                    stockIncrement: qtyToAdd,
+                    confirmStockIncrement: confirmQtyToAdd,
+                    unitType: product.unitType || 'PZA',
+                    isBulk: Boolean(product.isBulk),
+                    minStock: effectiveMin,
+                    mode: 'quick_restock',
+                    notes,
+                    operatorName,
+                }),
+            });
+            const data = await res.json().catch(() => null);
+            if (!res.ok || !data?.success || !data?.data) {
+                throw new Error(data?.error || 'No se pudo aplicar la recarga de piezas.');
+            }
+
+            const updatedProduct: Product = {
+                ...product,
+                ...data.data,
+                stock: Number(data.data.stock),
+                location: {
+                    estante: data.data.estante ?? product.location?.estante ?? '',
+                    fila: data.data.fila ?? product.location?.fila ?? '',
+                },
+            };
+
+            setLocalProducts((prev) => prev.map((p) => (p.id === product.id ? updatedProduct : p)));
+            const store = useERPStore.getState();
+            const nextProducts = store.products.map((p) => (p.id === product.id ? updatedProduct : p));
+            store.setProducts(nextProducts);
+            syncCachedProducts(nextProducts);
+
+            if (data.restockAudit) {
+                setRestockHistory((prev) => [data.restockAudit as RestockAuditEntry, ...prev.filter((x) => x.id !== data.restockAudit.id)]);
+            }
+
+            await logAudit({
+                type: 'STOCK_UPDATE',
+                userId: profile?.uid || 'SYSTEM',
+                userName: operatorName,
+                userRole: profile?.role || 'inventory',
+                description: `Recarga rápida de stock: ${product.name} (${previousStock} + ${qtyToAdd} = ${updatedProduct.stock} ${product.unitType || 'PZA'})${notes ? ` · Nota: ${notes}` : ''}`,
+                metadata: {
+                    productId: product.id,
+                    productName: product.name,
+                    previousStock,
+                    stockIncrement: qtyToAdd,
+                    newStock: updatedProduct.stock,
+                    doubleConfirmed: true,
+                    notes,
+                },
+            });
+
+            broadcastSync({ action: 'PRODUCT_UPDATED', id: product.id, scope: 'products', skipServerPost: true });
+            if (typeof window !== 'undefined' && (window as any).__inventorySocket) {
+                (window as any).__inventorySocket.emit('sync_db_event', { action: 'PRODUCT_SAVED', id: product.id });
+            }
+
+            toast.success(
+                `${product.name}: ${previousStock} + ${qtyToAdd} = ${updatedProduct.stock} ${product.unitType || 'PZA'}`,
+                '✅ Stock Recargado y Auditado'
+            );
+        } finally {
+            releaseMutationLock();
         }
-
-        const updatedProduct: Product = {
-            ...product,
-            ...data.data,
-            stock: Number(data.data.stock),
-            location: {
-                estante: data.data.estante ?? product.location?.estante ?? '',
-                fila: data.data.fila ?? product.location?.fila ?? '',
-            },
-        };
-
-        setLocalProducts((prev) => prev.map((p) => (p.id === product.id ? updatedProduct : p)));
-        const store = useERPStore.getState();
-        store.setProducts(store.products.map((p) => (p.id === product.id ? updatedProduct : p)));
-
-        if (data.restockAudit) {
-            setRestockHistory((prev) => [data.restockAudit as RestockAuditEntry, ...prev.filter((x) => x.id !== data.restockAudit.id)]);
-        }
-
-        await logAudit({
-            type: 'STOCK_UPDATE',
-            userId: profile?.uid || 'SYSTEM',
-            userName: operatorName,
-            userRole: profile?.role || 'inventory',
-            description: `Recarga rápida de stock: ${product.name} (${previousStock} + ${qtyToAdd} = ${updatedProduct.stock} ${product.unitType || 'PZA'})${notes ? ` · Nota: ${notes}` : ''}`,
-            metadata: {
-                productId: product.id,
-                productName: product.name,
-                previousStock,
-                stockIncrement: qtyToAdd,
-                newStock: updatedProduct.stock,
-                doubleConfirmed: true,
-                notes,
-            },
-        });
-
-        broadcastSync({ action: 'PRODUCT_SAVED', id: product.id });
-        if (typeof window !== 'undefined' && (window as any).__inventorySocket) {
-            (window as any).__inventorySocket.emit('sync_db_event', { action: 'PRODUCT_SAVED', id: product.id });
-        }
-
-        toast.success(
-            `${product.name}: ${previousStock} + ${qtyToAdd} = ${updatedProduct.stock} ${product.unitType || 'PZA'}`,
-            '✅ Stock Recargado y Auditado'
-        );
     };
 
     const handleDeleteProduct = async (productId: string, productName: string) => {
@@ -1314,6 +1401,159 @@ export default function InventoryDashboard() {
             toast.success(`Producto restaurado: ${restored.name}.`);
         } catch (error) {
             toast.error(error instanceof Error ? error.message : 'No se pudo restaurar el producto.');
+        }
+    };
+
+    const handleToggleProductVisibility = async (
+        productId: string,
+        patch: { hidePublicStock?: boolean; hideFromPublic?: boolean }
+    ) => {
+        if (!isSuperAdmin) {
+            toast.error('Solo el SuperAdmin puede modificar la visibilidad pública.');
+            return;
+        }
+        if (isReadOnly) {
+            toast.warning('Operación no permitida en Modo Demostración.', '🔒 Demo');
+            return;
+        }
+        setVisibilityBusyId(productId);
+        acquireMutationLock();
+        try {
+            const res = await fetch('/api/products', {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-user-role': profile?.role || 'superadmin',
+                    'x-user-id': profile?.uid || 'local_owner',
+                },
+                credentials: 'include',
+                body: JSON.stringify({ id: productId, ...patch }),
+            });
+            const data = await res.json().catch(() => null);
+            if (!res.ok || !data?.success) {
+                throw new Error(data?.error || 'No se pudo actualizar la visibilidad.');
+            }
+            const applyPatch = (p: Product): Product =>
+                p.id === productId
+                    ? {
+                          ...p,
+                          ...(typeof patch.hidePublicStock === 'boolean' ? { hidePublicStock: patch.hidePublicStock } : {}),
+                          ...(typeof patch.hideFromPublic === 'boolean' ? { hideFromPublic: patch.hideFromPublic } : {}),
+                      }
+                    : p;
+
+            setLocalProducts((prev) => prev.map(applyPatch));
+            const store = useERPStore.getState();
+            const nextProducts = store.products.map(applyPatch);
+            store.setProducts(nextProducts);
+            syncCachedProducts(nextProducts);
+            broadcastSync({ action: 'PRODUCT_UPDATED', id: productId, scope: 'products', skipServerPost: true });
+            toast.success('Visibilidad pública actualizada.');
+        } catch (err: any) {
+            toast.error(err?.message || 'Error cambiando visibilidad pública.');
+        } finally {
+            setVisibilityBusyId(null);
+            releaseMutationLock();
+        }
+    };
+
+    const handleBatchVisibility = async (patch: { hidePublicStock?: boolean; hideFromPublic?: boolean }) => {
+        if (!isSuperAdmin) return;
+        if (isReadOnly) {
+            toast.warning('Operación no permitida en Modo Demostración.', '🔒 Demo');
+            return;
+        }
+        const activeIds = selectedProductIds.filter((id) => localProducts.some((p) => p.id === id));
+        if (activeIds.length === 0) return;
+
+        setBulkActionBusy(true);
+        acquireMutationLock();
+        try {
+            const res = await fetch('/api/products', {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-user-role': profile?.role || 'superadmin',
+                    'x-user-id': profile?.uid || 'local_owner',
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                    batchVisibility: {
+                        ids: activeIds,
+                        ...patch,
+                    },
+                }),
+            });
+            const data = await res.json().catch(() => null);
+            if (!res.ok || !data?.success) {
+                throw new Error(data?.error || 'No se pudo actualizar el lote.');
+            }
+            const selectedSet = new Set(activeIds);
+            const applyBatch = (p: Product): Product =>
+                selectedSet.has(p.id)
+                    ? {
+                          ...p,
+                          ...(typeof patch.hidePublicStock === 'boolean' ? { hidePublicStock: patch.hidePublicStock } : {}),
+                          ...(typeof patch.hideFromPublic === 'boolean' ? { hideFromPublic: patch.hideFromPublic } : {}),
+                      }
+                    : p;
+
+            setLocalProducts((prev) => prev.map(applyBatch));
+            const store = useERPStore.getState();
+            const nextProducts = store.products.map(applyBatch);
+            store.setProducts(nextProducts);
+            syncCachedProducts(nextProducts);
+            broadcastSync({ action: 'PRODUCTS_VISIBILITY_UPDATED', scope: 'products', skipServerPost: true });
+            toast.success(`Visibilidad aplicada a ${activeIds.length} producto(s).`);
+        } catch (err: any) {
+            toast.error(err?.message || 'Error en configuración masiva.');
+        } finally {
+            setBulkActionBusy(false);
+            releaseMutationLock();
+        }
+    };
+
+    const handleBatchArchiveSelected = async () => {
+        if (!isSuperAdmin) return;
+        if (isReadOnly) {
+            toast.warning('Operación no permitida en Modo Demostración.', '🔒 Demo');
+            return;
+        }
+        const activeIds = selectedProductIds.filter((id) => localProducts.some((p) => p.id === id));
+        if (activeIds.length === 0) return;
+
+        setBulkActionBusy(true);
+        acquireMutationLock();
+        try {
+            const res = await fetch('/api/products', {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-user-role': profile?.role || 'superadmin',
+                    'x-user-id': profile?.uid || 'local_owner',
+                },
+                credentials: 'include',
+                body: JSON.stringify({ batchArchive: { ids: activeIds } }),
+            });
+            const data = await res.json().catch(() => null);
+            if (!res.ok || !data?.success) {
+                throw new Error(data?.error || 'No se pudieron mover a la papelera.');
+            }
+            const archivedSet = new Set(activeIds);
+            setLocalProducts((prev) => prev.filter((p) => !archivedSet.has(p.id)));
+            const store = useERPStore.getState();
+            const nextProducts = store.products.filter((p) => !archivedSet.has(p.id));
+            store.setProducts(nextProducts);
+            syncCachedProducts(nextProducts);
+            setSelectedProductIds([]);
+            setBulkTrashConfirmOpen(false);
+            broadcastSync({ action: 'PRODUCTS_BATCH_ARCHIVED', scope: 'products', skipServerPost: true });
+            toast.success(`${activeIds.length} producto(s) movidos a la papelera.`);
+        } catch (err: any) {
+            toast.error(err?.message || 'Error al mover lote a la papelera.');
+        } finally {
+            setBulkActionBusy(false);
+            releaseMutationLock();
         }
     };
 
@@ -1501,6 +1741,60 @@ export default function InventoryDashboard() {
         }
     };
 
+    const handleUpdateOrderStatus = async (orderId: string, nextStatus: string) => {
+        setBusyOrderId(orderId);
+        try {
+            const res = await fetch('/api/orders', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({
+                    id: orderId,
+                    action: 'update_order_status',
+                    status: nextStatus
+                })
+            });
+            const data = await res.json().catch(() => null);
+            if (!res.ok || !data?.success) {
+                throw new Error(data?.error || 'No se pudo actualizar el estado del pedido');
+            }
+            applyServerOrderUpdate(orderId, data.order);
+            broadcastSync({ action: 'ORDER_STATUS_UPDATED', id: orderId });
+            toast.success(`Pedido #${orderId.slice(-6).toUpperCase()} → ${nextStatus}`);
+        } catch (err: any) {
+            toast.error(err?.message || 'Error al actualizar estado');
+        } finally {
+            setBusyOrderId(null);
+        }
+    };
+
+    const handleReleaseOrderClaim = async (orderId: string) => {
+        setBusyOrderId(orderId);
+        try {
+            const res = await fetch('/api/orders', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({
+                    id: orderId,
+                    action: 'release_claim',
+                    slot: 'loading'
+                })
+            });
+            const data = await res.json().catch(() => null);
+            if (!res.ok || !data?.success) {
+                throw new Error(data?.error || 'No se pudo liberar el pedido');
+            }
+            applyServerOrderUpdate(orderId, data.order);
+            broadcastSync({ action: 'ORDER_CLAIM_RELEASED', id: orderId });
+            toast.info(`Pedido #${orderId.slice(-6).toUpperCase()} liberado en Pizarra.`);
+        } catch (err: any) {
+            toast.error(err?.message || 'Error al liberar pedido');
+        } finally {
+            setBusyOrderId(null);
+        }
+    };
+
     const handleAuthorizedAbandon = async (authResult: { pin: string; reason?: string; verifiedBy: { uid: string; name: string; role: string } }) => {
         if (!abandonTargetOrder) return;
         const target = abandonTargetOrder;
@@ -1659,7 +1953,50 @@ export default function InventoryDashboard() {
                                         <input type="text" disabled={profile?.role === 'inventory' && !!editingProductId} value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl font-medium text-white placeholder-slate-500 focus:border-[#0ea5e9] outline-none transition-all disabled:opacity-50" placeholder="Ej. Cemento Cruz Azul 50kg" />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Categoría</label>
+                                        <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Categoría</label>
+                                            <div className="flex items-center gap-2">
+                                                {classificationSource && (
+                                                    <HybridInferenceBadge
+                                                        source={classificationSource.source}
+                                                        model={classificationSource.model}
+                                                        latencyMs={classificationSource.latencyMs}
+                                                        compact
+                                                    />
+                                                )}
+                                                <button
+                                                    type="button"
+                                                    disabled={classifyingHybrid || !formData.name.trim()}
+                                                    onClick={async () => {
+                                                        if (!formData.name.trim()) return;
+                                                        setClassifyingHybrid(true);
+                                                        try {
+                                                            const res = await runHybridProductClassification(formData.name);
+                                                            setFormData((prev) => ({
+                                                                ...prev,
+                                                                category: res.category,
+                                                                description:
+                                                                    prev.description.trim()
+                                                                        ? prev.description
+                                                                        : `${res.subcategory} · Material: ${res.material} · Medida: ${res.measure}`,
+                                                            }));
+                                                            setClassificationSource({
+                                                                source: res.source,
+                                                                model: res.model,
+                                                                latencyMs: res.latencyMs,
+                                                            });
+                                                            toast.success(`Categoría sugerida: ${res.category}`);
+                                                        } finally {
+                                                            setClassifyingHybrid(false);
+                                                        }
+                                                    }}
+                                                    className="inline-flex items-center gap-1.5 rounded-lg border border-sky-500/40 bg-sky-950/40 px-2.5 py-1 text-[11px] font-semibold text-sky-300 hover:bg-sky-900/50 cursor-pointer disabled:opacity-50"
+                                                >
+                                                    {classifyingHybrid ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                                                    {classifyingHybrid ? 'Clasificando...' : 'Sugerir con IA Híbrida'}
+                                                </button>
+                                            </div>
+                                        </div>
                                         <input type="text" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} className="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl font-medium text-white placeholder-slate-500 focus:border-[#0ea5e9] outline-none transition-all" placeholder="Ej. Materiales de Construcción" />
                                     </div>
                                     <div>
@@ -2021,6 +2358,15 @@ export default function InventoryDashboard() {
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                         >
+                            {/* RESUMEN EJECUTIVO DE INVENTARIO */}
+                            <InventorySummaryCards
+                                summary={inventorySummary}
+                                totalAlerts={alertSummary.totalAlerts}
+                                criticalCount={alertSummary.criticalCount}
+                                lowStockCount={alertSummary.lowStockCount}
+                                formatCurrency={formatCurrency}
+                            />
+
                             {/* BANNER DE ALERTA DE STOCK CRÍTICO */}
                             {alertSummary.totalAlerts > 0 && (
                                 <div className="mb-4 bg-gradient-to-r from-rose-950/70 via-red-900/40 to-slate-900/90 border border-rose-500/50 rounded-2xl p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg shadow-rose-950/30">
@@ -2346,7 +2692,14 @@ export default function InventoryDashboard() {
                                                                 {order.customer?.name || order.customerName || 'Cliente Mostrador'}
                                                             </h4>
                                                             <p className="text-xs text-slate-400 mt-0.5">
-                                                                Destino: <span className="font-bold text-slate-300">{order.deliveryType === 'PATIO' ? 'Bahía de Carga / Patio' : 'Caja / Mostrador'}</span>
+                                                                Destino:{' '}
+                                                                <span className="font-bold text-slate-300">
+                                                                    {order.deliveryType === 'DELIVERY' || (order as any).deliveryMethod === 'repartidor'
+                                                                        ? '🛵 Reparto a Domicilio'
+                                                                        : order.deliveryType === 'PATIO' || (order as any).deliveryMethod === 'patio'
+                                                                            ? '🏗️ Bahía de Carga / Patio'
+                                                                            : '📦 Caja / Mostrador'}
+                                                                </span>
                                                             </p>
 
                                                             {/* Lista compacta de artículos con ubicación */}
@@ -2372,21 +2725,49 @@ export default function InventoryDashboard() {
                                                             {isClaimedByOther ? (
                                                                 <div className="space-y-2">
                                                                     <div className="text-center py-2 text-xs text-slate-400 font-bold bg-slate-800/40 rounded-xl">
-                                                                        🔒 Tomado por {order.loadedBy || 'otro operador'}{isOnHold ? ' (En Espera)' : ''}
+                                                                        🔒 Bloqueado por {order.loadedBy || 'otro operador'}{isOnHold ? ' (En Espera)' : ''}
                                                                     </div>
                                                                     {['admin', 'superadmin'].includes(profile?.role || '') && (
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={() => setAbandonTargetOrder(order)}
-                                                                            disabled={isBusy}
-                                                                            className="w-full min-h-[44px] py-2 bg-rose-950/50 hover:bg-rose-900/60 text-rose-200 border border-rose-500/40 font-black text-xs uppercase rounded-xl flex items-center justify-center gap-1.5 transition-all"
-                                                                        >
-                                                                            <LockKeyhole size={14} /> Liberar con NIP
-                                                                        </button>
+                                                                        <div className="grid grid-cols-2 gap-2">
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() => handleReleaseOrderClaim(order.id)}
+                                                                                disabled={isBusy}
+                                                                                className="min-h-[40px] py-2 bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 font-bold text-xs rounded-xl flex items-center justify-center gap-1 transition-all"
+                                                                            >
+                                                                                Soltar
+                                                                            </button>
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() => setAbandonTargetOrder(order)}
+                                                                                disabled={isBusy}
+                                                                                className="min-h-[40px] py-2 bg-rose-950/50 hover:bg-rose-900/60 text-rose-200 border border-rose-500/40 font-black text-xs uppercase rounded-xl flex items-center justify-center gap-1.5 transition-all"
+                                                                            >
+                                                                                <LockKeyhole size={14} /> NIP
+                                                                            </button>
+                                                                        </div>
                                                                     )}
                                                                 </div>
                                                             ) : isClaimedByMe ? (
                                                                 <div className="flex flex-col gap-2">
+                                                                    <div className="flex items-center justify-between gap-2 bg-slate-950/80 border border-sky-500/30 rounded-xl px-2.5 py-1.5">
+                                                                        <span className="text-[10px] font-black uppercase text-sky-300">
+                                                                            Estado:
+                                                                        </span>
+                                                                        <select
+                                                                            value={order.status}
+                                                                            disabled={isBusy}
+                                                                            onChange={(e) => handleUpdateOrderStatus(order.id, e.target.value)}
+                                                                            className="bg-slate-900 border border-slate-700 text-xs font-bold text-white rounded-lg px-2 py-1 outline-none"
+                                                                        >
+                                                                            <option value="PREPARANDO">PREPARANDO</option>
+                                                                            <option value="EN_ESPERA">EN_ESPERA</option>
+                                                                            <option value="PENDIENTE_LLEGADA">PENDIENTE_LLEGADA</option>
+                                                                            <option value={order.deliveryType === 'DELIVERY' ? 'READY_TO_SHIP' : 'READY_FOR_PICKUP'}>
+                                                                                {order.deliveryType === 'DELIVERY' ? 'LISTO P/ REPARTO (CAJA)' : 'LISTO P/ COBRO'}
+                                                                            </option>
+                                                                        </select>
+                                                                    </div>
                                                                     <button
                                                                         type="button"
                                                                         disabled={isBusy}
@@ -2396,24 +2777,33 @@ export default function InventoryDashboard() {
                                                                         {isOnHold ? <Play size={15} /> : <span>📦</span>}
                                                                         {isOnHold ? 'Retomar Surtido' : 'Continuar Surtido (1 a 1)'}
                                                                     </button>
-                                                                    <div className="grid grid-cols-2 gap-2">
+                                                                    <div className="grid grid-cols-3 gap-2">
                                                                         {!isOnHold && (
                                                                             <button
                                                                                 type="button"
                                                                                 disabled={isBusy}
                                                                                 onClick={() => handleHoldOrder(order)}
-                                                                                className="min-h-[44px] py-2 px-2 bg-amber-950/50 hover:bg-amber-900/60 text-amber-200 border border-amber-500/40 font-bold text-xs rounded-xl flex items-center justify-center gap-1 transition-all"
+                                                                                className="min-h-[40px] py-2 px-2 bg-amber-950/50 hover:bg-amber-900/60 text-amber-200 border border-amber-500/40 font-bold text-[11px] rounded-xl flex items-center justify-center gap-1 transition-all"
                                                                             >
-                                                                                <PauseCircle size={14} /> En Espera
+                                                                                <PauseCircle size={13} /> Espera
                                                                             </button>
                                                                         )}
                                                                         <button
                                                                             type="button"
                                                                             disabled={isBusy}
-                                                                            onClick={() => setAbandonTargetOrder(order)}
-                                                                            className={`${isOnHold ? 'col-span-2' : ''} min-h-[44px] py-2 px-2 bg-rose-950/50 hover:bg-rose-900/60 text-rose-200 border border-rose-500/40 font-bold text-xs rounded-xl flex items-center justify-center gap-1 transition-all`}
+                                                                            onClick={() => handleReleaseOrderClaim(order.id)}
+                                                                            className="min-h-[40px] py-2 px-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 font-bold text-[11px] rounded-xl flex items-center justify-center gap-1 transition-all"
+                                                                            title="Liberar orden a la pizarra sin penalización"
                                                                         >
-                                                                            <LockKeyhole size={14} /> Soltar (NIP)
+                                                                            Soltar
+                                                                        </button>
+                                                                        <button
+                                                                            type="button"
+                                                                            disabled={isBusy}
+                                                                            onClick={() => setAbandonTargetOrder(order)}
+                                                                            className={`${isOnHold ? 'col-span-2' : ''} min-h-[40px] py-2 px-2 bg-rose-950/50 hover:bg-rose-900/60 text-rose-200 border border-rose-500/40 font-bold text-[11px] rounded-xl flex items-center justify-center gap-1 transition-all`}
+                                                                        >
+                                                                            <LockKeyhole size={13} /> NIP
                                                                         </button>
                                                                     </div>
                                                                 </div>
@@ -2718,9 +3108,62 @@ export default function InventoryDashboard() {
                                         </div>
                                     </div>
                                     <div className="overflow-x-auto">
+                                        {isSuperAdmin && (
+                                            <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2 border-b border-slate-800/80 bg-slate-950/50 text-[11px] text-slate-400">
+                                                <div className="flex items-center gap-2">
+                                                    <span>Control de visibilidad pública (SuperAdmin)</span>
+                                                    <ConfigHelpButton settingKey="hidePublicStock" align="left" />
+                                                </div>
+                                                {selectedProductIds.filter((id) => localProducts.some((p) => p.id === id)).length > 0 && (
+                                                    <div className="flex items-center gap-2 text-cyan-300 font-semibold">
+                                                        <span>
+                                                            {selectedProductIds.filter((id) => localProducts.some((p) => p.id === id)).length} seleccionado(s)
+                                                        </span>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setSelectedProductIds([]);
+                                                                setBulkTrashConfirmOpen(false);
+                                                            }}
+                                                            className="text-slate-400 hover:text-white underline cursor-pointer"
+                                                        >
+                                                            Limpiar selección
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
                                         <table className="w-full min-w-[760px] text-left text-sm">
                                             <thead className="bg-slate-800/80 text-[10px] uppercase tracking-wider text-slate-400">
                                                 <tr>
+                                                    {isSuperAdmin && (
+                                                        <th className="px-3 py-2.5 w-10 text-center">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={
+                                                                    filteredProducts.length > 0 &&
+                                                                    filteredProducts.every((p) => selectedProductIds.includes(p.id))
+                                                                }
+                                                                onChange={(e) => {
+                                                                    if (e.target.checked) {
+                                                                        const nextIds = Array.from(
+                                                                            new Set([
+                                                                                ...selectedProductIds,
+                                                                                ...filteredProducts.map((p) => p.id),
+                                                                            ])
+                                                                        );
+                                                                        setSelectedProductIds(nextIds);
+                                                                    } else {
+                                                                        const filteredSet = new Set(filteredProducts.map((p) => p.id));
+                                                                        setSelectedProductIds((prev) => prev.filter((id) => !filteredSet.has(id)));
+                                                                    }
+                                                                }}
+                                                                aria-label="Seleccionar todos los productos visibles"
+                                                                title="Seleccionar todos"
+                                                                className="w-4 h-4 accent-cyan-400 cursor-pointer rounded"
+                                                            />
+                                                        </th>
+                                                    )}
                                                     <th className="px-4 py-2.5 w-14 text-center">Foto</th>
                                                     <th className="px-4 py-2.5">Producto</th>
                                                     <th className="px-4 py-2.5">Barras / Código</th>
@@ -2731,8 +3174,39 @@ export default function InventoryDashboard() {
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-slate-800">
-                                                {filteredProducts.map(product => (
-                                                    <tr key={product.id} className="hover:bg-slate-800/40 transition-colors">
+                                                {filteredProducts.map(product => {
+                                                    const isSelected = isSuperAdmin && selectedProductIds.includes(product.id);
+                                                    const isVisibilityMenuOpen = isSuperAdmin && visibilityPopoverId === product.id;
+                                                    const hasAnyVisibilityRestriction = Boolean(
+                                                        product.hideFromPublic || product.hidePublicStock
+                                                    );
+                                                    return (
+                                                    <tr
+                                                        key={product.id}
+                                                        className={`transition-colors ${
+                                                            isSelected
+                                                                ? 'bg-cyan-500/10 hover:bg-cyan-500/15'
+                                                                : 'hover:bg-slate-800/40'
+                                                        }`}
+                                                    >
+                                                        {isSuperAdmin && (
+                                                            <td className="px-3 py-2.5 text-center">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={isSelected}
+                                                                    onChange={() => {
+                                                                        setSelectedProductIds((prev) =>
+                                                                            prev.includes(product.id)
+                                                                                ? prev.filter((id) => id !== product.id)
+                                                                                : [...prev, product.id]
+                                                                        );
+                                                                    }}
+                                                                    aria-label={`Seleccionar ${product.name}`}
+                                                                    className="w-4 h-4 accent-cyan-400 cursor-pointer rounded"
+                                                                />
+                                                            </td>
+                                                        )}
+
                                                         {/* Columna Foto */}
                                                         <td className="px-4 py-2.5 text-center">
                                                             <div className="w-11 h-11 rounded-lg bg-zinc-800 border border-white/10 overflow-hidden flex items-center justify-center mx-auto shrink-0 shadow-sm">
@@ -2749,7 +3223,15 @@ export default function InventoryDashboard() {
                                                             <button type="button" onClick={() => handleEditProduct(product)} className="text-left font-bold text-white hover:text-cyan-300 text-xs sm:text-sm">
                                                                 {product.name}
                                                             </button>
-                                                            <div className="text-[11px] text-slate-400">{product.category || 'General'}</div>
+                                                            <div className="text-[11px] text-slate-400 flex items-center gap-1.5 flex-wrap">
+                                                                <span>{product.category || 'General'}</span>
+                                                                {isSuperAdmin && product.hideFromPublic && (
+                                                                    <span className="text-rose-300 font-medium">· Oculto al público</span>
+                                                                )}
+                                                                {isSuperAdmin && !product.hideFromPublic && product.hidePublicStock && (
+                                                                    <span className="text-amber-300 font-medium">· Piezas ocultas</span>
+                                                                )}
+                                                            </div>
                                                         </td>
 
                                                         {/* Columna Barras */}
@@ -2768,18 +3250,129 @@ export default function InventoryDashboard() {
                                                         </td>
 
                                                         {/* Columna Existencia */}
-                                                        <td className="px-4 py-2.5 text-right font-bold text-cyan-300 font-mono text-xs sm:text-sm">
+                                                        <td className="px-4 py-2.5 text-right font-bold text-cyan-300 font-mono text-xs sm:text-sm tabular-nums">
                                                             {product.stock} {product.unitType || 'PZA'}
                                                         </td>
 
                                                         {/* Columna Precio */}
-                                                        <td className="px-4 py-2.5 text-right text-slate-200 font-semibold font-mono text-xs sm:text-sm">
+                                                        <td className="px-4 py-2.5 text-right text-slate-200 font-semibold font-mono text-xs sm:text-sm tabular-nums">
                                                             {formatCurrency(product.price)}
                                                         </td>
 
                                                         {/* Columna Acción */}
-                                                        <td className="px-4 py-2.5 text-right">
+                                                        <td className="px-4 py-2.5 text-right relative">
                                                             <div className="flex items-center justify-end gap-1">
+                                                                {isSuperAdmin && (
+                                                                    <div className="relative">
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() =>
+                                                                                setVisibilityPopoverId((prev) =>
+                                                                                    prev === product.id ? null : product.id
+                                                                                )
+                                                                            }
+                                                                            disabled={visibilityBusyId === product.id}
+                                                                            aria-expanded={isVisibilityMenuOpen}
+                                                                            aria-label={`Visibilidad pública de ${product.name}`}
+                                                                            title={
+                                                                                product.hideFromPublic
+                                                                                    ? 'Oculto totalmente al público'
+                                                                                    : product.hidePublicStock
+                                                                                      ? 'Piezas ocultas (solo precio público)'
+                                                                                      : 'Visible al público (clic para configurar)'
+                                                                            }
+                                                                            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                                                                                product.hideFromPublic
+                                                                                    ? 'bg-rose-500/20 text-rose-300 hover:bg-rose-500/30'
+                                                                                    : product.hidePublicStock
+                                                                                      ? 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30'
+                                                                                      : 'text-slate-400 hover:bg-cyan-500/10 hover:text-cyan-300'
+                                                                            }`}
+                                                                        >
+                                                                            {hasAnyVisibilityRestriction ? <EyeOff size={15} /> : <Eye size={15} />}
+                                                                        </button>
+
+                                                                        {isVisibilityMenuOpen && (
+                                                                            <div
+                                                                                role="dialog"
+                                                                                aria-label={`Opciones de visibilidad para ${product.name}`}
+                                                                                className="absolute right-0 top-full mt-1.5 z-[600] w-64 rounded-xl border border-slate-700 bg-slate-950 p-3 text-left shadow-2xl space-y-2"
+                                                                            >
+                                                                                <div className="flex items-center justify-between gap-2 pb-1.5 border-b border-slate-800">
+                                                                                    <span className="text-[11px] font-bold text-slate-200 truncate">
+                                                                                        Visibilidad Pública
+                                                                                    </span>
+                                                                                    <button
+                                                                                        type="button"
+                                                                                        onClick={() => setVisibilityPopoverId(null)}
+                                                                                        className="text-slate-400 hover:text-white p-0.5 cursor-pointer"
+                                                                                        aria-label="Cerrar menú"
+                                                                                    >
+                                                                                        <X size={13} />
+                                                                                    </button>
+                                                                                </div>
+
+                                                                                <button
+                                                                                    type="button"
+                                                                                    disabled={visibilityBusyId === product.id}
+                                                                                    onClick={() =>
+                                                                                        void handleToggleProductVisibility(product.id, {
+                                                                                            hidePublicStock: !product.hidePublicStock,
+                                                                                        })
+                                                                                    }
+                                                                                    className="w-full flex items-start justify-between gap-2 rounded-lg border border-slate-800 bg-slate-900/80 p-2 text-left hover:border-amber-500/50 transition-colors cursor-pointer"
+                                                                                >
+                                                                                    <div className="min-w-0">
+                                                                                        <span className="text-[11px] font-semibold text-slate-100 block">
+                                                                                            Ocultar número de piezas
+                                                                                        </span>
+                                                                                        <span className="text-[10px] text-slate-400 block">
+                                                                                            Al público solo muestra precio y &ldquo;Disponible&rdquo;.
+                                                                                        </span>
+                                                                                    </div>
+                                                                                    <span
+                                                                                        className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
+                                                                                            product.hidePublicStock
+                                                                                                ? 'bg-amber-400 border-amber-400 text-slate-950'
+                                                                                                : 'border-slate-600'
+                                                                                        }`}
+                                                                                    >
+                                                                                        {product.hidePublicStock && <Check size={11} strokeWidth={3} />}
+                                                                                    </span>
+                                                                                </button>
+
+                                                                                <button
+                                                                                    type="button"
+                                                                                    disabled={visibilityBusyId === product.id}
+                                                                                    onClick={() =>
+                                                                                        void handleToggleProductVisibility(product.id, {
+                                                                                            hideFromPublic: !product.hideFromPublic,
+                                                                                        })
+                                                                                    }
+                                                                                    className="w-full flex items-start justify-between gap-2 rounded-lg border border-slate-800 bg-slate-900/80 p-2 text-left hover:border-rose-500/50 transition-colors cursor-pointer"
+                                                                                >
+                                                                                    <div className="min-w-0">
+                                                                                        <span className="text-[11px] font-semibold text-slate-100 block">
+                                                                                            Ocultar tarjeta completa
+                                                                                        </span>
+                                                                                        <span className="text-[10px] text-slate-400 block">
+                                                                                            No aparece en tienda pública; sigue en POS/Almacén.
+                                                                                        </span>
+                                                                                    </div>
+                                                                                    <span
+                                                                                        className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
+                                                                                            product.hideFromPublic
+                                                                                                ? 'bg-rose-500 border-rose-500 text-white'
+                                                                                                : 'border-slate-600'
+                                                                                        }`}
+                                                                                    >
+                                                                                        {product.hideFromPublic && <Check size={11} strokeWidth={3} />}
+                                                                                    </span>
+                                                                                </button>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                )}
                                                                 <button
                                                                     type="button"
                                                                     onClick={() => setRestockTargetProduct(product)}
@@ -2802,10 +3395,11 @@ export default function InventoryDashboard() {
                                                             </div>
                                                         </td>
                                                     </tr>
-                                                ))}
+                                                    );
+                                                })}
                                                 {filteredProducts.length === 0 && (
                                                     <tr>
-                                                        <td colSpan={7} className="px-5 py-12 text-center text-xs text-slate-500">
+                                                        <td colSpan={isSuperAdmin ? 8 : 7} className="px-5 py-12 text-center text-xs text-slate-500">
                                                             {localProducts.length === 0 ? 'Todavía no hay productos. Registra el primero desde Estantes.' : 'No hay coincidencias para esa búsqueda.'}
                                                         </td>
                                                     </tr>
@@ -3782,6 +4376,100 @@ export default function InventoryDashboard() {
                 requireReason={true}
                 onAuthorized={handleAuthorizedAbandon}
             />
+
+            {/* BARRA FLOTANTE DE CONFIGURACIÓN MASIVA TIPO GALERÍA (SOLO SUPERADMIN) */}
+            {isSuperAdmin &&
+                activeTab === 'catalog' &&
+                selectedProductIds.filter((id) => localProducts.some((p) => p.id === id)).length > 0 && (
+                    <div
+                        role="region"
+                        aria-label="Acciones masivas sobre productos seleccionados"
+                        className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[950] w-[calc(100%-1.5rem)] max-w-4xl rounded-2xl border border-cyan-500/40 bg-slate-950/95 px-4 py-3 shadow-2xl backdrop-blur-xl"
+                    >
+                        {bulkTrashConfirmOpen ? (
+                            <div className="flex flex-wrap items-center justify-between gap-3">
+                                <span className="text-xs font-semibold text-rose-200">
+                                    ¿Mover {selectedProductIds.filter((id) => localProducts.some((p) => p.id === id)).length} producto(s) seleccionado(s) a la papelera? Podrás restaurarlos después.
+                                </span>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        type="button"
+                                        disabled={bulkActionBusy}
+                                        onClick={() => setBulkTrashConfirmOpen(false)}
+                                        className="min-h-[36px] px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-900 text-xs font-semibold text-slate-200 hover:bg-slate-800 cursor-pointer"
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button
+                                        type="button"
+                                        disabled={bulkActionBusy}
+                                        onClick={() => void handleBatchArchiveSelected()}
+                                        className="min-h-[36px] px-3.5 py-1.5 rounded-lg bg-rose-500 text-xs font-bold text-white hover:bg-rose-400 cursor-pointer disabled:opacity-60"
+                                    >
+                                        {bulkActionBusy ? 'Moviendo...' : 'Confirmar Papelera'}
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="flex flex-wrap items-center justify-between gap-2.5">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs font-bold text-cyan-300 tabular-nums">
+                                        {selectedProductIds.filter((id) => localProducts.some((p) => p.id === id)).length} seleccionados
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={() => setSelectedProductIds([])}
+                                        className="text-xs text-slate-400 hover:text-white underline cursor-pointer"
+                                    >
+                                        Limpiar
+                                    </button>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-1.5">
+                                    <button
+                                        type="button"
+                                        disabled={bulkActionBusy}
+                                        onClick={() => void handleBatchVisibility({ hidePublicStock: true })}
+                                        className="min-h-[36px] px-2.5 py-1.5 rounded-lg border border-amber-500/40 bg-amber-500/15 text-[11px] font-semibold text-amber-200 hover:bg-amber-500/25 cursor-pointer disabled:opacity-50"
+                                    >
+                                        Ocultar piezas
+                                    </button>
+                                    <button
+                                        type="button"
+                                        disabled={bulkActionBusy}
+                                        onClick={() => void handleBatchVisibility({ hidePublicStock: false })}
+                                        className="min-h-[36px] px-2.5 py-1.5 rounded-lg border border-slate-700 bg-slate-900 text-[11px] font-semibold text-slate-200 hover:bg-slate-800 cursor-pointer disabled:opacity-50"
+                                    >
+                                        Mostrar piezas
+                                    </button>
+                                    <button
+                                        type="button"
+                                        disabled={bulkActionBusy}
+                                        onClick={() => void handleBatchVisibility({ hideFromPublic: true })}
+                                        className="min-h-[36px] px-2.5 py-1.5 rounded-lg border border-rose-500/40 bg-rose-500/15 text-[11px] font-semibold text-rose-200 hover:bg-rose-500/25 cursor-pointer disabled:opacity-50"
+                                    >
+                                        Ocultar tarjetas
+                                    </button>
+                                    <button
+                                        type="button"
+                                        disabled={bulkActionBusy}
+                                        onClick={() => void handleBatchVisibility({ hideFromPublic: false })}
+                                        className="min-h-[36px] px-2.5 py-1.5 rounded-lg border border-emerald-500/40 bg-emerald-500/15 text-[11px] font-semibold text-emerald-200 hover:bg-emerald-500/25 cursor-pointer disabled:opacity-50"
+                                    >
+                                        Hacer públicos
+                                    </button>
+                                    <button
+                                        type="button"
+                                        disabled={bulkActionBusy}
+                                        onClick={() => setBulkTrashConfirmOpen(true)}
+                                        className="min-h-[36px] px-2.5 py-1.5 rounded-lg border border-rose-500/50 bg-rose-600/20 text-[11px] font-semibold text-rose-200 hover:bg-rose-600/35 flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                                    >
+                                        <Trash2 size={13} /> Papelera
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
         </div>
     );
 }

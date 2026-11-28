@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "965829469572",
+    "project_id": "bunkker-eaf97",
+    "storage_bucket": "bunkker-eaf97.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:965829469572:android:0c4d8f9501e9604af469d1",
+        "android_client_info": {
+          "package_name": "com.BunkkerERP"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDorV2wsTpveBjmQrjrBVsxO1_em7fdjHk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

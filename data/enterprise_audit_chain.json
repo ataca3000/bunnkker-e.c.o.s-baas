@@ -1,0 +1,830 @@
+[
+  {
+    "entryId": "aud_ae45d94a992041f7ae1e",
+    "sequence": 1,
+    "branchId": "default",
+    "actorId": "demo-superadmin",
+    "actorName": "Dueño (Superadmin)",
+    "actorRole": "superadmin",
+    "action": "SESSION_ISSUED_PIN",
+    "resourceRef": "jti_2cf6dca98f5b44a7a1590a8d082b9ffe",
+    "details": {
+      "deviceId": "DEV-4af36c6b-mwuc7egc",
+      "provider": "terminal_pin"
+    },
+    "payloadHash": "9ea72c12ea0a075f6713e937bde9fd17dcd031371ed1f96c49cfc6d85e16e19c",
+    "previousHash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "entryHash": "3741ccb00c50ec56f412b5d30beae309c780b189b308977d83761e0253006663",
+    "timestamp": "2026-11-24T06:52:17.971Z"
+  },
+  {
+    "entryId": "aud_0a8eb2fab46d42b4ad60",
+    "sequence": 2,
+    "branchId": "default",
+    "actorId": "demo-superadmin",
+    "actorName": "Dueño (Superadmin)",
+    "actorRole": "superadmin",
+    "action": "SESSION_ISSUED_PIN",
+    "resourceRef": "jti_f3192a9e8979439ba0d669d877423c4d",
+    "details": {
+      "deviceId": "pw-check-1",
+      "provider": "terminal_pin"
+    },
+    "payloadHash": "66ba0f5a9981c047ae3b9f3d1337b0c50a06b5a7b2be3bd341fab76b126f4de7",
+    "previousHash": "3741ccb00c50ec56f412b5d30beae309c780b189b308977d83761e0253006663",
+    "entryHash": "fb28265c42c78e9bde567ae170b31e9184d4175a9561386250932e5c7cc8bb62",
+    "timestamp": "2026-11-24T06:53:38.837Z"
+  },
+  {
+    "entryId": "aud_5341fb2105484e19815d",
+    "sequence": 3,
+    "branchId": "default",
+    "actorId": "demo-superadmin",
+    "actorName": "Dueño (Superadmin)",
+    "actorRole": "superadmin",
+    "action": "SESSION_ISSUED_PIN",
+    "resourceRef": "jti_e17cfb64e35145818e37f871761c15bf",
+    "details": {
+      "deviceId": "DEV-4af36c6b-mwuc9owz",
+      "provider": "terminal_pin"
+    },
+    "payloadHash": "6532aeacce8b9d3b58cc19a7b61ad1dad9ad7dd7e88fc5731c9683d8bd7dfcc3",
+    "previousHash": "fb28265c42c78e9bde567ae170b31e9184d4175a9561386250932e5c7cc8bb62",
+    "entryHash": "6901cc7d5ab50bcf2dabf1282e1fc0978dc2f982d1e5e460a9174bbdb025f40a",
+    "timestamp": "2026-11-24T06:54:21.174Z"
+  },
+  {
+    "entryId": "aud_2c5fce3c38d74e36b9eb",
+    "sequence": 4,
+    "branchId": "default",
+    "actorId": "demo-superadmin",
+    "actorName": "Dueño (Superadmin)",
+    "actorRole": "superadmin",
+    "action": "SESSION_ISSUED_PIN",
+    "resourceRef": "jti_5c39a0444893476cba5680b5b29028f5",
+    "details": {
+      "deviceId": "DEV-4af36c6b-mwuw3e3e",
+      "provider": "terminal_pin"
+    },
+    "payloadHash": "45dcc2311f7cbf744a9102b7c69ca491f7d55210dbaf27a6313445a9e2c7bc0e",
+    "previousHash": "6901cc7d5ab50bcf2dabf1282e1fc0978dc2f982d1e5e460a9174bbdb025f40a",
+    "entryHash": "b7c539f0623d61152f3c2134480ce72149dc61ab580a405c91434ca6e2964c20",
+    "timestamp": "2026-11-24T16:09:13.781Z"
+  },
+  {
+    "entryId": "aud_ad2407efebd04e028e29",
+    "sequence": 5,
+    "branchId": "default",
+    "actorId": "demo-superadmin",
+    "actorName": "Dueño (Superadmin)",
+    "actorRole": "superadmin",
+    "action": "SESSION_ISSUED_PIN",
+    "resourceRef": "jti_3a20e278e2c640f9b525f7f73c198992",
+    "details": {
+      "deviceId": "DEV-4af36c6b-mwv74u13",
+      "provider": "terminal_pin"
+    },
+    "payloadHash": "b59c5524f4eb1382f68ed610af02fdd04359978342e50e3a304581ac6572ed51",
+    "previousHash": "b7c539f0623d61152f3c2134480ce72149dc61ab580a405c91434ca6e2964c20",
+    "entryHash": "d11703433bab29a847a41a2cbf20b67319e86e455856755d0b90af9be5fce742",
+    "timestamp": "2026-11-24T21:18:33.758Z"
+  },
+  {
+    "entryId": "aud_4b36fcd0e4e542c28e7e",
+    "sequence": 6,
+    "branchId": "default",
+    "actorId": "demo-superadmin",
+    "actorName": "Dueño (Superadmin)",
+    "actorRole": "superadmin",
+    "action": "SESSION_ISSUED_PIN",
+    "resourceRef": "jti_c9224be2732e421fb867bb299c143a05",
+    "details": {
+      "deviceId": "DEV-4af36c6b-mwv74u13",
+      "provider": "terminal_pin"
+    },
+    "payloadHash": "7d40e339173cd6014eab90daab439fbf819cffaa2d876c153b1ea4e4c676a2cc",
+    "previousHash": "d11703433bab29a847a41a2cbf20b67319e86e455856755d0b90af9be5fce742",
+    "entryHash": "c58ccea275df2a0d3157f59c70db773041fd84b76fd8137cf6d9732679d4cff8",
+    "timestamp": "2026-11-24T21:21:15.920Z"
+  },
+  {
+    "entryId": "aud_4162763c39ad432388ea",
+    "sequence": 7,
+    "branchId": "default",
+    "actorId": "demo-superadmin",
+    "actorName": "Dueño (Superadmin)",
+    "actorRole": "superadmin",
+    "action": "SESSION_ISSUED_PIN",
+    "resourceRef": "jti_7e75d88c84dd4786b21af7074357efed",
+    "details": {
+      "deviceId": "DEV-4af36c6b-mwylkgr7",
+      "provider": "terminal_pin"
+    },
+    "payloadHash": "1512875db8e617802c2661048432f783cd98a16bcb6598af8cdfc9dacbc1cb06",
+    "previousHash": "c58ccea275df2a0d3157f59c70db773041fd84b76fd8137cf6d9732679d4cff8",
+    "entryHash": "73465f78550a61c545a81efa86e86104657a353068965bad8da30f90233a9b8d",
+    "timestamp": "2026-11-27T06:26:15.113Z"
+  },
+  {
+    "entryId": "aud_852b4d33d44b4e9f8ebd",
+    "sequence": 8,
+    "branchId": "default",
+    "actorId": "demo-superadmin",
+    "actorName": "Dueño (Superadmin)",
+    "actorRole": "superadmin",
+    "action": "SESSION_ISSUED_PIN",
+    "resourceRef": "jti_b058d4d078a74d70beddd363488f1d97",
+    "details": {
+      "deviceId": "DEV-4af36c6b-mwylnr4y",
+      "provider": "terminal_pin"
+    },
+    "payloadHash": "46f312ef2d7ac2b6a45ebc759ac2bfe8873ba65c7cad8a01c52ff166bdcbeabb",
+    "previousHash": "73465f78550a61c545a81efa86e86104657a353068965bad8da30f90233a9b8d",
+    "entryHash": "b01878526553a50d99670d7d7b10f8a0602375b4749b71de260303d9d8c33ded",
+    "timestamp": "2026-11-27T06:27:59.926Z"
+  },
+  {
+    "entryId": "aud_9202d5c5a3f647b1a822",
+    "sequence": 9,
+    "branchId": "default",
+    "actorId": "demo-superadmin",
+    "actorName": "Dueño (Superadmin)",
+    "actorRole": "superadmin",
+    "action": "SESSION_ISSUED_PIN",
+    "resourceRef": "jti_848959d5d63f48efa8b3de19d61055a6",
+    "details": {
+      "deviceId": "diag-test",
+      "provider": "terminal_pin"
+    },
+    "payloadHash": "c54e01822a39e10d3002c1861ab198b0fc504ba7b15f3a7390249b99b58f065d",
+    "previousHash": "b01878526553a50d99670d7d7b10f8a0602375b4749b71de260303d9d8c33ded",
+    "entryHash": "69aca8ce45816ac15a7fcbd8e1c74ef00c79a5753cc4c567cbaa82896039b8a1",
+    "timestamp": "2026-11-27T06:29:52.402Z"
+  },
+  {
+    "entryId": "aud_381db8d8b5244602b66d",
+    "sequence": 10,
+    "branchId": "default",
+    "actorId": "demo-superadmin",
+    "actorName": "Dueño (Superadmin)",
+    "actorRole": "superadmin",
+    "action": "SESSION_ISSUED_PIN",
+    "resourceRef": "jti_2dd2820f675446939faa58be1ba4eef8",
+    "details": {
+      "deviceId": "DEV-4af36c6b-mwylqn4o",
+      "provider": "terminal_pin"
+    },
+    "payloadHash": "71adf5c57349e2239c961d3c19834962d5a42d8640c8545641c2ca4d24dc9181",
+    "previousHash": "69aca8ce45816ac15a7fcbd8e1c74ef00c79a5753cc4c567cbaa82896039b8a1",
+    "entryHash": "c33e615afddc09e0b7ebaadfd1dd4b776f18bbe18bfff0e5e46b45379d429d1b",
+    "timestamp": "2026-11-27T06:30:13.684Z"
+  },
+  {
+    "entryId": "aud_f1140b51e614402dab48",
+    "sequence": 11,
+    "branchId": "default",
+    "actorId": "demo-superadmin",
+    "actorName": "Dueño (Superadmin)",
+    "actorRole": "superadmin",
+    "action": "SESSION_ISSUED_PIN",
+    "resourceRef": "jti_a3fb412c40df4535871b72786afa5bd5",
+    "details": {
+      "deviceId": "DEV-4af36c6b-mwylrkzv",
+      "provider": "terminal_pin"
+    },
+    "payloadHash": "6c2e474e9a4a4009c205a839b479cc89bae414a7026236846e23e80621836d9e",
+    "previousHash": "c33e615afddc09e0b7ebaadfd1dd4b776f18bbe18bfff0e5e46b45379d429d1b",
+    "entryHash": "b72abf679d00623427126c6e5c59bf01996d87bc5dd3ce184baac0ca74f7e3e0",
+    "timestamp": "2026-11-27T06:30:57.635Z"
+  },
+  {
+    "entryId": "aud_f18a3a2c200142e98a3b",
+    "sequence": 12,
+    "branchId": "default",
+    "actorId": "demo-superadmin",
+    "actorName": "Dueño (Superadmin)",
+    "actorRole": "superadmin",
+    "action": "SESSION_ISSUED_PIN",
+    "resourceRef": "jti_794a6d51ab0f4a3683ceed99135e50b2",
+    "details": {
+      "deviceId": "DEV-4af36c6b-mwylszho",
+      "provider": "terminal_pin"
+    },
+    "payloadHash": "f52fb43de728654c9f33dcdf3f55ddf040fc8452de569546f8b82a0e3d93711d",
+    "previousHash": "b72abf679d00623427126c6e5c59bf01996d87bc5dd3ce184baac0ca74f7e3e0",
+    "entryHash": "e8c1e2d44a1eb2e5861eaea6a18a72a156b11c5f5185508960dda11366ae3b98",
+    "timestamp": "2026-11-27T06:32:01.195Z"
+  },
+  {
+    "entryId": "aud_39493fd3448a41729e24",
+    "sequence": 13,
+    "branchId": "default",
+    "actorId": "demo-superadmin",
+    "actorName": "Dueño (Superadmin)",
+    "actorRole": "superadmin",
+    "action": "SESSION_ISSUED_PIN",
+    "resourceRef": "jti_c4bca1c9f807422394ed7b07d3dabdc6",
+    "details": {
+      "deviceId": "DEV-4af36c6b-mwylu0f2",
+      "provider": "terminal_pin"
+    },
+    "payloadHash": "9c7340688d6570286e7385941a8efced18e9efb087607a1434c0f212bf7e1a28",
+    "previousHash": "e8c1e2d44a1eb2e5861eaea6a18a72a156b11c5f5185508960dda11366ae3b98",
+    "entryHash": "eb7266ad212fa55049428fb4ae3dd74b262671df299c1fb01d365e2e573e014f",
+    "timestamp": "2026-11-27T06:32:49.996Z"
+  },
+  {
+    "entryId": "aud_7541ceaf29064f8eb8fe",
+    "sequence": 14,
+    "branchId": "default",
+    "actorId": "demo-superadmin",
+    "actorName": "Dueño (Superadmin)",
+    "actorRole": "superadmin",
+    "action": "SESSION_ISSUED_PIN",
+    "resourceRef": "jti_0032df24d94249ff976fe9835706b6de",
+    "details": {
+      "deviceId": "DEV-4af36c6b-mwylvlgr",
+      "provider": "terminal_pin"
+    },
+    "payloadHash": "1a7731273434d7deccb50577fa4255d43b62b17e76adc690789c7f462268e666",
+    "previousHash": "eb7266ad212fa55049428fb4ae3dd74b262671df299c1fb01d365e2e573e014f",
+    "entryHash": "089899cf5aeb3f435e5d0244bdec9c91e348ae6d8421167df7f233029ae1ebe4",
+    "timestamp": "2026-11-27T06:34:04.529Z"
+  },
+  {
+    "entryId": "aud_1439ca98a7a445e79983",
+    "sequence": 15,
+    "branchId": "default",
+    "actorId": "demo-superadmin",
+    "actorName": "Dueño (Superadmin)",
+    "actorRole": "superadmin",
+    "action": "SESSION_ISSUED_PIN",
+    "resourceRef": "jti_0c9b74baebd64f1ba4c4691532203976",
+    "details": {
+      "deviceId": "DEV-4af36c6b-mwylwm1p",
+      "provider": "terminal_pin"
+    },
+    "payloadHash": "b0e1b636b5322b81df947db7287b12a642cf2f257fa552b06005693a6005db37",
+    "previousHash": "089899cf5aeb3f435e5d0244bdec9c91e348ae6d8421167df7f233029ae1ebe4",
+    "entryHash": "2cc2799cbec4bd75ce36c163e422aa81e1db9a9e813c33d8c7edd0f536bf6730",
+    "timestamp": "2026-11-27T06:34:50.561Z"
+  },
+  {
+    "entryId": "aud_a6a29ec366fb47688c46",
+    "sequence": 16,
+    "branchId": "default",
+    "actorId": "demo-superadmin",
+    "actorName": "Dueño (Superadmin)",
+    "actorRole": "superadmin",
+    "action": "SESSION_ISSUED_PIN",
+    "resourceRef": "jti_a1381bf2e72d4136b233eb8b0dd13622",
+    "details": {
+      "deviceId": "DEV-4af36c6b-mwylxiom",
+      "provider": "terminal_pin"
+    },
+    "payloadHash": "3433652e6718d5ad145ca4adc8b9a8a991b7dcbea84863e031d275f6f7cfcf6b",
+    "previousHash": "2cc2799cbec4bd75ce36c163e422aa81e1db9a9e813c33d8c7edd0f536bf6730",
+    "entryHash": "a820c262c0fef974dbb570e721e2387a8d6cea2f9f614cb32c8570d0a6b375ca",
+    "timestamp": "2026-11-27T06:35:32.555Z"
+  },
+  {
+    "entryId": "aud_93030aae0f09414e9a02",
+    "sequence": 17,
+    "branchId": "default",
+    "actorId": "demo-superadmin",
+    "actorName": "Dueño (Superadmin)",
+    "actorRole": "superadmin",
+    "action": "SESSION_ISSUED_PIN",
+    "resourceRef": "jti_438e1225edbc46c99bda211d427830f5",
+    "details": {
+      "deviceId": "DEV-4af36c6b-mwz7odjr",
+      "provider": "terminal_pin"
+    },
+    "payloadHash": "98800066d88867433519927e1b9bdadb08003c48194e582a58c5d1b358ae4fef",
+    "previousHash": "a820c262c0fef974dbb570e721e2387a8d6cea2f9f614cb32c8570d0a6b375ca",
+    "entryHash": "65b93f237d185e094e1f9f733bb3f8ded008d73b5c46f7abd0544159af39524f",
+    "timestamp": "2026-11-27T16:45:03.020Z"
+  },
+  {
+    "entryId": "aud_0396b8245ac74f00a5b6",
+    "sequence": 18,
+    "branchId": "default",
+    "actorId": "demo-superadmin",
+    "actorName": "Dueño (Superadmin)",
+    "actorRole": "superadmin",
+    "action": "SESSION_ISSUED_PIN",
+    "resourceRef": "jti_31e36e790e0c44948d7901ac0fc9fa3e",
+    "details": {
+      "deviceId": "DEV-4af36c6b-mwz7rbn1",
+      "provider": "terminal_pin"
+    },
+    "payloadHash": "77fbea1c6e77fb1db97681f290b23be96c85e2b72e473a4722ce825cff7c533d",
+    "previousHash": "65b93f237d185e094e1f9f733bb3f8ded008d73b5c46f7abd0544159af39524f",
+    "entryHash": "562480c53f02ad3feb84a990b3539d42885a6ef947d0c1f0a1c66fd668cb3032",
+    "timestamp": "2026-11-27T16:47:00.028Z"
+  },
+  {
+    "entryId": "aud_91f0974171604f5da08e",
+    "sequence": 19,
+    "branchId": "default",
+    "actorId": "demo-superadmin",
+    "actorName": "Dueño (Superadmin)",
+    "actorRole": "superadmin",
+    "action": "SESSION_ISSUED_PIN",
+    "resourceRef": "jti_7a1490569f3443758365c151a2046995",
+    "details": {
+      "deviceId": "DEV-4af36c6b-mwz8wdc1",
+      "provider": "terminal_pin"
+    },
+    "payloadHash": "63efb3557c398d73bc529fea0172066495b6ce310f23b636041538ca8ed3e7ce",
+    "previousHash": "562480c53f02ad3feb84a990b3539d42885a6ef947d0c1f0a1c66fd668cb3032",
+    "entryHash": "639e11532ddd15fdab6942a367de445ffe148df8931c68af4e9de3c820f962d7",
+    "timestamp": "2026-11-27T17:18:35.956Z"
+  },
+  {
+    "entryId": "aud_a3c78480c8364aa8a035",
+    "sequence": 20,
+    "branchId": "default",
+    "actorId": "demo-superadmin",
+    "actorName": "Dueño (Superadmin)",
+    "actorRole": "superadmin",
+    "action": "SESSION_ISSUED_PIN",
+    "resourceRef": "jti_1c9e16051c134689ac70d5e45e700c73",
+    "details": {
+      "deviceId": "DEV-4af36c6b-mwz8xiul",
+      "provider": "terminal_pin"
+    },
+    "payloadHash": "a4e337504e9bb19a2dc7b913d7b0d1aa8ffa7aa89066d224c14860e8deecdd33",
+    "previousHash": "639e11532ddd15fdab6942a367de445ffe148df8931c68af4e9de3c820f962d7",
+    "entryHash": "bd4350dfd3dc5bd54077ffcd79997e031c68fcccbf5ac28f08b1ac56b515a0c7",
+    "timestamp": "2026-11-27T17:19:25.986Z"
+  },
+  {
+    "entryId": "aud_37d3580a59cd41098143",
+    "sequence": 21,
+    "branchId": "default",
+    "actorId": "demo-superadmin",
+    "actorName": "Dueño (Superadmin)",
+    "actorRole": "superadmin",
+    "action": "SESSION_ISSUED_PIN",
+    "resourceRef": "jti_3c1016256f8a4f43abdd55b88297243e",
+    "details": {
+      "deviceId": "DEV-4af36c6b-mwz8ywc4",
+      "provider": "terminal_pin"
+    },
+    "payloadHash": "9ec7ad757a3365481ec18d2372d4be46029aadc0768f82d6194a899449b0e8ba",
+    "previousHash": "bd4350dfd3dc5bd54077ffcd79997e031c68fcccbf5ac28f08b1ac56b515a0c7",
+    "entryHash": "51a9f2794cafc7451d642fc80b47ea68bb46bc8be6ad826e413aaf4453f46528",
+    "timestamp": "2026-11-27T17:20:29.347Z"
+  },
+  {
+    "entryId": "aud_a1342f6f7a784f3b8810",
+    "sequence": 22,
+    "branchId": "default",
+    "actorId": "demo-superadmin",
+    "actorName": "Dueño (Superadmin)",
+    "actorRole": "superadmin",
+    "action": "SESSION_ISSUED_PIN",
+    "resourceRef": "jti_05a33f60587048a497fef3cad7c4f137",
+    "details": {
+      "deviceId": "DEV-4af36c6b-mwz8zevg",
+      "provider": "terminal_pin"
+    },
+    "payloadHash": "731f4740a89018119d81c45b6c1d1ca6a4c8412256478b362239e590dff05461",
+    "previousHash": "51a9f2794cafc7451d642fc80b47ea68bb46bc8be6ad826e413aaf4453f46528",
+    "entryHash": "c6a29ba3144e666e6d5370f0b5f0b115b3a8bf4f578544ca0af3dd1f11acfc78",
+    "timestamp": "2026-11-27T17:20:53.777Z"
+  },
+  {
+    "entryId": "aud_410c81f59afc460f877d",
+    "sequence": 23,
+    "branchId": "default",
+    "actorId": "demo-superadmin",
+    "actorName": "Dueño (Superadmin)",
+    "actorRole": "superadmin",
+    "action": "SESSION_ISSUED_PIN",
+    "resourceRef": "jti_d2e12b6b90d14cdd878c5b6da2e3f19c",
+    "details": {
+      "deviceId": "DEV-4af36c6b-mwz90oyj",
+      "provider": "terminal_pin"
+    },
+    "payloadHash": "a7cfb165d4c5dc50015abe8619fbc4ce1ae6ea72f1ab0d6acfbfe4cc904fb9e8",
+    "previousHash": "c6a29ba3144e666e6d5370f0b5f0b115b3a8bf4f578544ca0af3dd1f11acfc78",
+    "entryHash": "944c9b04f06c85638595ea0bdb2a7a233f607fc804b045eec603e20b8305c394",
+    "timestamp": "2026-11-27T17:21:54.041Z"
+  },
+  {
+    "entryId": "aud_011dc2df20b0476a943d",
+    "sequence": 24,
+    "branchId": "default",
+    "actorId": "demo-superadmin",
+    "actorName": "Dueño (Superadmin)",
+    "actorRole": "superadmin",
+    "action": "SESSION_ISSUED_PIN",
+    "resourceRef": "jti_16b291f0ec9d4d77934bf2ffae8f2d9d",
+    "details": {
+      "deviceId": "test-device",
+      "provider": "terminal_pin"
+    },
+    "payloadHash": "6073065a23cf970b87e2840f197f10aebca8b33182e84436a422226dbecb9f55",
+    "previousHash": "944c9b04f06c85638595ea0bdb2a7a233f607fc804b045eec603e20b8305c394",
+    "entryHash": "bee5b9908149616601fbc761f980514acf4169a3af2098d1df7343452a2036a6",
+    "timestamp": "2026-11-27T17:23:26.286Z"
+  },
+  {
+    "entryId": "aud_e860808b55ad4a029bfd",
+    "sequence": 25,
+    "branchId": "default",
+    "actorId": "demo-superadmin",
+    "actorName": "Dueño (Superadmin)",
+    "actorRole": "superadmin",
+    "action": "SESSION_ISSUED_PIN",
+    "resourceRef": "jti_b87a4fc234424a7d9db244b9b7693883",
+    "details": {
+      "deviceId": "DEV-4af36c6b-mwz93e9m",
+      "provider": "terminal_pin"
+    },
+    "payloadHash": "00607bf5210db9f806766168f1f54657e4834cbbc3b06df65f990d6cd38cc51b",
+    "previousHash": "bee5b9908149616601fbc761f980514acf4169a3af2098d1df7343452a2036a6",
+    "entryHash": "f99820662312e4abd2958cff22896332b8c27bf042cd21ed9d1e5f54c191c792",
+    "timestamp": "2026-11-27T17:24:00.335Z"
+  },
+  {
+    "entryId": "aud_ff98c610b3394277834a",
+    "sequence": 26,
+    "branchId": "default",
+    "actorId": "demo-superadmin",
+    "actorName": "Dueño (Superadmin)",
+    "actorRole": "superadmin",
+    "action": "SESSION_ISSUED_PIN",
+    "resourceRef": "jti_c43d878d6abc4dc3a787e59e1e3692fa",
+    "details": {
+      "deviceId": "DEV-4af36c6b-mwz94iqa",
+      "provider": "terminal_pin"
+    },
+    "payloadHash": "b1fa0517942f15b93b575c82860530f10a635bf9aba3194aa871019e9e5713d6",
+    "previousHash": "f99820662312e4abd2958cff22896332b8c27bf042cd21ed9d1e5f54c191c792",
+    "entryHash": "f5ce56841f9f58d4ef6e333d24c910fc63d8af9d0cac33716bb17988d9ac3e5f",
+    "timestamp": "2026-11-27T17:24:52.122Z"
+  },
+  {
+    "entryId": "aud_670ab2809b584d7fb984",
+    "sequence": 27,
+    "branchId": "default",
+    "actorId": "demo-superadmin",
+    "actorName": "Dueño (Superadmin)",
+    "actorRole": "superadmin",
+    "action": "SESSION_ISSUED_PIN",
+    "resourceRef": "jti_d8f7fd85ed514f7fa5906ef210a12b1e",
+    "details": {
+      "deviceId": "DEV-4af36c6b-mwz95gu6",
+      "provider": "terminal_pin"
+    },
+    "payloadHash": "4b37600a51b4d226652b0b98bb06f23f6c602ca6b312898cec85af66709178bb",
+    "previousHash": "f5ce56841f9f58d4ef6e333d24c910fc63d8af9d0cac33716bb17988d9ac3e5f",
+    "entryHash": "750c6adac6bfca0631c6857e6cbcd45f57fd7458a4cffb33ded1dc7c8b688b36",
+    "timestamp": "2026-11-27T17:25:34.330Z"
+  },
+  {
+    "entryId": "aud_2f9462f5b8d94f59ba69",
+    "sequence": 28,
+    "branchId": "default",
+    "actorId": "demo-superadmin",
+    "actorName": "Dueño (Superadmin)",
+    "actorRole": "superadmin",
+    "action": "SESSION_ISSUED_PIN",
+    "resourceRef": "jti_d365d461e22545fe916dc85e92e95467",
+    "details": {
+      "deviceId": "test-dev",
+      "provider": "terminal_pin"
+    },
+    "payloadHash": "2972d7d113d790f09e3ca4b8ba529ae5b5577c7b52bd6a0d66915afc59044e55",
+    "previousHash": "750c6adac6bfca0631c6857e6cbcd45f57fd7458a4cffb33ded1dc7c8b688b36",
+    "entryHash": "16322b27bcca478d12832b364873970d175b8e8e937bd5a7f71dd40c44378d12",
+    "timestamp": "2026-11-27T17:26:55.329Z"
+  },
+  {
+    "entryId": "aud_08476997044f41ab9c5a",
+    "sequence": 29,
+    "branchId": "default",
+    "actorId": "demo-superadmin",
+    "actorName": "Dueño (Superadmin)",
+    "actorRole": "superadmin",
+    "action": "SESSION_ISSUED_PIN",
+    "resourceRef": "jti_dc409a99ea3d402aabb0ab8f00fb8433",
+    "details": {
+      "deviceId": "DEV-4af36c6b-mwz97u95",
+      "provider": "terminal_pin"
+    },
+    "payloadHash": "38c204a76e6f8c4fd732a8b6bfbc5c6e2cdcda72d3e7bc75cfa713a0a7bb0c06",
+    "previousHash": "16322b27bcca478d12832b364873970d175b8e8e937bd5a7f71dd40c44378d12",
+    "entryHash": "05f89d873620bc18e2a156ba67beac00eb4fe7cadff6b9ef2c42dcb5f8a20689",
+    "timestamp": "2026-11-27T17:27:30.483Z"
+  },
+  {
+    "entryId": "aud_81b6ede6fead43c0a362",
+    "sequence": 30,
+    "branchId": "default",
+    "actorId": "demo-superadmin",
+    "actorName": "Dueño (Superadmin)",
+    "actorRole": "superadmin",
+    "action": "SESSION_ISSUED_PIN",
+    "resourceRef": "jti_c32cc82bb7fb474c84b901baa3449cba",
+    "details": {
+      "deviceId": "DEV-4af36c6b-mwz996v7",
+      "provider": "terminal_pin"
+    },
+    "payloadHash": "f3b7c58a77fee3d60c44b6e7d0e48fcd0c762126d4ae8d230839e0e63ebfe918",
+    "previousHash": "05f89d873620bc18e2a156ba67beac00eb4fe7cadff6b9ef2c42dcb5f8a20689",
+    "entryHash": "22a64bd19a21ccf398ac9495ae659d888d32719395f40899dac642fef415bb16",
+    "timestamp": "2026-11-27T17:28:29.706Z"
+  },
+  {
+    "entryId": "aud_6dd4662ab1d44ca7a3e2",
+    "sequence": 31,
+    "branchId": "default",
+    "actorId": "demo-superadmin",
+    "actorName": "Dueño (Superadmin)",
+    "actorRole": "superadmin",
+    "action": "SESSION_ISSUED_PIN",
+    "resourceRef": "jti_e837bd1fc1ce44c694afb50b68c8affd",
+    "details": {
+      "deviceId": "DEV-4af36c6b-mwz9auv1",
+      "provider": "terminal_pin"
+    },
+    "payloadHash": "169d64e02a449ec8849c6f8d2db77487b7c0af6756970588177284a46935e140",
+    "previousHash": "22a64bd19a21ccf398ac9495ae659d888d32719395f40899dac642fef415bb16",
+    "entryHash": "2451cbb3e93bd6b340e52d80457107c88cda1f8d529e2ffc6f0ceb760526edfb",
+    "timestamp": "2026-11-27T17:29:46.173Z"
+  },
+  {
+    "entryId": "aud_d4045668605f4e3c8819",
+    "sequence": 32,
+    "branchId": "default",
+    "actorId": "demo-superadmin",
+    "actorName": "Dueño (Superadmin)",
+    "actorRole": "superadmin",
+    "action": "SESSION_ISSUED_PIN",
+    "resourceRef": "jti_2a7df3d2e4624e338d4e846519bc6021",
+    "details": {
+      "deviceId": "test-dev",
+      "provider": "terminal_pin"
+    },
+    "payloadHash": "0055771d215e8ce0ee9700e6bda3893993937e2bc0ad807eed4d4c51511db3d1",
+    "previousHash": "2451cbb3e93bd6b340e52d80457107c88cda1f8d529e2ffc6f0ceb760526edfb",
+    "entryHash": "87f6cc58af597531a0d51c074ef8c5dee3301e47a237117ea75f6387c2a755b4",
+    "timestamp": "2026-11-27T17:30:20.790Z"
+  },
+  {
+    "entryId": "aud_615ae6947f514962b56a",
+    "sequence": 33,
+    "branchId": "default",
+    "actorId": "demo-superadmin",
+    "actorName": "Dueño (Superadmin)",
+    "actorRole": "superadmin",
+    "action": "SESSION_ISSUED_PIN",
+    "resourceRef": "jti_d8ba0c7257884d13aefeb2eee163ffc0",
+    "details": {
+      "deviceId": "test-dev",
+      "provider": "terminal_pin"
+    },
+    "payloadHash": "e6af47ad0a84f7b0cb8a50ff4c8909e56b76ffbcb46725864498d24f2847c879",
+    "previousHash": "87f6cc58af597531a0d51c074ef8c5dee3301e47a237117ea75f6387c2a755b4",
+    "entryHash": "0370bdca7ebf88a726a54c91e66921a5ed6b7abd6c324d7a37d8aeb9c61e1b6a",
+    "timestamp": "2026-11-27T17:30:40.188Z"
+  },
+  {
+    "entryId": "aud_3fb5bb3154e0468abb40",
+    "sequence": 34,
+    "branchId": "default",
+    "actorId": "demo-superadmin",
+    "actorName": "Dueño (Superadmin)",
+    "actorRole": "superadmin",
+    "action": "SESSION_ISSUED_PIN",
+    "resourceRef": "jti_e265bdc448f84714ba182825226b8c3b",
+    "details": {
+      "deviceId": "DEV-4af36c6b-mwz9cf8a",
+      "provider": "terminal_pin"
+    },
+    "payloadHash": "f9351211000547e748839c15cf4da27a8e1661271426a3112674742c3706f63f",
+    "previousHash": "0370bdca7ebf88a726a54c91e66921a5ed6b7abd6c324d7a37d8aeb9c61e1b6a",
+    "entryHash": "3c715ccba74808c9422e9c79dafd1e77d0d83b17ef9becee68ab5b29776c5553",
+    "timestamp": "2026-11-27T17:30:59.036Z"
+  },
+  {
+    "entryId": "aud_54a9a43a4a3d46488262",
+    "sequence": 35,
+    "branchId": "default",
+    "actorId": "demo-superadmin",
+    "actorName": "Dueño (Superadmin)",
+    "actorRole": "superadmin",
+    "action": "SESSION_ISSUED_PIN",
+    "resourceRef": "jti_15bd83404ef8446b9b6e92bec77ba136",
+    "details": {
+      "deviceId": "DEV-4af36c6b-mwz9dtr0",
+      "provider": "terminal_pin"
+    },
+    "payloadHash": "a21153b9c04ef680a973002e2e951fafa75212c1c87fca986fffcd083582a9ce",
+    "previousHash": "3c715ccba74808c9422e9c79dafd1e77d0d83b17ef9becee68ab5b29776c5553",
+    "entryHash": "e3b265d3fbfe1ab1c471866de9a4cad9831e709e68f11a3b8ee2abc74078cfa3",
+    "timestamp": "2026-11-27T17:32:05.520Z"
+  },
+  {
+    "entryId": "aud_fafa7b53a23d484a881f",
+    "sequence": 36,
+    "branchId": "default",
+    "actorId": "demo-superadmin",
+    "actorName": "Dueño (Superadmin)",
+    "actorRole": "superadmin",
+    "action": "SESSION_ISSUED_PIN",
+    "resourceRef": "jti_6ebc7447462d41d78f71200d7e7f86db",
+    "details": {
+      "deviceId": "test-dev",
+      "provider": "terminal_pin"
+    },
+    "payloadHash": "d5a120a0f9a9925f65d52616f2c319796108365956c4974785bfe95d0788044d",
+    "previousHash": "e3b265d3fbfe1ab1c471866de9a4cad9831e709e68f11a3b8ee2abc74078cfa3",
+    "entryHash": "16e5a6ac10b5b378dab79d2798cc671ed104f67b19c79147ec2008eb3705acca",
+    "timestamp": "2026-11-27T17:32:45.319Z"
+  },
+  {
+    "entryId": "aud_b17585ca2160402bb282",
+    "sequence": 37,
+    "branchId": "default",
+    "actorId": "demo-superadmin",
+    "actorName": "Dueño (Superadmin)",
+    "actorRole": "superadmin",
+    "action": "SESSION_ISSUED_PIN",
+    "resourceRef": "jti_134594202c7343aaa6a0cc3eb25ccb18",
+    "details": {
+      "deviceId": "DEV-4af36c6b-mwz9ewza",
+      "provider": "terminal_pin"
+    },
+    "payloadHash": "7f02c1b81677401cffc0c90d6c30fc64e5575d45ae0a76f0b2f10636057e1fa5",
+    "previousHash": "16e5a6ac10b5b378dab79d2798cc671ed104f67b19c79147ec2008eb3705acca",
+    "entryHash": "76403fe9cfa084e9ab13f7d5b2318b64c56ca4a688ae7a011a318f2c487277b7",
+    "timestamp": "2026-11-27T17:32:58.371Z"
+  },
+  {
+    "entryId": "aud_4157565e28ab4204be4d",
+    "sequence": 38,
+    "branchId": "default",
+    "actorId": "demo-superadmin",
+    "actorName": "Dueño (Superadmin)",
+    "actorRole": "superadmin",
+    "action": "SESSION_ISSUED_PIN",
+    "resourceRef": "jti_195e23a769374224bbddd333e8200d12",
+    "details": {
+      "deviceId": "DEV-4af36c6b-mwz9fuiw",
+      "provider": "terminal_pin"
+    },
+    "payloadHash": "a4e47f540ddaf3fbc3876de519d10351152cf32ddabba3fd902a1b918d3a07d6",
+    "previousHash": "76403fe9cfa084e9ab13f7d5b2318b64c56ca4a688ae7a011a318f2c487277b7",
+    "entryHash": "319be4ba6c2275d3273347b347445102046b14e957920fc7b2bbf5ea37b1a9be",
+    "timestamp": "2026-11-27T17:33:39.166Z"
+  },
+  {
+    "entryId": "aud_4f8429a2d9c64647856a",
+    "sequence": 39,
+    "branchId": "default",
+    "actorId": "demo-superadmin",
+    "actorName": "Dueño (Superadmin)",
+    "actorRole": "superadmin",
+    "action": "SESSION_ISSUED_PIN",
+    "resourceRef": "jti_f22db086a0cf47fc84e7df80a7f69381",
+    "details": {
+      "deviceId": "DEV-4af36c6b-mwz9hg8z",
+      "provider": "terminal_pin"
+    },
+    "payloadHash": "4eb6c12bf054c24e9abd7a545266e736249f1a26995c69df899c779ab5844759",
+    "previousHash": "319be4ba6c2275d3273347b347445102046b14e957920fc7b2bbf5ea37b1a9be",
+    "entryHash": "85baf21ac28491edb2baac030b4251a24dc8a18e6efabd792ce83563e3efedb4",
+    "timestamp": "2026-11-27T17:34:55.195Z"
+  },
+  {
+    "entryId": "aud_12deb264fc9a4caca70a",
+    "sequence": 40,
+    "branchId": "default",
+    "actorId": "demo-superadmin",
+    "actorName": "Dueño (Superadmin)",
+    "actorRole": "superadmin",
+    "action": "SESSION_ISSUED_PIN",
+    "resourceRef": "jti_6fed8c8018a54a2ebd26ad00fa2ad346",
+    "details": {
+      "deviceId": "DEV-4af36c6b-mwz9ichq",
+      "provider": "terminal_pin"
+    },
+    "payloadHash": "9184ba6525881c0a33af9e165a5bff0cae83ec9abdd92cf2d5d17d713738d306",
+    "previousHash": "85baf21ac28491edb2baac030b4251a24dc8a18e6efabd792ce83563e3efedb4",
+    "entryHash": "47aa65ec1d0e9832a34f7ee78ce6aa840698112fbea2468c73164c4c89a81d44",
+    "timestamp": "2026-11-27T17:35:41.810Z"
+  },
+  {
+    "entryId": "aud_0f8f4a998501413aa2a5",
+    "sequence": 41,
+    "branchId": "default",
+    "actorId": "demo-superadmin",
+    "actorName": "Dueño (Superadmin)",
+    "actorRole": "superadmin",
+    "action": "SESSION_ISSUED_PIN",
+    "resourceRef": "jti_13847b6dd1254776bed876d98ee40b8e",
+    "details": {
+      "deviceId": "test-dev",
+      "provider": "terminal_pin"
+    },
+    "payloadHash": "8673b5612e784f7eead9ca986bc66b147dc169406c6227243092bc9e021523a4",
+    "previousHash": "47aa65ec1d0e9832a34f7ee78ce6aa840698112fbea2468c73164c4c89a81d44",
+    "entryHash": "ca5724a9862eacbb2b5c5bef6609062ca600de3c39253648bcf8ae09f6574ad9",
+    "timestamp": "2026-11-27T17:41:18.686Z"
+  },
+  {
+    "entryId": "aud_3fbbecef80ed4d46b947",
+    "sequence": 42,
+    "branchId": "default",
+    "actorId": "demo-superadmin",
+    "actorName": "Dueño (Superadmin)",
+    "actorRole": "superadmin",
+    "action": "SESSION_ISSUED_PIN",
+    "resourceRef": "jti_ef20d2838c844c58a47e0bf01d380ed5",
+    "details": {
+      "deviceId": "DEV-4af36c6b-mwz9q2vm",
+      "provider": "terminal_pin"
+    },
+    "payloadHash": "79943696ffb8743a9eb1a200988f46589d88ffd514bb852b36fd745b019e88c2",
+    "previousHash": "ca5724a9862eacbb2b5c5bef6609062ca600de3c39253648bcf8ae09f6574ad9",
+    "entryHash": "a6d353148a33522c432e511f7975ac6b29dc8b574fb0b3f076018838e9a2de4e",
+    "timestamp": "2026-11-27T17:41:44.282Z"
+  },
+  {
+    "entryId": "aud_a82a75746dbb48a48d13",
+    "sequence": 43,
+    "branchId": "default",
+    "actorId": "demo-superadmin",
+    "actorName": "Dueño (Superadmin)",
+    "actorRole": "superadmin",
+    "action": "SESSION_ISSUED_PIN",
+    "resourceRef": "jti_a69fc0bae9bc4c35908c2608e58c036b",
+    "details": {
+      "deviceId": "DEV-4af36c6b-mwz9t0t6",
+      "provider": "terminal_pin"
+    },
+    "payloadHash": "245f66c0bd70c2d60b22ffc46a0954d161327ec3cac0568caf53965721bfd787",
+    "previousHash": "a6d353148a33522c432e511f7975ac6b29dc8b574fb0b3f076018838e9a2de4e",
+    "entryHash": "9a6c472337fe76622ff562e6015f3b71a49f32fbcfd220873212f6a3896a1729",
+    "timestamp": "2026-11-27T17:43:57.664Z"
+  },
+  {
+    "entryId": "aud_06208318625346ff88fe",
+    "sequence": 44,
+    "branchId": "default",
+    "actorId": "demo-superadmin",
+    "actorName": "Dueño (Superadmin)",
+    "actorRole": "superadmin",
+    "action": "SESSION_ISSUED_PIN",
+    "resourceRef": "jti_22b16226bc494c0089286b78d4d7f759",
+    "details": {
+      "deviceId": "DEV-4af36c6b-mwz9uuc6",
+      "provider": "terminal_pin"
+    },
+    "payloadHash": "16c74798cb710e5b231cc9eec42ca36fba4888cf4c5f12c1e63440593d93da43",
+    "previousHash": "9a6c472337fe76622ff562e6015f3b71a49f32fbcfd220873212f6a3896a1729",
+    "entryHash": "73ed41326847caa3eefe64b322685bc4c3d8602806c9d48e2e97e46fe80cf802",
+    "timestamp": "2026-11-27T17:45:21.759Z"
+  },
+  {
+    "entryId": "aud_1b489ca13d844ed68f5e",
+    "sequence": 45,
+    "branchId": "default",
+    "actorId": "demo-superadmin",
+    "actorName": "Dueño (Superadmin)",
+    "actorRole": "superadmin",
+    "action": "SESSION_ISSUED_PIN",
+    "resourceRef": "jti_bfd931723930458797ac3979dfa785d2",
+    "details": {
+      "deviceId": "DEV-4af36c6b-mwz9wbp9",
+      "provider": "terminal_pin"
+    },
+    "payloadHash": "8ef939ad645f0cbbc4dfb9969821e91840063288df3a8b62f6ab9a83563c1e18",
+    "previousHash": "73ed41326847caa3eefe64b322685bc4c3d8602806c9d48e2e97e46fe80cf802",
+    "entryHash": "d02c1602c104b2b335ad7ebc707f101da012040f8406cbd45c20ef3277e18dd0",
+    "timestamp": "2026-11-27T17:46:32.207Z"
+  },
+  {
+    "entryId": "aud_3e1c2f57912c46ceb74a",
+    "sequence": 46,
+    "branchId": "default",
+    "actorId": "demo-superadmin",
+    "actorName": "Dueño (Superadmin)",
+    "actorRole": "superadmin",
+    "action": "SESSION_ISSUED_PIN",
+    "resourceRef": "jti_a7538f866a004903b02d96716edad145",
+    "details": {
+      "deviceId": "pw-verify",
+      "provider": "terminal_pin"
+    },
+    "payloadHash": "b295ecd59022a68249adcf1365974af3255cfc1456aa289ffe236646293f1aca",
+    "previousHash": "d02c1602c104b2b335ad7ebc707f101da012040f8406cbd45c20ef3277e18dd0",
+    "entryHash": "a3a530a28f8b9c79f30d366e239e1d369012fda77220013de99536b0f0c3b3b8",
+    "timestamp": "2026-11-27T17:48:34.903Z"
+  }
+]

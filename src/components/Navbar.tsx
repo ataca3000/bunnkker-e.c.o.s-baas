@@ -11,7 +11,6 @@ import { usePathname } from "next/navigation";
 const CartDrawer = dynamic(() => import("./CartDrawer"), { ssr: false });
 const BarcodeScanner = dynamic(() => import("./BarcodeScanner"), { ssr: false });
 import ThemeToggle from "./ThemeToggle";
-import LanguageSelector from "./LanguageSelector";
 import styles from "./Navbar.module.css";
 import { toast } from "@/lib/toast";
 import { findProductByBarcodeOrCode } from "@/lib/barcodeLookup";
@@ -162,9 +161,6 @@ export default function Navbar() {
 
                     {/* Actions Area */}
                     <div className={styles.actionsArea}>
-                        {/* Selector de Idioma (Español, Inglés, Francés, Chino) */}
-                        <LanguageSelector />
-
                         {/* Selector de Tema */}
                         <ThemeToggle className="mr-1" />
 

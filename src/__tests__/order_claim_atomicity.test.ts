@@ -64,6 +64,7 @@ vi.mock('@/lib/apiAuth', () => ({
     validateActiveDbUser: vi.fn(async () => ({ ok: true, ...h.state.actor })),
     validateApiSession: vi.fn(),
     verifyRoleSignature: vi.fn(),
+    getTenantId: vi.fn(() => 'default'),
 }));
 vi.mock('@/lib/salesCounter', () => ({
     getSalesTrialStatus: vi.fn(() => ({ isLocked: false })),
