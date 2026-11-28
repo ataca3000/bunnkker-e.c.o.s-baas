@@ -254,11 +254,11 @@ export default function PairDevicePage() {
           )}
         </form>
 
-        <div className="pt-4 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
-          <span className="flex items-center gap-1.5">
-            <Smartphone className="w-3.5 h-3.5 text-sky-400" />
-            Sincronización HTTPS / LAN
-          </span>
+        <div className="pt-4 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400">
+          <Link href="/conectar-host" className="flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 font-semibold">
+            <Smartphone className="w-3.5 h-3.5 text-emerald-400" />
+            Modo Host LAN (Sin Internet)
+          </Link>
           <Link href="/login" className="text-sky-400 hover:text-sky-300 font-semibold">
             Ir a Login con PIN →
           </Link>

@@ -1,20 +1,24 @@
 /**
- * Motor de Persistencia Offline con IndexedDB para el Carrito y Cola de Pedidos (BUNKKER E.C.O.S.)
+ * Motor de Persistencia Offline con IndexedDB para el Carrito, Catálogo Snapshot,
+ * Vínculo Host LAN y Cola Transaccional de Pedidos (BUNKKER E.C.O.S. Local-First v3)
  *
  * Garantiza que:
  * 1. El estado del carrito (tanto de clientes como del POS en caja) persista en IndexedDB
  *    incluso si el navegador se cierra abruptamente o la red es inestable.
  * 2. Los pedidos creados durante desconexiones o caídas de red se guarden en una cola
- *    transaccional en IndexedDB (`offline_orders_queue`) y se sincronicen automáticamente
- *    con `/api/orders` cuando la conexión se restablezca o al reabrir el navegador.
+ *    transaccional en IndexedDB (`offline_orders_queue`) y se sincronicen automáticamente.
+ * 3. El catálogo operativo (`local_products_snapshot`) y la configuración del Host LAN
+ *    (`local_host_config`) permanezcan disponibles 100% offline para consultas y cobro local.
  */
 
 import type { StateStorage } from 'zustand/middleware';
 
 const DB_NAME = 'bunkker_ecos_offline_db';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 const STORE_KV = 'cart_kv_store';
 const STORE_ORDERS_QUEUE = 'offline_orders_queue';
+const STORE_PRODUCTS_SNAPSHOT = 'local_products_snapshot';
+const STORE_HOST_CONFIG = 'local_host_config';
 
 export interface QueuedOfflineOrder {
     orderId: string;
@@ -24,6 +28,42 @@ export interface QueuedOfflineOrder {
     attempts: number;
     lastError?: string;
     source: 'storefront' | 'pos';
+}
+
+export interface OfflineCatalogProduct {
+    id: string;
+    sku?: string;
+    barcode?: string;
+    name: string;
+    price: number;
+    stock: number;
+    category?: string;
+    estante?: string;
+    fila?: string;
+    updatedAt: string;
+}
+
+export interface OfflineCatalogSnapshotMeta {
+    snapshotId: 'active';
+    branchId: string;
+    roomCode?: string;
+    hostEpoch: number;
+    source: 'lan_host' | 'cloud' | 'local';
+    updatedAt: string;
+    products: OfflineCatalogProduct[];
+}
+
+export interface LanHostLinkConfig {
+    configId: 'active_host';
+    roomCode: string;
+    hostUrl: string;
+    wsUrl: string;
+    branchId: string;
+    branchName: string;
+    hostEpoch: number;
+    role: string;
+    deviceName: string;
+    connectedAt: string;
 }
 
 function isBrowser(): boolean {
@@ -50,6 +90,12 @@ function openOfflineDB(): Promise<IDBDatabase> {
                 if (!db.objectStoreNames.contains(STORE_ORDERS_QUEUE)) {
                     const queueStore = db.createObjectStore(STORE_ORDERS_QUEUE, { keyPath: 'orderId' });
                     queueStore.createIndex('createdAt', 'createdAt', { unique: false });
+                }
+                if (!db.objectStoreNames.contains(STORE_PRODUCTS_SNAPSHOT)) {
+                    db.createObjectStore(STORE_PRODUCTS_SNAPSHOT, { keyPath: 'snapshotId' });
+                }
+                if (!db.objectStoreNames.contains(STORE_HOST_CONFIG)) {
+                    db.createObjectStore(STORE_HOST_CONFIG, { keyPath: 'configId' });
                 }
             };
 
@@ -94,7 +140,6 @@ export async function idbGetItem(key: string): Promise<string | null> {
             return typeof val === 'string' ? val : JSON.stringify(val);
         }
 
-        // Migración automática si existe en localStorage pero aún no en IndexedDB
         const localFallback = window.localStorage.getItem(key);
         if (localFallback) {
             await idbSetItem(key, localFallback);
@@ -205,6 +250,165 @@ export async function loadCheckoutDraftFromIDB(): Promise<Record<string, any> | 
     }
 }
 
+// ─── Snapshot Local-First de Catálogo e Información del Host LAN ─────────────
+
+const FALLBACK_CATALOG_KEY = 'bunkker_offline_catalog_snapshot_v1';
+const FALLBACK_HOST_KEY = 'bunkker_lan_host_link_v1';
+
+export async function saveOfflineCatalogSnapshot(
+    snapshot: Omit<OfflineCatalogSnapshotMeta, 'snapshotId' | 'updatedAt'> & { updatedAt?: string }
+): Promise<OfflineCatalogSnapshotMeta> {
+    const record: OfflineCatalogSnapshotMeta = {
+        snapshotId: 'active',
+        branchId: snapshot.branchId || 'default',
+        roomCode: snapshot.roomCode,
+        hostEpoch: Number.isFinite(snapshot.hostEpoch) ? snapshot.hostEpoch : 1,
+        source: snapshot.source,
+        updatedAt: snapshot.updatedAt || new Date().toISOString(),
+        products: Array.isArray(snapshot.products) ? snapshot.products : [],
+    };
+
+    if (!isBrowser()) return record;
+
+    try {
+        const db = await openOfflineDB();
+        await new Promise<void>((resolve, reject) => {
+            const tx = db.transaction(STORE_PRODUCTS_SNAPSHOT, 'readwrite');
+            const store = tx.objectStore(STORE_PRODUCTS_SNAPSHOT);
+            store.put(record);
+            tx.oncomplete = () => resolve();
+            tx.onerror = () => reject(tx.error);
+        });
+    } catch {
+        try {
+            window.localStorage.setItem(FALLBACK_CATALOG_KEY, JSON.stringify(record));
+        } catch {}
+    }
+
+    return record;
+}
+
+export async function loadOfflineCatalogSnapshot(): Promise<OfflineCatalogSnapshotMeta | null> {
+    if (!isBrowser()) return null;
+    try {
+        const db = await openOfflineDB();
+        const record = await new Promise<OfflineCatalogSnapshotMeta | null>((resolve, reject) => {
+            const tx = db.transaction(STORE_PRODUCTS_SNAPSHOT, 'readonly');
+            const store = tx.objectStore(STORE_PRODUCTS_SNAPSHOT);
+            const req = store.get('active');
+            req.onsuccess = () => resolve((req.result as OfflineCatalogSnapshotMeta) ?? null);
+            req.onerror = () => reject(req.error);
+        });
+        if (record) return record;
+    } catch {}
+
+    try {
+        const raw = window.localStorage.getItem(FALLBACK_CATALOG_KEY);
+        return raw ? (JSON.parse(raw) as OfflineCatalogSnapshotMeta) : null;
+    } catch {
+        return null;
+    }
+}
+
+export async function applyLocalStockDeltaToIDB(
+    deltas: Array<{ productId: string; delta: number }>
+): Promise<OfflineCatalogSnapshotMeta | null> {
+    const current = await loadOfflineCatalogSnapshot();
+    if (!current) return null;
+
+    const deltaMap = new Map<string, number>();
+    for (const entry of deltas) {
+        if (!entry?.productId || !Number.isFinite(entry.delta)) continue;
+        deltaMap.set(entry.productId, (deltaMap.get(entry.productId) || 0) + entry.delta);
+    }
+
+    const updatedProducts = current.products.map((product) => {
+        const change = deltaMap.get(product.id);
+        if (change === undefined) return product;
+        return {
+            ...product,
+            stock: Math.max(0, Number(product.stock || 0) + change),
+            updatedAt: new Date().toISOString(),
+        };
+    });
+
+    return await saveOfflineCatalogSnapshot({
+        branchId: current.branchId,
+        roomCode: current.roomCode,
+        hostEpoch: current.hostEpoch,
+        source: current.source,
+        products: updatedProducts,
+    });
+}
+
+export async function saveLanHostLink(
+    config: Omit<LanHostLinkConfig, 'configId' | 'connectedAt'> & { connectedAt?: string }
+): Promise<LanHostLinkConfig> {
+    const record: LanHostLinkConfig = {
+        ...config,
+        configId: 'active_host',
+        connectedAt: config.connectedAt || new Date().toISOString(),
+    };
+
+    if (!isBrowser()) return record;
+
+    try {
+        const db = await openOfflineDB();
+        await new Promise<void>((resolve, reject) => {
+            const tx = db.transaction(STORE_HOST_CONFIG, 'readwrite');
+            const store = tx.objectStore(STORE_HOST_CONFIG);
+            store.put(record);
+            tx.oncomplete = () => resolve();
+            tx.onerror = () => reject(tx.error);
+        });
+    } catch {}
+
+    try {
+        window.localStorage.setItem(FALLBACK_HOST_KEY, JSON.stringify(record));
+    } catch {}
+
+    return record;
+}
+
+export async function loadLanHostLink(): Promise<LanHostLinkConfig | null> {
+    if (!isBrowser()) return null;
+    try {
+        const db = await openOfflineDB();
+        const record = await new Promise<LanHostLinkConfig | null>((resolve, reject) => {
+            const tx = db.transaction(STORE_HOST_CONFIG, 'readonly');
+            const store = tx.objectStore(STORE_HOST_CONFIG);
+            const req = store.get('active_host');
+            req.onsuccess = () => resolve((req.result as LanHostLinkConfig) ?? null);
+            req.onerror = () => reject(req.error);
+        });
+        if (record) return record;
+    } catch {}
+
+    try {
+        const raw = window.localStorage.getItem(FALLBACK_HOST_KEY);
+        return raw ? (JSON.parse(raw) as LanHostLinkConfig) : null;
+    } catch {
+        return null;
+    }
+}
+
+export async function clearLanHostLink(): Promise<void> {
+    if (!isBrowser()) return;
+    try {
+        const db = await openOfflineDB();
+        await new Promise<void>((resolve, reject) => {
+            const tx = db.transaction(STORE_HOST_CONFIG, 'readwrite');
+            const store = tx.objectStore(STORE_HOST_CONFIG);
+            store.delete('active_host');
+            tx.oncomplete = () => resolve();
+            tx.onerror = () => reject(tx.error);
+        });
+    } catch {}
+    try {
+        window.localStorage.removeItem(FALLBACK_HOST_KEY);
+    } catch {}
+}
+
 // ─── Cola Transaccional de Pedidos Offline en IndexedDB ──────────────────────
 
 /**
@@ -258,7 +462,6 @@ export async function getQueuedOfflineOrders(): Promise<QueuedOfflineOrder[]> {
             req.onerror = () => reject(req.error);
         });
 
-        // Combinar si hubiera alguno en fallback de localStorage
         const fallbackRaw = window.localStorage.getItem('bunkker_offline_orders_fallback');
         if (fallbackRaw) {
             try {
@@ -315,14 +518,17 @@ export async function removeQueuedOfflineOrder(orderId: string): Promise<void> {
 let isFlushingQueue = false;
 
 /**
- * Sincroniza todos los pedidos pendientes en IndexedDB con `/api/orders`.
- * Retorna cuántos pedidos fueron sincronizados exitosamente.
+ * Sincroniza todos los pedidos pendientes en IndexedDB con `/api/orders`
+ * o hacia el Host LAN activo si la aplicación está vinculada en modo local-first.
  */
 export async function flushOfflineOrderQueue(onOrderSynced?: (orderId: string) => void): Promise<{ synced: number; remaining: number }> {
     if (!isBrowser() || isFlushingQueue) {
         return { synced: 0, remaining: 0 };
     }
-    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+
+    const activeHost = await loadLanHostLink().catch(() => null);
+    const hasInternet = typeof navigator === 'undefined' || navigator.onLine !== false;
+    if (!hasInternet && !activeHost?.hostUrl) {
         const pending = await getQueuedOfflineOrders();
         return { synced: 0, remaining: pending.length };
     }
@@ -340,10 +546,15 @@ export async function flushOfflineOrderQueue(onOrderSynced?: (orderId: string) =
             try {
                 const { getCustomerAuthHeaders } = await import('@/lib/customerAuth');
                 const authHeaders = getCustomerAuthHeaders();
-                const res = await fetch('/api/orders', {
+                const targetEndpoint =
+                    !hasInternet && activeHost?.hostUrl && window.location.protocol !== 'https:'
+                        ? `${activeHost.hostUrl.replace(/\/+$/, '')}/api/host/sale`
+                        : '/api/orders';
+
+                const res = await fetch(targetEndpoint, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', ...authHeaders },
-                    credentials: 'include',
+                    credentials: targetEndpoint === '/api/orders' ? 'include' : 'omit',
                     body: JSON.stringify(entry.payload),
                 });
 
@@ -352,7 +563,6 @@ export async function flushOfflineOrderQueue(onOrderSynced?: (orderId: string) =
                     syncedCount++;
                     if (onOrderSynced) onOrderSynced(entry.orderId);
                 } else if (res.status >= 400 && res.status < 500 && res.status !== 408 && res.status !== 429) {
-                    // Si es un error de validación definitivo o duplicado ya procesado
                     const errData = await res.json().catch(() => ({}));
                     if (errData?.duplicated || res.status === 400) {
                         await removeQueuedOfflineOrder(entry.orderId);
@@ -360,7 +570,6 @@ export async function flushOfflineOrderQueue(onOrderSynced?: (orderId: string) =
                     }
                 }
             } catch {
-                // Error de red: cortar el ciclo y reintentar en el siguiente pulso
                 break;
             }
         }

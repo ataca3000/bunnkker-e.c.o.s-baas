@@ -14,7 +14,7 @@ const PRESERVED_CACHES = new Set([STATIC_CACHE_NAME, MEDIA_CACHE_NAME]);
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(STATIC_CACHE_NAME).then((cache) => {
-      return cache.addAll(['/', '/catalogo', '/servicios', '/nosotros', '/contacto', '/manifest.json']).catch(() => {});
+      return cache.addAll(['/', '/catalogo', '/servicios', '/nosotros', '/contacto', '/conectar-host', '/manifest.json']).catch(() => {});
     }).then(() => self.skipWaiting())
   );
 });

@@ -118,3 +118,45 @@ export async function mirrorImmutableAuditToFirestore(entry: ImmutableAuditEntry
     return false;
   }
 }
+
+export async function reconcileHostAuthoritativeSnapshotToFirestore(params: {
+  branchId: string;
+  branchName: string;
+  roomCode: string;
+  region?: string;
+  todaySales: number;
+  todayOrders: number;
+  subscriptionTier?: 'TRIAL' | 'STARTER' | 'PRO' | 'ENTERPRISE';
+}): Promise<boolean> {
+  if (!hasRealCredentials || !auth.currentUser?.uid || !auth.currentUser?.emailVerified) {
+    return false;
+  }
+  const safeBranchId = params.branchId.replace(/[^a-zA-Z0-9_-]/g, '-').slice(0, 64) || 'branch-host-local';
+  const path = `branch_nodes/${safeBranchId}`;
+  try {
+    await setDoc(
+      doc(db, 'branch_nodes', safeBranchId),
+      {
+        branchId: safeBranchId,
+        ownerUid: auth.currentUser.uid,
+        name: params.branchName.slice(0, 120) || 'Sucursal Host Local',
+        code: params.roomCode.slice(0, 24) || 'BNK-HOST',
+        region: (params.region || 'LAN Local-First').slice(0, 120),
+        status: 'online',
+        isolationMode: 'isolated_local_first',
+        pendingSyncCount: 0,
+        todaySales: Math.max(0, Number(params.todaySales || 0)),
+        todayOrders: Math.max(0, Math.round(params.todayOrders || 0)),
+        subscriptionTier: params.subscriptionTier || 'PRO',
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
+    return true;
+  } catch (err) {
+    handleFirestoreError(err, OperationType.WRITE, path);
+    return false;
+  }
+}
+
